@@ -16,7 +16,7 @@ var (
 
 var sep = `«»`
 
-// GetTitleAndURL get the title of active tab of the current window of `browser`
+// GetTitleAndURL get the `title` and `UTL` of active tab of the current window of `browser`
 //    `browser`:
 //       "edge" for "Microsoft Edge" (default)
 //       "chrome" for "Google Chrome"
@@ -45,13 +45,13 @@ func GetTitleAndURL(browser string) (t, u string, err error) {
 	return t, u, nil
 }
 
-// GetTitle get the title of active tab of the current window of Google Chrome
+// GetTitle get the `title` of active tab of the current window of `browser`
 func GetTitle(browser string) (string, error) {
 	t, _, err := GetTitleAndURL(browser)
 	return t, err
 }
 
-// GetURL get the URL of active tab of the current window of Google Chrome
+// GetURL get the `URL` of active tab of the current window of `browser`
 func GetURL(browser string) (string, error) {
 	_, u, err := GetTitleAndURL(browser)
 	return u, err
