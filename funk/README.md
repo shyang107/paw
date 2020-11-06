@@ -159,8 +159,7 @@ see also, typesafe implementations: DifferenceString
 
 ### `funk.IndexOf`
 
-Gets the index at which the first occurrence of a value is found in an array or return `-1`
-if the value cannot be found.
+Gets the index at which the first occurrence of a value is found in an array or return `-1` if the value cannot be found.
 
 ```language-go
 // slice of string
@@ -178,8 +177,7 @@ see also, typesafe implementations: `IndexOfInt`, `IndexOfInt64`, `IndexOfFloat3
 
 ### `funk.LastIndexOf`
 
-Gets the index at which the last occurrence of a value is found in an array or return -1
-if the value cannot be found.
+Gets the index at which the last occurrence of a value is found in an array or return `-1` if the value cannot be found.
 
 ```language-go
 // slice of string
@@ -397,7 +395,7 @@ fmt.Println(bar.Bar.Bars[1].Name) // "level-2-new"
 
 ### `funk.MustSet`
 
-Short hand for funk.Set if struct does not contain `interface{}` field type to discard errors.
+Short hand for [`funk.Set`](#funkset) if struct does not contain `interface{}` field type to discard errors.
 
 ### `funk.Prune`
 
@@ -489,6 +487,7 @@ fmt.Println(results) // []int{4, 3, 2, 1}
 ### `funk.Chunk`
 
 Creates an array of elements split into groups with the length of the size.
+
 If array can't be split evenly, the final chunk will be the remaining element.
 
 ```language-go

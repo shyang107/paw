@@ -19,6 +19,7 @@
         - [`GetAbbrString`](#getabbrstring)
         - [`CountPlaceHolder`](#countplaceholder)
         - [`HasChineseChar`](#haschinesechar)
+    - [Table](#table)
 
 <!-- /TOC -->
 
@@ -31,7 +32,7 @@
 `LineCount` counts the number of `\n` for reader `r`
 
 ```language-go
-func LineCount(r io.Reader) (int, error) 
+func LineCount(r io.Reader) (int, error)
 ```
 
 > modify from "github.com/liuzl/goutil"
@@ -44,7 +45,7 @@ func LineCount(r io.Reader) (int, error)
 : could be `gzip` file or `plain text` file
 
 ```language-go
-func GzFileLineCount(f string) (int, error)
+func FileLineCount(f string) (int, error)
 ```
 
 > modify from "github.com/liuzl/goutil"
@@ -104,7 +105,7 @@ func GetTitleAndURL(browser string) (t, u string, err error)
 `GetTitle` get the `title` of active tab of the current window of `browser`
 
 ```language-go
-func GetTitle(browser string) (string, error) 
+func GetTitle(browser string) (string, error)
 ```
 
 ### `GetURL`
@@ -136,7 +137,7 @@ func GetAbbrString(str string, maxlen int) string
 : number of occupied space in terminal for ASCII-character
 
 ```language-go
-func CountPlaceHolder(str string) (nHan int, nASCII int) 
+func CountPlaceHolder(str string) (nHan int, nASCII int)
 ```
 
 ### `HasChineseChar`
@@ -146,3 +147,7 @@ func CountPlaceHolder(str string) (nHan int, nASCII int)
 ```language-go
 func HasChineseChar(str string) bool
 ```
+
+## Table
+
+<!-- TODO -->
