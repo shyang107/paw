@@ -198,7 +198,9 @@ func getRowString(fields []string, widths []int, aligns []Align, sep string, pad
 		sb.WriteString(s + sep)
 	}
 	str := sb.String()
-	isAbbrSymbol = strings.Contains(str, abbrSymbol)
+	if !isAbbrSymbol {
+		isAbbrSymbol = strings.Contains(str, abbrSymbol)
+	}
 	return padding + str
 }
 
@@ -223,8 +225,8 @@ func (t *TableFormat) PrintRow(rows []string) {
 
 // PrintEnd print end-section into `t.writer`
 func (t *TableFormat) PrintEnd() {
-	fmt.Fprintln(t.writer, strings.ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
 	if isAbbrSymbol {
+		fmt.Fprintln(t.writer, strings.ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
 		fmt.Fprintln(t.writer, t.Padding+"* '"+abbrSymbol+"' : abbreviation of term")
 	}
 	fmt.Fprintln(t.writer, t.botBanner)
