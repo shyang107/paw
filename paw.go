@@ -1,37 +1,52 @@
 package paw
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 
-	"github.com/keakon/golog"
-)
-
-const (
-// // InfoLevel is golog's level
-// InfoLevel = golog.InfoLevel
-// // WarnLeveL is golog's level
-// WarnLeveL = golog.WarnLevel
-// // DebugLevel is golog's level
-// DebugLevel = golog.DebugLevel
-// // CritLevel is golog's level
-// CritLevel = golog.CritLevel
-// // ErrorLevel is golog's level
-// ErrorLevel = golog.ErrorLevel
+	"github.com/sirupsen/logrus"
+	// nested "github.com/antonfisher/nested-logrus-formatter"
+	nested "github.com/antonfisher/nested-logrus-formatter"
 )
 
 var (
-	// Log is log instance
-	Log = golog.NewStderrLogger()
-	sb  = strings.Builder{}
+	sb = strings.Builder{}
+	// Logger is logrus.Logger
+	// Logger = logrus.New()
+	Logger = &logrus.Logger{
+		Out:          os.Stderr,
+		ReportCaller: true,
+		Formatter:    nestedFormatter,
+		Level:        logrus.InfoLevel,
+	}
+	// NestedFormatter ...
+	nestedFormatter = &nested.Formatter{
+		HideKeys: true,
+		// FieldsOrder:     []string{"component", "category"},
+		// TimestampFormat: "2006-01-02 15:04:05",
+		TimestampFormat: "0102-150405.000",
+		TrimMessages:    true,
+		CallerFirst:     true,
+		CustomCallerFormatter: func(f *runtime.Frame) string {
+			s := strings.Split(f.Function, ".")
+			funcName := s[len(s)-1]
+			return fmt.Sprintf(" [%s:%d][%s()]", filepath.Base(f.File), f.Line, funcName)
+		},
+	}
 )
 
 func init() {
-
+	// Logger.SetLevel(logrus.InfoLevel)
+	// Logger.SetReportCaller(true)
+	// Logger.SetOutput(os.Stdout)
+	// Logger.SetFormatter(nestedFormatter)
 }
 
-// // SetLogLevel set the level of Log to `lv`
-// //
-// // 	`lv`: golog.LeveL (such as `InfoLevel`, `WarnLeveL`, `DebugLevel`, `CritLevel`, `ErrorLevel`)
-// func SetLogLevel(lv golog.Level) {
-// 	Log = golog.NewLogger(lv)
-// }
+// SetLoggerFieldsOrder set `nestedFormatter.FieldsOrder`
+func SetLoggerFieldsOrder(fields []string) {
+	nestedFormatter.FieldsOrder = fields
+	Logger.SetFormatter(nestedFormatter)
+}

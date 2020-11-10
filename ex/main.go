@@ -7,17 +7,22 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/funk"
+	"github.com/shyang107/paw/log"
+	// "github.com/shyang107/paw/Log"
 	// "github.com/thoas/go-funk"
 )
 
 var (
-	lg = paw.Log
+	// lg = paw.Glog
+	lg = paw.Logger
 )
 
 func init() {
-	// paw.SetLogLevel(paw.InfoLevel)
+	lg.SetLevel(logrus.DebugLevel)
 }
 
 func main() {
@@ -27,22 +32,49 @@ func main() {
 	// testGetAbbrString()
 	// exTableFormat()
 	exStringBuilder()
+	exLoger()
+	exReverse()
 }
 
+func exReverse() {
+	lg.Info("exReverse")
+	s := "Text中文 Collection"
+	tb := paw.TextBuilder{}
+	tb.SetText(s)
+	fmt.Println("           s:", s)
+	fmt.Println("     tb.Text:", tb.GetText())
+	fmt.Println("tb.Reverse():", tb.Reverse())
+	fmt.Println("     tb.Text:", tb.GetText())
+	fmt.Println("tb.Reverse():", tb.Reverse())
+
+}
+func exLoger() {
+	log.Info.Println("飛雪無情的博客:", "http://www.flysnow.org")
+	log.Warn.Printf("飛雪無情的微信公眾號：%s\n", "flysnow_org")
+	log.Error.Println("歡迎關注留言")
+
+	lg.Infoln("飛雪無情的博客:", "http://www.flysnow.org")
+	lg.Warnln("飛雪無情的博客:", "http://www.flysnow.org")
+	lg.Debugln("飛雪無情的博客:", "http://www.flysnow.org")
+	lg.Errorln("飛雪無情的博客:", "http://www.flysnow.org")
+	// lg.Traceln("飛雪無情的博客:", "http://www.flysnow.org")
+	// lg.Fatalln("飛雪無情的博客:", "http://www.flysnow.org")
+
+}
 func exStringBuilder() {
 	lg.Info("exStringBuilder")
 	s := "Text中文 Collection"
 	tb := &paw.TextBuilder{}
 	tc := tb.SetText(s).Build()
 	fmt.Println("                         s:", s)
-	fmt.Println("     tb.SetText(s).Build():", tc.Text)
+	fmt.Println("     tb.SetText(s).Build():", tc.GetText())
 	fmt.Println("tb.NumberBanner().String():", tb.NumberBanner())
 	fmt.Println(`   b.GetAbbrString(8, "»"):`, tb.GetAbbrString(8, "»"))
 	fmt.Println(`tb.NumberBanner().String():`, tb.GetAbbrString(8, "»").NumberBanner())
 	h, a := tb.CountPlaceHolder()
 	fmt.Println("     tb.CountPlaceHolder():", h, a)
 	fmt.Println("       tb.HasChineseChar():", tb.HasChineseChar())
-	fmt.Println("     tb.SetText(s).Build():", tc.Text)
+	fmt.Println("     tb.SetText(s).Build():", tc.GetText())
 	// out:
 	// [I 2020-11-08 12:28:38 main:33] exStringBuilder
 	//                          s: Text中文 Collection
