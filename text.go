@@ -1,9 +1,16 @@
 package paw
 
 import (
+	"bytes"
+	"io/ioutil"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/encoding/traditionalchinese"
+
+	"golang.org/x/text/transform"
 	// "github.com/gookit/color"
 )
 
@@ -29,6 +36,7 @@ func (tc TextCollection) GetText() string {
 // TextBuilder contains all tools which can be chained.
 type TextBuilder struct {
 	TextCollection
+	TBError error
 }
 
 // Build return a instance of `TextCollection`
@@ -232,100 +240,6 @@ func (tb *TextBuilder) ReplaceAll(old, new string) *TextBuilder {
 	return tb
 }
 
-// GetAbbrString return the abbreviation string 'xxx...' of `str`
-//
-// 	`maxlen`: maimium length of the abbreviation
-// 	`conSymbole`: tailing symbol of the abbreviation
-func GetAbbrString(str string, maxlen int, conSymbole string) string {
-	hc, ac := CountPlaceHolder(str)
-	lenStr := hc + ac
-	if lenStr <= maxlen {
-		return str
-	}
-	if len(conSymbole) < 1 {
-		conSymbole = "..."
-	}
-	limit := maxlen - len(conSymbole)
-	c := 0
-	sb := strings.Builder{}
-	for _, ch := range str {
-		rl := utf8.RuneLen(ch)
-		if rl == 3 {
-			c += 2
-		} else {
-			c++
-		}
-		if c <= limit {
-			sb.WriteRune(ch)
-		} else {
-			break
-		}
-	}
-	hc, ac = CountPlaceHolder(sb.String())
-	c = hc + ac
-	if c < limit {
-		for i := 0; i < limit-c; i++ {
-			sb.WriteString(" ")
-		}
-	}
-	str = sb.String() + conSymbole
-	return str
-}
-
-// CountPlaceHolder return `nHan` and `nASCII`
-//
-// 	`nHan`: number of occupied space in screen for han-character
-// 	`nASCII`: number of occupied space in screen for ASCII-character
-func CountPlaceHolder(str string) (nHan int, nASCII int) {
-	nHan, nASCII = 0, 0
-	for _, ch := range str {
-		rl := utf8.RuneLen(ch)
-		if rl == 3 {
-			nHan += 2
-		} else {
-			nASCII++
-		}
-	}
-	return nHan, nASCII
-}
-
-// HasChineseChar return true for that `str` include chinese character
-//
-// Example:
-// 	HasChineseChar("abc 中文") return true
-// 	HasChineseChar("abccefgh") return false
-func HasChineseChar(str string) bool {
-	for _, r := range str {
-		if unicode.Is(unicode.Scripts["Han"], r) {
-			return true
-		}
-	}
-	return false
-}
-
-// NumberBanner return numbers' string with length `len`
-//
-// Example:
-// 	NumberBanner(11) return "12345678901"
-func NumberBanner(len int) string {
-	nl := []byte("1234567890")
-	sb := strings.Builder{}
-	for i := 0; i < len; i++ {
-		c := nl[i%10]
-		sb.Write([]byte{c})
-	}
-	return sb.String()
-}
-
-// Reverse reverse the string `s`
-func Reverse(s string) string {
-	sl := []rune(s)
-	for i, j := 0, len(sl)-1; i < j; i, j = i+1, j-1 {
-		sl[i], sl[j] = sl[j], sl[i]
-	}
-	return string(sl)
-}
-
 // HasPrefix return `strings.HasPrefix(str, prefix)`
 func HasPrefix(str string, prefix string) bool {
 	return strings.HasPrefix(str, prefix)
@@ -483,17 +397,17 @@ func Title(s string) string {
 // Map returns a copy of the string `s` with all its characters modified according to the `mapping` function. If `mapping` returns a negative value, the character is dropped from the string with no replacement.
 //
 // Example:
-// rot13 := func(r rune) rune {
-// 	switch {
-// 	case r >= 'A' && r <= 'Z':
-// 		return 'A' + (r-'A'+13)%26
-// 	case r >= 'a' && r <= 'z':
-// 		return 'a' + (r-'a'+13)%26
+// 	rot13 := func(r rune) rune {
+// 		switch {
+// 		case r >= 'A' && r <= 'Z':
+// 			return 'A' + (r-'A'+13)%26
+// 		case r >= 'a' && r <= 'z':
+// 			return 'a' + (r-'a'+13)%26
+// 		}
+// 		return r
 // 	}
-// 	return r
-// }
-// fmt.Println(strings.Map(rot13, "'Twas brillig and the slithy gopher..."))
-// out:
+// 	fmt.Println(strings.Map(rot13, "'Twas brillig and the slithy gopher..."))
+// 	out:
 // 	'Gjnf oevyyvt naq gur fyvgul tbcure...
 func Map(mapping func(rune) rune, s string) string {
 	return strings.Map(mapping, s)
@@ -529,4 +443,218 @@ func Replace(s, old, new string, n int) string {
 // 	out: moo moo moo
 func ReplaceAll(s, old, new string) string {
 	return strings.ReplaceAll(s, old, new)
+}
+
+// GetAbbrString return the abbreviation string 'xxx...' of `str`
+//
+// 	`maxlen`: maimium length of the abbreviation
+// 	`conSymbole`: tailing symbol of the abbreviation
+func GetAbbrString(str string, maxlen int, conSymbole string) string {
+	hc, ac := CountPlaceHolder(str)
+	lenStr := hc + ac
+	if lenStr <= maxlen {
+		return str
+	}
+	if len(conSymbole) < 1 {
+		conSymbole = "..."
+	}
+	limit := maxlen - len(conSymbole)
+	c := 0
+	sb := strings.Builder{}
+	for _, ch := range str {
+		rl := utf8.RuneLen(ch)
+		if rl == 3 {
+			c += 2
+		} else {
+			c++
+		}
+		if c <= limit {
+			sb.WriteRune(ch)
+		} else {
+			break
+		}
+	}
+	hc, ac = CountPlaceHolder(sb.String())
+	c = hc + ac
+	if c < limit {
+		for i := 0; i < limit-c; i++ {
+			sb.WriteString(" ")
+		}
+	}
+	str = sb.String() + conSymbole
+	return str
+}
+
+// CountPlaceHolder return `nHan` and `nASCII`
+//
+// 	`nHan`: number of occupied space in screen for han-character
+// 	`nASCII`: number of occupied space in screen for ASCII-character
+func CountPlaceHolder(str string) (nHan int, nASCII int) {
+	nHan, nASCII = 0, 0
+	for _, ch := range str {
+		rl := utf8.RuneLen(ch)
+		if rl == 3 {
+			nHan += 2
+		} else {
+			nASCII++
+		}
+	}
+	return nHan, nASCII
+}
+
+// HasChineseChar return true for that `str` include chinese character
+//
+// Example:
+// 	HasChineseChar("abc 中文") return true
+// 	HasChineseChar("abccefgh") return false
+func HasChineseChar(str string) bool {
+	for _, r := range str {
+		if unicode.Is(unicode.Scripts["Han"], r) {
+			return true
+		}
+	}
+	return false
+}
+
+// NumberBanner return numbers' string with length `len`
+//
+// Example:
+// 	NumberBanner(11) return "12345678901"
+func NumberBanner(len int) string {
+	nl := []byte("1234567890")
+	sb := strings.Builder{}
+	for i := 0; i < len; i++ {
+		c := nl[i%10]
+		sb.Write([]byte{c})
+	}
+	return sb.String()
+}
+
+// Reverse reverse the string `s`
+func Reverse(s string) string {
+	sl := []rune(s)
+	for i, j := 0, len(sl)-1; i < j; i, j = i+1, j-1 {
+		sl[i], sl[j] = sl[j], sl[i]
+	}
+	return string(sl)
+}
+
+// GbkToUtf8 decodes GBK to UTF8
+func GbkToUtf8(s []byte) ([]byte, error) {
+	rd := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewDecoder())
+	d, e := ioutil.ReadAll(rd)
+	if e != nil {
+		return nil, e
+	}
+	return d, nil
+}
+
+// GbkToUtf8String decodes GBK to UTF8
+func GbkToUtf8String(s string) (string, error) {
+	bs := []byte(s)
+	us, e := GbkToUtf8(bs)
+	return string(us), e
+}
+
+// GbkToUtf8String packs `GbkToUtf8String(s string)`
+func (tb *TextBuilder) GbkToUtf8String() *TextBuilder {
+	s, e := GbkToUtf8String(tb.text)
+	if e != nil {
+		tb.TBError = e
+		tb.text = ""
+		return tb
+	}
+	tb.TBError = nil
+	tb.text = s
+	return tb
+}
+
+// Utf8ToGbk encodes UTF8 to GBK
+func Utf8ToGbk(s []byte) ([]byte, error) {
+	rd := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewEncoder())
+	d, e := ioutil.ReadAll(rd)
+	if e != nil {
+		return nil, e
+	}
+	return d, nil
+}
+
+// Utf8ToGbkString encodes UTF8 to GBK
+func Utf8ToGbkString(s string) (string, error) {
+	bs := []byte(s)
+	us, e := Utf8ToGbk(bs)
+	return string(us), e
+}
+
+// Utf8ToGbkString packs `Utf8ToGbkString(s string)`
+func (tb *TextBuilder) Utf8ToGbkString() *TextBuilder {
+	s, e := Utf8ToGbkString(tb.text)
+	if e != nil {
+		tb.TBError = e
+		tb.text = ""
+		return tb
+	}
+	tb.TBError = nil
+	tb.text = s
+	return tb
+}
+
+// Big5ToUtf8 decodes Big5 to UTF8
+func Big5ToUtf8(s []byte) ([]byte, error) {
+	rd := transform.NewReader(bytes.NewReader(s), traditionalchinese.Big5.NewDecoder())
+	d, e := ioutil.ReadAll(rd)
+	if e != nil {
+		return nil, e
+	}
+	return d, nil
+}
+
+// Big5ToUtf8String decodes Big5 to UTF8
+func Big5ToUtf8String(s string) (string, error) {
+	bs := []byte(s)
+	us, e := Big5ToUtf8(bs)
+	return string(us), e
+}
+
+// Big5ToUtf8String packs `Big5ToUtf8String(s string)`
+func (tb *TextBuilder) Big5ToUtf8String() *TextBuilder {
+	s, e := Big5ToUtf8String(tb.text)
+	if e != nil {
+		tb.TBError = e
+		tb.text = ""
+		return tb
+	}
+	tb.TBError = nil
+	tb.text = s
+	return tb
+}
+
+// Utf8ToBig5 encodes UTF8 to Big5
+func Utf8ToBig5(s []byte) ([]byte, error) {
+	rd := transform.NewReader(bytes.NewReader(s), traditionalchinese.Big5.NewEncoder())
+	d, e := ioutil.ReadAll(rd)
+	if e != nil {
+		return nil, e
+	}
+	return d, nil
+}
+
+// Utf8ToBig5String encodes UTF8 to Big5
+func Utf8ToBig5String(s string) (string, error) {
+	bs := []byte(s)
+	us, e := Utf8ToBig5(bs)
+	return string(us), e
+}
+
+// Utf8ToBig5String packs `Utf8ToBig5String(s string)`
+func (tb *TextBuilder) Utf8ToBig5String() *TextBuilder {
+	s, e := Utf8ToBig5String(tb.text)
+	if e != nil {
+		tb.TBError = e
+		tb.text = ""
+		return tb
+	}
+	tb.TBError = nil
+	tb.text = s
+	return tb
 }

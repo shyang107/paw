@@ -13,5 +13,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/thoas/go-funk v0.7.0
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
+	github.com/xlab/treeprint v1.0.0 // indirect
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
+	golang.org/x/text v0.3.0
 )

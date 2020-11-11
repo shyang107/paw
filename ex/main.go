@@ -12,6 +12,7 @@ import (
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/funk"
 	"github.com/shyang107/paw/log"
+	"github.com/shyang107/paw/treeprint"
 	// "github.com/shyang107/paw/Log"
 	// "github.com/thoas/go-funk"
 )
@@ -31,11 +32,40 @@ func main() {
 	// rehttp()
 	// testGetAbbrString()
 	// exTableFormat()
-	exStringBuilder()
-	exLoger()
-	exReverse()
+	// exStringBuilder()
+	// exLoger()
+	// exReverse()
+	exPrintTree()
+	// exShuffle()
 }
 
+func exShuffle() {
+	s := []rune("abcdefg")
+	slice := make([]interface{}, len(s))
+	for i, val := range s {
+		slice[i] = string(val)
+	}
+	fmt.Println(slice)
+	for i := 0; i < 10; i++ {
+		paw.Shuffle(slice)
+		fmt.Println(slice)
+	}
+}
+func exPrintTree() {
+	data := []treeprint.Org{
+		// {"A001", "Dept1", "0 -----th top"},
+		{"A001", "Dept1", "0"},
+		{"A011", "Dept2", "0"},
+		{"A002", "subDept1", "A001"},
+		{"A005", "subDept2", "A001"},
+		{"A003", "sub_subDept1", "A002"},
+		{"A006", "gran_subDept", "A003"},
+		{"A004", "sub_subDept2", "A002"},
+		{"A012", "subDept1", "A011"},
+	}
+
+	treeprint.PrintOrgTree("ORG", data, "0", 3)
+}
 func exReverse() {
 	lg.Info("exReverse")
 	s := "Text中文 Collection"
