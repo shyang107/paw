@@ -14,232 +14,6 @@ import (
 	// "github.com/gookit/color"
 )
 
-// TextCollection contains string `Text`
-type TextCollection struct {
-	text string
-}
-
-func (tc TextCollection) String() string {
-	return tc.text
-}
-
-// SetText set field to string `s`
-func (tc *TextCollection) SetText(s string) {
-	tc.text = s
-}
-
-// GetText get the string value
-func (tc TextCollection) GetText() string {
-	return tc.text
-}
-
-// TextBuilder contains all tools which can be chained.
-type TextBuilder struct {
-	TextCollection
-	TBError error
-}
-
-// Build return a instance of `TextCollection`
-func (tb *TextBuilder) Build() TextCollection {
-	return TextCollection{text: tb.text}
-}
-
-// SetText set `TextBuilder.TextCollection.Text` to `txt`
-func (tb *TextBuilder) SetText(txt string) *TextBuilder {
-	tb.text = txt
-	return tb
-}
-
-// GetText return `TextBuilder.TextCollection.Text`
-func (tb *TextBuilder) GetText() string {
-	return tb.TextCollection.GetText()
-}
-
-// String return `TextBuilder.TextCollection.Text`
-func (tb *TextBuilder) String() string {
-	return tb.TextCollection.String()
-}
-
-// GetAbbrString get a abbreviation of `TextBuilder.TextCollection.Text` and save to `TextBuilder.TextCollection.Text`
-//
-// 	`maxlen`: maimium length of the abbreviation
-// 	`conSymbole`: tailing symbol of the abbreviation
-func (tb *TextBuilder) GetAbbrString(maxlen int, contSymbol string) *TextBuilder {
-	tb.text = GetAbbrString(tb.text, maxlen, contSymbol)
-	return tb
-}
-
-// CountPlaceHolder return `nHan` and `nASCII`
-//
-// 	`nHan`: number of occupied space in screen for han-character
-// 	`nASCII`: number of occupied space in screen for ASCII-character
-func (tb *TextBuilder) CountPlaceHolder() (nHan int, nASCII int) {
-	return CountPlaceHolder(tb.text)
-}
-
-// HasChineseChar return true for that `str` include chinese character
-//
-// Example:
-// 	HasChineseChar("abc 中文") return true
-// 	HasChineseChar("abccefgh") return false
-func (tb *TextBuilder) HasChineseChar() bool {
-	return HasChineseChar(tb.text)
-}
-
-// NumberBanner return numbers' string with length of `TextBuilder.TextCollection.Text`
-//
-// Example:
-// 	TextBuilder.TextCollection.Text = "Text中文 Collection"
-// 	nh, na := CountPlaceHolder（"Text中文 Collection"）
-// 	--> nh=4, na=15 --> length = nh + na = 19
-// 	NumberBanner() return "12345678901"
-func (tb *TextBuilder) NumberBanner() *TextBuilder {
-	h, a := tb.CountPlaceHolder()
-	tb.text = NumberBanner(h + a)
-	return tb
-}
-
-// Reverse packs `Reverse(s string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) Reverse() *TextBuilder {
-	tb.text = Reverse(tb.text)
-	return tb
-}
-
-// HasPrefix return `strings.HasPrefix(tb.text, prefix)`
-func (tb *TextBuilder) HasPrefix(prefix string) bool {
-	return strings.HasPrefix(tb.text, prefix)
-}
-
-// HasSuffix return `strings.HasSuffix(tb.text, Suffix)`
-func (tb *TextBuilder) HasSuffix(suffix string) bool {
-	return strings.HasSuffix(tb.text, suffix)
-}
-
-// Contains return `strings.Contains(tb.text, substr)`
-func (tb *TextBuilder) Contains(substr string) bool {
-	return strings.Contains(tb.text, substr)
-}
-
-// Trim packs `Trim(s, cutset)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) Trim(cutset string) *TextBuilder {
-	tb.text = strings.Trim(tb.text, cutset)
-	return tb
-}
-
-// TrimFunc packs `TrimFunc(s string, f func(rune) bool)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) TrimFunc(f func(rune) bool) *TextBuilder {
-	tb.text = strings.TrimFunc(tb.text, f)
-	return tb
-}
-
-// TrimLeft packs `TrimLeft(s, cutset string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) TrimLeft(cutset string) *TextBuilder {
-	tb.text = strings.TrimLeft(tb.text, cutset)
-	return tb
-}
-
-// TrimLeftFunc packs `TrimLeftFunc(s string, f func(rune) bool)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) TrimLeftFunc(f func(rune) bool) *TextBuilder {
-	tb.text = strings.TrimLeftFunc(tb.text, f)
-	return tb
-}
-
-// TrimPrefix packs `TrimPrefix(s, prefix string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) TrimPrefix(s, prefix string) *TextBuilder {
-	tb.text = strings.TrimPrefix(tb.text, prefix)
-	return tb
-}
-
-// TrimRight packs `TrimRight(s, cutset string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) TrimRight(s, cutset string) *TextBuilder {
-	tb.text = strings.TrimRight(tb.text, cutset)
-	return tb
-}
-
-// TrimRightFunc packs `TrimRightFunc(s string, f func(rune) bool)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) TrimRightFunc(s string, f func(rune) bool) *TextBuilder {
-	tb.text = strings.TrimRightFunc(tb.text, f)
-	return tb
-}
-
-// TrimSpace packs `TrimSpace(s string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) TrimSpace() *TextBuilder {
-	tb.text = strings.TrimSpace(tb.text)
-	return tb
-}
-
-// TrimSuffix packs `TrimSuffix(s, suffix string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) TrimSuffix(suffix string) *TextBuilder {
-	tb.text = strings.TrimSuffix(tb.text, suffix)
-	return tb
-}
-
-// ToUpper packs `ToUpper(s string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) ToUpper() *TextBuilder {
-	tb.text = strings.ToUpper(tb.text)
-	return tb
-}
-
-// ToTitle packs `ToTitle(s string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) ToTitle() *TextBuilder {
-	tb.text = strings.ToUpper(tb.text)
-	return tb
-}
-
-// ToLower packs ` ToLower(s string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) ToLower() *TextBuilder {
-	tb.text = strings.ToLower(tb.text)
-	return tb
-}
-
-// Title returns packs `Title(s string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) Title() *TextBuilder {
-	tb.text = strings.Title(tb.text)
-	return tb
-}
-
-// Map packs `Map(mapping func(rune) rune, s string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) Map(mapping func(rune) rune) *TextBuilder {
-	tb.text = strings.Map(mapping, tb.text)
-	return tb
-}
-
-// Repeat packs `Repeat(s string, count int)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) Repeat(count int) *TextBuilder {
-	tb.text = strings.Repeat(tb.text, count)
-	return tb
-}
-
-// Replace packs `Replace(s, old, new string, n int)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) Replace(old, new string, n int) *TextBuilder {
-	tb.text = strings.Replace(tb.text, old, new, n)
-	return tb
-}
-
-// ReplaceAll packs `ReplaceAll(s, old, new string)`
-// 	set `TextCollection.Text` to the result
-func (tb *TextBuilder) ReplaceAll(old, new string) *TextBuilder {
-	tb.text = strings.ReplaceAll(tb.text, old, new)
-	return tb
-}
-
 // HasPrefix return `strings.HasPrefix(str, prefix)`
 func HasPrefix(str string, prefix string) bool {
 	return strings.HasPrefix(str, prefix)
@@ -556,19 +330,6 @@ func GbkToUtf8String(s string) (string, error) {
 	return string(us), e
 }
 
-// GbkToUtf8String packs `GbkToUtf8String(s string)`
-func (tb *TextBuilder) GbkToUtf8String() *TextBuilder {
-	s, e := GbkToUtf8String(tb.text)
-	if e != nil {
-		tb.TBError = e
-		tb.text = ""
-		return tb
-	}
-	tb.TBError = nil
-	tb.text = s
-	return tb
-}
-
 // Utf8ToGbk encodes UTF8 to GBK
 func Utf8ToGbk(s []byte) ([]byte, error) {
 	rd := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewEncoder())
@@ -584,19 +345,6 @@ func Utf8ToGbkString(s string) (string, error) {
 	bs := []byte(s)
 	us, e := Utf8ToGbk(bs)
 	return string(us), e
-}
-
-// Utf8ToGbkString packs `Utf8ToGbkString(s string)`
-func (tb *TextBuilder) Utf8ToGbkString() *TextBuilder {
-	s, e := Utf8ToGbkString(tb.text)
-	if e != nil {
-		tb.TBError = e
-		tb.text = ""
-		return tb
-	}
-	tb.TBError = nil
-	tb.text = s
-	return tb
 }
 
 // Big5ToUtf8 decodes Big5 to UTF8
@@ -616,19 +364,6 @@ func Big5ToUtf8String(s string) (string, error) {
 	return string(us), e
 }
 
-// Big5ToUtf8String packs `Big5ToUtf8String(s string)`
-func (tb *TextBuilder) Big5ToUtf8String() *TextBuilder {
-	s, e := Big5ToUtf8String(tb.text)
-	if e != nil {
-		tb.TBError = e
-		tb.text = ""
-		return tb
-	}
-	tb.TBError = nil
-	tb.text = s
-	return tb
-}
-
 // Utf8ToBig5 encodes UTF8 to Big5
 func Utf8ToBig5(s []byte) ([]byte, error) {
 	rd := transform.NewReader(bytes.NewReader(s), traditionalchinese.Big5.NewEncoder())
@@ -646,15 +381,14 @@ func Utf8ToBig5String(s string) (string, error) {
 	return string(us), e
 }
 
-// Utf8ToBig5String packs `Utf8ToBig5String(s string)`
-func (tb *TextBuilder) Utf8ToBig5String() *TextBuilder {
-	s, e := Utf8ToBig5String(tb.text)
-	if e != nil {
-		tb.TBError = e
-		tb.text = ""
-		return tb
+// IsEqualString compares string `a` and `b`
+func IsEqualString(a, b string, ignoreCase bool) bool {
+	if ignoreCase {
+		return strings.EqualFold(a, b)
 	}
-	tb.TBError = nil
-	tb.text = s
-	return tb
+	i := strings.Compare(a, b)
+	if i == 0 {
+		return true
+	}
+	return false
 }

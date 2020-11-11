@@ -84,3 +84,22 @@ func ForEachLine(br *bufio.Reader, callback func(string) error) error {
 	}
 	return nil
 }
+
+// AppendToFile append string `s` to file `fileName`
+func AppendToFile(fileName string, s string) error {
+	var file *os.File
+	var err error
+	if IsFileExist(fileName) {
+		file, err = os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, 0644)
+	} else {
+		file, err = os.Create(fileName)
+	}
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	if _, err = file.WriteString(s); err != nil {
+		return err
+	}
+	return nil
+}

@@ -35,8 +35,12 @@ func main() {
 	// exStringBuilder()
 	// exLoger()
 	// exReverse()
-	exPrintTree()
+	// exPrintTree()
 	// exShuffle()
+	exGetCurrPath()
+}
+func exGetCurrPath() {
+	fmt.Println(paw.GetCurrPath())
 }
 
 func exShuffle() {
@@ -95,16 +99,16 @@ func exStringBuilder() {
 	lg.Info("exStringBuilder")
 	s := "Text中文 Collection"
 	tb := &paw.TextBuilder{}
-	tc := tb.SetText(s).Build()
+	tb.Build(s)
 	fmt.Println("                         s:", s)
-	fmt.Println("     tb.SetText(s).Build():", tc.GetText())
+	fmt.Println("              tb.GetText():", tb.GetText())
 	fmt.Println("tb.NumberBanner().String():", tb.NumberBanner())
 	fmt.Println(`   b.GetAbbrString(8, "»"):`, tb.GetAbbrString(8, "»"))
 	fmt.Println(`tb.NumberBanner().String():`, tb.GetAbbrString(8, "»").NumberBanner())
 	h, a := tb.CountPlaceHolder()
 	fmt.Println("     tb.CountPlaceHolder():", h, a)
 	fmt.Println("       tb.HasChineseChar():", tb.HasChineseChar())
-	fmt.Println("     tb.SetText(s).Build():", tc.GetText())
+	fmt.Println("              tb.GetText():", tb.GetText())
 	// out:
 	// [I 2020-11-08 12:28:38 main:33] exStringBuilder
 	//                          s: Text中文 Collection
