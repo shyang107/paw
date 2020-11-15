@@ -6,7 +6,9 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/sirupsen/logrus"
 
 	"github.com/shyang107/paw"
@@ -38,16 +40,64 @@ func main() {
 	// exPrintTree()
 	// exShuffle()
 	// exGetCurrPath()
-	var n1 = []int{1, 39, 2, 9, 7, 54, 11}
-	var n2 = []int{1, 39, 2, 9, 7, 54, 11}
-	// var n = []int{4, 3, 2, 10, 12, 1, 5, 6}
-	InsertionSort(n1)
-	SelectionSort(n2)
+	// var n1 = []int{1, 39, 2, 9, 7, 54, 11}
+	// var n2 = []int{1, 39, 2, 9, 7, 54, 11}
+	// var n3 = []int{1, 39, 2, 9, 7, 54, 11}
+	// var n4 = []int{1, 39, 2, 9, 7, 54, 11}
+	// // var n1 = []int{4, 3, 2, 10, 12, 1, 5, 6}
+	// // var n2 = []int{4, 3, 2, 10, 12, 1, 5, 6}
+	// // size := 20
+	// // n1 = paw.GenerateSlice(size)
+	// InsertionSort(n1)
+	// // n2 = paw.GenerateSlice(size)
+	// SelectionSort(n2)
+	// // n3 = paw.GenerateSlice(size)
+	// exCombSort(n3)
+	// // n4 = paw.GenerateSlice(size)
+	// exMergeSort(n4)
+	exRegEx()
+}
+
+const tmpText = "const twoMatch = `test string`;\nconst noMatches = `test ${ variabel }`;\nabcde ${ field1 } and ${ Field2}"
+
+func exRegEx() {
+	var re = regexp.MustCompile(`(?m)(\${.*?)(\b\w+\b)(.*?})`)
+	tokens := map[string]string{
+		"variabel": "[token_variabel]",
+		"field1":   "[token_field1]",
+		"field2":   "[token_field2]",
+	}
+	fmt.Println(tmpText)
+	matchs := re.FindAllStringSubmatch(tmpText, -1)
+	spew.Dump(matchs)
+	tb := paw.TextBuilder{}
+	result := tmpText
+	for _, m := range matchs {
+		tb.SetText(m[2]).ToLower()
+		result = strings.ReplaceAll(result, m[0], tokens[tb.GetText()])
+	}
+	fmt.Println(result)
+	// fmt.Println(re.ReplaceAllString(str, substitution))
+}
+func exMergeSort(n []int) {
+	fmt.Println("MergeSort\n", n)
+	n = paw.MergeSort(n)
+	fmt.Println(n)
+	// paw.CombSortFunc(n, 1.8, func(a, b int) bool { return a < b })
+	// fmt.Println(n)
+}
+func exCombSort(n []int) {
+	// n := paw.GenerateSlice(8)
+	fmt.Println("CombSort\n", n)
+	paw.CombSort(n, 1.8)
+	fmt.Println(n)
+	paw.CombSortFunc(n, 1.8, func(a, b int) bool { return a < b })
+	fmt.Println(n)
 }
 
 // SelectionSort 選擇排序
 func SelectionSort(n []int) {
-	fmt.Println(n)
+	fmt.Println("SelectionSort\n", n)
 	// count := 0
 	// for i := 0; i < len(n); i++ {
 	// 	minIndex := i
@@ -64,11 +114,12 @@ func SelectionSort(n []int) {
 	fmt.Println(n)
 	paw.SelectionSortFunc(n, func(a, b int) bool { return a < b })
 	fmt.Println(n)
+
 }
 
 // InsertionSort 插入排序
 func InsertionSort(n []int) {
-	fmt.Println(n)
+	fmt.Println("InsertionSort\n", n)
 	// count := 0
 	// i := 1
 	// for i < len(a) {

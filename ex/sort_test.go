@@ -17,22 +17,23 @@ const (
 var r = paw.NewRand()
 
 func GetRandomNums(n int) []int {
-	nums := []int{}
-	for i := 0; i < N; i++ {
-		nums = append(nums, r.Intn(N))
-	}
-	return nums
+	// nums := []int{}
+	// for i := 0; i < N; i++ {
+	// 	nums = append(nums, r.Intn(N))
+	// }
+	// return nums
+	return paw.GenerateSlice(n)
 }
 
-func BenchmarkParallelSort(b *testing.B) {
-	nums := GetRandomNums(N)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			sort.Ints(nums)
-		}
-	})
-}
+// func BenchmarkParallelSort(b *testing.B) {
+// 	nums := GetRandomNums(N)
+// 	b.ResetTimer()
+// 	b.RunParallel(func(pb *testing.PB) {
+// 		for pb.Next() {
+// 			sort.Ints(nums)
+// 		}
+// 	})
+// }
 func BenchmarkSort(b *testing.B) {
 	nums := GetRandomNums(N)
 	b.ResetTimer()
@@ -40,15 +41,16 @@ func BenchmarkSort(b *testing.B) {
 		sort.Ints(nums)
 	}
 }
-func BenchmarkParallelSelctionSort(b *testing.B) {
-	nums := GetRandomNums(N)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			paw.SelectionSort(nums)
-		}
-	})
-}
+
+// func BenchmarkParallelSelctionSort(b *testing.B) {
+// 	nums := GetRandomNums(N)
+// 	b.ResetTimer()
+// 	b.RunParallel(func(pb *testing.PB) {
+// 		for pb.Next() {
+// 			paw.SelectionSort(nums)
+// 		}
+// 	})
+// }
 func BenchmarkSelectionSort(b *testing.B) {
 	nums := GetRandomNums(N)
 	b.ResetTimer()
@@ -56,20 +58,28 @@ func BenchmarkSelectionSort(b *testing.B) {
 		paw.SelectionSort(nums)
 	}
 }
-func BenchmarkParallelInsertionSort(b *testing.B) {
-	nums := GetRandomNums(N)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			paw.InsertionSort(nums)
-		}
-	})
-}
+
+// func BenchmarkParallelInsertionSort(b *testing.B) {
+// 	nums := GetRandomNums(N)
+// 	b.ResetTimer()
+// 	b.RunParallel(func(pb *testing.PB) {
+// 		for pb.Next() {
+// 			paw.InsertionSort(nums)
+// 		}
+// 	})
+// }
 func BenchmarkInsertionSort(b *testing.B) {
 	nums := GetRandomNums(N)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		paw.InsertionSort(nums)
+	}
+}
+func BenchmarkCombSort(b *testing.B) {
+	nums := GetRandomNums(N)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		paw.CombSort(nums)
 	}
 }
 
