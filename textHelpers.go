@@ -4,7 +4,6 @@ import "strings"
 
 // TextTools is the collections of tools of text
 type TextTools interface {
-	Build(s string) TextTools
 	GetAbbrString(maxlen int, contSymbol string) TextTools
 	Map(mapping func(rune) rune) TextTools
 	NumberBanner() TextTools
@@ -28,17 +27,17 @@ type TextTools interface {
 	TrimSuffix(suffix string) TextTools
 
 	Big5ToUtf8String() (TextTools, error)
+	Utf8ToBig5String() (TextTools, error)
+	GbkToUtf8String() (TextTools, error)
+	Utf8ToGbkString() (TextTools, error)
+
 	CountPlaceHolder() (nHan int, nASCII int)
 	Contains(substr string) bool
-	GbkToUtf8String() (TextTools, error)
 	GetText() string
 	HasChineseChar() bool
 	HasPrefix(prefix string) bool
 	HasSuffix(suffix string) bool
 	IsEqualString(b string, ignoreCase bool) bool
-	// String() string
-	Utf8ToBig5String() (TextTools, error)
-	Utf8ToGbkString() (TextTools, error)
 }
 
 // TextBuilder contains all tools which can be chained.
@@ -47,8 +46,8 @@ type TextBuilder struct {
 	TBError error
 }
 
-// Build return a instance of `TextBuilder` and return `TextTools`
-func (tb *TextBuilder) Build(s string) TextTools {
+// NewTextBuilder return a instance of `TextBuilder` and return `TextTools`
+func (tb *TextBuilder) NewTextBuilder(s string) TextTools {
 	tb = &TextBuilder{Text: s}
 	return tb
 }

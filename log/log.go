@@ -24,3 +24,12 @@ func init() {
 	Warn = log.New(os.Stdout, "[Warn] ", log.Ldate|log.Ltime|log.Lshortfile)
 	Error = log.New(os.Stderr, "[Error] ", log.Ldate|log.Ltime|log.Lshortfile)
 }
+
+// type Job struct {
+// 	Command string
+// 	*log.Logger
+// }
+
+// func NewJob(command string) *Job {
+// 	return &Job{command, log.New(os.Stderr, "Job: ", log.Ldate|log.Ltime|log.Lshortfile)}
+// }

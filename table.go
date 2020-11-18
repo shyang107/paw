@@ -9,20 +9,24 @@ import (
 
 // TableFormat define the format used to print out
 type TableFormat struct {
-	Fields     []string
-	LenFields  []int
-	Aligns     []Align
-	Padding    string
-	Sep        string
-	TopChar    string
-	topBanner  string
-	MiddleChar string
-	midBanner  string
-	BottomChar string
-	botBanner  string
-	beforeMsg  string
-	afterMsg   string
-	writer     io.Writer
+	Fields          []string
+	LenFields       []int
+	Aligns          []Align
+	Padding         string
+	Sep             string
+	TopChar         string
+	topBanner       string
+	MiddleChar      string
+	midBanner       string
+	BottomChar      string
+	botBanner       string
+	beforeMsg       string
+	afterMsg        string
+	writer          io.Writer
+	isAbbrSymbol    bool
+	isPrepare       bool
+	isPrepareBefore bool
+	isPrepareAfter  bool
 }
 
 // Align is id that indicate alignment of head-column
@@ -42,23 +46,27 @@ const (
 // NewTableFormat return a instance of TableFormat
 func NewTableFormat() *TableFormat {
 	return &TableFormat{
-		Fields:     []string{},
-		LenFields:  []int{},
-		Aligns:     []Align{},
-		Padding:    "",
-		Sep:        space,
-		TopChar:    "=",
-		MiddleChar: "-",
-		BottomChar: "=",
-		writer:     os.Stdout,
+		Fields:          []string{},
+		LenFields:       []int{},
+		Aligns:          []Align{},
+		Padding:         "",
+		Sep:             space,
+		TopChar:         "=",
+		MiddleChar:      "-",
+		BottomChar:      "=",
+		writer:          os.Stdout,
+		isAbbrSymbol:    false,
+		isPrepare:       false,
+		isPrepareBefore: false,
+		isPrepareAfter:  false,
 	}
 }
 
 var (
-	isAbbrSymbol    bool
-	isPrepare       bool
-	isPrepareBefore bool
-	isPrepareAfter  bool
+// isAbbrSymbol    bool
+// isPrepare       bool
+// isPrepareBefore bool
+// isPrepareAfter  bool
 )
 
 // SetBeforeMessage set message to show before table
@@ -67,7 +75,7 @@ func (t *TableFormat) SetBeforeMessage(msg string) {
 	if len(t.Padding) > 0 {
 		t.beforeMsg = t.Padding + t.beforeMsg
 	}
-	isPrepareBefore = true
+	t.isPrepareBefore = true
 }
 
 // SetAfterMessage set message to show after table
@@ -76,14 +84,14 @@ func (t *TableFormat) SetAfterMessage(msg string) {
 	if len(t.Padding) > 0 {
 		t.afterMsg = t.Padding + t.afterMsg
 	}
-	isPrepareAfter = true
+	t.isPrepareAfter = true
 }
 
 // Prepare initialize `TableFormat`
 func (t *TableFormat) Prepare(w io.Writer) {
 	t.check()
 	t.writer = w
-	isPrepare = true
+	t.isPrepare = true
 }
 
 func (t *TableFormat) check() {
@@ -162,7 +170,7 @@ func (t *TableFormat) checkFields() {
 	case llf < lf:
 		for i := llf; i < lf; i++ {
 			hc, ac := CountPlaceHolder(t.Fields[i])
-			t.LenFields = append(t.LenFields, hc+ac)
+			t.LenFields = append(t.LenFields[:llf:llf], hc+ac)
 		}
 	case llf > lf:
 		t.LenFields = t.LenFields[:lf]
@@ -174,7 +182,7 @@ func (t *TableFormat) checkFields() {
 	}
 }
 
-func getRowString(fields []string, widths []int, aligns []Align, sep string, padding string) string {
+func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align, sep string, padding string) string {
 	sb.Reset()
 	lf := len(fields)
 	for i := 0; i < lf; i++ {
@@ -198,39 +206,39 @@ func getRowString(fields []string, widths []int, aligns []Align, sep string, pad
 		sb.WriteString(s + sep)
 	}
 	str := sb.String()
-	if !isAbbrSymbol {
-		isAbbrSymbol = strings.Contains(str, abbrSymbol)
+	if !t.isAbbrSymbol {
+		t.isAbbrSymbol = strings.Contains(str, abbrSymbol)
 	}
 	return padding + str
 }
 
 // PrintSart print out head-section in `t.Writer`
 func (t *TableFormat) PrintSart() error {
-	if !isPrepare {
+	if !t.isPrepare {
 		t.Prepare(os.Stdout)
 	}
-	if isPrepareBefore {
+	if t.isPrepareBefore {
 		fmt.Fprintln(t.writer, t.beforeMsg)
 	}
 	fmt.Fprintln(t.writer, t.topBanner)
-	fmt.Fprintln(t.writer, getRowString(t.Fields, t.LenFields, t.Aligns, " ", t.Padding))
+	fmt.Fprintln(t.writer, t.getRowString(t.Fields, t.LenFields, t.Aligns, " ", t.Padding))
 	fmt.Fprintln(t.writer, t.midBanner)
 	return nil
 }
 
 // PrintRow print row into `t.writer`
 func (t *TableFormat) PrintRow(rows []string) {
-	fmt.Fprintln(t.writer, getRowString(rows, t.LenFields, t.Aligns, " ", t.Padding))
+	fmt.Fprintln(t.writer, t.getRowString(rows, t.LenFields, t.Aligns, " ", t.Padding))
 }
 
 // PrintEnd print end-section into `t.writer`
 func (t *TableFormat) PrintEnd() {
-	if isAbbrSymbol {
+	if t.isAbbrSymbol {
 		fmt.Fprintln(t.writer, strings.ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
 		fmt.Fprintln(t.writer, t.Padding+"* '"+abbrSymbol+"' : abbreviation of term")
 	}
 	fmt.Fprintln(t.writer, t.botBanner)
-	if isPrepareAfter {
+	if t.isPrepareAfter {
 		fmt.Fprintln(t.writer, t.afterMsg)
 	}
 }
