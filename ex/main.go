@@ -79,21 +79,22 @@ func exRegEx() {
 	fmt.Println(result)
 	// fmt.Println(re.ReplaceAllString(str, substitution))
 }
-func exMergeSort(n []int) {
-	fmt.Println("MergeSort\n", n)
-	n = paw.MergeSort(n)
-	fmt.Println(n)
-	// paw.CombSortFunc(n, 1.8, func(a, b int) bool { return a < b })
-	// fmt.Println(n)
-}
-func exCombSort(n []int) {
-	// n := paw.GenerateSlice(8)
-	fmt.Println("CombSort\n", n)
-	paw.CombSort(n, 1.8)
-	fmt.Println(n)
-	paw.CombSortFunc(n, 1.8, func(a, b int) bool { return a < b })
-	fmt.Println(n)
-}
+
+// func exMergeSort(n []int) {
+// 	fmt.Println("MergeSort\n", n)
+// 	n = paw.MergeSort(n)
+// 	fmt.Println(n)
+// 	// paw.CombSortFunc(n, 1.8, func(a, b int) bool { return a < b })
+// 	// fmt.Println(n)
+// }
+// func exCombSort(n []int) {
+// 	// n := paw.GenerateSlice(8)
+// 	fmt.Println("CombSort\n", n)
+// 	paw.CombSort(n, 1.8)
+// 	fmt.Println(n)
+// 	paw.CombSortFunc(n, 1.8, func(a, b int) bool { return a < b })
+// 	fmt.Println(n)
+// }
 
 // SelectionSort 選擇排序
 func SelectionSort(n []int) {
@@ -197,7 +198,7 @@ func exStringBuilder() {
 	lg.Info("exStringBuilder")
 	s := "Text中文 Collection"
 	tb := &paw.TextBuilder{}
-	tb.Build(s)
+	tb.NewTextBuilder(s)
 	fmt.Println("                         s:", s)
 	fmt.Println("              tb.GetText():", tb.GetText())
 	fmt.Println("tb.NumberBanner().String():", tb.NumberBanner())
