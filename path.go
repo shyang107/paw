@@ -167,7 +167,7 @@ func GetAllSubfolderString(root string) []string {
 	return files
 }
 
-// File :
+// File : path information
 type File struct {
 	FullPath string // The full path including the folder
 	Folder   string // The folder of the file

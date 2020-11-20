@@ -85,7 +85,7 @@ func exGetFiles3() {
 
 	tp := &paw.TableFormat{
 		Fields:    []string{"No.", "File"},
-		LenFields: []int{4, 72},
+		LenFields: []int{5, 72},
 		Aligns:    []paw.Align{paw.AlignRight, paw.AlignLeft},
 	}
 	tp.Prepare(os.Stdout)
@@ -121,7 +121,6 @@ func exGetFiles2() {
 	for i, f := range files {
 		fmt.Printf("%3d. %s\n", i, f.FullPath)
 	}
-
 	i := 0
 	prefix := "."
 	regexPattern := `\.git`
