@@ -23,7 +23,7 @@ var sep = `«»`
 func GetTitleAndURL(browser string) (t, u string, err error) {
 	browser, ok := browserApp[browser]
 	if !ok {
-		browser = browserApp["edge"] // default
+		browser = browserApp["edge"] // default browser
 	}
 	osa, _ := exec.LookPath("osascript")
 	cmd := exec.Command(osa,

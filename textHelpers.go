@@ -25,6 +25,7 @@ type TextTools interface {
 	TrimRightFunc(s string, f func(rune) bool) TextTools
 	TrimSpace() TextTools
 	TrimSuffix(suffix string) TextTools
+	TrimBOM() TextTools
 
 	Big5ToUtf8String() (TextTools, error)
 	Utf8ToBig5String() (TextTools, error)
@@ -295,4 +296,10 @@ func (tb *TextBuilder) Utf8ToBig5String() (TextTools, error) {
 // IsEqualString packs `IsEqualString(a, b string, ignoreCase bool) bool`
 func (tb *TextBuilder) IsEqualString(b string, ignoreCase bool) bool {
 	return IsEqualString(tb.Text, b, ignoreCase)
+}
+
+// TrimBOM packs `TrimBOM(line string) string`
+func (tb *TextBuilder) TrimBOM() TextTools {
+	tb.Text = TrimBOM(tb.Text)
+	return tb
 }
