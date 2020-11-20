@@ -4,24 +4,27 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/mitchellh/go-homedir"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sirupsen/logrus"
 
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/funk"
-	"github.com/shyang107/paw/log"
+
 	"github.com/shyang107/paw/treeprint"
-	// "github.com/shyang107/paw/Log"
 	// "github.com/thoas/go-funk"
 )
 
 var (
 	// lg = paw.Glog
-	lg = paw.Logger
+	lg  = paw.Logger
+	log = paw.Logger
 )
 
 func init() {
@@ -55,7 +58,131 @@ func main() {
 	// exCombSort(n3)
 	// // n4 = paw.GenerateSlice(size)
 	// exMergeSort(n4)
-	exRegEx()
+	// exRegEx()
+	// exLogger()
+	// exFolder()
+	// exGetFiles1()
+	// exGetFiles2()
+	exGetFiles3()
+}
+
+func exGetFiles3() {
+	paw.Logger.Info("exGetFiles3")
+	sourceFolder := "../"
+	sourceFolder, err := filepath.Abs(sourceFolder)
+	if err != nil {
+		paw.Logger.Error(err)
+	}
+	sourceFolder += "/"
+	head := "\nGetFilesFunc: folder <- '../', isRecursive <- true\n"
+	head += "  sourceFolder: " + sourceFolder + "\n"
+	prefix := "."
+	regexPattern := `\.git`
+	re := regexp.MustCompile(regexPattern)
+	head += "  Exculde:" + "\n"
+	head += fmt.Sprintf("          prefix: %q\n", prefix)
+	head += fmt.Sprintf("    regexPattern: %q", regexPattern)
+
+	tp := &paw.TableFormat{
+		Fields:    []string{"No.", "File"},
+		LenFields: []int{4, 72},
+		Aligns:    []paw.Align{paw.AlignRight, paw.AlignLeft},
+	}
+	tp.Prepare(os.Stdout)
+	tp.SetBeforeMessage(head)
+	tp.PrintSart()
+
+	files, err := paw.GetFilesFunc("../", true, func(f paw.File) bool {
+		return !(len(f.FileName) == 0 || strings.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
+	})
+	if err != nil {
+		paw.Logger.Error(err)
+	}
+
+	for i, f := range files {
+		newPath, err := paw.GetNewFilePath(f, sourceFolder, "./")
+		if err != nil {
+			paw.Logger.Error(err)
+		}
+		tp.PrintRow([]string{strconv.Itoa(i+1) + ".", newPath})
+	}
+	tp.PrintEnd()
+}
+
+func exGetFiles2() {
+	paw.Logger.Info("exGetFiles2")
+	paw.Logger.Info("GetFiles: folder <- '../', isRecursive <- true")
+	sourceFolder := "../"
+	fmt.Println("sourceFolder:", sourceFolder)
+	files, err := paw.GetFiles(sourceFolder, true)
+	if err != nil {
+		paw.Logger.Error(err)
+	}
+	for i, f := range files {
+		fmt.Printf("%3d. %s\n", i, f.FullPath)
+	}
+
+	i := 0
+	prefix := "."
+	regexPattern := `\.git`
+	re := regexp.MustCompile(regexPattern)
+	fmt.Println("Exculde:")
+	fmt.Printf("\t      prefix: %q\n", prefix)
+	fmt.Printf("\tregexPattern: %q\n", regexPattern)
+	for _, f := range files {
+		if strings.HasPrefix(f.FileName, prefix) {
+			continue
+		} else if len(f.FileName) == 0 {
+			continue
+		} else if re.MatchString(f.FullPath) {
+			continue
+		}
+		i++
+		fmt.Printf("%3d. %s\n", i, f.FullPath)
+	}
+}
+func exGetFiles1() {
+	paw.Logger.Info("exGetFiles1")
+	paw.Logger.Info("GetFiles: folder <- '~/', isRecursive <- false")
+	homepath, err := homedir.Dir()
+	if err != nil {
+		paw.Logger.Error(err)
+	}
+	files, err := paw.GetFiles(homepath, false)
+	if err != nil {
+		paw.Logger.Error(err)
+	}
+	for i, f := range files {
+		fmt.Printf("%2d. %s\n", i+1, f.FullPath)
+	}
+}
+
+func exFolder() {
+	paw.Logger.Info("exFolder")
+	path := "/aaa/bbb/ccc/example.xxx"
+	fmt.Println("                            path:", path)
+	file := paw.ConstructFile(path)
+	fmt.Println("ConstructFile(path):")
+	spew.Dump(file)
+	sourceFolder := "/aaa/bbb/"
+	fmt.Println("                    sourceFolder:", sourceFolder)
+	subfolder := paw.GetSubfolder(file, sourceFolder)
+	fmt.Println("GetSubfolder(file, sourceFolder):", subfolder)
+	targetFolder := "ddd/"
+	fmt.Println("                    targetFolder:", targetFolder)
+	newFolder, _ := paw.GetNewFilePath(file, sourceFolder, targetFolder)
+	fmt.Println("GetNewFilePath(file, sourceFolder, targetFolder):", newFolder)
+}
+
+func exLogger() {
+	paw.Logger.Info("exLogger")
+	paw.Logger.Debug("exLogger")
+	paw.Logger.Warn("exLogger")
+	paw.Logger.Trace("exLogger")
+	fmt.Println("  GetDotDir()", paw.GetDotDir())
+	fmt.Println("GetCurrPath()", paw.GetCurrPath())
+	fmt.Println("  GetAppDir()", paw.GetAppDir())
+
 }
 
 const tmpText = "const twoMatch = `test string`;\nconst noMatches = `test ${ variabel }`;\nabcde ${ field1 } and ${ Field2}"
@@ -182,9 +309,9 @@ func exReverse() {
 
 }
 func exLoger() {
-	log.Info.Println("飛雪無情的博客:", "http://www.flysnow.org")
-	log.Warn.Printf("飛雪無情的微信公眾號：%s\n", "flysnow_org")
-	log.Error.Println("歡迎關注留言")
+	log.Infoln("飛雪無情的博客:", "http://www.flysnow.org")
+	log.Warnln("飛雪無情的微信公眾號：%s\n", "flysnow_org")
+	log.Errorln("歡迎關注留言")
 
 	lg.Infoln("飛雪無情的博客:", "http://www.flysnow.org")
 	lg.Warnln("飛雪無情的博客:", "http://www.flysnow.org")

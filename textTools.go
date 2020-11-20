@@ -392,3 +392,15 @@ func IsEqualString(a, b string, ignoreCase bool) bool {
 	}
 	return false
 }
+
+// TrimBOM trim the leading BOM character of a string
+func TrimBOM(line string) string {
+	l := len(line)
+	if l >= 3 {
+		if line[0] == 0xef && line[1] == 0xbb && line[2] == 0xbf {
+			trimLine := line[3:]
+			return trimLine
+		}
+	}
+	return line
+}
