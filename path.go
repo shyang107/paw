@@ -100,78 +100,84 @@ func MakeAll(path string) error {
 	return nil
 }
 
-// GetGlobFilesList 獲得目標檔列表
-func GetGlobFilesList(folder string, pattern string) ([]string, error) {
-	if len(folder) == 0 {
-		folder = "" + "."
-	}
-	pattern = "" + folder + "/" + pattern
-	fls, err := filepath.Glob(pattern)
-	return fls, err
-}
+// // GetGlobFilesList 獲得目標檔列表
+// func GetGlobFilesList(folder string, pattern string) ([]string, error) {
+// 	if len(folder) == 0 {
+// 		folder = "" + "."
+// 	}
+// 	pattern = "" + folder + "/" + pattern
+// 	fls, err := filepath.Glob(pattern)
+// 	return fls, err
+// }
 
-// GetFolderFileInfo gets and returns the `FileInfo` list from the specific `folder`
-func GetFolderFileInfo(folder string) []os.FileInfo {
-	var files []os.FileInfo
-	f, err := os.Open(folder)
-	if err != nil {
-		Logger.WithFields(logrus.Fields{
-			"folder": folder,
-		}).Fatal(err)
-	}
-	defer f.Close()
-	if fileInfos, err := f.Readdir(-1); err == nil {
-		for _, fi := range fileInfos {
-			if !fi.IsDir() {
-				files = append(files, fi)
-			}
-		}
-	}
-	return files
-}
+// // GetFolderFileInfo gets and returns the `FileInfo` list from the specific `folder`
+// func GetFolderFileInfo(folder string) []os.FileInfo {
+// 	var files []os.FileInfo
+// 	f, err := os.Open(folder)
+// 	if err != nil {
+// 		Logger.WithFields(logrus.Fields{
+// 			"folder": folder,
+// 		}).Fatal(err)
+// 	}
+// 	defer f.Close()
+// 	if fileInfos, err := f.Readdir(-1); err == nil {
+// 		for _, fi := range fileInfos {
+// 			if !fi.IsDir() {
+// 				files = append(files, fi)
+// 			}
+// 		}
+// 	}
+// 	return files
+// }
 
-// GetFolderFileString gets and returns the file string list from the specific `folder`
-func GetFolderFileString(folder string) []string {
-	var files []string
-	fileInfos := GetFolderFileInfo(folder)
-	for _, fi := range fileInfos {
-		files = append(files, fi.Name())
-	}
-	return files
-}
+// // GetFolderFileString gets and returns the file string list from the specific `folder`
+// func GetFolderFileString(folder string) []string {
+// 	var files []string
+// 	fileInfos := GetFolderFileInfo(folder)
+// 	for _, fi := range fileInfos {
+// 		files = append(files, fi.Name())
+// 	}
+// 	return files
+// }
 
-// GetAllSubfolderFileInfo gets and returns all `FileInfo` list in `root` folder and its all subfolders
-func GetAllSubfolderFileInfo(root string) []os.FileInfo {
-	var files []os.FileInfo
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
-			files = append(files, info)
-		}
-		return nil
-	})
-	if err != nil {
-		Logger.WithFields(logrus.Fields{
-			"folder": root,
-		}).Fatal(err)
-	}
-	return files
-}
+// // GetAllSubfolderFileInfo gets and returns all `FileInfo` list in `root` folder and its all subfolders
+// func GetAllSubfolderFileInfo(root string) []os.FileInfo {
+// 	var files []os.FileInfo
+// 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+// 		if !info.IsDir() {
+// 			files = append(files, info)
+// 		}
+// 		return nil
+// 	})
+// 	if err != nil {
+// 		Logger.WithFields(logrus.Fields{
+// 			"folder": root,
+// 		}).Fatal(err)
+// 	}
+// 	return files
+// }
 
-// GetAllSubfolderString gets and returns all files string list in `root` folder and its all subfolders
-func GetAllSubfolderString(root string) []string {
-	var files []string
-	fileInfos := GetAllSubfolderFileInfo(root)
-	for _, fi := range fileInfos {
-		files = append(files, fi.Name())
-	}
-	return files
-}
+// // GetAllSubfolderString gets and returns all files string list in `root` folder and its all subfolders
+// func GetAllSubfolderString(root string) []string {
+// 	var files []string
+// 	for _, fi := range GetAllSubfolderFileInfo(root) {
+// 		files = append(files, fi.Name())
+// 	}
+// 	return files
+// }
 
 // File : path information
+//
+// 	Fields:
+// 	  `FullPath`: The full path including the folder
+// 	  `Folder`: The folder of the file
+// 	  `File`: The file name including extension (basename)
+// 	  `FileName`: The file name excluding extension
+// 	  `Ext`: Extension of the file
 type File struct {
 	FullPath string // The full path including the folder
 	Folder   string // The folder of the file
-	File     string // The file name including extension
+	File     string // The file name including extension (basename)
 	FileName string // The file name excluding extension
 	Ext      string // Extension of the file
 }
@@ -214,6 +220,16 @@ func HasFile(filename string) bool {
 //		true  to return []File in `folder` and all `subfolders`
 func GetFiles(folder string, isRecursive bool) ([]File, error) {
 	return GetFilesFunc(folder, isRecursive, func(f File) bool {
+		return true
+	})
+}
+
+// GetFilesString :
+// 	isRecursive:
+// 		false to return []File in `folder`
+//		true  to return []File in `folder` and all `subfolders`
+func GetFilesString(folder string, isRecursive bool) ([]string, error) {
+	return GetFilesFuncString(folder, isRecursive, func(f File) bool {
 		return true
 	})
 }
@@ -269,6 +285,23 @@ func GetFilesFunc(folder string, isRecursive bool, isInclude func(file File) boo
 		return files, err
 	}
 
+	return files, nil
+}
+
+// GetFilesFuncString :
+// 	isRecursive:
+// 		false to get []File in `folder`
+// 		true  to get []File in `folder` and all `subfolders`
+// 	isInclude(file) return true to include
+func GetFilesFuncString(folder string, isRecursive bool, isInclude func(file File) bool) ([]string, error) {
+	var files []string
+	flist, err := GetFilesFunc(folder, isRecursive, isInclude)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range flist {
+		files = append(files, f.FullPath)
+	}
 	return files, nil
 }
 

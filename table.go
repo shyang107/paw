@@ -95,6 +95,9 @@ func (t *TableFormat) Prepare(w io.Writer) {
 }
 
 func (t *TableFormat) check() {
+	if len(t.Sep) == 0 {
+		t.Sep = space
+	}
 	t.checkFields()
 	t.checkAlign()
 	t.setBanner()
@@ -227,8 +230,12 @@ func (t *TableFormat) PrintSart() error {
 }
 
 // PrintRow print row into `t.writer`
-func (t *TableFormat) PrintRow(rows []string) {
-	fmt.Fprintln(t.writer, t.getRowString(rows, t.LenFields, t.Aligns, " ", t.Padding))
+func (t *TableFormat) PrintRow(rows ...interface{}) {
+	var srows []string
+	for _, r := range rows {
+		srows = append(srows, fmt.Sprint(r))
+	}
+	fmt.Fprintln(t.writer, t.getRowString(srows, t.LenFields, t.Aligns, t.Sep, t.Padding))
 }
 
 // PrintEnd print end-section into `t.writer`
