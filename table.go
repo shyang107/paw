@@ -69,11 +69,26 @@ var (
 // isPrepareAfter  bool
 )
 
+func paddingString(s string, pad string) string {
+	if !strings.Contains(s, "\n") {
+		return pad + s
+	}
+	ss := strings.Split(s, "\n")
+	// sb := strings.Builder{}
+	sb := ""
+	for i := 0; i < len(ss)-1; i++ {
+		sb += pad + ss[i] + "\n"
+	}
+	sb += pad + ss[len(ss)-1]
+	return sb
+}
+
 // SetBeforeMessage set message to show before table
 func (t *TableFormat) SetBeforeMessage(msg string) {
 	t.beforeMsg = msg
 	if len(t.Padding) > 0 {
-		t.beforeMsg = t.Padding + t.beforeMsg
+		// t.beforeMsg = t.Padding + t.beforeMsg
+		t.beforeMsg = paddingString(t.beforeMsg, t.Padding)
 	}
 	t.isPrepareBefore = true
 }
@@ -82,7 +97,8 @@ func (t *TableFormat) SetBeforeMessage(msg string) {
 func (t *TableFormat) SetAfterMessage(msg string) {
 	t.afterMsg = msg
 	if len(t.Padding) > 0 {
-		t.afterMsg = t.Padding + t.afterMsg
+		// t.afterMsg = t.Padding + t.afterMsg
+		t.afterMsg = paddingString(t.afterMsg, t.Padding)
 	}
 	t.isPrepareAfter = true
 }
@@ -242,7 +258,7 @@ func (t *TableFormat) PrintRow(rows ...interface{}) {
 func (t *TableFormat) PrintEnd() {
 	if t.isAbbrSymbol {
 		fmt.Fprintln(t.writer, strings.ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
-		fmt.Fprintln(t.writer, t.Padding+"* '"+abbrSymbol+"' : abbreviation of term")
+		fmt.Fprintln(t.writer, t.Padding+"* '"+abbrSymbol+"' : abbreviated symbol of a term")
 	}
 	fmt.Fprintln(t.writer, t.botBanner)
 	if t.isPrepareAfter {
