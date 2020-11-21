@@ -120,6 +120,7 @@ func exGrouppingFiles() {
 	}
 	tp.PrintEnd()
 }
+
 func exGetFilesString() {
 	paw.Logger.Info("")
 	sourceFolder := "../"

@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/spf13/cast"
 )
 
 // TableFormat define the format used to print out
@@ -199,7 +201,7 @@ func (t *TableFormat) checkFields() {
 	case llf < lf:
 		for i := llf; i < lf; i++ {
 			hc, ac := CountPlaceHolder(t.Fields[i])
-			t.LenFields = append(t.LenFields[:llf:llf], hc+ac)
+			t.LenFields = append(t.LenFields[:llf], hc+ac)
 		}
 	case llf > lf:
 		t.LenFields = t.LenFields[:lf]
@@ -250,18 +252,16 @@ func (t *TableFormat) PrintSart() error {
 		fmt.Fprintln(t.writer, t.beforeMsg)
 	}
 	fmt.Fprintln(t.writer, t.topBanner)
-	fmt.Fprintln(t.writer, t.getRowString(t.Fields, t.LenFields, t.Aligns, " ", t.Padding))
+	fmt.Fprintln(t.writer,
+		t.getRowString(t.Fields, t.LenFields, t.Aligns, t.Sep, t.Padding))
 	fmt.Fprintln(t.writer, t.midBanner)
 	return nil
 }
 
 // PrintRow print row into `t.writer`
 func (t *TableFormat) PrintRow(rows ...interface{}) {
-	var srows []string
-	for _, r := range rows {
-		srows = append(srows, fmt.Sprint(r))
-	}
-	fmt.Fprintln(t.writer, t.getRowString(srows, t.LenFields, t.Aligns, t.Sep, t.Padding))
+	fmt.Fprintln(t.writer,
+		t.getRowString(cast.ToStringSlice(rows), t.LenFields, t.Aligns, t.Sep, t.Padding))
 }
 
 // PrintMiddleSepLine print middle sepperating line using `MiddleChar`
@@ -272,7 +272,8 @@ func (t *TableFormat) PrintMiddleSepLine() {
 // PrintEnd print end-section into `t.writer`
 func (t *TableFormat) PrintEnd() {
 	if t.isAbbrSymbol {
-		fmt.Fprintln(t.writer, strings.ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
+		fmt.Fprintln(t.writer,
+			strings.ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
 		fmt.Fprintln(t.writer, t.Padding+"* '"+abbrSymbol+"' : abbreviated symbol of a term")
 	}
 	fmt.Fprintln(t.writer, t.botBanner)
