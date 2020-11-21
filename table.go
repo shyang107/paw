@@ -8,6 +8,16 @@ import (
 )
 
 // TableFormat define the format used to print out
+//
+// 	Elements:
+// `Fields []string{}`, string list of heading row
+// `LenFields []int{}`, length of every field of heading row
+// `Aligns []Align{}` : ,
+// `Padding string`: paddign string befor every row, default "",
+// `Sep string` : sepperating string between fields
+// `TopChar string`: character of top sepperating row, default "=",
+// `MiddleChar string`: character of middle sepperating row , default "-",
+// `BottomChar string`: character of bottom sepperating row, default "=",
 type TableFormat struct {
 	Fields          []string
 	LenFields       []int
@@ -252,6 +262,11 @@ func (t *TableFormat) PrintRow(rows ...interface{}) {
 		srows = append(srows, fmt.Sprint(r))
 	}
 	fmt.Fprintln(t.writer, t.getRowString(srows, t.LenFields, t.Aligns, t.Sep, t.Padding))
+}
+
+// PrintMiddleSepLine print middle sepperating line using `MiddleChar`
+func (t *TableFormat) PrintMiddleSepLine() {
+	fmt.Fprintln(t.writer, t.midBanner)
 }
 
 // PrintEnd print end-section into `t.writer`

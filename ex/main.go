@@ -36,7 +36,7 @@ func main() {
 	// testFileLineCount()
 	// rehttp()
 	// testGetAbbrString()
-	exTableFormat()
+	// exTableFormat()
 	// exStringBuilder()
 	// exLoger()
 	// exReverse()
@@ -64,11 +64,11 @@ func main() {
 	// exGetFiles1()
 	// exGetFiles2()
 	// exGetFiles3()
-	// exGetFilesString()
+	exGetFilesString()
 }
 
 func exGetFilesString() {
-	paw.Logger.Info("exGetFilesString")
+	paw.Logger.Info("")
 	sourceFolder := "../"
 	isRecursive := true
 	sourceFolder, err := filepath.Abs(sourceFolder)
@@ -77,8 +77,8 @@ func exGetFilesString() {
 	}
 	sourceFolder += "/"
 	hsb := strings.Builder{}
-	hsb.WriteString("\nGetFilesFuncString:\n")
-	hsb.WriteString("  sourceFolder: " + `../ <- ` + sourceFolder + "\n")
+	hsb.WriteString("GetFilesFuncString:\n")
+	hsb.WriteString("  sourceFolder: " + `"../" <- "` + sourceFolder + "\"\n")
 	hsb.WriteString("   isRecursive: " + strconv.FormatBool(isRecursive) + "\n")
 	prefix := "."
 	regexPattern := `\.git`
@@ -91,7 +91,7 @@ func exGetFilesString() {
 		Fields:    []string{"No.", "File"},
 		LenFields: []int{5, 72},
 		Aligns:    []paw.Align{paw.AlignRight, paw.AlignLeft},
-		Padding:   "  ",
+		Padding:   "# ",
 	}
 	tp.Prepare(os.Stdout)
 	tp.SetBeforeMessage(hsb.String())
@@ -107,7 +107,11 @@ func exGetFilesString() {
 
 	for i, f := range files {
 		path := strings.TrimPrefix(f, sourceFolder)
-		tp.PrintRow(i+1, path)
+		j := i + 1
+		tp.PrintRow(j, path)
+		if j%5 == 0 {
+			tp.PrintMiddleSepLine()
+		}
 	}
 	tp.PrintEnd()
 }
