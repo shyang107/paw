@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
@@ -342,4 +343,48 @@ func GetNewFilePath(file File, sourceFolder, targetFolder string) (string, error
 // 	return "ccc/"
 func GetSubfolder(file File, sourceFolder string) string {
 	return strings.TrimPrefix(file.Folder, sourceFolder)
+}
+
+// byFolder is used in sort with key `Folder`
+type byFolder []File
+
+func (f byFolder) Len() int           { return len(f) }
+func (f byFolder) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
+func (f byFolder) Less(i, j int) bool { return f[i].Folder < f[j].Folder }
+
+type sortByFile []File
+
+func (a sortByFile) Len() int           { return len(a) }
+func (a sortByFile) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a sortByFile) Less(i, j int) bool { return a[i].File < a[j].File }
+
+type sortByString []string
+
+func (a sortByString) Len() int           { return len(a) }
+func (a sortByString) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a sortByString) Less(i, j int) bool { return a[i] < a[j] }
+
+// GrouppingFiles is groupping `files`, first sorted by fullpath then sorted by file name
+func GrouppingFiles(files []File) []File {
+	tfiles := files
+	sort.Sort(byFolder(tfiles))
+	fd := make(map[string][]File)
+	fdm := make(map[string]int)
+	for _, f := range files {
+		fdm[f.Folder] = 1
+		fd[f.Folder] = append(fd[f.Folder], f)
+	}
+	for _, d := range fd {
+		sort.Sort(sortByFile(d))
+	}
+	var fds []string
+	for k := range fdm {
+		fds = append(fds, k)
+	}
+	sort.Sort(sortByString(fds))
+	var sfiles []File
+	for _, s := range fds {
+		sfiles = append(sfiles, fd[s]...)
+	}
+	return sfiles
 }
