@@ -290,10 +290,6 @@ func GrouppingFiles(files []File) {
 	}
 	// sort folder
 	fdnames := funk.Keys(gpnames).([]string)
-	// var fdnames []string
-	// for k := range gpnames {
-	// 	fdnames = append(fdnames, k)
-	// }
 	sort.Strings(fdnames)
 	// sort file in folder
 	for _, g := range gps {
