@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cast"
+	"github.com/shyang107/paw/cast"
 )
 
 // TableFormat define the format used to print out

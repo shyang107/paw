@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/shyang107/paw/cast"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sirupsen/logrus"
@@ -65,13 +66,76 @@ func main() {
 	// exGetFiles2()
 	// exGetFiles3()
 	// exGetFilesString()
-	exGrouppingFiles()
+	// exGrouppingFiles1()
+	exGrouppingFiles2()
 }
 
-func exGrouppingFiles() {
+func exGrouppingFiles2() {
 	paw.Logger.Info("")
-	sourceFolder := "../"
+	// sourceFolder := "../"
+	sourceFolder, _ := homedir.Expand("~/Downloads/")
 	// sourceFolder := "/Users/shyang/go/src/rover/opcc/"
+	isRecursive := true
+	sourceFolder, err := filepath.Abs(sourceFolder)
+	if err != nil {
+		paw.Logger.Error(err)
+	}
+	sourceFolder += "/"
+	hsb := strings.Builder{}
+	hsb.WriteString("GetFilesFuncString:\n")
+	hsb.WriteString("  sourceFolder: \"" + sourceFolder + "\"\n")
+	hsb.WriteString("   isRecursive: " + strconv.FormatBool(isRecursive) + "\n")
+	prefix := "."
+	regexPattern := `\.git|\$RECYCLE\.BIN`
+	re := regexp.MustCompile(regexPattern)
+	hsb.WriteString("  Exculde:" + "\n")
+	hsb.WriteString(`          prefix: "` + prefix + `"` + "\n")
+	hsb.WriteString(`    regexPattern: "` + regexPattern + `"`)
+
+	tp := &paw.TableFormat{
+		Fields:    []string{"No.", "Sorted Files"},
+		LenFields: []int{5, 80},
+		Aligns:    []paw.Align{paw.AlignRight, paw.AlignLeft},
+		Padding:   "# ",
+	}
+	tp.Prepare(os.Stdout)
+	tp.SetBeforeMessage(hsb.String())
+	tp.PrintSart()
+
+	files, err := paw.GetFilesFunc(sourceFolder, isRecursive,
+		func(f paw.File) bool {
+			return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
+		})
+	if err != nil {
+		paw.Logger.Error(err)
+	}
+
+	paw.GrouppingFiles(files)
+
+	oFolder := files[0].Folder
+	gcount := 0
+	for i, f := range files {
+		path := paw.TrimPrefix(f.FullPath, sourceFolder)
+		if oFolder != f.Folder {
+			oFolder = f.Folder
+			tp.PrintRow("", "Sum: "+cast.ToString(gcount)+" files.")
+			tp.PrintMiddleSepLine()
+			gcount = 1
+		} else {
+			gcount++
+		}
+		tp.PrintRow(gcount, path)
+		if i == len(files)-1 {
+			tp.PrintRow("", "Sum: "+cast.ToString(gcount)+" files.")
+		}
+	}
+	tp.SetAfterMessage("Total: " + cast.ToString(len(files)) + " files. ")
+	tp.PrintEnd()
+}
+func exGrouppingFiles1() {
+	paw.Logger.Info("")
+	// sourceFolder := "../"
+	sourceFolder := "/Users/shyang/go/src/rover/opcc/"
 	isRecursive := true
 	sourceFolder, err := filepath.Abs(sourceFolder)
 	if err != nil {
@@ -101,22 +165,26 @@ func exGrouppingFiles() {
 
 	files, err := paw.GetFilesFunc(sourceFolder, isRecursive,
 		func(f paw.File) bool {
-			return !(len(f.FileName) == 0 || strings.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
+			return len(f.FileName) == 0 || strings.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath)
 		})
 	if err != nil {
 		paw.Logger.Error(err)
 	}
+	sfiles := make([]paw.File, len(files))
+	copy(sfiles, files)
+	paw.GrouppingFiles(sfiles)
 
-	sfiles := paw.GrouppingFiles(files)
-
+	oFolder := sfiles[0].Folder
 	for i, f := range files {
 		path := strings.TrimPrefix(f.FullPath, sourceFolder)
 		spath := strings.TrimPrefix(sfiles[i].FullPath, sourceFolder)
 		j := i + 1
-		tp.PrintRow(j, path, spath)
-		if j%5 == 0 {
+		// if j%5 == 0 {
+		if oFolder != sfiles[i].Folder {
+			oFolder = sfiles[i].Folder
 			tp.PrintMiddleSepLine()
 		}
+		tp.PrintRow(j, path, spath)
 	}
 	tp.PrintEnd()
 }
@@ -198,7 +266,7 @@ func exGetFiles3() {
 	tp.PrintSart()
 
 	files, err := paw.GetFilesFunc("../", true, func(f paw.File) bool {
-		return !(len(f.FileName) == 0 || strings.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
+		return (len(f.FileName) == 0 || strings.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
 	})
 	if err != nil {
 		paw.Logger.Error(err)

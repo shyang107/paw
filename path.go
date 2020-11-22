@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/shyang107/paw/funk"
 	"github.com/sirupsen/logrus"
 	// log "github.com/sirupsen/logrus"
 )
@@ -239,10 +240,9 @@ func GetFilesString(folder string, isRecursive bool) ([]string, error) {
 // 	isRecursive:
 // 		false to get []File in `folder`
 // 		true  to get []File in `folder` and all `subfolders`
-// 	isInclude(file) return true to include
-func GetFilesFunc(folder string, isRecursive bool, isInclude func(file File) bool) ([]File, error) {
+// 	filter(file) return true to exclude
+func GetFilesFunc(folder string, isRecursive bool, filter func(file File) bool) ([]File, error) {
 	var files []File
-
 	if isRecursive {
 		err := filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
 			file, err := filepath.Abs(path)
@@ -252,7 +252,7 @@ func GetFilesFunc(folder string, isRecursive bool, isInclude func(file File) boo
 
 			if !info.IsDir() {
 				f := ConstructFile(file)
-				if isInclude(f) {
+				if !filter(f) {
 					files = append(files, f)
 				}
 			}
@@ -277,7 +277,7 @@ func GetFilesFunc(folder string, isRecursive bool, isInclude func(file File) boo
 					return files, err
 				}
 				f := ConstructFile(folder + "\\" + file.Name())
-				if isInclude(f) {
+				if !filter(f) {
 					files = append(files, f)
 				}
 			}
@@ -345,40 +345,33 @@ func GetSubfolder(file File, sourceFolder string) string {
 	return strings.TrimPrefix(file.Folder, sourceFolder)
 }
 
-// sortByFolder is used in sort with key `Folder`
-type sortByFolder []File
-
-func (f sortByFolder) Len() int           { return len(f) }
-func (f sortByFolder) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
-func (f sortByFolder) Less(i, j int) bool { return f[i].Folder < f[j].Folder }
-
-type sortByFile []File
-
-func (a sortByFile) Len() int           { return len(a) }
-func (a sortByFile) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a sortByFile) Less(i, j int) bool { return a[i].File < a[j].File }
-
 // GrouppingFiles is groupping `files`, first sorted by fullpath then sorted by file name
-func GrouppingFiles(files []File) []File {
-	tfiles := files
-	sort.Sort(sortByFolder(tfiles))
-	fd := make(map[string][]File)
-	fdm := make(map[string]int)
+func GrouppingFiles(files []File) {
+	// assemble by folder
+	gps := make(map[string][]File)
+	gpnames := make(map[string]int)
 	for _, f := range files {
-		fdm[f.Folder] = 1
-		fd[f.Folder] = append(fd[f.Folder], f)
+		gpnames[f.Folder] = 1
+		gps[f.Folder] = append(gps[f.Folder], f)
 	}
-	for _, d := range fd {
-		sort.Sort(sortByFile(d))
+	// sort folder
+	fdnames := funk.Keys(gpnames).([]string)
+	// var fdnames []string
+	// for k := range gpnames {
+	// 	fdnames = append(fdnames, k)
+	// }
+	sort.Strings(fdnames)
+	// sort file in folder
+	for _, g := range gps {
+		sort.SliceStable(g, func(i, j int) bool {
+			return g[i].File < g[j].File
+		})
 	}
-	var fds []string
-	for k := range fdm {
-		fds = append(fds, k)
+	i := 0
+	for _, folder := range fdnames {
+		for _, f := range gps[folder] {
+			files[i] = f
+			i++
+		}
 	}
-	sort.Strings(fds)
-	var sfiles []File
-	for _, s := range fds {
-		sfiles = append(sfiles, fd[s]...)
-	}
-	return sfiles
 }
