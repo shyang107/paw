@@ -86,7 +86,7 @@ func exGrouppingFiles2() {
 	hsb.WriteString("  sourceFolder: \"" + sourceFolder + "\"\n")
 	hsb.WriteString("   isRecursive: " + strconv.FormatBool(isRecursive) + "\n")
 	prefix := "."
-	regexPattern := `\.git|\$RECYCLE\.BIN`
+	regexPattern := `\.git|\$RECYCLE\.BIN|desktop\.ini`
 	re := regexp.MustCompile(regexPattern)
 	hsb.WriteString("  Exculde:" + "\n")
 	hsb.WriteString(`          prefix: "` + prefix + `"` + "\n")
@@ -94,7 +94,7 @@ func exGrouppingFiles2() {
 
 	tp := &paw.TableFormat{
 		Fields:    []string{"No.", "Sorted Files"},
-		LenFields: []int{5, 80},
+		LenFields: []int{5, 100},
 		Aligns:    []paw.Align{paw.AlignRight, paw.AlignLeft},
 		Padding:   "# ",
 	}
@@ -114,22 +114,32 @@ func exGrouppingFiles2() {
 
 	oFolder := files[0].Folder
 	gcount := 0
+	j := 0
 	for i, f := range files {
-		path := paw.TrimPrefix(f.FullPath, sourceFolder)
 		if oFolder != f.Folder {
 			oFolder = f.Folder
-			tp.PrintRow("", "Sum: "+cast.ToString(gcount)+" files.")
+			tp.PrintRow("", "Sum: "+cast.ToString(j)+" files.")
 			tp.PrintMiddleSepLine()
-			gcount = 1
-		} else {
+			j = 1
 			gcount++
+		} else {
+			j++
 		}
-		tp.PrintRow(gcount, path)
+		if j == 1 {
+			folder := paw.TrimPrefix(f.Folder, sourceFolder)
+			if len(folder) == 0 {
+				folder = "./"
+			}
+			tp.PrintRow("", folder)
+		}
+		tp.PrintRow(j, f.File)
+		// path := paw.TrimPrefix(f.FullPath, sourceFolder)
+		// tp.PrintRow(j, path)
 		if i == len(files)-1 {
-			tp.PrintRow("", "Sum: "+cast.ToString(gcount)+" files.")
+			tp.PrintRow("", "Sum: "+cast.ToString(j)+" files.")
 		}
 	}
-	tp.SetAfterMessage("Total: " + cast.ToString(len(files)) + " files. ")
+	tp.SetAfterMessage("Total: " + cast.ToString(gcount) + " subfolders and " + cast.ToString(len(files)) + " files. ")
 	tp.PrintEnd()
 }
 func exGrouppingFiles1() {

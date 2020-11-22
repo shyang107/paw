@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
-	"github.com/shyang107/paw/funk"
 	"github.com/sirupsen/logrus"
 	// log "github.com/sirupsen/logrus"
 )
@@ -284,12 +283,15 @@ func GrouppingFiles(files []File) {
 	// assemble by folder
 	gps := make(map[string][]File)
 	gpnames := make(map[string]int)
+	var fdnames []string
 	for _, f := range files {
-		gpnames[f.Folder] = 1
+		if _, ok := gpnames[f.Folder]; !ok {
+			fdnames = append(fdnames, f.Folder)
+			gpnames[f.Folder] = 1
+		}
 		gps[f.Folder] = append(gps[f.Folder], f)
 	}
 	// sort folder
-	fdnames := funk.Keys(gpnames).([]string)
 	sort.Strings(fdnames)
 	// sort file in folder
 	for _, g := range gps {
@@ -299,9 +301,7 @@ func GrouppingFiles(files []File) {
 	}
 	i := 0
 	for _, folder := range fdnames {
-		for _, f := range gps[folder] {
-			files[i] = f
-			i++
-		}
+		copy(files[i:], gps[folder])
+		i += len(gps[folder])
 	}
 }
