@@ -358,12 +358,6 @@ func (a sortByFile) Len() int           { return len(a) }
 func (a sortByFile) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a sortByFile) Less(i, j int) bool { return a[i].File < a[j].File }
 
-type sortByString []string
-
-func (a sortByString) Len() int           { return len(a) }
-func (a sortByString) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a sortByString) Less(i, j int) bool { return a[i] < a[j] }
-
 // GrouppingFiles is groupping `files`, first sorted by fullpath then sorted by file name
 func GrouppingFiles(files []File) []File {
 	tfiles := files
@@ -381,7 +375,7 @@ func GrouppingFiles(files []File) []File {
 	for k := range fdm {
 		fds = append(fds, k)
 	}
-	sort.Sort(sortByString(fds))
+	sort.Strings(fds)
 	var sfiles []File
 	for _, s := range fds {
 		sfiles = append(sfiles, fd[s]...)
