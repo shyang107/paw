@@ -345,12 +345,12 @@ func GetSubfolder(file File, sourceFolder string) string {
 	return strings.TrimPrefix(file.Folder, sourceFolder)
 }
 
-// byFolder is used in sort with key `Folder`
-type byFolder []File
+// sortByFolder is used in sort with key `Folder`
+type sortByFolder []File
 
-func (f byFolder) Len() int           { return len(f) }
-func (f byFolder) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
-func (f byFolder) Less(i, j int) bool { return f[i].Folder < f[j].Folder }
+func (f sortByFolder) Len() int           { return len(f) }
+func (f sortByFolder) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
+func (f sortByFolder) Less(i, j int) bool { return f[i].Folder < f[j].Folder }
 
 type sortByFile []File
 
@@ -367,7 +367,7 @@ func (a sortByString) Less(i, j int) bool { return a[i] < a[j] }
 // GrouppingFiles is groupping `files`, first sorted by fullpath then sorted by file name
 func GrouppingFiles(files []File) []File {
 	tfiles := files
-	sort.Sort(byFolder(tfiles))
+	sort.Sort(sortByFolder(tfiles))
 	fd := make(map[string][]File)
 	fdm := make(map[string]int)
 	for _, f := range files {
