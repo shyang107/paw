@@ -27,3 +27,6 @@ _testmain.go
 
 #GoLand
 .idea
+
+afero/sftpfs/file1
+afero/sftpfs/test/
