@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
-	"strings"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
@@ -105,16 +104,20 @@ func MakeAll(path string) error {
 //
 // 	Fields:
 // 	  `FullPath`: The full path including the folder
+// 	  `ShortPath` : The short path is `FullPath` without rootfolder part (replace with './')
 // 	  `Folder`: The folder of the file
+// 	  `ShortFolder`: The folder of the file without rootfolder part
 // 	  `File`: The file name including extension (basename)
 // 	  `FileName`: The file name excluding extension
 // 	  `Ext`: Extension of the file
 type File struct {
-	FullPath string // The full path including the folder
-	Folder   string // The folder of the file
-	File     string // The file name including extension (basename)
-	FileName string // The file name excluding extension
-	Ext      string // Extension of the file
+	FullPath    string // The full path including the folder
+	ShortPath   string // The short path is `FullPath` without rootfolder part
+	Folder      string // The folder of the file
+	ShortFolder string // The folder of the file without rootfolder part
+	File        string // The file name including extension (basename)
+	FileName    string // The file name excluding extension
+	Ext         string // Extension of the file
 }
 
 // ConstructFile construct `paw.File` from string
@@ -128,16 +131,18 @@ type File struct {
 // 		FileName: "example",
 // 		Ext:      ".xxx",
 // 	}
-func ConstructFile(path string) File {
+func ConstructFile(path string, root string) File {
 	base := filepath.Base(path)
 	ext := filepath.Ext(path)
-
+	shortPath := "./" + TrimPrefix(path, root)
 	return File{
-		FullPath: path,
-		File:     base,
-		Folder:   strings.TrimSuffix(path, base),
-		FileName: strings.TrimSuffix(base, ext),
-		Ext:      ext,
+		FullPath:    path,
+		ShortPath:   shortPath,
+		File:        base,
+		Folder:      TrimSuffix(path, base),
+		ShortFolder: TrimSuffix(shortPath, base),
+		FileName:    TrimSuffix(base, ext),
+		Ext:         ext,
 	}
 }
 
@@ -184,7 +189,7 @@ func GetFilesFunc(folder string, isRecursive bool, filter func(file File) bool) 
 			}
 
 			if !info.IsDir() {
-				f := ConstructFile(file)
+				f := ConstructFile(file, folder)
 				if !filter(f) {
 					files = append(files, f)
 				}
@@ -209,7 +214,7 @@ func GetFilesFunc(folder string, isRecursive bool, filter func(file File) bool) 
 				if err != nil {
 					return files, err
 				}
-				f := ConstructFile(folder + "\\" + file.Name())
+				f := ConstructFile(folder+"\\"+file.Name(), folder)
 				if !filter(f) {
 					files = append(files, f)
 				}
@@ -299,9 +304,8 @@ func GrouppingFiles(files []File) {
 			return g[i].File < g[j].File
 		})
 	}
-	i := 0
+	at := 0
 	for _, folder := range fdnames {
-		copy(files[i:], gps[folder])
-		i += len(gps[folder])
+		at += copy(files[at:], gps[folder])
 	}
 }
