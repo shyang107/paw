@@ -68,10 +68,22 @@ func main() {
 	// exGetFiles3()
 	// exGetFilesString()
 	// exGrouppingFiles1()
-	exGrouppingFiles2()
+	// exGrouppingFiles2()
+	exGrouppingFiles3()
 	// exTextTemplate()
+	// exRegEx2()
 }
 
+func exRegEx2() {
+	text := "field1,field2 filed3|field4	field5"
+	r := regexp.MustCompile(`,| |\t|\|`)
+	result := r.Split(text, -1)
+	fmt.Printf("case 1 : %q\n\tpattern: %q\n\t%v\n", text, r.String(), result)
+	r = regexp.MustCompile(`(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})`)
+	text = "2020-10-20 2020-1-05 2020-11-3"
+	result2 := r.ReplaceAllString(text, "${year}/${month}/${day}")
+	fmt.Printf("case 2 : %q\n\tpattern: %q\n\t%v\n", text, r.String(), result2)
+}
 func exTextTemplate() {
 	paw.Logger.Info("")
 	type option struct {
@@ -157,6 +169,38 @@ func exTextTemplate() {
 		paw.Logger.Fatalf("execution: %s", err)
 	}
 }
+func exGrouppingFiles3() {
+	paw.Logger.Info("")
+	sourceFolder := "../"
+	// sourceFolder, _ := homedir.Expand("~/Downloads/")
+	// sourceFolder := "/Users/shyang/go/src/rover/opcc/"
+	isRecursive := true
+	sourceFolder, err := filepath.Abs(sourceFolder)
+	if err != nil {
+		paw.Logger.Error(err)
+	}
+	sourceFolder += "/"
+	hsb := strings.Builder{}
+	hsb.WriteString("GetFilesFuncString:\n")
+	hsb.WriteString("- sourceFolder:	\"" + sourceFolder + "\"\n")
+	hsb.WriteString("- isRecursive:	" + strconv.FormatBool(isRecursive) + "\n")
+	prefix := "."
+	regexPattern := `\.git|\$RECYCLE\.BIN|desktop\.ini`
+	// regexPattern := `\.git|\$RECYCLE\.BIN|desktop\.ini|funk|afero`
+	re := regexp.MustCompile(regexPattern)
+	hsb.WriteString("- Excluding conditions:" + "\n")
+	hsb.WriteString(`	- prefix:	"` + prefix + `"` + "\n")
+	hsb.WriteString(`	- regexPattern:	"` + regexPattern + `"`)
+
+	fileList := paw.FileList{}
+	fileList.GetFilesFunc(sourceFolder, isRecursive,
+		func(f paw.File) bool {
+			return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
+		})
+	fileList.OrderedByFolder()
+	fileList.Print(hsb.String())
+}
+
 func exGrouppingFiles2() {
 	paw.Logger.Info("")
 	sourceFolder := "../"
@@ -578,7 +622,7 @@ func exReverse() {
 }
 func exLoger() {
 	log.Infoln("飛雪無情的博客:", "http://www.flysnow.org")
-	log.Warnln("飛雪無情的微信公眾號：%s\n", "flysnow_org")
+	log.Warnf("飛雪無情的微信公眾號：%s\n", "flysnow_org")
 	log.Errorln("歡迎關注留言")
 
 	lg.Infoln("飛雪無情的博客:", "http://www.flysnow.org")

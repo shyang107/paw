@@ -75,13 +75,14 @@ func BenchmarkInsertionSort(b *testing.B) {
 		paw.InsertionSort(nums)
 	}
 }
-func BenchmarkCombSort(b *testing.B) {
-	nums := GetRandomNums(N)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		paw.CombSort(nums)
-	}
-}
+
+// func BenchmarkCombSort(b *testing.B) {
+// 	nums := GetRandomNums(N)
+// 	b.ResetTimer()
+// 	for i := 0; i < b.N; i++ {
+// 		paw.CombSort(nums)
+// 	}
+// }
 
 func TestInsertionSort(t *testing.T) {
 	var actual = []int{1, 39, 2, 9, 7, 54, 11}

@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/shyang107/paw/cast"
 	"github.com/sirupsen/logrus"
 	// log "github.com/sirupsen/logrus"
 )
@@ -124,23 +125,32 @@ type File struct {
 //
 // Example:
 // 	path := "/aaa/bbb/ccc/example.xxx"
+//  root := "/aaa/"
 // 	path => File{
-// 		FullPath: "/aaa/bbb/ccc/example.xxx",
-// 		File:     "example.xxx",
-// 		Folder:   "/aaa/bbb/ccc/",
-// 		FileName: "example",
-// 		Ext:      ".xxx",
+// 		FullPath:    "/aaa/bbb/ccc/example.xxx",
+// 		ShortPath:   "bbb/ccc/example.xxx"
+// 		File:        "example.xxx",
+// 		Folder:      "/aaa/bbb/ccc/",
+// 		ShortFolder: "bbb/ccc/",
+// 		FileName:    "example",
+// 		Ext:         ".xxx",
 // 	}
 func ConstructFile(path string, root string) File {
 	base := filepath.Base(path)
 	ext := filepath.Ext(path)
-	shortPath := "./" + TrimPrefix(path, root)
+	folder := TrimSuffix(path, base)
+	shortFolder, _ := filepath.Rel(root, folder)
+	if shortFolder != "." {
+		shortFolder = "./" + shortFolder
+	}
+	shortFolder += "/"
+	shortPath := shortFolder + base
 	return File{
 		FullPath:    path,
 		ShortPath:   shortPath,
 		File:        base,
-		Folder:      TrimSuffix(path, base),
-		ShortFolder: TrimSuffix(shortPath, base),
+		Folder:      folder,
+		ShortFolder: shortFolder,
 		FileName:    TrimSuffix(base, ext),
 		Ext:         ext,
 	}
@@ -178,8 +188,8 @@ func GetFilesString(folder string, isRecursive bool) ([]string, error) {
 // 	isRecursive:
 // 		false to get []File in `folder`
 // 		true  to get []File in `folder` and all `subfolders`
-// 	filter(file) return true to exclude
-func GetFilesFunc(folder string, isRecursive bool, filter func(file File) bool) ([]File, error) {
+// 	exclude(file) return true to exclude
+func GetFilesFunc(folder string, isRecursive bool, exclude func(file File) bool) ([]File, error) {
 	var files []File
 	if isRecursive {
 		err := filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
@@ -190,7 +200,7 @@ func GetFilesFunc(folder string, isRecursive bool, filter func(file File) bool) 
 
 			if !info.IsDir() {
 				f := ConstructFile(file, folder)
-				if !filter(f) {
+				if !exclude(f) {
 					files = append(files, f)
 				}
 			}
@@ -215,7 +225,7 @@ func GetFilesFunc(folder string, isRecursive bool, filter func(file File) bool) 
 					return files, err
 				}
 				f := ConstructFile(folder+"\\"+file.Name(), folder)
-				if !filter(f) {
+				if !exclude(f) {
 					files = append(files, f)
 				}
 			}
@@ -285,27 +295,134 @@ func GetSubfolder(file File, sourceFolder string) string {
 
 // GrouppingFiles is groupping `files`, first sorted by fullpath then sorted by file name
 func GrouppingFiles(files []File) {
-	// assemble by folder
-	gps := make(map[string][]File)
-	gpnames := make(map[string]int)
-	var fdnames []string
-	for _, f := range files {
-		if _, ok := gpnames[f.Folder]; !ok {
-			fdnames = append(fdnames, f.Folder)
-			gpnames[f.Folder] = 1
+	fl := &FileList{files}
+	fl.OrderedByFolder()
+}
+
+// LessFunc implement Less()
+type LessFunc func(p1, p2 *File) bool
+
+// FilesSorter implements the Sort interface, sorting the files within.
+type FilesSorter struct {
+	files []File
+	less  []LessFunc
+}
+
+// Sort sorts the argument slice according to the less functions passed to OrderedBy.
+func (ms *FilesSorter) Sort(files []File) {
+	ms.files = files
+	sort.Sort(ms)
+}
+
+// OrderedBy returns a Sorter that sorts using the less functions, in order.
+// Call its Sort method to sort the data.
+func OrderedBy(less ...LessFunc) *FilesSorter {
+	return &FilesSorter{
+		less: less,
+	}
+}
+
+// Len is part of sort.Interface.
+func (ms *FilesSorter) Len() int {
+	return len(ms.files)
+}
+
+// Swap is part of sort.Interface.
+func (ms *FilesSorter) Swap(i, j int) {
+	ms.files[i], ms.files[j] = ms.files[j], ms.files[i]
+}
+
+// Less is part of sort.Interface. It is implemented by looping along the
+// less functions until it finds a comparison that discriminates between
+// the two items (one is less than the other). Note that it can call the
+// less functions twice per call. We could change the functions to return
+// -1, 0, 1 and reduce the number of calls for greater efficiency: an
+// exercise for the reader.
+func (ms *FilesSorter) Less(i, j int) bool {
+	p, q := &ms.files[i], &ms.files[j]
+	// Try all but the last comparison.
+	var k int
+	for k = 0; k < len(ms.less)-1; k++ {
+		less := ms.less[k]
+		switch {
+		case less(p, q):
+			// p < q, so we have a decision.
+			return true
+		case less(q, p):
+			// p > q, so we have a decision.
+			return false
 		}
-		gps[f.Folder] = append(gps[f.Folder], f)
+		// p == q; try the next comparison.
 	}
-	// sort folder
-	sort.Strings(fdnames)
-	// sort file in folder
-	for _, g := range gps {
-		sort.SliceStable(g, func(i, j int) bool {
-			return g[i].File < g[j].File
-		})
+	// All comparisons to here said "equal", so just return whatever
+	// the final comparison reports.
+	return ms.less[k](p, q)
+}
+
+// Files []File
+type Files []File
+
+// FileList struct{ Files }
+type FileList struct{ Files }
+
+// GetFilesFunc get files with codintion `exclude` func
+func (fl *FileList) GetFilesFunc(srcFolder string, isRecursive bool, exclude func(file File) bool) {
+	files, err := GetFilesFunc(srcFolder, isRecursive, exclude)
+	if err != nil {
+		Logger.Error(err)
 	}
-	at := 0
-	for _, folder := range fdnames {
-		at += copy(files[at:], gps[folder])
+	fl.Files = files
+}
+
+// OrderedByFolder organizes files ordered by Folder and then by file name
+func (fl *FileList) OrderedByFolder() {
+	byFolder := func(f1, f2 *File) bool {
+		return f1.Folder < f2.Folder
 	}
+	byFileName := func(f1, f2 *File) bool {
+		return f1.FileName < f2.FileName
+	}
+	OrderedBy(byFolder, byFileName).Sort(fl.Files)
+}
+
+// Print filelist with `head`
+func (fl FileList) Print(head string) {
+	tf := &TableFormat{
+		Fields:    []string{"No.", "Sorted Files"},
+		LenFields: []int{5, 100},
+		Aligns:    []Align{AlignRight, AlignLeft},
+		// Padding:   "# ",
+	}
+	fl.PrintWithTableFormat(tf, head)
+}
+
+// PrintWithTableFormat print files with `TableFormat` and `head`
+func (fl FileList) PrintWithTableFormat(tp *TableFormat, head string) {
+	tp.SetBeforeMessage(head)
+	tp.PrintSart()
+	oFolder := fl.Files[0].Folder
+	gcount := 1
+	j := 0
+	for i, f := range fl.Files {
+		if oFolder != f.Folder {
+			oFolder = f.Folder
+			tp.PrintRow("", "Sum: "+cast.ToString(j)+" files.")
+			tp.PrintMiddleSepLine()
+			j = 1
+			gcount++
+		} else {
+			j++
+		}
+		if j == 1 {
+			tp.PrintRow("", fmt.Sprintf("folder %d: %q", gcount, f.ShortFolder))
+		}
+
+		tp.PrintRow(j, f.File)
+
+		if i == len(fl.Files)-1 {
+			tp.PrintRow("", "Sum: "+cast.ToString(j)+" files.")
+		}
+	}
+	tp.SetAfterMessage("Total: " + cast.ToString(gcount) + " subfolders and " + cast.ToString(len(fl.Files)) + " files. ")
+	tp.PrintEnd()
 }
