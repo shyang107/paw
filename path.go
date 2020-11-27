@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
@@ -294,6 +295,19 @@ func GetSubfolder(file File, sourceFolder string) string {
 	return TrimPrefix(file.Folder, sourceFolder)
 }
 
+// CountSubfolders count subfolders of `files`
+func CountSubfolders(files []File) int {
+	folders := make(map[string]int)
+	for _, f := range files {
+		if _, ok := folders[f.ShortFolder]; !ok {
+			if !strings.EqualFold(f.ShortFolder, "./") {
+				folders[f.ShortFolder] = 1
+			}
+		}
+	}
+	return len(folders)
+}
+
 // GrouppingFiles is groupping `files`, first sorted by fullpath then sorted by file name
 func GrouppingFiles(files []File) {
 	fl := &FileList{files}
@@ -430,7 +444,12 @@ func (fl FileList) PrintWithTableFormat(tp *TableFormat, head string) {
 			j++
 		}
 		if j == 1 {
-			tp.PrintRow("", fmt.Sprintf("folder %d: %q", gcount, f.ShortFolder))
+			if strings.EqualFold(f.ShortFolder, "./") {
+				gcount--
+				tp.PrintRow("", fmt.Sprintf("[%d]. source folder (%q)", gcount, f.ShortFolder))
+			} else {
+				tp.PrintRow("", fmt.Sprintf("[%d]. subfolder: %q", gcount, f.ShortFolder))
+			}
 		}
 
 		tp.PrintRow(j, f.File)
@@ -439,6 +458,6 @@ func (fl FileList) PrintWithTableFormat(tp *TableFormat, head string) {
 			tp.PrintRow("", fmt.Sprintf("Sum: %d files.", j))
 		}
 	}
-	tp.SetAfterMessage(fmt.Sprintf("Total: %d subfolders and %d files.", gcount, len(fl.Files)))
+	tp.SetAfterMessage(fmt.Sprintf("Total: %d subfolders and %d files.", CountSubfolders(fl.Files), len(fl.Files)))
 	tp.PrintEnd()
 }
