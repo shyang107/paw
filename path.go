@@ -1,14 +1,15 @@
 package paw
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
 
 	"github.com/mitchellh/go-homedir"
-	"github.com/shyang107/paw/cast"
 	"github.com/sirupsen/logrus"
 	// log "github.com/sirupsen/logrus"
 )
@@ -365,6 +366,20 @@ type Files []File
 // FileList struct{ Files }
 type FileList struct{ Files }
 
+func (fl FileList) String() string {
+	tf := &TableFormat{
+		Fields:    []string{"No.", "Sorted Files"},
+		LenFields: []int{5, 75},
+		Aligns:    []Align{AlignRight, AlignLeft},
+		// Padding:   "# ",
+	}
+	var buf []byte
+	sb := bytes.NewBuffer(buf)
+	tf.Prepare(sb)
+	fl.PrintWithTableFormat(tf, "")
+	return TrimPrefix(sb.String(), "\n")
+}
+
 // GetFilesFunc get files with codintion `exclude` func
 func (fl *FileList) GetFilesFunc(srcFolder string, isRecursive bool, exclude func(file File) bool) {
 	files, err := GetFilesFunc(srcFolder, isRecursive, exclude)
@@ -386,13 +401,14 @@ func (fl *FileList) OrderedByFolder() {
 }
 
 // Print filelist with `head`
-func (fl FileList) Print(head string) {
+func (fl FileList) Print(w io.Writer, head, pad string) {
 	tf := &TableFormat{
 		Fields:    []string{"No.", "Sorted Files"},
-		LenFields: []int{5, 100},
+		LenFields: []int{5, 75},
 		Aligns:    []Align{AlignRight, AlignLeft},
-		// Padding:   "# ",
+		Padding:   pad,
 	}
+	tf.Prepare(w)
 	fl.PrintWithTableFormat(tf, head)
 }
 
@@ -406,7 +422,7 @@ func (fl FileList) PrintWithTableFormat(tp *TableFormat, head string) {
 	for i, f := range fl.Files {
 		if oFolder != f.Folder {
 			oFolder = f.Folder
-			tp.PrintRow("", "Sum: "+cast.ToString(j)+" files.")
+			tp.PrintRow("", fmt.Sprintf("Sum: %d files.", j))
 			tp.PrintMiddleSepLine()
 			j = 1
 			gcount++
@@ -420,9 +436,9 @@ func (fl FileList) PrintWithTableFormat(tp *TableFormat, head string) {
 		tp.PrintRow(j, f.File)
 
 		if i == len(fl.Files)-1 {
-			tp.PrintRow("", "Sum: "+cast.ToString(j)+" files.")
+			tp.PrintRow("", fmt.Sprintf("Sum: %d files.", j))
 		}
 	}
-	tp.SetAfterMessage("Total: " + cast.ToString(gcount) + " subfolders and " + cast.ToString(len(fl.Files)) + " files. ")
+	tp.SetAfterMessage(fmt.Sprintf("Total: %d subfolders and %d files.", gcount, len(fl.Files)))
 	tp.PrintEnd()
 }
