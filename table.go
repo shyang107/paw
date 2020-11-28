@@ -81,7 +81,8 @@ var (
 // isPrepareAfter  bool
 )
 
-func paddingString(s string, pad string) string {
+// PaddingString add pad-prefix in every line of string
+func PaddingString(s string, pad string) string {
 	if !strings.Contains(s, "\n") {
 		return pad + s
 	}
@@ -100,7 +101,7 @@ func (t *TableFormat) SetBeforeMessage(msg string) {
 	t.beforeMsg = msg
 	if len(t.Padding) > 0 {
 		// t.beforeMsg = t.Padding + t.beforeMsg
-		t.beforeMsg = paddingString(t.beforeMsg, t.Padding)
+		t.beforeMsg = PaddingString(t.beforeMsg, t.Padding)
 	}
 	t.isPrepareBefore = true
 }
@@ -110,7 +111,7 @@ func (t *TableFormat) SetAfterMessage(msg string) {
 	t.afterMsg = msg
 	if len(t.Padding) > 0 {
 		// t.afterMsg = t.Padding + t.afterMsg
-		t.afterMsg = paddingString(t.afterMsg, t.Padding)
+		t.afterMsg = PaddingString(t.afterMsg, t.Padding)
 	}
 	t.isPrepareAfter = true
 }

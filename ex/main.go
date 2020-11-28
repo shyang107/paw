@@ -53,7 +53,8 @@ func main() {
 	// exGetFilesString()
 	// exGrouppingFiles1()
 	// exGrouppingFiles2()
-	exGrouppingFiles3()
+	// exGrouppingFiles3()
+	exGrouppingFiles4()
 	// exTextTemplate()
 	// exRegEx2()
 }

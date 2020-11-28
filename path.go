@@ -414,16 +414,56 @@ func (fl *FileList) OrderedByFolder() {
 	OrderedBy(byFolder, byFileName).Sort(fl.Files)
 }
 
+// OutputMode : FileList output mode
+type OutputMode uint
+
+const (
+	// OPlainTextMode : FileList output in plain text mode (default, use PrintPlain())
+	OPlainTextMode OutputMode = iota
+	// OTableFormatMode : FileList output in TableFormat mode (use PrintWithTableFormat())
+	OTableFormatMode
+	// OTreeMode : FileList output in tree mode (use PrintTree())
+	OTreeMode
+)
+
 // Print filelist with `head`
-func (fl FileList) Print(w io.Writer, head, pad string) {
-	tf := &TableFormat{
-		Fields:    []string{"No.", "Sorted Files"},
-		LenFields: []int{5, 75},
-		Aligns:    []Align{AlignRight, AlignLeft},
-		Padding:   pad,
+func (fl FileList) Print(w io.Writer, mode OutputMode, head, pad string) {
+	switch mode {
+	case OTreeMode:
+		fl.PrintTree(w, head, pad)
+	case OTableFormatMode:
+		tf := &TableFormat{
+			Fields:    []string{"No.", "Sorted Files"},
+			LenFields: []int{5, 75},
+			Aligns:    []Align{AlignRight, AlignLeft},
+			Padding:   pad,
+		}
+		tf.Prepare(w)
+		fl.PrintWithTableFormat(tf, head)
+	default: // OPlainTextMode
+		fl.PrintPlain(w, head, pad)
 	}
-	tf.Prepare(w)
-	fl.PrintWithTableFormat(tf, head)
+}
+
+// PrintTree print out FileList in tree mode
+func (fl FileList) PrintTree(w io.Writer, head, pad string) {
+	Logger.Fatalln("not yet implement")
+	// fmt.Fprintln(w, PaddingString(head, pad))
+	// fmt.Fprintln(w, pad)
+	// for i, f := range fl.Files {
+	// 	fmt.Fprintf(w, "%s%5d %s\n", pad, i+1, f.FullPath)
+	// }
+	// fmt.Fprintf(w, "%sTotal: %d subfolders and %d files.\n", pad, CountSubfolders(fl.Files), len(fl.Files))
+}
+
+// PrintPlain print out FileList in plain text mode
+func (fl FileList) PrintPlain(w io.Writer, head, pad string) {
+	fmt.Fprintln(w, PaddingString(head, pad))
+	fmt.Fprintln(w, pad)
+	for i, f := range fl.Files {
+		fmt.Fprintf(w, "%s%5d %s\n", pad, i+1, f.FullPath)
+	}
+	fmt.Fprintf(w, "%sTotal: %d subfolders and %d files.\n", pad, CountSubfolders(fl.Files), len(fl.Files))
 }
 
 // PrintWithTableFormat print files with `TableFormat` and `head`

@@ -9,7 +9,7 @@ import (
 	"github.com/shyang107/paw/cast"
 )
 
-func exGrouppingFiles3() {
+func exGrouppingFiles4() {
 	paw.Logger.Info("")
 	head := "GetFilesFuncString:\n"
 	sourceFolder := "../"
@@ -40,7 +40,9 @@ func exGrouppingFiles3() {
 			return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
 		})
 	fileList.OrderedByFolder()
-	fileList.Print(os.Stdout, paw.OTableFormatMode, head, "# ")
+	fileList.Print(os.Stdout, paw.OPlainTextMode, head, "# ")
+	// fileList.Print(os.Stdout, paw.OTableFormatMode, head, "# ")
+	fileList.Print(os.Stdout, paw.OTreeMode, head, "# ")
 	// fmt.Println(head)
 	// fmt.Println(fileList)
 }
