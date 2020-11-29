@@ -27,7 +27,7 @@ func main() {
 	// exLoger()
 	// exReverse()
 	// exPrintTree1()
-	exPrintTree2()
+	// exPrintTree2()
 	// exShuffle()
 	// exGetCurrPath()
 	// var n1 = []int{1, 39, 2, 9, 7, 54, 11}

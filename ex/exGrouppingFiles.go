@@ -38,16 +38,14 @@ func exGrouppingFiles4() {
 	re := regexp.MustCompile(regexPattern)
 
 	fileList := paw.FileList{}
-	fileList.GetFilesFunc(sourceFolder, isRecursive,
-		func(f paw.File) bool {
-			return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
-		})
+	exclude := func(f paw.File) bool {
+		return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
+	}
+	fileList.GetFilesFunc(sourceFolder, isRecursive, exclude)
 	fileList.OrderedByFolder()
 	// fileList.Print(os.Stdout, paw.OPlainTextMode, head, "# ")
-	// fileList.Print(os.Stdout, paw.OTableFormatMode, head, "# ")
-	fileList.Print(os.Stdout, paw.OTreeMode, head, "# ")
-	// fmt.Println(head)
-	// fmt.Println(fileList)
+	fileList.Print(os.Stdout, paw.OTableFormatMode, head, "# ")
+	// fileList.Print(os.Stdout, paw.OTreeMode, head, "# ")
 }
 
 func exGrouppingFiles3() {

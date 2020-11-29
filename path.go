@@ -94,7 +94,7 @@ func MakeAll(path string) error {
 	if IsPathExists(path) {
 		return nil
 	}
-	err := os.MkdirAll(path, 0711) // 0755
+	err := os.MkdirAll(path, os.ModePerm) // 0755
 	if err != nil {
 		return err
 	}
@@ -447,12 +447,6 @@ func (fl FileList) Print(w io.Writer, mode OutputMode, head, pad string) {
 	}
 }
 
-type tree struct {
-	name string
-	root *tree
-	sub  []*tree
-}
-
 // PrintTree print out FileList in tree mode
 func (fl FileList) PrintTree(w io.Writer, head, pad string) {
 	fmt.Fprintln(w, PaddingString(head, pad))
@@ -465,59 +459,58 @@ func (fl FileList) PrintTree(w io.Writer, head, pad string) {
 	nfl := len(fl.Files)
 
 	tree := treeprint.New()
-	var one, two treeprint.Tree
-	for j, fd := range fdk {
+	for _, fd := range fdk {
 		trimfd := trimPath(fd)
 		ss := strings.Split(trimfd, "/")
 		ns := len(ss)
-		fmt.Printf("%d folder: %-22s, files: %4d; n: %d, split: %v \n",
-			j, fd, len(fdm[fd]), ns, ss)
-		// fmt.Println("  ", mfns[fd])
-		if ns == 1 && len(ss[0]) == 0 && len(fdm[fd]) > 0 {
-			// tree.SetValue(fmt.Sprintf("%s [%d files] [%d directories, %d files]", root, len(fdm[fd]), nfd-1, len(fl.Files)))
-			tree.SetMetaValue(len(fdm[fd]))
-			tree.SetValue(fmt.Sprintf("%s [%d directories, %d files]", root, nfd-1, len(fl.Files)))
-			addNodes(tree, fdm[fd])
-			continue
-		}
-		if ns == 1 && len(ss[0]) > 0 && len(fdm[fd]) > 0 {
-			one = tree.AddMetaBranch(cast.ToString(len(fdm[fd])), ss[0])
-			addNodes(one, fdm[fd])
-			continue
-		}
-		for i := 1; i < ns; i++ {
-			one = tree.FindByValue(ss[i-1])
-			// 	// fmt.Println(one.String())
-			if one == nil {
+		if ns == 1 {
+			if len(ss[0]) == 0 {
+				tree.SetMetaValue(len(fdm[fd]))
+				tree.SetValue(fmt.Sprintf("%s", root))
+				for _, v := range fdm[fd] {
+					tree.AddNode(v)
+				}
 			} else {
-				Logger.Infoln(fd, ss[i-1], ss[i])
-				two = one.AddMetaBranch(cast.ToString(len(fdm[fd])), ss[i])
-				addNodes(two, fdm[fd])
+				one := tree.AddMetaBranch(cast.ToString(len(fdm[fd])), ss[0])
+				for _, v := range fdm[fd] {
+					one.AddNode(v)
+				}
+			}
+			continue
+		}
+		treend := make([]treeprint.Tree, ns)
+		treend[0] = tree.FindByValue(ss[0])
+		for i := 1; i < ns; i++ {
+			treend[i] = treend[0].FindByValue(ss[i])
+			if treend[i] == nil {
+				treend[i] = treend[i-1].AddMetaBranch(cast.ToString(len(fdm[fd])), ss[i])
+				for _, v := range fdm[fd] {
+					treend[i].AddNode(v)
+				}
 			}
 		}
 	}
-	fmt.Println("nfd =", nfd, "nfl =", nfl)
+	// fmt.Println("nfd =", nfd, "nfl =", nfl)
 	fmt.Fprintln(w, PaddingString(tree.String(), pad))
-	// fmt.Fprintln(w, pad)
 	fmt.Fprintf(w, "%s%d directories, %d files\n", pad, nfd-1, nfl)
-	// fmt.Fprintf(w, "%sTotal: %d subfolders and %d files.\n", pad, nSubFolders, len(fl.Files))
 }
 
-func collectFiles(files []File) (map[string][]string, []string) {
-	fdm := make(map[string][]string)
-	fdk := []string{}
+func collectFiles(files []File) (fdm map[string][]string, fdk []string) {
+	fdm = make(map[string][]string)
+	fdk = []string{}
 	sfd := ""
 	for _, f := range files {
 		if !strings.EqualFold(sfd, f.ShortFolder) {
 			sfd = f.ShortFolder
-			if _, ok := fdm[f.ShortFolder]; !ok {
-				fdm[f.ShortFolder] = []string{}
-				fdk = append(fdk, f.ShortFolder)
-			}
-			fdm[f.ShortFolder] = append(fdm[f.ShortFolder], f.File)
-		} else {
-			fdm[f.ShortFolder] = append(fdm[f.ShortFolder], f.File)
+			// if _, ok := fdm[f.ShortFolder]; !ok {
+			// 	fdm[f.ShortFolder] = []string{}
+			// 	fdk = append(fdk, f.ShortFolder)
+			// }
+			fdm[f.ShortFolder] = []string{}
+			fdk = append(fdk, f.ShortFolder)
+			// fdm[f.ShortFolder] = append(fdm[f.ShortFolder], f.File)
 		}
+		fdm[f.ShortFolder] = append(fdm[f.ShortFolder], f.File)
 	}
 	if !sort.StringsAreSorted(fdk) {
 		sort.Strings(fdk)
@@ -525,58 +518,10 @@ func collectFiles(files []File) (map[string][]string, []string) {
 	return fdm, fdk
 }
 
-func addNodes(one treeprint.Tree, names []string) {
-	for _, v := range names {
-		one.AddNode(v)
-	}
-}
-
 func trimPath(path string) string {
 	mpath := TrimPrefix(path, "./")
 	mpath = TrimSuffix(mpath, "/")
 	return mpath
-}
-func treeFiles(tree treeprint.Tree, fds []string) {
-	n := len(fds)
-	switch {
-	case n == 1:
-		tree.AddNode(fds[0])
-	case n > 1:
-		treeFiles(tree.AddBranch(fds[0]), fds[1:n])
-	}
-}
-
-const (
-	tsym = "├"
-	vsym = "│"
-	hsym = "──"
-	lsym = "└"
-	ssym = "   "
-)
-
-func getLeading(fds []string, isEnd bool) string {
-	lead := ""
-	n := len(fds)
-	switch {
-	case n == 1:
-		if !isEnd {
-			lead = tsym + hsym + " " + fds[0]
-		} else {
-			lead = lsym + hsym + " " + fds[0]
-		}
-	case n > 1:
-		if !isEnd {
-			lead += vsym + ssym + getLeading(fds[1:n], isEnd)
-		} else {
-			lead += " " + ssym + getLeading(fds[1:n], isEnd)
-		}
-	}
-	return lead
-}
-func splitPath(path string) []string {
-	mpath := TrimPrefix(path, "./")
-	mpath = TrimSuffix(mpath, "/")
-	return strings.Split(mpath, "/")
 }
 
 func findRoot(files []File) string {
@@ -603,7 +548,9 @@ func (fl FileList) PrintPlain(w io.Writer, head, pad string) {
 	for i, f := range fl.Files {
 		fmt.Fprintf(w, "%s%5d %s\n", pad, i+1, f.FullPath)
 	}
-	fmt.Fprintf(w, "%sTotal: %d subfolders and %d files.\n", pad, CountSubfolders(fl.Files), len(fl.Files))
+	// fmt.Fprintf(w, "%sTotal: %d subfolders and %d files.\n", pad, CountSubfolders(fl.Files), len(fl.Files))
+	fmt.Fprintln(w, pad)
+	fmt.Fprintf(w, "%s%d directories, %d files\n", pad, CountSubfolders(fl.Files), len(fl.Files))
 }
 
 // PrintWithTableFormat print files with `TableFormat` and `head`
@@ -638,6 +585,8 @@ func (fl FileList) PrintWithTableFormat(tp *TableFormat, head string) {
 			tp.PrintRow("", fmt.Sprintf("Sum: %d files.", j))
 		}
 	}
-	tp.SetAfterMessage(fmt.Sprintf("Total: %d subfolders and %d files.", CountSubfolders(fl.Files), len(fl.Files)))
+	// tp.SetAfterMessage(fmt.Sprintf("Total: %d subfolders and %d files.", CountSubfolders(fl.Files), len(fl.Files)))
+	tp.SetAfterMessage(fmt.Sprintf("%d directories, %d files\n", CountSubfolders(fl.Files), len(fl.Files)))
+
 	tp.PrintEnd()
 }
