@@ -31,21 +31,25 @@ func exGrouppingFiles4() {
 	head += "- Excluding conditions:" + "\n"
 	prefix := "."
 	head += "	- prefix:	`" + prefix + "`" + "\n"
-	regexPattern := `\.git|\$RECYCLE\.BIN|desktop\.ini`
 	// regexPattern := `\.git|\$RECYCLE\.BIN|desktop\.ini|funk|afero`
-	head += "	- regexPattern:	`" + regexPattern + "`"
+	// regexPattern := `\.git|\$RECYCLE\.BIN|desktop\.ini`
+	// head += "	- regexPattern:	`" + regexPattern + "`"
+	head += "	- regexPattern:	`" + paw.ExcludePattern + "`"
 
-	re := regexp.MustCompile(regexPattern)
+	// re := regexp.MustCompile(regexPattern)
 
 	fileList := paw.FileList{}
+	// exclude := func(f paw.File) bool {
+	// 	return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
+	// }
 	exclude := func(f paw.File) bool {
-		return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
+		return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || paw.REUsuallyExclude.MatchString(f.FullPath))
 	}
 	fileList.GetFilesFunc(sourceFolder, isRecursive, exclude)
 	fileList.OrderedByFolder()
 	// fileList.Print(os.Stdout, paw.OPlainTextMode, head, "# ")
-	fileList.Print(os.Stdout, paw.OTableFormatMode, head, "# ")
-	// fileList.Print(os.Stdout, paw.OTreeMode, head, "# ")
+	// fileList.Print(os.Stdout, paw.OTableFormatMode, head, "# ")
+	fileList.Print(os.Stdout, paw.OTreeMode, head, "# ")
 }
 
 func exGrouppingFiles3() {
