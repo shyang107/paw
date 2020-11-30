@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -188,6 +189,13 @@ func GetFilesString(folder string, isRecursive bool) ([]string, error) {
 	})
 }
 
+var (
+	// ExcludePattern is pattern used in GetFilesFunc to exclude some files/folders such as `.git|.gitignore|.DS_Store|$RECYCLE.BIN|desktop.ini|_gsdata_`
+	ExcludePattern = `\.git|\.gitignore|\.DS_Store|\$RECYCLE\.BIN|desktop\.ini|_gsdata_`
+	// REUsuallyExclude is regexp used in GetFilesFunc to exclude some files/folders such as `.git|.gitignore|.DS_Store|$RECYCLE.BIN|desktop.ini|_gsdata_`
+	REUsuallyExclude = regexp.MustCompile(ExcludePattern)
+)
+
 // GetFilesFunc :
 // 	isRecursive:
 // 		false to get []File in `folder`
@@ -195,6 +203,8 @@ func GetFilesString(folder string, isRecursive bool) ([]string, error) {
 // 	exclude(file) return true to exclude
 func GetFilesFunc(folder string, isRecursive bool, exclude func(file File) bool) ([]File, error) {
 	var files []File
+	// defer checkRootFiles(files, folder)
+
 	if isRecursive {
 		err := filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
 			file, err := filepath.Abs(path)
@@ -202,7 +212,7 @@ func GetFilesFunc(folder string, isRecursive bool, exclude func(file File) bool)
 				return nil
 			}
 
-			if !info.IsDir() {
+			if !info.IsDir() && info.Mode().IsRegular() {
 				f := ConstructFile(file, folder)
 				if !exclude(f) {
 					files = append(files, f)
@@ -210,7 +220,7 @@ func GetFilesFunc(folder string, isRecursive bool, exclude func(file File) bool)
 			}
 			return nil
 		})
-
+		files = checkRootFiles(files, folder)
 		return files, err
 	}
 
@@ -218,15 +228,17 @@ func GetFilesFunc(folder string, isRecursive bool, exclude func(file File) bool)
 	defer f.Close()
 
 	if err != nil {
-		return files, err
+		// return files, err
+		goto END
 	}
 
 	if fileinfo, err := f.Readdir(-1); err == nil {
 		for _, file := range fileinfo {
-			if !file.IsDir() {
+			if !file.IsDir() && file.Mode().IsRegular() {
 				folder, err := filepath.Abs(folder)
 				if err != nil {
-					return files, err
+					// return files, err
+					goto END
 				}
 				f := ConstructFile(folder+"\\"+file.Name(), folder)
 				if !exclude(f) {
@@ -235,10 +247,29 @@ func GetFilesFunc(folder string, isRecursive bool, exclude func(file File) bool)
 			}
 		}
 	} else {
-		return files, err
+		// return files, err
+		goto END
 	}
+END:
+	files = checkRootFiles(files, folder)
+	return files, err
+}
 
-	return files, nil
+const zeroRootFiles = "«zeroRootFiles»"
+
+func checkRootFiles(files []File, root string) []File {
+	nrf := 0
+	// fmt.Println("root:", root)
+	for _, f := range files {
+		// fmt.Println("f.Folder:", f.Folder)
+		if strings.EqualFold(f.Folder, root) {
+			nrf++
+		}
+	}
+	if nrf == 0 {
+		files = append(files, ConstructFile(root+zeroRootFiles, root))
+	}
+	return files
 }
 
 // GetFilesFuncString :
@@ -376,11 +407,11 @@ func (ms *FilesSorter) Less(i, j int) bool {
 	return ms.less[k](p, q)
 }
 
-// Files []File
-type Files []File
+// // Files []File
+// type Files []File
 
 // FileList struct{ Files }
-type FileList struct{ Files }
+type FileList struct{ Files []File }
 
 func (fl FileList) String() string {
 	tf := &TableFormat{
@@ -450,9 +481,7 @@ func (fl FileList) Print(w io.Writer, mode OutputMode, head, pad string) {
 // PrintTree print out FileList in tree mode
 func (fl FileList) PrintTree(w io.Writer, head, pad string) {
 	fmt.Fprintln(w, PaddingString(head, pad))
-	root := findRoot(fl.Files)
-	// fmt.Fprintf(w, "%s%s\n", pad, root)
-	// nSubFolders := CountSubfolders(fl.Files)
+	root, rootPath := findRoot(fl.Files)
 
 	fdm, fdk := collectFiles(fl.Files)
 	nfd := len(fdk)
@@ -463,10 +492,16 @@ func (fl FileList) PrintTree(w io.Writer, head, pad string) {
 		trimfd := trimPath(fd)
 		ss := strings.Split(trimfd, "/")
 		ns := len(ss)
+		// fmt.Printf("%v %d %v\n", trimfd, ns, ss)
 		if ns == 1 {
 			if len(ss[0]) == 0 {
-				tree.SetMetaValue(len(fdm[fd]))
-				tree.SetValue(fmt.Sprintf("%s", root))
+				if len(fdm[fd]) == 1 && strings.EqualFold(fdm[fd][0], zeroRootFiles) {
+					nfl--
+					delete(fdm, fd)
+				}
+				tree.SetMetaValue(fmt.Sprintf("%d (%d directories, %d files)", len(fdm[fd]), nfd-1, nfl))
+				// tree.SetValue(root)
+				tree.SetValue(fmt.Sprintf("%s\nroot: %s", root, rootPath))
 				for _, v := range fdm[fd] {
 					tree.AddNode(v)
 				}
@@ -502,13 +537,8 @@ func collectFiles(files []File) (fdm map[string][]string, fdk []string) {
 	for _, f := range files {
 		if !strings.EqualFold(sfd, f.ShortFolder) {
 			sfd = f.ShortFolder
-			// if _, ok := fdm[f.ShortFolder]; !ok {
-			// 	fdm[f.ShortFolder] = []string{}
-			// 	fdk = append(fdk, f.ShortFolder)
-			// }
 			fdm[f.ShortFolder] = []string{}
 			fdk = append(fdk, f.ShortFolder)
-			// fdm[f.ShortFolder] = append(fdm[f.ShortFolder], f.File)
 		}
 		fdm[f.ShortFolder] = append(fdm[f.ShortFolder], f.File)
 	}
@@ -524,43 +554,58 @@ func trimPath(path string) string {
 	return mpath
 }
 
-func findRoot(files []File) string {
+func findRoot(files []File) (root, fullpath string) {
 	var (
-		root   string
 		folder string
 	)
 	root = files[0].Folder
+	fullpath = files[0].Folder
 	for _, f := range files {
 		if !strings.EqualFold(folder, f.ShortFolder) {
 			folder = f.ShortFolder
 			if len(root) > len(folder) {
 				root = folder
+				fullpath = f.Folder
 			}
 		}
 	}
-	return root
+	return root, fullpath
 }
 
 // PrintPlain print out FileList in plain text mode
 func (fl FileList) PrintPlain(w io.Writer, head, pad string) {
 	fmt.Fprintln(w, PaddingString(head, pad))
 	fmt.Fprintln(w, pad)
-	for i, f := range fl.Files {
-		fmt.Fprintf(w, "%s%5d %s\n", pad, i+1, f.FullPath)
+	nSubFolders := CountSubfolders(fl.Files)
+	nFiles := len(fl.Files)
+	count := 1
+	for _, f := range fl.Files {
+		if f.File == zeroRootFiles {
+			nFiles--
+			continue
+		}
+		fmt.Fprintf(w, "%s%5d %s\n", pad, count, f.FullPath)
+		count++
 	}
-	// fmt.Fprintf(w, "%sTotal: %d subfolders and %d files.\n", pad, CountSubfolders(fl.Files), len(fl.Files))
 	fmt.Fprintln(w, pad)
-	fmt.Fprintf(w, "%s%d directories, %d files\n", pad, CountSubfolders(fl.Files), len(fl.Files))
+	fmt.Fprintf(w, "%s%d directories, %d files\n", pad, nSubFolders, nFiles)
 }
 
 // PrintWithTableFormat print files with `TableFormat` and `head`
 func (fl FileList) PrintWithTableFormat(tp *TableFormat, head string) {
 	tp.SetBeforeMessage(head)
 	tp.PrintSart()
+	nSubFolders := CountSubfolders(fl.Files)
+	nFiles := len(fl.Files)
 	oFolder := fl.Files[0].Folder
 	gcount := 1
 	j := 0
 	for i, f := range fl.Files {
+		if f.File == zeroRootFiles {
+			oFolder = fl.Files[i+1].Folder
+			nFiles--
+			continue
+		}
 		if oFolder != f.Folder {
 			oFolder = f.Folder
 			tp.PrintRow("", fmt.Sprintf("Sum: %d files.", j))
@@ -585,8 +630,8 @@ func (fl FileList) PrintWithTableFormat(tp *TableFormat, head string) {
 			tp.PrintRow("", fmt.Sprintf("Sum: %d files.", j))
 		}
 	}
-	// tp.SetAfterMessage(fmt.Sprintf("Total: %d subfolders and %d files.", CountSubfolders(fl.Files), len(fl.Files)))
-	tp.SetAfterMessage(fmt.Sprintf("%d directories, %d files\n", CountSubfolders(fl.Files), len(fl.Files)))
+
+	tp.SetAfterMessage(fmt.Sprintf("%d directories, %d files\n", nSubFolders, nFiles))
 
 	tp.PrintEnd()
 }
