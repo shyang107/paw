@@ -414,17 +414,17 @@ func (ms *FilesSorter) Less(i, j int) bool {
 type FileList struct{ Files []File }
 
 func (fl FileList) String() string {
-	tf := &TableFormat{
-		Fields:    []string{"No.", "Sorted Files"},
-		LenFields: []int{5, 75},
-		Aligns:    []Align{AlignRight, AlignLeft},
-		// Padding:   "# ",
-	}
-	var buf []byte
-	sb := bytes.NewBuffer(buf)
-	tf.Prepare(sb)
-	fl.PrintWithTableFormat(tf, "")
-	return TrimPrefix(sb.String(), "\n")
+	// tf := &TableFormat{
+	// 	Fields:    []string{"No.", "Sorted Files"},
+	// 	LenFields: []int{5, 75},
+	// 	Aligns:    []Align{AlignRight, AlignLeft},
+	// 	// Padding:   "# ",
+	// }
+	buf := new(bytes.Buffer)
+	// tf.Prepare(buf)
+	// fl.PrintWithTableFormat(tf, "")
+	fl.Print(buf, OPlainTextMode, "", "")
+	return TrimPrefix(string(buf.Bytes()), "\n")
 }
 
 // GetFilesFunc get files with codintion `exclude` func

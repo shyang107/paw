@@ -55,7 +55,8 @@ func main() {
 	// exGrouppingFiles1()
 	// exGrouppingFiles2()
 	// exGrouppingFiles3()
-	exGrouppingFiles4()
+	// exGrouppingFiles4()
 	// exTextTemplate()
 	// exRegEx2()
+	exFilesMap()
 }
