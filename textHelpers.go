@@ -26,6 +26,7 @@ type TextTools interface {
 	TrimSpace() TextTools
 	TrimSuffix(suffix string) TextTools
 	TrimBOM() TextTools
+	TrimFrontEndSpaceLine() TextTools
 
 	Big5ToUtf8String() (TextTools, error)
 	Utf8ToBig5String() (TextTools, error)
@@ -301,5 +302,11 @@ func (tb *TextBuilder) IsEqualString(b string, ignoreCase bool) bool {
 // TrimBOM packs `TrimBOM(line string) string`
 func (tb *TextBuilder) TrimBOM() TextTools {
 	tb.Text = TrimBOM(tb.Text)
+	return tb
+}
+
+// TrimFrontEndSpaceLine packs `TrimFrontEndSpaceLine(content string) string`
+func (tb *TextBuilder) TrimFrontEndSpaceLine() TextTools {
+	tb.Text = TrimFrontEndSpaceLine(tb.Text)
 	return tb
 }

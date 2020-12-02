@@ -404,3 +404,29 @@ func TrimBOM(line string) string {
 	}
 	return line
 }
+
+// TrimFrontEndSpaceLine trim the front and end empty line of `content` and return
+func TrimFrontEndSpaceLine(content string) string {
+	lines := strings.Split(content, "\n")
+	fIdx := -1
+	eIdx := -1
+	for i := 0; i < len(lines); i++ {
+		s := TrimSpace(lines[i])
+		if len(s) > 0 {
+			fIdx = i
+			break
+		}
+	}
+	for i := len(lines) - 1; i >= 0; i-- {
+		s := TrimSpace(lines[i])
+		if len(s) > 0 {
+			eIdx = i + 1
+			break
+		}
+	}
+	if fIdx == -1 && eIdx == -1 {
+		return content
+	}
+	lines = append([]string{}, lines[fIdx:eIdx]...)
+	return strings.Join(lines, "\n")
+}
