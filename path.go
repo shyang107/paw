@@ -447,17 +447,17 @@ func (fl *FileList) OrderedByFolder() {
 	OrderedBy(byFolder, byFileName).Sort(fl.Files)
 }
 
-// OutputMode : FileList output mode
-type OutputMode uint
+// // OutputMode : FileList output mode
+// type OutputMode uint
 
-const (
-	// OPlainTextMode : FileList output in plain text mode (default, use PrintPlain())
-	OPlainTextMode OutputMode = iota
-	// OTableFormatMode : FileList output in TableFormat mode (use PrintWithTableFormat())
-	OTableFormatMode
-	// OTreeMode : FileList output in tree mode (use PrintTree())
-	OTreeMode
-)
+// const (
+// 	// OPlainTextMode : FileList output in plain text mode (default, use PrintPlain())
+// 	OPlainTextMode OutputMode = iota
+// 	// OTableFormatMode : FileList output in TableFormat mode (use PrintWithTableFormat())
+// 	OTableFormatMode
+// 	// OTreeMode : FileList output in tree mode (use PrintTree())
+// 	OTreeMode
+// )
 
 // Print filelist with `head`
 func (fl FileList) Print(w io.Writer, mode OutputMode, head, pad string) {
@@ -548,11 +548,11 @@ func collectFiles(files []File) (fdm map[string][]string, fdk []string) {
 	return fdm, fdk
 }
 
-func trimPath(path string) string {
-	mpath := TrimPrefix(path, "./")
-	mpath = TrimSuffix(mpath, "/")
-	return mpath
-}
+// func trimPath(path string) string {
+// 	mpath := TrimPrefix(path, "./")
+// 	mpath = TrimSuffix(mpath, "/")
+// 	return mpath
+// }
 
 func findRoot(files []File) (root, fullpath string) {
 	var (

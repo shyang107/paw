@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/shyang107/paw"
@@ -33,17 +33,23 @@ func exFilesMap() {
 
 	// re := regexp.MustCompile(regexPattern)
 
-	fileList := paw.FileList{}
+	fm := paw.NewFilesMap()
 	// exclude := func(f paw.File) bool {
 	// 	return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
 	// }
 	exclude := func(f paw.File) bool {
 		return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || paw.REUsuallyExclude.MatchString(f.FullPath))
 	}
-	fileList.GetFilesFunc(sourceFolder, isRecursive, exclude)
-	fileList.OrderedByFolder()
-	// fileList.Print(os.Stdout, paw.OPlainTextMode, head, "# ")
-	// fileList.Print(os.Stdout, paw.OTableFormatMode, head, "# ")
-	// fileList.Print(os.Stdout, paw.OTreeMode, head, "# ")
-	fmt.Println(fileList)
+	fm.GetFilesFunc(sourceFolder, isRecursive, exclude)
+	// fm.OrderedByFolder()
+	fm.OrderedAll()
+	pad := "# "
+	// fm.Print(os.Stdout, paw.OPlainTextMode, head, pad)
+	// fm.Print(os.Stdout, paw.OTableFormatMode, head, pad)
+	fm.Print(os.Stdout, paw.OTreeMode, head, pad)
+	// fm.PrintPlain(os.Stdout, head, pad)
+	// fmt.Println(fm)
+	// fmt.Println(fm.PlainText(head, pad))
+	// fmt.Println(fm.Table(head, pad))
+	// fmt.Println(fm.Tree(head, pad))
 }
