@@ -2,13 +2,16 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/shyang107/paw/cast"
+	"github.com/shyang107/paw/treeprint"
+
 	"github.com/davecgh/go-spew/spew"
-	"github.com/mitchellh/go-homedir"
 
 	"github.com/sirupsen/logrus"
 
@@ -69,8 +72,8 @@ func main() {
 	// exTextTemplate()
 	// exRegEx2()
 	// sourceFolder := os.Args[1]
-	// sourceFolder := "../"
-	sourceFolder, _ := homedir.Expand("~/Downloads/")
+	sourceFolder := "../"
+	// sourceFolder, _ := homedir.Expand("~/Downloads/0")
 	// sourceFolder := "/Users/shyang/go/src/rover/opcc/"
 	exWalk(sourceFolder)
 	// exFilesMap(sourceFolder)
@@ -101,9 +104,7 @@ func exWalk(root string) {
 		// if paw.REUsuallyExclude.MatchString(path) || strings.HasPrefix(base, ".") {
 		// 	return nil
 		// }
-		// if strings.HasPrefix(base, ".") {
-		// 	return nil
-		// }
+
 		pl := strings.Split(path, "/")
 		for _, p := range pl {
 			if strings.HasPrefix(p, ".") { // ignore hidden files
@@ -132,57 +133,126 @@ func exWalk(root string) {
 		return nil
 	})
 	dirs = funk.Keys(folder).([]string)
-	fmt.Println(nd, "directories,", nf, "files.")
+	fmt.Println(nd-1, "directories,", nf, "files.")
 	sort.Strings(dirs)
 	// spew.Dump(folder)
 	spew.Dump(dirs)
-	output(root, dirs, folder)
+	// textoutput(root, dirs, folder)
+	treeoutput(root, dirs, folder)
 
 }
 
-func output(root string, dirs []string, folder map[string][]string) {
+func treeoutput(root string, dirs []string, folder map[string][]string) {
+	nd, nf := 0, 0
+	w := os.Stdout
+
+	tree := treeprint.New()
+	for _, dir := range dirs {
+		nd++
+		ss := strings.Split(strings.TrimPrefix(dir, "/"), "/")
+		ns := len(ss)
+		level := ns
+		// fmt.Printf("ss[%d]: %v\n", ns, ss)
+		treend := make([]treeprint.Tree, ns)
+		switch {
+		case len(dir) == 0: // root
+			level = 0
+			nd--
+			// tree.SetMetaValue(fmt.Sprintf("%d (%d directories, %d files)",
+			// 	len(folder[dir]), len(dirs)-1, nFiles(folder)))
+			tree.SetMetaValue(fmt.Sprintf("%d", len(folder[dir])))
+			tree.SetValue(fmt.Sprintf("%s » root: %q", "./", root))
+			treend[0] = tree
+		default: // subfolder
+			treend[0] = tree.FindByValue(ss[0])
+			if treend[0] == nil {
+				treend[0] = tree.AddMetaBranch(cast.ToString(len(folder[dir])), ss[0])
+			}
+			for i := 1; i < ns; i++ {
+				treend[i] = treend[i-1].FindByValue(ss[i])
+				if treend[i] == nil {
+					treend[i] = treend[i-1].AddMetaBranch(cast.ToString(len(folder[dir])), ss[i])
+				}
+			}
+		}
+		if len(folder[dir]) == 0 {
+			continue
+		}
+		nf += len(folder[dir])
+		level++
+		// if treend[ns-1] == nil {
+		// 	fmt.Println("root:", root, "dir:", dir)
+		// 	os.Exit(1)
+		// }
+		for _, f := range folder[dir] {
+			treend[ns-1].AddNode(f)
+		}
+	}
+	fprintWithLevel(w, 0, tree.String())
+	fprintWithLevel(w, 0, fmt.Sprintf("%d directories, %d files.", nd, nf))
+}
+
+func nFiles(folder map[string][]string) int {
+	n := 0
+	for _, v := range folder {
+		n += len(v)
+	}
+	return n
+}
+
+func textoutput(root string, dirs []string, folder map[string][]string) {
 	top := strings.Repeat("=", 80)
 	mid := strings.Repeat("-", 80)
 	buttom := top
 	nd, nf := 0, 0
-	fmt.Println(top)
+	w := os.Stdout
+	fprintWithLevel(w, 0, top)
 
 	for i, dir := range dirs {
-		var (
-			k = 2
-		)
+		// var (
+		// 	k = 2
+		// )
 		level := len(strings.Split(dir, "/")) - 1
 		nd++
 		switch {
 		case len(dir) == 0:
 			level = 0
 			nd--
-			print(level, fmt.Sprintf("%2d %s", i+1, root))
+			fprintWithLevel(w, level, fmt.Sprintf("%2d %s", i+1, root))
 		case len(folder[dir]) == 0:
-			print(level, fmt.Sprintf("%2d %s", i+1, dir))
+			fprintWithLevel(w, level, fmt.Sprintf("%2d %s", i+1, dir))
 			goto MID
 			continue
 		default:
-			print(level, fmt.Sprintf("%2d %s", i+1, dir))
+			fprintWithLevel(w, level, fmt.Sprintf("%2d %s", i+1, dir))
 		}
 		nf += len(folder[dir])
 		// k := 2
 		level++
 		for j, f := range folder[dir] {
-			if j > k {
-				break
-			}
-			print(level, fmt.Sprintf("%2d %s", j+1, f))
+			// if j > k {
+			// 	break
+			// }
+			fprintWithLevel(w, level, fmt.Sprintf("%2d %s", j+1, f))
 		}
 	MID:
 		if i < len(dirs)-1 {
-			fmt.Println(mid)
+			// level--
+			// fprintWithLevel(w, level, mid[:len(mid)-2*level])
+			fprintWithLevel(w, 0, mid)
 		}
 	}
-	fmt.Println(buttom)
-	fmt.Println(nd, "directories,", nf, "files.")
+	fprintWithLevel(w, 0, buttom)
+	fprintWithLevel(w, 0, fmt.Sprintf("%d directories, %d files.", nd, nf))
 }
-func print(level int, row string) {
+
+func fprintWithLevel(w io.Writer, level int, row string) {
+	ns := 2
+	space := " "
+	pad := strings.Repeat(space, ns*level)
+	fmt.Fprintln(w, pad, row)
+}
+func printWithLevel(level int, row string) {
 	ns := 2
 	space := " "
 	pad := strings.Repeat(space, ns*level)
