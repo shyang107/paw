@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -312,12 +313,82 @@ func fprintWithLevel(w io.Writer, level int, row string) {
 	fmt.Fprintln(w, pad, row)
 }
 
-func walk(root string) (dirs []string, folder map[string][]string, err error) {
+// FindFiles ...
+func (m *PathMap) FindFiles(root string, isRecursive bool) error {
 
 	root, _ = filepath.Abs(root)
-	root = strings.TrimSuffix(root, "/")
+	// root = strings.TrimSuffix(root, "/")
+	dirs := []string{}
+	folder := make(map[string][]string)
+	var err error
+	if isRecursive {
+		err = walkDir(root, &dirs, &folder)
+	} else {
+		err = ioReadDir(root, &dirs, &folder)
+	}
+	if err != nil {
+		return err
+	}
 
-	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	m.SetRoot(root)
+	m.SetDirs(dirs)
+	m.SetFolder(folder)
+
+	return nil
+}
+
+func osReadDir(root string, dirs *[]string, folder *map[string][]string) error {
+
+	f, err := os.Open(root)
+	if err != nil {
+		return err
+	}
+
+	fis, err := f.Readdir(-1)
+	defer f.Close()
+	if err != nil {
+		return err
+	}
+
+	for _, fi := range fis {
+		// TODO ignoring conditions
+		if strings.HasPrefix(fi.Name(), ".") { // ignore hidden files
+			continue
+		}
+		(*folder)[""] = append((*folder)[""], fi.Name())
+	}
+
+	*dirs = append(*dirs, "")
+
+	return nil
+}
+
+func ioReadDir(root string, dirs *[]string, folder *map[string][]string) error {
+	// root, _ = filepath.Abs(root)
+	// root = strings.TrimSuffix(root, "/")
+	fis, err := ioutil.ReadDir(root)
+	if err != nil {
+		return err
+	}
+	for _, fi := range fis {
+		// TODO ignoring conditions
+		if strings.HasPrefix(fi.Name(), ".") { // ignore hidden files
+			continue
+		}
+		(*folder)[""] = append((*folder)[""], fi.Name())
+	}
+
+	*dirs = append(*dirs, "")
+
+	return nil
+}
+
+func walkDir(root string, dirs *[]string, folder *map[string][]string) error {
+
+	// root, _ = filepath.Abs(root)
+	// root = strings.TrimSuffix(root, "/")
+
+	visitFile := func(path string, info os.FileInfo, err error) error {
 		// fmt.Println(path)
 		if err != nil {
 			fmt.Println(err) // can't walk here,
@@ -343,18 +414,21 @@ func walk(root string) (dirs []string, folder map[string][]string, err error) {
 		// fmt.Printf("%q %q\n", sub, base)
 
 		if info.IsDir() {
-			if _, ok := folder[sub]; !ok {
-				folder[sub] = []string{}
+			if _, ok := (*folder)[sub]; !ok {
+				(*folder)[sub] = []string{}
+				(*dirs) = append(*dirs, sub)
 			}
 		} else {
 			sub = strings.TrimSuffix(sub, base)
 			sub = strings.TrimSuffix(sub, "/")
-			folder[sub] = append(folder[sub], base)
+			(*folder)[sub] = append((*folder)[sub], base)
 		}
 		return nil
-	})
-	if err != nil {
-		return nil, nil, err
 	}
-	return dirs, folder, nil
+
+	err := filepath.Walk(root, visitFile)
+	if err != nil {
+		return err
+	}
+	return nil
 }

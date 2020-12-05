@@ -71,12 +71,28 @@ func main() {
 	// exGrouppingFiles4()
 	// exTextTemplate()
 	// exRegEx2()
-	// sourceFolder := os.Args[1]
-	sourceFolder := "../"
-	// sourceFolder, _ := homedir.Expand("~/Downloads/0")
-	// sourceFolder := "/Users/shyang/go/src/rover/opcc/"
-	exWalk(sourceFolder)
-	// exFilesMap(sourceFolder)
+	// root := os.Args[1]
+	root := "../"
+	// root, _ := homedir.Expand("~/Downloads/0")
+	// root := "/Users/shyang/go/src/rover/opcc/"
+	// exWalk(root)
+	// exFilesMap(root)
+	exPathMap(root)
+}
+
+func exPathMap(root string) {
+	root, _ = filepath.Abs(root)
+	root = strings.TrimSuffix(root, "/")
+
+	pm := paw.NewPathMap()
+	isRecursive := false
+	w := os.Stdout
+	pm.FindFiles(root, isRecursive)
+	// spew.Dump(pm.GetDirs())
+
+	pm.Fprint(w, paw.OPlainTextMode, "", "")
+	pm.Fprint(w, paw.OTableFormatMode, "", "")
+	pm.Fprint(w, paw.OTreeMode, "", "")
 }
 
 func exWalk(root string) {
