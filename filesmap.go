@@ -393,18 +393,6 @@ func findFilesMapFunc(folder string, isRecursive bool, exclude func(file File) b
 	return files, err
 }
 
-// OutputMode : FileList output mode
-type OutputMode uint
-
-const (
-	// OPlainTextMode : FileList output in plain text mode (default, use PrintPlain())
-	OPlainTextMode OutputMode = iota
-	// OTableFormatMode : FileList output in TableFormat mode (use PrintWithTableFormat())
-	OTableFormatMode
-	// OTreeMode : FileList output in tree mode (use PrintTree())
-	OTreeMode
-)
-
 // Fprint filelist with `head`
 func (m *FilesMap) Fprint(w io.Writer, mode OutputMode, head, pad string) {
 	switch mode {

@@ -137,12 +137,12 @@ func exWalk(root string) {
 	sort.Strings(dirs)
 	// spew.Dump(folder)
 	spew.Dump(dirs)
-	// textoutput(root, dirs, folder)
-	treeoutput(root, dirs, folder)
-
+	// outputText(root, dirs, folder)
+	// outputTree(root, dirs, folder)
+	outputTable(root, dirs, folder)
 }
 
-func treeoutput(root string, dirs []string, folder map[string][]string) {
+func outputTree(root string, dirs []string, folder map[string][]string) {
 	nd, nf := 0, 0
 	w := os.Stdout
 
@@ -200,7 +200,52 @@ func nFiles(folder map[string][]string) int {
 	return n
 }
 
-func textoutput(root string, dirs []string, folder map[string][]string) {
+func outputTable(root string, dirs []string, folder map[string][]string) {
+	nd, nf := 0, 0
+
+	w := os.Stdout
+
+	tf := paw.NewTableFormat()
+	tf.Fields = []string{"No.", "Files"}
+	tf.LenFields = []int{4, 76}
+	tf.Aligns = []paw.Align{paw.AlignRight, paw.AlignLeft}
+	tf.Prepare(w)
+
+	// tf.SetBeforeMessage(msg)
+	tf.PrintSart()
+	for i, dir := range dirs {
+		level := len(strings.Split(dir, "/")) - 1
+		dfiles := len(folder[dir])
+		nd++
+		subhead := fmt.Sprintf("Depth: %d, .%s ( %d files)", level, dir, dfiles)
+		switch {
+		case len(dir) == 0:
+			level = 0
+			nd--
+			tf.PrintRow("", fmt.Sprintf("Depth: %d, %s ( %d files)", level, root, dfiles))
+		case len(folder[dir]) == 0:
+			tf.PrintRow("", subhead)
+			goto MID
+		default:
+			tf.PrintRow("", subhead)
+		}
+		nf += len(folder[dir])
+		level++
+		for j, f := range folder[dir] {
+			tf.PrintRow(cast.ToString(j+1), f)
+
+		}
+	MID:
+		// tf.PrintRow("", fmt.Sprintf("Sum: %d files.", len(folder[dir])))
+		if i < len(dirs)-1 {
+			tf.PrintMiddleSepLine()
+		}
+	}
+	tf.SetAfterMessage(fmt.Sprintf("\n%d directories, %d files\n", nd, nf))
+	tf.PrintEnd()
+}
+
+func outputText(root string, dirs []string, folder map[string][]string) {
 	top := strings.Repeat("=", 80)
 	mid := strings.Repeat("-", 80)
 	buttom := top
@@ -209,9 +254,6 @@ func textoutput(root string, dirs []string, folder map[string][]string) {
 	fprintWithLevel(w, 0, top)
 
 	for i, dir := range dirs {
-		// var (
-		// 	k = 2
-		// )
 		level := len(strings.Split(dir, "/")) - 1
 		nd++
 		switch {
@@ -227,18 +269,12 @@ func textoutput(root string, dirs []string, folder map[string][]string) {
 			fprintWithLevel(w, level, fmt.Sprintf("%2d %s", i+1, dir))
 		}
 		nf += len(folder[dir])
-		// k := 2
 		level++
 		for j, f := range folder[dir] {
-			// if j > k {
-			// 	break
-			// }
 			fprintWithLevel(w, level, fmt.Sprintf("%2d %s", j+1, f))
 		}
 	MID:
 		if i < len(dirs)-1 {
-			// level--
-			// fprintWithLevel(w, level, mid[:len(mid)-2*level])
 			fprintWithLevel(w, 0, mid)
 		}
 	}

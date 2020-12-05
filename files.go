@@ -254,3 +254,15 @@ func GrouppingFiles(files []File) {
 	fl := &FileList{files}
 	fl.OrderedByFolder()
 }
+
+// OutputMode : FileList output mode
+type OutputMode uint
+
+const (
+	// OPlainTextMode : FileList output in plain text mode (default, use PrintPlain())
+	OPlainTextMode OutputMode = iota
+	// OTableFormatMode : FileList output in TableFormat mode (use PrintWithTableFormat())
+	OTableFormatMode
+	// OTreeMode : FileList output in tree mode (use PrintTree())
+	OTreeMode
+)
