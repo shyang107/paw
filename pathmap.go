@@ -14,10 +14,12 @@ import (
 )
 
 type pmCondition struct {
-	targetType []string // 目標檔案型別
-	ignoreFile []string // 忽略檔案 (檔名，包括副檔名)
-	ignorePath []string // 忽略目錄
-	ignoreType []string // 忽略檔案型別
+	ignoreHidden    bool     // 第一優先， `true` 忽略路徑中以 `.` 開頭的檔案或目錄
+	ignoreCondition bool     // false 忽略過濾條件
+	targetType      []string // 目標檔案型別
+	ignoreFile      []string // 忽略檔案 (檔名，包括副檔名)
+	ignorePath      []string // 忽略目錄
+	ignoreType      []string // 忽略檔案型別
 }
 
 // PathMap store paths of files
@@ -35,10 +37,12 @@ func NewPathMap() *PathMap {
 		folder: make(map[string][]string),
 		dirs:   []string{},
 		cond: pmCondition{
-			targetType: []string{},
-			ignoreFile: []string{},
-			ignorePath: []string{},
-			ignoreType: []string{},
+			ignoreHidden:    true,       // 第一優先， `true` 忽略路徑中以 `.` 開頭的檔案或目錄
+			ignoreCondition: true,       // false 忽略過濾條件
+			targetType:      []string{}, // 目標檔案型別
+			ignoreFile:      []string{}, // 忽略檔案 (檔名，包括副檔名)
+			ignorePath:      []string{}, // 忽略目錄
+			ignoreType:      []string{}, // 忽略檔案型別
 		},
 	}
 	return p
@@ -87,18 +91,12 @@ func (m *PathMap) GetDirs() []string {
 	return m.dirs
 }
 
-// GetInfos will return `[]os.FileInfo` of paths
-func (m *PathMap) GetInfos() ([]os.FileInfo, error) {
+// GetFileInfo will return `[]os.FileInfo` of paths
+func (m *PathMap) GetFileInfo() ([]os.FileInfo, error) {
 	fis := []os.FileInfo{}
-	path := ""
 	for k, files := range m.folder {
-		if len(k) == 0 {
-			path = m.root
-		} else {
-			path = m.root + k + "/"
-		}
 		for _, f := range files {
-			path += f
+			path := filepath.Join(m.root, k, f)
 			fi, err := os.Stat(path)
 			if err != nil {
 				return nil, err
@@ -107,6 +105,33 @@ func (m *PathMap) GetInfos() ([]os.FileInfo, error) {
 		}
 	}
 	return fis, nil
+}
+
+// GetPaths will return string of all fullpaths
+func (m *PathMap) GetPaths() []string {
+	fs := []string{}
+	for _, dir := range m.dirs {
+		for _, name := range m.folder[dir] {
+			fullpath := filepath.Join(m.root, dir, name)
+			fs = append(fs, fullpath)
+		}
+	}
+	return fs
+}
+
+// GetPathsString will return string of all fullpaths
+func (m *PathMap) GetPathsString() string {
+	buf := new(bytes.Buffer)
+	i := 1
+	for _, dir := range m.dirs {
+		for _, name := range m.folder[dir] {
+			fullpath := filepath.Join(m.root, dir, name)
+			buf.WriteString(fmt.Sprintf("%d. %s\n", i, fullpath))
+			i++
+		}
+	}
+	buf.WriteString(fmt.Sprintf("\n%d directories, %d files.\n", m.NDirs(), m.NFiles()))
+	return string(buf.Bytes())
 }
 
 // NFiles will return the numbers of files
@@ -125,11 +150,15 @@ func (m *PathMap) NDirs() int {
 }
 
 // SetCondition store conditions to filter files
-func (m *PathMap) SetCondition(targetType, ignoreFile, ignorePath, ignoreType []string) {
-	m.cond.targetType = targetType
-	m.cond.ignoreFile = ignoreType
-	m.cond.ignorePath = ignorePath
-	m.cond.ignoreType = ignoreType
+func (m *PathMap) SetCondition(ignoreHidden, ignoreCondition bool, targetType, ignoreFile, ignorePath, ignoreType []string) {
+	m.cond = pmCondition{
+		ignoreHidden:    ignoreHidden,    // 第一優先， `true` 忽略路徑中以 `.` 開頭的檔案或目錄
+		ignoreCondition: ignoreCondition, // false 忽略過濾條件
+		targetType:      targetType,      // 目標檔案型別
+		ignoreFile:      ignoreFile,      // 忽略檔案 (檔名，包括副檔名)
+		ignorePath:      ignorePath,      // 忽略目錄
+		ignoreType:      ignoreType,      // 忽略檔案型別
+	}
 }
 
 // GetCondition will return `map[{condition}][]string` of filter-conditions of files
@@ -140,20 +169,6 @@ func (m *PathMap) GetCondition() map[string][]string {
 	cond["ignorePath"] = m.cond.ignorePath
 	cond["ignoreType"] = m.cond.ignoreType
 	return cond
-}
-
-// PathList will return string of all fullpaths
-func (m *PathMap) PathList() string {
-	buf := new(bytes.Buffer)
-	i := 1
-	for _, dir := range m.dirs {
-		for _, name := range m.folder[dir] {
-			fullpath := filepath.Join(m.root, dir, name)
-			buf.WriteString(fmt.Sprintf("%4d %s\n", i, fullpath))
-			i++
-		}
-	}
-	return string(buf.Bytes())
 }
 
 // Fprint filelist with `head`
@@ -318,12 +333,12 @@ func foutputText(w io.Writer, root string, dirs []string, folder map[string][]st
 	for i, dir := range dirs {
 		level := len(strings.Split(dir, "/")) - 1
 		nd++
-		subhead := fmt.Sprintf("%2d %s", i+1, dir)
+		subhead := fmt.Sprintf("%2d. %s", i+1, dir)
 		switch {
 		case len(dir) == 0:
 			level = 0
 			nd--
-			fprintWithLevel(w, level, fmt.Sprintf("%2d %s", i+1, root))
+			fprintWithLevel(w, level, fmt.Sprintf("%2d. %s", i+1, root))
 		case len(folder[dir]) == 0:
 			fprintWithLevel(w, level, subhead)
 			goto MID
@@ -334,7 +349,7 @@ func foutputText(w io.Writer, root string, dirs []string, folder map[string][]st
 		nf += len(folder[dir])
 		level++
 		for j, f := range folder[dir] {
-			fprintWithLevel(w, level, fmt.Sprintf("%2d %s", j+1, f))
+			fprintWithLevel(w, level, fmt.Sprintf("%2d. %s", j+1, f))
 		}
 	MID:
 		if i < len(dirs)-1 {
@@ -359,7 +374,10 @@ func fprintWithLevel(w io.Writer, level int, row string) {
 	fmt.Fprintln(w, pad, row)
 }
 
-// FindFiles ...
+// FindFiles finds diles and fills into `PathMap` w.r.t. some conditions (`m.cond`, see `m.GetCondition()`)
+// 	isRecursive:
+// 		false to find files only in `root` directory
+//		true  to find recursive files including subfolders
 func (m *PathMap) FindFiles(root string, isRecursive bool) error {
 
 	root, _ = filepath.Abs(root)
@@ -368,9 +386,9 @@ func (m *PathMap) FindFiles(root string, isRecursive bool) error {
 	folder := make(map[string][]string)
 	var err error
 	if isRecursive {
-		err = walkDir(root, &dirs, &folder)
+		err = walkDir(root, &dirs, &folder, &m.cond)
 	} else {
-		err = ioReadDir(root, &dirs, &folder)
+		err = ioReadDir(root, &dirs, &folder, &m.cond)
 	}
 	if err != nil {
 		return err
@@ -383,7 +401,7 @@ func (m *PathMap) FindFiles(root string, isRecursive bool) error {
 	return nil
 }
 
-func osReadDir(root string, dirs *[]string, folder *map[string][]string) error {
+func osReadDir(root string, dirs *[]string, folder *map[string][]string, cond *pmCondition) error {
 
 	f, err := os.Open(root)
 	if err != nil {
@@ -397,11 +415,14 @@ func osReadDir(root string, dirs *[]string, folder *map[string][]string) error {
 	}
 
 	for _, fi := range fis {
-		// TODO ignoring conditions
-		if strings.HasPrefix(fi.Name(), ".") { // ignore hidden files
-			continue
+		if cond.ignoreHidden { // ignore hidden files
+			if strings.HasPrefix(fi.Name(), ".") {
+				continue
+			}
 		}
-		(*folder)[""] = append((*folder)[""], fi.Name())
+		if isAddFile(fi.Name(), cond) { // 是否執行過濾條件
+			(*folder)[""] = append((*folder)[""], fi.Name())
+		}
 	}
 
 	*dirs = append(*dirs, "")
@@ -409,19 +430,23 @@ func osReadDir(root string, dirs *[]string, folder *map[string][]string) error {
 	return nil
 }
 
-func ioReadDir(root string, dirs *[]string, folder *map[string][]string) error {
+func ioReadDir(root string, dirs *[]string, folder *map[string][]string, cond *pmCondition) error {
 	// root, _ = filepath.Abs(root)
 	// root = strings.TrimSuffix(root, "/")
 	fis, err := ioutil.ReadDir(root)
 	if err != nil {
 		return err
 	}
+
 	for _, fi := range fis {
-		// TODO ignoring conditions
-		if strings.HasPrefix(fi.Name(), ".") { // ignore hidden files
-			continue
+		if cond.ignoreHidden { // ignore hidden files
+			if strings.HasPrefix(fi.Name(), ".") {
+				continue
+			}
 		}
-		(*folder)[""] = append((*folder)[""], fi.Name())
+		if isAddFile(fi.Name(), cond) { // 是否執行過濾條件
+			(*folder)[""] = append((*folder)[""], fi.Name())
+		}
 	}
 
 	*dirs = append(*dirs, "")
@@ -429,45 +454,46 @@ func ioReadDir(root string, dirs *[]string, folder *map[string][]string) error {
 	return nil
 }
 
-func walkDir(root string, dirs *[]string, folder *map[string][]string) error {
-
-	// root, _ = filepath.Abs(root)
-	// root = strings.TrimSuffix(root, "/")
+func walkDir(root string, dirs *[]string, folder *map[string][]string, cond *pmCondition) error {
 
 	visitFile := func(path string, info os.FileInfo, err error) error {
 		// fmt.Println(path)
 		if err != nil {
-			fmt.Println(err) // can't walk here,
-			return nil       // but continue walking elsewhere
+			Logger.Errorln(err) // can't walk here,
+			return nil          // but continue walking elsewhere
 		}
 
-		apath, _ := filepath.Abs(path)
+		// apath, _ := filepath.Abs(path)
+		// base := filepath.Base(apath)
+		base := info.Name()
+		sub := strings.TrimPrefix(path, root)
 
-		base := filepath.Base(apath)
-		sub := strings.TrimPrefix(apath, root)
-
-		// if paw.REUsuallyExclude.MatchString(path) || strings.HasPrefix(base, ".") {
-		// 	return nil
-		// }
-		// TODO ignoring coditions
-		pl := strings.Split(path, "/")
-		for _, p := range pl {
-			if strings.HasPrefix(p, ".") { // ignore hidden files
-				return nil
+		if cond.ignoreHidden { // ignore hidden files
+			pl := strings.Split(path, "/")
+			for _, p := range pl {
+				if strings.HasPrefix(p, ".") {
+					return nil
+				}
 			}
 		}
 
-		// fmt.Printf("%q %q\n", sub, base)
-
-		if info.IsDir() {
+		if info.IsDir() { // 子目錄
+			if cond.ignoreCondition { // 執行過濾條件
+				// 過濾被忽略的資料夾 (資料夾名完全相同)
+				if isInArray(&cond.ignorePath, base) {
+					return filepath.SkipDir
+				}
+			}
 			if _, ok := (*folder)[sub]; !ok {
 				(*folder)[sub] = []string{}
 				(*dirs) = append(*dirs, sub)
 			}
-		} else {
-			sub = strings.TrimSuffix(sub, base)
-			sub = strings.TrimSuffix(sub, "/")
-			(*folder)[sub] = append((*folder)[sub], base)
+		} else { // 檔案
+			sub = strings.TrimSuffix(sub, "/"+base)
+			// sub = strings.TrimSuffix(sub, "/")
+			if isAddFile(base, cond) { // 是否執行過濾條件
+				(*folder)[sub] = append((*folder)[sub], base)
+			}
 		}
 		return nil
 	}
@@ -477,4 +503,39 @@ func walkDir(root string, dirs *[]string, folder *map[string][]string) error {
 		return err
 	}
 	return nil
+}
+
+func isAddFile(base string, c *pmCondition) bool {
+	if !c.ignoreCondition { // 不執行過濾條件
+		return true // 加入檔案
+	} else { // 執行過濾條件
+		// 目標檔案型別被指定
+		if !isAllEmpty(&c.targetType) {
+			// 屬於目標檔案型別
+			if isInSuffix(&c.targetType, base) {
+				// 忽略檔案為空 或者 目標檔案中不含有指定忽略檔案
+				if isAllEmpty(&c.ignoreFile) || !isInArray(&c.ignoreFile, base) {
+					return true // 加入檔案
+				}
+			}
+		} else { // 目標檔案型別為空
+			// fmt.Printf("%v %q\n", ignoreType, base)
+			// 忽略檔案型別被指定
+			if !isAllEmpty(&c.ignoreType) {
+				// 不屬於忽略檔案型別
+				if !isInSuffix(&c.ignoreType, base) {
+					// 忽略檔案為空 或者 目標檔案中不含有指定忽略檔案
+					if isAllEmpty(&c.ignoreFile) || !isInArray(&c.ignoreFile, base) {
+						return true // 加入檔案
+					}
+				}
+			} else { // 忽略檔案型別為空
+				// 忽略檔案為空 或者 目標檔案中不含有指定忽略檔案
+				if isAllEmpty(&c.ignoreFile) || !isInArray(&c.ignoreFile, base) {
+					return true // 加入檔案
+				}
+			}
+		}
+	}
+	return false // 不加入檔案
 }
