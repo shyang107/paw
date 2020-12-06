@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/treeprint"
 
@@ -72,8 +73,8 @@ func main() {
 	// exTextTemplate()
 	// exRegEx2()
 	// root := os.Args[1]
-	root := "../"
-	// root, _ := homedir.Expand("~/Downloads/0")
+	// root := "../"
+	root, _ := homedir.Expand("~/Downloads/0")
 	// root := "/Users/shyang/go/src/rover/opcc/"
 	// exWalk(root)
 	// exFilesMap(root)
@@ -85,14 +86,16 @@ func exPathMap(root string) {
 	root = strings.TrimSuffix(root, "/")
 
 	pm := paw.NewPathMap()
-	isRecursive := false
+	isRecursive := true
 	w := os.Stdout
 	pm.FindFiles(root, isRecursive)
 	// spew.Dump(pm.GetDirs())
-
 	pm.Fprint(w, paw.OPlainTextMode, "", "")
-	pm.Fprint(w, paw.OTableFormatMode, "", "")
-	pm.Fprint(w, paw.OTreeMode, "", "")
+	// pm.Fprint(w, paw.OTableFormatMode, "", "")
+	// pm.Fprint(w, paw.OTreeMode, "", "")
+	spew.Dump(pm)
+	fmt.Println(pm.PathList())
+	spew.Dump(pm.GetCondition())
 }
 
 func exWalk(root string) {

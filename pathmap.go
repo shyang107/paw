@@ -13,11 +13,19 @@ import (
 	"github.com/shyang107/paw/treeprint"
 )
 
+type pmCondition struct {
+	targetType []string // 目標檔案型別
+	ignoreFile []string // 忽略檔案 (檔名，包括副檔名)
+	ignorePath []string // 忽略目錄
+	ignoreType []string // 忽略檔案型別
+}
+
 // PathMap store paths of files
 type PathMap struct {
-	root   string
-	folder map[string][]string
-	dirs   []string
+	root   string              // 根目錄
+	folder map[string][]string // 檔案名稱 (basename, xxxx.xxx) map ，按子目錄儲存，完整路徑為 root +
+	dirs   []string            // 子目錄索引，路徑不含根目錄
+	cond   pmCondition         // 檔案過濾條件
 }
 
 // NewPathMap will return an instance of `PathMap`
@@ -26,13 +34,19 @@ func NewPathMap() *PathMap {
 		root:   "",
 		folder: make(map[string][]string),
 		dirs:   []string{},
+		cond: pmCondition{
+			targetType: []string{},
+			ignoreFile: []string{},
+			ignorePath: []string{},
+			ignoreType: []string{},
+		},
 	}
 	return p
 }
 
-func (m PathMap) String() string {
-	return m.Text("", "")
-}
+// func (m PathMap) String() string {
+// 	return m.Text("", "")
+// }
 
 // SetFolder will store `folder`
 func (m *PathMap) SetFolder(folder map[string][]string) {
@@ -108,6 +122,38 @@ func (m *PathMap) NFiles() int {
 // NDirs will return the numbers of sub-directories
 func (m *PathMap) NDirs() int {
 	return len(m.GetDirs()) - 1
+}
+
+// SetCondition store conditions to filter files
+func (m *PathMap) SetCondition(targetType, ignoreFile, ignorePath, ignoreType []string) {
+	m.cond.targetType = targetType
+	m.cond.ignoreFile = ignoreType
+	m.cond.ignorePath = ignorePath
+	m.cond.ignoreType = ignoreType
+}
+
+// GetCondition will return `map[{condition}][]string` of filter-conditions of files
+func (m *PathMap) GetCondition() map[string][]string {
+	cond := make(map[string][]string)
+	cond["targetType"] = m.cond.targetType
+	cond["ignoreFile"] = m.cond.ignoreFile
+	cond["ignorePath"] = m.cond.ignorePath
+	cond["ignoreType"] = m.cond.ignoreType
+	return cond
+}
+
+// PathList will return string of all fullpaths
+func (m *PathMap) PathList() string {
+	buf := new(bytes.Buffer)
+	i := 1
+	for _, dir := range m.dirs {
+		for _, name := range m.folder[dir] {
+			fullpath := filepath.Join(m.root, dir, name)
+			buf.WriteString(fmt.Sprintf("%4d %s\n", i, fullpath))
+			i++
+		}
+	}
+	return string(buf.Bytes())
 }
 
 // Fprint filelist with `head`
