@@ -8,15 +8,15 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/shyang107/paw/cast"
-	"github.com/shyang107/paw/treeprint"
-
 	"github.com/davecgh/go-spew/spew"
-
-	"github.com/sirupsen/logrus"
-
+	"github.com/fatih/color"
+	"github.com/mattn/go-isatty"
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/funk"
+	"github.com/shyang107/paw/godirwalk"
+	"github.com/shyang107/paw/treeprint"
+	"github.com/sirupsen/logrus"
 	// "github.com/thoas/go-funk"
 )
 
@@ -78,6 +78,83 @@ func main() {
 	// exWalk(root)
 	// exFilesMap(root)
 	exPathMap(root)
+	// exColor()
+}
+
+var (
+	typeDesc = map[string]string{
+		"di": "directory",
+		"fi": "file",
+		"ln": "symbolic link",
+		"pi": "fifo file",
+		"so": "socket file",
+		"bd": "block (buffered) special file",
+		"cd": "character (unbuffered) special file",
+		"or": "symbolic link pointing to a non-existent file (orphan)",
+		"mi": "non-existent file pointed to by a symbolic link (visible when you type ls -l)",
+		"ex": "file which is executable (ie. has 'x' set in permissions)",
+	}
+	colors  = make(map[string]string)
+	exts    = []string{}
+	NoColor = os.Getenv("TERM") == "dumb" || !(isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()))
+)
+
+func init() {
+	getcolors()
+}
+func getcolors() {
+	colorenv := os.Getenv("LS_COLORS")
+	args := strings.Split(colorenv, ":")
+
+	// colors := make(map[string]string)
+	// ctypes := make(map[string]string)
+	// exts := []string{}
+	for _, a := range args {
+		// fmt.Printf("%v\t", a)
+		kv := strings.Split(a, "=")
+
+		// fmt.Printf("%v\n", kv)
+		if len(kv) == 2 {
+			colors[kv[0]] = kv[1]
+			exts = append(exts, kv[0])
+		}
+	}
+	// sort.Strings(exts)
+}
+func exColor() {
+	// colorenv := os.Getenv("LS_COLORS")
+	// fmt.Println(colorenv)
+	// buf := []byte{}
+	for _, c := range exts {
+		str := colorstr(colors[c], c+" : "+colors[c])
+		fmt.Println(str)
+		// fmt.Println(c, ":", colors[c])
+		// fmt.Printf("%s\n")
+		// buf = append(buf, cbyte(colors[c], c+" : "+colors[c])...) // very first print should set normal
+		// buf = append(buf, '\n')
+		// os.Stdout.Write(buf)
+		// buf = buf[:0]
+	}
+}
+func colorstr(code, s string) string {
+	att := []color.Attribute{}
+	for _, a := range strings.Split(code, ";") {
+		att = append(att, color.Attribute(cast.ToInt(a)))
+	}
+	cs := color.New(att...)
+	return cs.Sprint(s)
+}
+
+func fileColorStr(ext, s string) string {
+	switch {
+	case NoColor:
+		return s
+	default:
+		if _, ok := colors[ext]; !ok {
+			return s
+		}
+		return colorstr(colors[ext], s)
+	}
 }
 
 func exPathMap(root string) {
@@ -98,14 +175,51 @@ func exPathMap(root string) {
 	pm.FindFiles(root, isRecursive)
 	// spew.Dump(pm.GetDirs())
 	w := os.Stdout
-	pm.Fprint(w, paw.OPlainTextMode, "", "")
+	// pm.Fprint(w, paw.OPlainTextMode, "", "")
 	// pm.Fprint(w, paw.OTableFormatMode, "", "")
-	// pm.Fprint(w, paw.OTreeMode, "", "")
+	pm.Fprint(w, paw.OTreeMode, "", "")
 	// spew.Dump(pm)
 	// fmt.Println(pm.GetFilesString())
 	// spew.Dump(pm.GetCondition())
-	for i, f := range pm.GetFiles() {
-		fmt.Println(i+1, f)
+	// for i, f := range pm.GetPaths() {
+	// 	fmt.Println(i+1, f)
+	// }
+	return
+	i := 1
+	godirwalk.Walk(root, &godirwalk.Options{
+		Callback: func(osPathname string, de *godirwalk.Dirent) error {
+			if b, err := de.IsDirOrSymlinkToDir(); b == true && err == nil {
+				if strings.HasPrefix(de.Name(), ".") {
+					// return filepath.SkipDir
+					return godirwalk.SkipThis
+				}
+			} else {
+				if strings.HasPrefix(de.Name(), ".") {
+					return nil
+				}
+				// fmt.Printf("%d. %s %s %s\n", i, de.ModeType(), osPathname, ext)
+				str, _ := paw.FileColorStr(osPathname, osPathname)
+				fmt.Printf("%d. %s %s\n", i, de.ModeType(), str)
+				i++
+
+			}
+			return nil
+		},
+		// Unsorted: false,
+	})
+
+	children, _ := godirwalk.ReadDirnames(root, nil)
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "cannot get list of directory children")
+	// }
+	sort.Strings(children)
+
+	for _, child := range children {
+		base, err := paw.FileColorStr(filepath.Join(root, child), child)
+		if err != nil {
+			paw.Logger.Errorln(err)
+		}
+		fmt.Printf("%s\n", base)
 	}
 }
 

@@ -2,6 +2,7 @@ package paw
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,9 +10,116 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fatih/color"
+	"github.com/mattn/go-isatty"
 	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/treeprint"
 )
+
+var (
+	typeDesc = map[string]string{
+		"di": "directory",
+		"fi": "file",
+		"ln": "symbolic link",
+		"pi": "fifo file",
+		"so": "socket file",
+		"bd": "block (buffered) special file",
+		"cd": "character (unbuffered) special file",
+		"or": "symbolic link pointing to a non-existent file (orphan)",
+		"mi": "non-existent file pointed to by a symbolic link (visible when you type ls -l)",
+		"ex": "file which is executable (ie. has 'x' set in permissions)",
+	}
+	// colors = make(map[string]string)
+	colors = make(map[string][]color.Attribute)
+	// exts    = []string{}
+
+	// NoColor check from the type of terminal and
+	// determine output to terminal in color (`true`) or not (`false`)
+	NoColor = os.Getenv("TERM") == "dumb" || !(isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()))
+)
+
+func init() {
+	getcolors()
+}
+
+// SetNoColor will set `true` to `NoColor`
+func SetNoColor() {
+	NoColor = true
+}
+
+// ResumNoColor will resume the default value of `NoColor`
+func ResumNoColor() {
+	NoColor = os.Getenv("TERM") == "dumb" || !(isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()))
+}
+
+func getcolors() {
+	colorenv := os.Getenv("LS_COLORS")
+	args := strings.Split(colorenv, ":")
+
+	// colors := make(map[string]string)
+	// ctypes := make(map[string]string)
+	// exts := []string{}
+	for _, a := range args {
+		// fmt.Printf("%v\t", a)
+		kv := strings.Split(a, "=")
+
+		// fmt.Printf("%v\n", kv)
+		if len(kv) == 2 {
+			colors[kv[0]] = getColorAttribute(kv[1])
+			// exts = append(exts, kv[0])
+		}
+	}
+	// sort.Strings(exts)
+}
+
+func getColorAttribute(code string) []color.Attribute {
+	att := []color.Attribute{}
+	for _, a := range strings.Split(code, ";") {
+		att = append(att, color.Attribute(cast.ToInt(a)))
+	}
+	return att
+}
+
+func colorstr(att []color.Attribute, s string) string {
+	cs := color.New(att...)
+	return cs.Sprint(s)
+}
+
+// FileColorStr will return the color string of `s` form `fullpath`
+func FileColorStr(fullpath, s string) (string, error) {
+	ext, err := GetColorExt(fullpath)
+	if err != nil {
+		return "", err
+	}
+	switch {
+	case NoColor:
+		return s, nil
+	default:
+		if _, ok := colors[ext]; !ok {
+			return s, nil
+		}
+		return colorstr(colors[ext], s), nil
+	}
+}
+
+// GetColorExt will return the color key of extention from `fullpath`
+func GetColorExt(fullpath string) (ext string, err error) {
+	fi, err := os.Stat(fullpath)
+	if err != nil {
+		return "", errors.New("GetColorExt:" + err.Error())
+	}
+	switch mode := fi.Mode(); {
+	case mode.IsDir():
+		ext = "di"
+	case mode&os.ModeSymlink != 0:
+		ext = "ln"
+	case mode&os.ModeSocket != 0:
+		ext = "so"
+	default:
+		ext = "*" + filepath.Ext(fullpath)
+	}
+	return ext, nil
+}
 
 type pmCondition struct {
 	ignoreHidden    bool     // 第一優先， `true` 忽略路徑中以 `.` 開頭的檔案或目錄
@@ -256,7 +364,9 @@ func foutputTree(w io.Writer, root string, dirs []string, folder map[string][]st
 // Table will return a string in table mode with `head` (use `FprintTable`)
 func (m *PathMap) Table(head, pad string) string {
 	buf := new(bytes.Buffer)
+	SetNoColor()
 	m.Fprint(buf, OTableFormatMode, head, pad)
+	ResumNoColor()
 	return TrimFrontEndSpaceLine(string(buf.Bytes()))
 }
 
@@ -277,12 +387,17 @@ func foutputTable(tf *TableFormat, root string, dirs []string, folder map[string
 		level := len(strings.Split(dir, "/")) - 1
 		dfiles := len(folder[dir])
 		nd++
-		subhead := fmt.Sprintf("Depth: %d, .%s ( %d files)", level, dir, dfiles)
+		// subhead := fmt.Sprintf("Depth: %d, .%s ( %d files)", level, dir, dfiles)
+		fullpath := filepath.Join(root, dir)
+		str, _ := FileColorStr(fullpath, dir)
+		subhead := fmt.Sprintf("Depth: %d, .%s ( %d files)", level, str, dfiles)
 		switch {
 		case len(dir) == 0:
 			level = 0
 			nd--
-			tf.PrintRow("", fmt.Sprintf("Depth: %d, %s ( %d files)", level, root, dfiles))
+			// tf.PrintRow("", fmt.Sprintf("Depth: %d, %s ( %d files)", level, root, dfiles))
+			str, _ := FileColorStr(root, root)
+			tf.PrintRow("", fmt.Sprintf("Depth: %d, %s ( %d files)", level, str, dfiles))
 		case len(folder[dir]) == 0:
 			tf.PrintRow("", subhead)
 			goto MID
@@ -292,7 +407,10 @@ func foutputTable(tf *TableFormat, root string, dirs []string, folder map[string
 		nf += len(folder[dir])
 		level++
 		for j, f := range folder[dir] {
-			tf.PrintRow(cast.ToString(j+1), f)
+			// tf.PrintRow(cast.ToString(j+1), f)
+			fullpath := filepath.Join(root, dir, f)
+			str, _ := FileColorStr(fullpath, f)
+			tf.PrintRow(cast.ToString(j+1), str)
 
 		}
 	MID:
@@ -308,7 +426,9 @@ func foutputTable(tf *TableFormat, root string, dirs []string, folder map[string
 // Text return string in plain text mode (use `FprintText`)
 func (m *PathMap) Text(head, pad string) string {
 	buf := new(bytes.Buffer)
+	SetNoColor()
 	m.Fprint(buf, OPlainTextMode, head, pad)
+	ResumNoColor()
 	return TrimFrontEndSpaceLine(string(buf.Bytes()))
 }
 
@@ -333,12 +453,17 @@ func foutputText(w io.Writer, root string, dirs []string, folder map[string][]st
 	for i, dir := range dirs {
 		level := len(strings.Split(dir, "/")) - 1
 		nd++
-		subhead := fmt.Sprintf("%2d. %s", i+1, dir)
+		// subhead := fmt.Sprintf("%2d. %s", i+1, dir)
+		fullpath := filepath.Join(root, dir)
+		str, _ := FileColorStr(fullpath, dir)
+		subhead := fmt.Sprintf("%2d. %s", i+1, str)
 		switch {
 		case len(dir) == 0:
 			level = 0
 			nd--
-			fprintWithLevel(w, level, fmt.Sprintf("%2d. %s", i+1, root))
+			// fprintWithLevel(w, level, fmt.Sprintf("%2d. %s", i+1, root))
+			str, _ := FileColorStr(root, root)
+			fprintWithLevel(w, level, fmt.Sprintf("%2d. %s", i+1, str))
 		case len(folder[dir]) == 0:
 			fprintWithLevel(w, level, subhead)
 			goto MID
@@ -349,7 +474,10 @@ func foutputText(w io.Writer, root string, dirs []string, folder map[string][]st
 		nf += len(folder[dir])
 		level++
 		for j, f := range folder[dir] {
-			fprintWithLevel(w, level, fmt.Sprintf("%2d. %s", j+1, f))
+			// fprintWithLevel(w, level, fmt.Sprintf("%2d. %s", j+1, f))
+			fullpath := filepath.Join(root, dir, f)
+			str, _ := FileColorStr(fullpath, f)
+			fprintWithLevel(w, level, fmt.Sprintf("%2d. %s", j+1, str))
 		}
 	MID:
 		if i < len(dirs)-1 {
@@ -508,34 +636,35 @@ func walkDir(root string, dirs *[]string, folder *map[string][]string, cond *pmC
 func isAddFile(base string, c *pmCondition) bool {
 	if !c.ignoreCondition { // 不執行過濾條件
 		return true // 加入檔案
-	} else { // 執行過濾條件
-		// 目標檔案型別被指定
-		if !isAllEmpty(&c.targetType) {
-			// 屬於目標檔案型別
-			if isInSuffix(&c.targetType, base) {
+	}
+	// 執行過濾條件
+	// 目標檔案型別被指定
+	if !isAllEmpty(&c.targetType) {
+		// 屬於目標檔案型別
+		if isInSuffix(&c.targetType, base) {
+			// 忽略檔案為空 或者 目標檔案中不含有指定忽略檔案
+			if isAllEmpty(&c.ignoreFile) || !isInArray(&c.ignoreFile, base) {
+				return true // 加入檔案
+			}
+		}
+	} else { // 目標檔案型別為空
+		// fmt.Printf("%v %q\n", ignoreType, base)
+		// 忽略檔案型別被指定
+		if !isAllEmpty(&c.ignoreType) {
+			// 不屬於忽略檔案型別
+			if !isInSuffix(&c.ignoreType, base) {
 				// 忽略檔案為空 或者 目標檔案中不含有指定忽略檔案
 				if isAllEmpty(&c.ignoreFile) || !isInArray(&c.ignoreFile, base) {
 					return true // 加入檔案
 				}
 			}
-		} else { // 目標檔案型別為空
-			// fmt.Printf("%v %q\n", ignoreType, base)
-			// 忽略檔案型別被指定
-			if !isAllEmpty(&c.ignoreType) {
-				// 不屬於忽略檔案型別
-				if !isInSuffix(&c.ignoreType, base) {
-					// 忽略檔案為空 或者 目標檔案中不含有指定忽略檔案
-					if isAllEmpty(&c.ignoreFile) || !isInArray(&c.ignoreFile, base) {
-						return true // 加入檔案
-					}
-				}
-			} else { // 忽略檔案型別為空
-				// 忽略檔案為空 或者 目標檔案中不含有指定忽略檔案
-				if isAllEmpty(&c.ignoreFile) || !isInArray(&c.ignoreFile, base) {
-					return true // 加入檔案
-				}
+		} else { // 忽略檔案型別為空
+			// 忽略檔案為空 或者 目標檔案中不含有指定忽略檔案
+			if isAllEmpty(&c.ignoreFile) || !isInArray(&c.ignoreFile, base) {
+				return true // 加入檔案
 			}
 		}
 	}
+
 	return false // 不加入檔案
 }
