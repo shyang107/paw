@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	typeDesc = map[string]string{
+	// TypeDesc ...
+	TypeDesc = map[string]string{
 		"di": "directory",
 		"fi": "file",
 		"ln": "symbolic link",
@@ -29,8 +30,8 @@ var (
 		"mi": "non-existent file pointed to by a symbolic link (visible when you type ls -l)",
 		"ex": "file which is executable (ie. has 'x' set in permissions)",
 	}
-	// colors = make(map[string]string)
-	colors = make(map[string][]color.Attribute)
+	// Colors = make(map[string]string)
+	Colors = make(map[string][]color.Attribute)
 	// exts    = []string{}
 
 	// NoColor check from the type of terminal and
@@ -65,7 +66,7 @@ func getcolors() {
 
 		// fmt.Printf("%v\n", kv)
 		if len(kv) == 2 {
-			colors[kv[0]] = getColorAttribute(kv[1])
+			Colors[kv[0]] = getColorAttribute(kv[1])
 			// exts = append(exts, kv[0])
 		}
 	}
@@ -95,10 +96,10 @@ func FileColorStr(fullpath, s string) (string, error) {
 	case NoColor:
 		return s, nil
 	default:
-		if _, ok := colors[ext]; !ok {
+		if _, ok := Colors[ext]; !ok {
 			return s, nil
 		}
-		return colorstr(colors[ext], s), nil
+		return colorstr(Colors[ext], s), nil
 	}
 }
 
@@ -330,7 +331,7 @@ func foutputTree(w io.Writer, root string, dirs []string, folder map[string][]st
 			// tree.SetMetaValue(fmt.Sprintf("%d (%d directories, %d files)",
 			// 	len(folder[dir]), len(dirs)-1, nFiles(folder)))
 			tree.SetMetaValue(fmt.Sprintf("%d", len(folder[dir])))
-			tree.SetValue(fmt.Sprintf("%s » root: %q", "./", root))
+			tree.SetValue(fmt.Sprintf("%s » root: %s", "./", root))
 			treend[0] = tree
 		default: // subfolder
 			treend[0] = tree.FindByValue(ss[0])
@@ -357,8 +358,104 @@ func foutputTree(w io.Writer, root string, dirs []string, folder map[string][]st
 			treend[ns-1].AddNode(f)
 		}
 	}
-	fprintWithLevel(w, 0, tree.String())
+	// fprintWithLevel(w, 0, tree.String())
+	printTreeColor(w, tree.String())
+	fprintWithLevel(w, 0, "")
 	fprintWithLevel(w, 0, fmt.Sprintf("%d directories, %d files.", nd, nf))
+}
+
+func printTreeColor(w io.Writer, s string) {
+	// dirRE := regexp.MustCompile(`\[\d+?\]\s\s([\w\-\.]+)$`)
+	// fileRE := regexp.MustCompile(`\s([\w\-\.]+)$`)
+	s = TrimFrontEndSpaceLine(s)
+	lines := strings.Split(s, "\n")
+	var buf []byte
+	fields := strings.Split(lines[0], ":")
+	sep := "./"
+	// buf = append(buf, fields[0]...)
+	part1 := strings.Split(fields[0], sep)
+	buf = append(buf, part1[0]...)
+	cstr := colorstr(Colors["di"], sep)
+	buf = append(buf, cstr...)
+	buf = append(buf, part1[1]...)
+
+	cstr = colorstr(Colors["di"], fields[1])
+	buf = append(buf, ':')
+	buf = append(buf, cstr...)         // print match
+	os.Stdout.Write(append(buf, '\n')) // don't forget newline
+	buf = buf[:0]
+
+	for _, row := range lines[1:] {
+		// matches := dirRE.FindAllStringSubmatchIndex(row, -1)
+		// spew.Dump(matches)
+		sep := "]  "
+		fields := strings.Split(row, sep)
+		if len(fields) == 2 {
+			buf = append(buf, fields[0]...) // print text before match
+			buf = append(buf, sep...)
+			cstr := colorstr(Colors["di"], fields[1])
+			buf = append(buf, cstr...)         // print match
+			os.Stdout.Write(append(buf, '\n')) // don't forget newline
+			buf = buf[:0]
+			continue
+		}
+
+		sep = "── "
+		fields = strings.Split(row, sep)
+		if len(fields) == 2 {
+			buf = append(buf, fields[0]...) // print text before match
+			buf = append(buf, sep...)
+			ext := "*" + filepath.Ext(fields[1])
+			cstr := colorstr(Colors[ext], fields[1])
+			buf = append(buf, cstr...)         // print match
+			os.Stdout.Write(append(buf, '\n')) // don't forget newline
+			buf = buf[:0]
+			continue
+		} else {
+			Logger.Errorln("file")
+			continue
+		}
+		// if matches != nil || len(matches[0]) > 0 {
+		// 	buf = append(buf, row[:matches[0][2]]...) // print text before match
+		// 	cstr := row[matches[0][2]:matches[0][3]]
+		// 	// fmt.Println(row, "->", cstr)
+		// 	cstr = colorstr(Colors["di"], cstr)
+		// 	buf = append(buf, cstr...)         // print match
+		// 	os.Stdout.Write(append(buf, '\n')) // don't forget newline
+		// 	buf = buf[:0]
+		// 	continue
+		// }
+		// matches = fileRE.FindAllStringSubmatchIndex(row, -1)
+		// if len(matches) == 0 {
+		// 	buf = append(buf, row...)
+		// 	os.Stdout.Write(append(buf, '\n')) // don't forget newline
+		// 	buf = buf[:0]
+		// 	continue
+		// }
+		// if matches != nil || len(matches[0]) > 0 {
+		// 	buf = append(buf, row[:matches[0][2]]...) // print text before match
+		// 	cstr := row[matches[0][2]:matches[0][3]]
+		// 	// fmt.Println(row, "->", cstr)
+		// 	ext := "*" + filepath.Ext(cstr)
+		// 	cstr = colorstr(Colors[ext], cstr)
+		// 	buf = append(buf, cstr...)         // print match
+		// 	os.Stdout.Write(append(buf, '\n')) // don't forget newline
+		// 	buf = buf[:0]
+		// 	continue
+		// }
+		// var prev int
+		// for _, tuple := range matches {
+		// 	buf = append(buf, row[prev:tuple[0]]...) // print text before match
+		// 	// buf = append(buf, row[tuple[0]:tuple[1]]...) // print match
+		// 	cstr := row[tuple[0]:tuple[1]]
+		// 	fmt.Println(row, "->", cstr)
+		// 	cstr = colorstr(Colors["di"], s)
+		// 	buf = append(buf, cstr...) // print match
+		// 	prev = tuple[1]
+		// }
+		// // buf = append(buf, row[prev:]...) // print remaining
+		// // _, err := os.Stdout.Write(append(buf, '\n')) // don't forget newline
+	}
 }
 
 // Table will return a string in table mode with `head` (use `FprintTable`)
