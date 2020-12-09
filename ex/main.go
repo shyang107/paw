@@ -94,8 +94,9 @@ var (
 		"mi": "non-existent file pointed to by a symbolic link (visible when you type ls -l)",
 		"ex": "file which is executable (ie. has 'x' set in permissions)",
 	}
-	colors  = make(map[string]string)
-	exts    = []string{}
+	colors = make(map[string]string)
+	exts   = []string{}
+	// NoColor ...
 	NoColor = os.Getenv("TERM") == "dumb" || !(isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()))
 )
 
@@ -175,9 +176,9 @@ func exPathMap(root string) {
 	pm.FindFiles(root, isRecursive)
 	// spew.Dump(pm.GetDirs())
 	w := os.Stdout
-	// pm.Fprint(w, paw.OPlainTextMode, "", "")
+	// pm.Fprint(w, paw.OPlainTextMode, "", "# ")
 	// pm.Fprint(w, paw.OTableFormatMode, "", "")
-	pm.Fprint(w, paw.OTreeMode, "", "")
+	pm.Fprint(w, paw.OTreeMode, "", "# ")
 	// spew.Dump(pm)
 	// fmt.Println(pm.GetFilesString())
 	// spew.Dump(pm.GetCondition())
@@ -199,7 +200,8 @@ func exPathMap(root string) {
 				}
 				// fmt.Printf("%d. %s %s %s\n", i, de.ModeType(), osPathname, ext)
 				str, _ := paw.FileColorStr(osPathname, osPathname)
-				fmt.Printf("%d. %s %s\n", i, de.ModeType(), str)
+
+				fmt.Printf("%d. %v %s\n", i, de.ModeType(), str)
 				i++
 
 			}
@@ -208,19 +210,23 @@ func exPathMap(root string) {
 		// Unsorted: false,
 	})
 
-	children, _ := godirwalk.ReadDirnames(root, nil)
+	root = "/Users/shyang"
+	fns, _ := godirwalk.ReadDirnames(root, nil)
 	// if err != nil {
 	// 	return nil, errors.Wrap(err, "cannot get list of directory children")
 	// }
-	sort.Strings(children)
+	sort.Strings(fns)
 
-	for _, child := range children {
-		base, err := paw.FileColorStr(filepath.Join(root, child), child)
+	for _, f := range fns {
+		path := filepath.Join(root, f)
+		base, err := paw.FileColorStr(path, f)
 		if err != nil {
 			paw.Logger.Errorln(err)
 		}
-		fmt.Printf("%s\n", base)
+		fi, _ := os.Lstat(path)
+		fmt.Printf("%s %s\n", fi.Mode(), base)
 	}
+
 }
 
 func exWalk(root string) {

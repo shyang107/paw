@@ -8,11 +8,15 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
 	"github.com/shyang107/paw/cast"
+	"github.com/shyang107/paw/funk"
 	"github.com/shyang107/paw/treeprint"
 )
 
@@ -105,18 +109,34 @@ func FileColorStr(fullpath, s string) (string, error) {
 
 // GetColorExt will return the color key of extention from `fullpath`
 func GetColorExt(fullpath string) (ext string, err error) {
-	fi, err := os.Stat(fullpath)
+	fi, err := os.Lstat(fullpath)
 	if err != nil {
 		return "", errors.New("GetColorExt:" + err.Error())
 	}
+
 	switch mode := fi.Mode(); {
-	case mode.IsDir():
-		ext = "di"
-	case mode&os.ModeSymlink != 0:
-		ext = "ln"
-	case mode&os.ModeSocket != 0:
-		ext = "so"
-	default:
+	case mode.IsDir(): // d: is a directory 資料夾模式
+		ext = "di" // di = directory
+
+	case mode&os.ModeSymlink != 0: // L: symbolic link 象徵性的關聯
+		ext = "ln" // ln = symbolic link
+		// if !HasFile(fullpath) { // or = symbolic link pointing to a non-existent file (orphan)
+		// 	ext = "or"
+		// } else { // mi = non-existent file pointed to by a symbolic link (visible when you type ls -l)
+		// 	ext = "mi"
+		// }
+	case mode&os.ModeSocket != 0: // S: Unix domain socket Unix 主機 socket
+		ext = "so" // so = socket file
+	case mode&os.ModeNamedPipe != 0:
+		ext = "pi" //pi = fifo file
+	// case mode&os.ModeDevice != 0:
+	// 	ext = ""
+
+	// bd = block (buffered) special file
+	// cd = character (unbuffered) special file
+
+	// ex = file which is executable (ie. has 'x' set in permissions)
+	default: // fi = file
 		ext = "*" + filepath.Ext(fullpath)
 	}
 	return ext, nil
@@ -192,6 +212,7 @@ func (m *PathMap) SetDirs(dirs []string) {
 	if dirs == nil {
 		return
 	}
+	sort.Strings(dirs)
 	m.dirs = dirs
 }
 
@@ -307,9 +328,13 @@ func (m *PathMap) Tree(head, pad string) string {
 
 // FprintTree print out in tree mode
 func (m *PathMap) FprintTree(w io.Writer, head, pad string) {
-	fmt.Fprintln(w, PaddingString(head, pad))
+	if len(head) > 0 {
+		fmt.Fprintln(w, PaddingString(head, pad))
+	}
 	fmt.Fprintln(w, pad)
-	foutputTree(w, m.GetRoot(), m.GetDirs(), m.GetFolder())
+	buf := new(bytes.Buffer)
+	foutputTreeX2(buf, m.GetRoot(), m.GetDirs(), m.GetFolder())
+	fmt.Fprintln(w, PaddingString(string(buf.Bytes()), pad))
 }
 
 func foutputTree(w io.Writer, root string, dirs []string, folder map[string][]string) {
@@ -322,7 +347,6 @@ func foutputTree(w io.Writer, root string, dirs []string, folder map[string][]st
 		ss := strings.Split(strings.TrimPrefix(dir, "/"), "/")
 		ns := len(ss)
 		level := ns
-		// fmt.Printf("ss[%d]: %v\n", ns, ss)
 		treend := make([]treeprint.Tree, ns)
 		switch {
 		case len(dir) == 0: // root
@@ -350,10 +374,6 @@ func foutputTree(w io.Writer, root string, dirs []string, folder map[string][]st
 		}
 		nf += len(folder[dir])
 		level++
-		// if treend[ns-1] == nil {
-		// 	fmt.Println("root:", root, "dir:", dir)
-		// 	os.Exit(1)
-		// }
 		for _, f := range folder[dir] {
 			treend[ns-1].AddNode(f)
 		}
@@ -362,100 +382,423 @@ func foutputTree(w io.Writer, root string, dirs []string, folder map[string][]st
 	printTreeColor(w, tree.String())
 	fprintWithLevel(w, 0, "")
 	fprintWithLevel(w, 0, fmt.Sprintf("%d directories, %d files.", nd, nf))
+	// fprintWithLevel(w, 0, "")
 }
 
 func printTreeColor(w io.Writer, s string) {
-	// dirRE := regexp.MustCompile(`\[\d+?\]\s\s([\w\-\.]+)$`)
-	// fileRE := regexp.MustCompile(`\s([\w\-\.]+)$`)
+	if NoColor {
+		fmt.Fprintln(w, s)
+		return
+	}
 	s = TrimFrontEndSpaceLine(s)
+	buf := new(bytes.Buffer)
+
 	lines := strings.Split(s, "\n")
-	var buf []byte
-	fields := strings.Split(lines[0], ":")
-	sep := "./"
-	// buf = append(buf, fields[0]...)
+	sep := ":"
+	fields := strings.Split(lines[0], sep)
+	sep = "./"
 	part1 := strings.Split(fields[0], sep)
-	buf = append(buf, part1[0]...)
+	buf.WriteString(part1[0])
 	cstr := colorstr(Colors["di"], sep)
-	buf = append(buf, cstr...)
-	buf = append(buf, part1[1]...)
+	buf.WriteString(cstr)
+	buf.WriteString(part1[1])
 
 	cstr = colorstr(Colors["di"], fields[1])
-	buf = append(buf, ':')
-	buf = append(buf, cstr...)         // print match
-	os.Stdout.Write(append(buf, '\n')) // don't forget newline
-	buf = buf[:0]
+	buf.WriteString(":" + cstr + "\n") // print match
 
 	for _, row := range lines[1:] {
-		// matches := dirRE.FindAllStringSubmatchIndex(row, -1)
-		// spew.Dump(matches)
 		sep := "]  "
 		fields := strings.Split(row, sep)
 		if len(fields) == 2 {
-			buf = append(buf, fields[0]...) // print text before match
-			buf = append(buf, sep...)
+			buf.WriteString(fields[0] + sep) // print text before match
 			cstr := colorstr(Colors["di"], fields[1])
-			buf = append(buf, cstr...)         // print match
-			os.Stdout.Write(append(buf, '\n')) // don't forget newline
-			buf = buf[:0]
+			buf.WriteString(cstr + "\n") // print match
 			continue
 		}
 
 		sep = "── "
 		fields = strings.Split(row, sep)
 		if len(fields) == 2 {
-			buf = append(buf, fields[0]...) // print text before match
-			buf = append(buf, sep...)
+			buf.WriteString(fields[0] + sep) // print text before match
 			ext := "*" + filepath.Ext(fields[1])
 			cstr := colorstr(Colors[ext], fields[1])
-			buf = append(buf, cstr...)         // print match
-			os.Stdout.Write(append(buf, '\n')) // don't forget newline
-			buf = buf[:0]
+			buf.WriteString(cstr + "\n") // print match
 			continue
 		} else {
 			Logger.Errorln("file")
 			continue
 		}
-		// if matches != nil || len(matches[0]) > 0 {
-		// 	buf = append(buf, row[:matches[0][2]]...) // print text before match
-		// 	cstr := row[matches[0][2]:matches[0][3]]
-		// 	// fmt.Println(row, "->", cstr)
-		// 	cstr = colorstr(Colors["di"], cstr)
-		// 	buf = append(buf, cstr...)         // print match
-		// 	os.Stdout.Write(append(buf, '\n')) // don't forget newline
-		// 	buf = buf[:0]
-		// 	continue
-		// }
-		// matches = fileRE.FindAllStringSubmatchIndex(row, -1)
-		// if len(matches) == 0 {
-		// 	buf = append(buf, row...)
-		// 	os.Stdout.Write(append(buf, '\n')) // don't forget newline
-		// 	buf = buf[:0]
-		// 	continue
-		// }
-		// if matches != nil || len(matches[0]) > 0 {
-		// 	buf = append(buf, row[:matches[0][2]]...) // print text before match
-		// 	cstr := row[matches[0][2]:matches[0][3]]
-		// 	// fmt.Println(row, "->", cstr)
-		// 	ext := "*" + filepath.Ext(cstr)
-		// 	cstr = colorstr(Colors[ext], cstr)
-		// 	buf = append(buf, cstr...)         // print match
-		// 	os.Stdout.Write(append(buf, '\n')) // don't forget newline
-		// 	buf = buf[:0]
-		// 	continue
-		// }
-		// var prev int
-		// for _, tuple := range matches {
-		// 	buf = append(buf, row[prev:tuple[0]]...) // print text before match
-		// 	// buf = append(buf, row[tuple[0]:tuple[1]]...) // print match
-		// 	cstr := row[tuple[0]:tuple[1]]
-		// 	fmt.Println(row, "->", cstr)
-		// 	cstr = colorstr(Colors["di"], s)
-		// 	buf = append(buf, cstr...) // print match
-		// 	prev = tuple[1]
-		// }
-		// // buf = append(buf, row[prev:]...) // print remaining
-		// // _, err := os.Stdout.Write(append(buf, '\n')) // don't forget newline
 	}
+	buf.WriteTo(w)
+}
+
+// EdgeType is edge string for tree view output
+type EdgeType string
+
+var (
+	// EdgeTypeLink is "│"
+	EdgeTypeLink EdgeType = "│"
+	// EdgeTypeMid is "├──"
+	EdgeTypeMid EdgeType = "├──"
+	// EdgeTypeEnd is "└──"
+	EdgeTypeEnd EdgeType = "└──"
+)
+
+// IndentSize is the number of spaces per tree level.
+var IndentSize = 3
+
+func foutputTreeX2(w io.Writer, root string, dirs []string, folder map[string][]string) {
+	// fmt.Fprintln(w, root)
+	// fmt.Println(root)
+	// spew.Dump(dirs)
+	// spew.Dump(folder)
+	var (
+		// rootRelDir = "-" // FileSummary.RelDir
+		// level0    = ""  // FileSummary.RelDir
+		nd, nf int
+		sp     = " "
+	)
+
+	levelm := getLevelm(dirs)
+	// for _, dir := range dirs {
+	// 	fmt.Printf("level: %-2d %q\n", levelm[dir], dir)
+	// }
+	// return
+	// spew.Dump(levelm)
+	// fs := transferToFileSummaryList(root, dirs, folder)
+	// spew.Dump(fs)
+	dm := getSubdirsMap(dirs)
+	for _, dir := range dirs {
+		if len(dm[dir]) == 0 {
+			continue
+		}
+		nd += len(dm[dir])
+		ss := strings.Split(dir, string(os.PathSeparator))
+		ns := len(ss) - 1
+		fmt.Printf("%s%q %d %v\n", strings.Repeat(sp, 3*ns), dir, len(dm[dir]), dm[dir])
+	}
+	fmt.Printf("%d directories\n", nd)
+	return
+	for i, dir := range dirs {
+		nd++
+		fullpath := filepath.Join(root, dir)
+		ds := NewFileSummary(fullpath, root)
+		// dirpath := ds.RelDir
+		level := levelm[dir]
+		meta := getSubdirsMeta(dir, dirs, folder)
+		if len(dir) == 0 { // root
+			nd--
+			croot, _ := FileColorStr(fullpath, "./")
+			croot += " "
+			cstr, _ := FileColorStr(fullpath, root)
+			fmt.Fprintf(w, "%s%d. %s\n", strings.Repeat(sp, IndentSize*level), i, croot+meta+cstr)
+		} else { // subfolder
+			level--
+			// edge := EdgeTypeMid
+			edge := getEdge(i, 0, dir, dirs, folder, level, levelm)
+			cstr, _ := FileColorStr(fullpath, ds.Name)
+			fmt.Fprintf(w, "%s %d. %s\n", edge, i, meta+cstr)
+			level++
+		}
+		continue
+		for j, file := range folder[dir] {
+			fullpath := filepath.Join(root, dir, file)
+			fs := NewFileSummary(fullpath, root)
+			edge := EdgeTypeMid
+			// edge := getEdge(i, j, dir, dirs, folder, level, levelm)
+			cstr, _ := FileColorStr(fullpath, fs.Name)
+			fmt.Fprintf(w, "%s%s %d. %s\n", strings.Repeat(sp, IndentSize*level), edge, nf+j+1, cstr)
+		}
+		nf += len(folder[dir])
+	}
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "%d directories, %d files.\n", nd, nf)
+}
+
+func getEdge(id, jf int, dir string, dirs []string, folder map[string][]string, level int, levelm map[string]int) string {
+
+	buf := []byte{} // new(bytes.Buffer)
+	sp := " "
+	var edge EdgeType
+	nd := len(dirs) - 1
+	// nf := len(folder[dir])
+	edge = EdgeTypeMid
+	if jf == 0 { // dir
+		if level == 0 {
+			if id == nd { // last dir
+				edge = EdgeTypeEnd
+			}
+			buf = append(buf, edge...)
+		} else {
+			if id < nd {
+				buf = append(buf, EdgeTypeLink...)
+				buf = append(buf, strings.Repeat(sp, IndentSize*level)...)
+			}
+			buf = append(buf, edge...)
+		}
+		goto END
+	}
+	// jf != 0 files
+END:
+	return string(buf)
+}
+
+func getSubdirsMap(dirs []string) map[string][]string {
+	dm := make(map[string][]string)
+	for _, dir := range dirs {
+		dm[dir] = []string{}
+		dm[dir] = append(dm[dir], getSubdirsList(dir, dirs)...)
+	}
+	return dm
+}
+
+func getSubdirsList(root string, dirs []string) []string {
+	sdir := []string{}
+	for _, dir := range dirs {
+		if strings.HasPrefix(dir, root) {
+			path := strings.TrimPrefix(dir, root)
+			ss := strings.Split(path, string(os.PathSeparator))
+			if len(ss) < 2 {
+				continue
+			}
+			ss = ss[1:]
+			if !funk.ContainsString(sdir, ss[0]) {
+				sdir = append(sdir, ss[0])
+			}
+		}
+	}
+	return sdir
+}
+
+func getSubdirsMeta(root string, dirs []string, folder map[string][]string) string {
+	ndd := getNumSubdirs(root, dirs)
+	ndf := len(folder[root])
+	meta := fmt.Sprintf("[%d dirs., %d files] ", ndd, ndf)
+	return meta
+}
+
+func getNumSubdirs(root string, dirs []string) int {
+	nd := 0
+	for _, dir := range dirs {
+		if strings.HasPrefix(dir, root) {
+			nd++
+		}
+	}
+	return nd - 1
+}
+
+func transferToFileSummary(root, dir, file string) *FileSummary {
+	if len(file) == 0 {
+		fullpath := filepath.Join(root, dir)
+		fs := NewFileSummary(fullpath, root)
+		return fs
+	}
+	fullpath := filepath.Join(root, dir, file)
+	fs := NewFileSummary(fullpath, root)
+	return fs
+}
+
+func transferToFileSummaryList(root string, dirs []string, folder map[string][]string) []*FileSummary {
+	fs := []*FileSummary{}
+	for _, d := range dirs {
+		if len(folder[d]) == 0 {
+			fullpath := filepath.Join(root, d)
+			fs = append(fs, NewFileSummary(fullpath, root))
+			continue
+		}
+		for _, f := range folder[d] {
+			fullpath := filepath.Join(root, d, f)
+			fs = append(fs, NewFileSummary(fullpath, root))
+		}
+	}
+	return fs
+}
+
+func getLevelm(dirs []string) map[string]int {
+	levelm := make(map[string]int)
+	sep := "/"
+	for _, d := range dirs {
+		ss := strings.Split(d, sep)
+		n := len(ss) - 1
+		// fmt.Println(d, n, ss)
+		levelm[d] = n
+	}
+	return levelm
+}
+
+func printFileSummary(fullpath, root string) {
+	// var (
+	// 	fullpath string
+	// )
+	// fullpath = filepath.Join(root, dirs[0])
+	// printFileSummary(fullpath, root)
+
+	// fullpath = filepath.Join(root, dirs[1])
+	// printFileSummary(fullpath, root)
+
+	// fullpath = filepath.Join(root, dirs[1], folder[dirs[1]][0])
+	// printFileSummary(fullpath, root)
+
+	// fullpath = filepath.Join(root, dirs[2])
+	// printFileSummary(fullpath, root)
+
+	// fullpath = filepath.Join(root, dirs[2], folder[dirs[2]][0])
+	// printFileSummary(fullpath, root)
+	fs := NewFileSummary(fullpath, root)
+	fmt.Printf("      root: %q\n", root)
+	fmt.Printf("  fullpath: %q\n", fullpath)
+	fmt.Printf("   AbsPath: %q\n", fs.AbsPath)
+	fmt.Printf("    RelDir: %q\n", fs.RelDir)
+	fmt.Printf("      Name: %q\n", fs.Name)
+	fmt.Printf("       Ext: %q\n", fs.Ext)
+	fmt.Printf("     IsDir: %v\n", fs.IsDir)
+	fmt.Println()
+}
+
+func getDirsLevelsEnded(dirs []string) (dirsLE map[string][]int) {
+	spew.Dump(dirs)
+	sep := string(os.PathSeparator)
+	dirsLE = make(map[string][]int)
+	for _, dir := range dirs {
+		var levelsEnded []int
+		spdirs := strings.Split(dir, sep)
+		// spdirs = spdirs[:]
+		level := len(spdirs)
+		fmt.Printf("%d %v\n", level, spdirs)
+		if level < 0 {
+			levelsEnded = append(levelsEnded, level)
+		} else {
+			for i := 0; i < level; i++ {
+				levelsEnded = append(levelsEnded, i)
+			}
+		}
+		fmt.Printf("%d %v\n", level, levelsEnded)
+
+		if _, ok := dirsLE[dir]; !ok {
+			dirsLE[dir] = []int{}
+			dirsLE[dir] = append(dirsLE[dir], levelsEnded...)
+		}
+	}
+	// spew.Dump(dirsLE)
+	return dirsLE
+}
+
+func foutputTreeX1(w io.Writer, root string, dirs []string, folder map[string][]string) {
+
+	// top := strings.Repeat("=", 80)
+	// mid := strings.Repeat("-", 80)
+	// buttom := top
+	var (
+		buf    = new(bytes.Buffer)
+		nd, nf = 0, 0
+		// prevDir, nextDir = "", ""
+		nextDir    = ""
+		hasNextDir bool
+	)
+
+	hasNextDir = true
+	dirsLevelsEnded := getDirsLevelsEnded(dirs)
+	iLastDir := len(dirs) - 1
+	for i, dir := range dirs {
+		// fmt.Println(filepath.Dir(dir), ":", filepath.Base(dir))
+		nd++
+		if i < iLastDir {
+			nextDir = dirs[i+1]
+		} else {
+			nextDir = ""
+		}
+		var levelsEnded []int
+		level := 0
+		if len(dir) == 0 { // root
+			path, _ := FileColorStr(root, root)
+			root, _ := FileColorStr(root, "./")
+			// buf.WriteString(fmt.Sprintf("%2d. %s", i+1, str))
+			meta := fmt.Sprintf("%d", len(folder[dir]))
+			val := fmt.Sprintf("%s » [%s]", root, path)
+			buf.WriteString(fmt.Sprintf("%d. [%s] %s\n", i, meta, val))
+		} else { // subfolder: len(dir) > 0
+			// buf.WriteString(fmt.Sprintf("%v\n", strings.Split(dir, "/")))
+			level = len(strings.Split(dir, "/")) - 1
+			levelsEnded = dirsLevelsEnded[dir]
+			fullpath := filepath.Join(root, dir)
+			hasNextDir = strings.Contains(nextDir, dir) && len(levelsEnded) == len(dirsLevelsEnded[nextDir])
+			edge := EdgeTypeMid
+			if i == len(dirs)-1 || !hasNextDir {
+				edge = EdgeTypeEnd
+			}
+			printTreeValues(buf, level, levelsEnded, edge, i, fullpath, folder[dir])
+		}
+
+		nf += len(folder[dir])
+		// subdir := filepath.Join(root, dir)
+		// hasNextDir = strings.Contains(nextDir, dir)
+		if len(folder[dir]) > 0 {
+			// printTreeFiles(buf, level+1, levelsEnded, hasNextDir, subdir, folder[dir])
+			files := folder[dir]
+			for i, f := range files {
+				edge := EdgeTypeMid
+				if i == len(files)-1 {
+					// levelsEnded = append(levelsEnded, level)
+					edge = EdgeTypeEnd
+				}
+				if hasNextDir {
+					edge = EdgeTypeMid
+				}
+
+				fullpath := filepath.Join(root, dir, f)
+				printTreeValues(buf, level+1, levelsEnded, edge, i+1, fullpath, nil)
+			}
+		}
+		// prevDir = dir
+	}
+	buf.WriteString("\n")
+	buf.WriteString(fmt.Sprintf("%d directories, %d files.", nd, nf))
+	fmt.Fprintln(w, string(buf.Bytes()))
+}
+
+func printTreeFiles(wr io.Writer, level int, levelsEnded []int, hasNextDir bool, dir string, files []string) {
+	for i, f := range files {
+		edge := EdgeTypeMid
+		if i == len(files)-1 {
+			// levelsEnded = append(levelsEnded, level)
+			edge = EdgeTypeEnd
+		}
+		if hasNextDir {
+			edge = EdgeTypeMid
+		}
+
+		fullpath := filepath.Join(dir, f)
+		printTreeValues(wr, level, levelsEnded, edge, i+1, fullpath, nil)
+	}
+}
+
+func printTreeValues(wr io.Writer,
+	level int, levelsEnded []int, edge EdgeType, idx int, fullpath string, files []string) {
+
+	for i := 0; i < level-1; i++ {
+		if isEnded(levelsEnded, i) {
+			fmt.Fprint(wr, strings.Repeat(" ", IndentSize+1))
+			continue
+		}
+		fmt.Fprintf(wr, "%s%s", EdgeTypeLink, strings.Repeat(" ", IndentSize))
+	}
+
+	val, _ := FileColorStr(fullpath, filepath.Base(fullpath))
+	if files == nil || len(files) == 0 {
+		fmt.Fprintf(wr, "%s %d. %s\n", edge, idx, val)
+		return
+	}
+
+	fmt.Fprintf(wr, "%s %d. [%d]  %s\n", edge, idx, len(files), val)
+}
+
+func isEnded(levelsEnded []int, level int) bool {
+	for _, l := range levelsEnded {
+		if l == level {
+			return true
+		}
+	}
+	return false
 }
 
 // Table will return a string in table mode with `head` (use `FprintTable`)
@@ -539,7 +882,8 @@ func (m *PathMap) FprintText(w io.Writer, head, pad string) {
 	fmt.Fprintln(w, pad)
 }
 
-func foutputText(w io.Writer, root string, dirs []string, folder map[string][]string) {
+func foutputText(w io.Writer,
+	root string, dirs []string, folder map[string][]string) {
 
 	top := strings.Repeat("=", 80)
 	mid := strings.Repeat("-", 80)
