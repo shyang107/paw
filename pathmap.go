@@ -460,25 +460,18 @@ func foutputTreeX2(w io.Writer, root string, dirs []string, folder map[string][]
 	)
 
 	levelm := getLevelm(dirs)
-	// for _, dir := range dirs {
-	// 	fmt.Printf("level: %-2d %q\n", levelm[dir], dir)
-	// }
-	// return
-	// spew.Dump(levelm)
-	// fs := transferToFileSummaryList(root, dirs, folder)
-	// spew.Dump(fs)
 	dm := getSubdirsMap(dirs)
-	for _, dir := range dirs {
-		if len(dm[dir]) == 0 {
-			continue
-		}
-		nd += len(dm[dir])
-		ss := strings.Split(dir, string(os.PathSeparator))
-		ns := len(ss) - 1
-		fmt.Printf("%s%q %d %v\n", strings.Repeat(sp, 3*ns), dir, len(dm[dir]), dm[dir])
-	}
-	fmt.Printf("%d directories\n", nd)
-	return
+	// for _, dir := range dirs {
+	// 	if len(dm[dir]) == 0 {
+	// 		continue
+	// 	}
+	// 	nd += len(dm[dir])
+	// 	ss := strings.Split(dir, string(os.PathSeparator))
+	// 	ns := len(ss) - 1
+	// 	fmt.Printf("%s%q %d %v\n", strings.Repeat(sp, 3*ns), dir, len(dm[dir]), dm[dir])
+	// }
+	// fmt.Printf("%d directories\n", nd)
+	// return
 	for i, dir := range dirs {
 		nd++
 		fullpath := filepath.Join(root, dir)
@@ -495,7 +488,7 @@ func foutputTreeX2(w io.Writer, root string, dirs []string, folder map[string][]
 		} else { // subfolder
 			level--
 			// edge := EdgeTypeMid
-			edge := getEdge(i, 0, dir, dirs, folder, level, levelm)
+			edge := getEdge(i, 0, ds, dirs, folder, level, levelm, dm)
 			cstr, _ := FileColorStr(fullpath, ds.Name)
 			fmt.Fprintf(w, "%s %d. %s\n", edge, i, meta+cstr)
 			level++
@@ -515,7 +508,7 @@ func foutputTreeX2(w io.Writer, root string, dirs []string, folder map[string][]
 	fmt.Fprintf(w, "%d directories, %d files.\n", nd, nf)
 }
 
-func getEdge(id, jf int, dir string, dirs []string, folder map[string][]string, level int, levelm map[string]int) string {
+func getEdge(id, jf int, ds *FileSummary, dirs []string, folder map[string][]string, level int, levelm map[string]int, dm map[string][]string) string {
 
 	buf := []byte{} // new(bytes.Buffer)
 	sp := " "
@@ -529,13 +522,35 @@ func getEdge(id, jf int, dir string, dirs []string, folder map[string][]string, 
 				edge = EdgeTypeEnd
 			}
 			buf = append(buf, edge...)
-		} else {
-			if id < nd {
-				buf = append(buf, EdgeTypeLink...)
-				buf = append(buf, strings.Repeat(sp, IndentSize*level)...)
-			}
-			buf = append(buf, edge...)
+			goto END
 		}
+		// level > 0
+		// buf = append(buf, strings.Repeat(sp, IndentSize)...)
+
+		dir := filepath.Join(ds.RelDir, ds.Name)
+		ipre := funk.IndexOfString(dm[ds.RelDir], ds.Name)
+		fmt.Printf("%d %s %s %s\n", id, ds.RelDir, ds.Name, dir)
+		fmt.Printf("  %d pre: %v\n", ipre, dm[ds.RelDir])
+
+		if ipre < 0 || ipre == len(dm[ds.RelDir])-1 {
+			edge = EdgeTypeEnd
+		}
+		buf = append(buf, EdgeTypeLink...)
+
+		for i := 0; i < level-1; i++ {
+			buf = append(buf, strings.Repeat(sp, IndentSize)...)
+			if ipre == 0 || len(dm[ds.Name]) == 0 {
+				buf = append(buf, sp...)
+			} else {
+				buf = append(buf, EdgeTypeLink...)
+			}
+		}
+		buf = append(buf, strings.Repeat(sp, IndentSize)...)
+		// }
+		if len(dm[ds.RelDir]) == 0 {
+			edge = EdgeTypeEnd
+		}
+		buf = append(buf, edge...)
 		goto END
 	}
 	// jf != 0 files
