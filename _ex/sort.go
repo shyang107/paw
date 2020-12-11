@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/_junk"
 )
 
 // SelectionSort 選擇排序
@@ -21,9 +21,9 @@ func SelectionSort(n []int) {
 	// 	count++
 	// 	fmt.Println(count, n)
 	// }
-	paw.SelectionSort(n)
+	_junk.SelectionSort(n)
 	fmt.Println(n)
-	paw.SelectionSortFunc(n, func(a, b int) bool { return a < b })
+	_junk.SelectionSortFunc(n, func(a, b int) bool { return a < b })
 	fmt.Println(n)
 
 }
@@ -43,8 +43,8 @@ func InsertionSort(n []int) {
 	// 	}
 	// 	i++
 	// }
-	paw.InsertionSort(n)
+	_junk.InsertionSort(n)
 	fmt.Println(n)
-	paw.InsertionSortFunc(n, func(a, b int) bool { return a < b })
+	_junk.InsertionSortFunc(n, func(a, b int) bool { return a < b })
 	fmt.Println(n)
 }

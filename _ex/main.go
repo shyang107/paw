@@ -9,10 +9,11 @@ import (
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/fatih/color"
-	"github.com/mattn/go-isatty"
+	"github.com/mitchellh/go-homedir"
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/_junk"
 	"github.com/shyang107/paw/cast"
+	"github.com/shyang107/paw/filetree"
 	"github.com/shyang107/paw/funk"
 	"github.com/shyang107/paw/godirwalk"
 	"github.com/shyang107/paw/treeprint"
@@ -72,7 +73,9 @@ func main() {
 	// exTextTemplate()
 	// exRegEx2()
 	// root := os.Args[1]
-	root := "../"
+	// root := "../"
+	// root, _ := homedir.Expand("~")
+	root, _ := homedir.Expand("~/Downloads")
 	// root, _ := homedir.Expand("~/Downloads/0")
 	// root := "/Users/shyang/go/src/rover/opcc/"
 	// exWalk(root)
@@ -81,88 +84,11 @@ func main() {
 	// exColor()
 }
 
-var (
-	typeDesc = map[string]string{
-		"di": "directory",
-		"fi": "file",
-		"ln": "symbolic link",
-		"pi": "fifo file",
-		"so": "socket file",
-		"bd": "block (buffered) special file",
-		"cd": "character (unbuffered) special file",
-		"or": "symbolic link pointing to a non-existent file (orphan)",
-		"mi": "non-existent file pointed to by a symbolic link (visible when you type ls -l)",
-		"ex": "file which is executable (ie. has 'x' set in permissions)",
-	}
-	colors = make(map[string]string)
-	exts   = []string{}
-	// NoColor ...
-	NoColor = os.Getenv("TERM") == "dumb" || !(isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()))
-)
-
-func init() {
-	getcolors()
-}
-func getcolors() {
-	colorenv := os.Getenv("LS_COLORS")
-	args := strings.Split(colorenv, ":")
-
-	// colors := make(map[string]string)
-	// ctypes := make(map[string]string)
-	// exts := []string{}
-	for _, a := range args {
-		// fmt.Printf("%v\t", a)
-		kv := strings.Split(a, "=")
-
-		// fmt.Printf("%v\n", kv)
-		if len(kv) == 2 {
-			colors[kv[0]] = kv[1]
-			exts = append(exts, kv[0])
-		}
-	}
-	// sort.Strings(exts)
-}
-func exColor() {
-	// colorenv := os.Getenv("LS_COLORS")
-	// fmt.Println(colorenv)
-	// buf := []byte{}
-	for _, c := range exts {
-		str := colorstr(colors[c], c+" : "+colors[c])
-		fmt.Println(str)
-		// fmt.Println(c, ":", colors[c])
-		// fmt.Printf("%s\n")
-		// buf = append(buf, cbyte(colors[c], c+" : "+colors[c])...) // very first print should set normal
-		// buf = append(buf, '\n')
-		// os.Stdout.Write(buf)
-		// buf = buf[:0]
-	}
-}
-func colorstr(code, s string) string {
-	att := []color.Attribute{}
-	for _, a := range strings.Split(code, ";") {
-		att = append(att, color.Attribute(cast.ToInt(a)))
-	}
-	cs := color.New(att...)
-	return cs.Sprint(s)
-}
-
-func fileColorStr(ext, s string) string {
-	switch {
-	case NoColor:
-		return s
-	default:
-		if _, ok := colors[ext]; !ok {
-			return s
-		}
-		return colorstr(colors[ext], s)
-	}
-}
-
-func exPathMap(root string) {
+func exPathMap1(root string) {
 	root, _ = filepath.Abs(root)
 	root = strings.TrimSuffix(root, "/")
 
-	pm := paw.NewPathMap()
+	pm := _junk.NewPathMap()
 	isRecursive := true
 
 	ignoreHidden := true
@@ -178,14 +104,18 @@ func exPathMap(root string) {
 	w := os.Stdout
 	// pm.Fprint(w, paw.OPlainTextMode, "", "# ")
 	// pm.Fprint(w, paw.OTableFormatMode, "", "")
-	pm.Fprint(w, paw.OTreeMode, "", "# ")
+	pm.Fprint(w, _junk.OTreeMode, "", "# ")
 	// spew.Dump(pm)
 	// fmt.Println(pm.GetFilesString())
 	// spew.Dump(pm.GetCondition())
 	// for i, f := range pm.GetPaths() {
 	// 	fmt.Println(i+1, f)
 	// }
-	return
+}
+
+func exPathMap2(root string) {
+	root, _ = filepath.Abs(root)
+	// root = strings.TrimSuffix(root, "/")
 	i := 1
 	godirwalk.Walk(root, &godirwalk.Options{
 		Callback: func(osPathname string, de *godirwalk.Dirent) error {
@@ -199,18 +129,22 @@ func exPathMap(root string) {
 					return nil
 				}
 				// fmt.Printf("%d. %s %s %s\n", i, de.ModeType(), osPathname, ext)
-				str, _ := paw.FileColorStr(osPathname, osPathname)
-
-				fmt.Printf("%d. %v %s\n", i, de.ModeType(), str)
+				str, _ := filetree.FileLSColorStr(osPathname, de.Name())
+				// fmt.Printf("%d. %v %s\n", i, de.ModeType(), str)
+				dir := filepath.Dir(osPathname)
+				path := filepath.Join(dir, str)
+				fi, _ := os.Lstat(osPathname)
+				fmt.Printf("%d. %v %s\n", i, fi.Mode(), path)
 				i++
-
 			}
 			return nil
 		},
 		// Unsorted: false,
 	})
-
-	root = "/Users/shyang"
+}
+func exPathMap(root string) {
+	root, _ = filepath.Abs(root)
+	// root = "/Users/shyang"
 	fns, _ := godirwalk.ReadDirnames(root, nil)
 	// if err != nil {
 	// 	return nil, errors.Wrap(err, "cannot get list of directory children")
@@ -219,7 +153,7 @@ func exPathMap(root string) {
 
 	for _, f := range fns {
 		path := filepath.Join(root, f)
-		base, err := paw.FileColorStr(path, f)
+		base, err := filetree.FileLSColorStr(path, f)
 		if err != nil {
 			paw.Logger.Errorln(err)
 		}

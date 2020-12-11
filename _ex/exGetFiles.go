@@ -9,6 +9,7 @@ import (
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/_junk"
 )
 
 func exGetFiles3() {
@@ -38,7 +39,7 @@ func exGetFiles3() {
 	tp.SetBeforeMessage(head)
 	tp.PrintSart()
 
-	files, err := paw.GetFilesFunc("../", true, func(f paw.File) bool {
+	files, err := _junk.GetFilesFunc("../", true, func(f _junk.File) bool {
 		return (len(f.FileName) == 0 || strings.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
 	})
 	if err != nil {
@@ -46,7 +47,7 @@ func exGetFiles3() {
 	}
 
 	for i, f := range files {
-		newPath, err := paw.GetNewFilePath(f, sourceFolder, "./")
+		newPath, err := _junk.GetNewFilePath(f, sourceFolder, "./")
 		if err != nil {
 			paw.Logger.Error(err)
 		}
@@ -60,7 +61,7 @@ func exGetFiles2() {
 	paw.Logger.Info("GetFiles: folder <- '../', isRecursive <- true")
 	sourceFolder := "../"
 	fmt.Println("sourceFolder:", sourceFolder)
-	files, err := paw.GetFiles(sourceFolder, true)
+	files, err := _junk.GetFiles(sourceFolder, true)
 	if err != nil {
 		paw.Logger.Error(err)
 	}
@@ -93,7 +94,7 @@ func exGetFiles1() {
 	if err != nil {
 		paw.Logger.Error(err)
 	}
-	files, err := paw.GetFiles(homepath, false)
+	files, err := _junk.GetFiles(homepath, false)
 	if err != nil {
 		paw.Logger.Error(err)
 	}

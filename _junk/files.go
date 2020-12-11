@@ -1,4 +1,4 @@
-package paw
+package _junk
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/shyang107/paw"
 )
 
 // File : path information
@@ -60,9 +62,9 @@ func ConstructFile(path string, root string) File {
 	}
 	base := filepath.Base(path)
 	ext := filepath.Ext(path)
-	folder := TrimSuffix(path, base)
+	folder := paw.TrimSuffix(path, base)
 	// shortFolder, _ := filepath.Rel(root, folder)
-	shortFolder := TrimPrefix(path, root)
+	shortFolder := paw.TrimPrefix(path, root)
 	shortPath := shortFolder + base
 	return File{
 		FullPath:    path,
@@ -70,7 +72,7 @@ func ConstructFile(path string, root string) File {
 		File:        base,
 		Folder:      folder,
 		ShortFolder: shortFolder,
-		FileName:    TrimSuffix(base, ext),
+		FileName:    paw.TrimSuffix(base, ext),
 		Ext:         ext,
 		Info:        fi,
 	}
@@ -233,7 +235,7 @@ func GetNewFilePath(file File, sourceFolder, targetFolder string) (string, error
 // 	sourceFolder := "/aaa/bbb/"
 // 	return "ccc/"
 func GetSubfolder(file File, sourceFolder string) string {
-	return TrimPrefix(file.Folder, sourceFolder)
+	return paw.TrimPrefix(file.Folder, sourceFolder)
 }
 
 // CountSubfolders count subfolders of `files`

@@ -1,4 +1,4 @@
-package paw
+package _junk
 
 import (
 	"bytes"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
+	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/treeprint"
 )
 
@@ -54,7 +55,7 @@ func NewFilesMapFrom(files []File) *FilesMap {
 func (m FilesMap) String() string {
 	buf := new(bytes.Buffer)
 	m.Fprint(buf, OPlainTextMode, "", "")
-	return TrimFrontEndSpaceLine(string(buf.Bytes()))
+	return paw.TrimFrontEndSpaceLine(string(buf.Bytes()))
 }
 
 // Keys will return the keys of key-value pairs
@@ -302,7 +303,7 @@ func (m *FilesMap) FindFiles(root string, isRecursive bool) {
 // 	use `len(f.FileName) == 0 || HasPrefix(f.FileName, ".") || REUsuallyExclude.MatchString(f.FullPath)` to exclude files
 func (m *FilesMap) FindRegularFiles(root string, isRecursive bool) {
 	m.FindFilesFunc(root, isRecursive, func(f File) bool {
-		return (len(f.FileName) == 0 || HasPrefix(f.FileName, ".") || REUsuallyExclude.MatchString(f.FullPath))
+		return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, ".") || REUsuallyExclude.MatchString(f.FullPath))
 	})
 }
 
@@ -315,7 +316,7 @@ func (m *FilesMap) FindFilesFunc(
 
 	files, err := findFilesMapFunc(root, isRecursive, exclude)
 	if err != nil {
-		Logger.Error(err)
+		paw.Logger.Error(err)
 	}
 	m.SetRoot(root)
 	// nf := 0
@@ -399,10 +400,10 @@ func (m *FilesMap) Fprint(w io.Writer, mode OutputMode, head, pad string) {
 	case OTreeMode:
 		m.FprintTree(w, head, pad)
 	case OTableFormatMode:
-		tf := &TableFormat{
+		tf := &paw.TableFormat{
 			Fields:    []string{"No.", "Sorted Files"},
 			LenFields: []int{5, 75},
-			Aligns:    []Align{AlignRight, AlignLeft},
+			Aligns:    []paw.Align{paw.AlignRight, paw.AlignLeft},
 			Padding:   pad,
 		}
 		m.FprintTable(w, tf, head)
@@ -420,7 +421,7 @@ func (m *FilesMap) Text(head, pad string) string {
 
 // FprintText print out FileList in plain text mode
 func (m *FilesMap) FprintText(w io.Writer, head, pad string) {
-	fmt.Fprintln(w, PaddingString(head, pad))
+	fmt.Fprintln(w, paw.PaddingString(head, pad))
 	fmt.Fprintln(w, pad)
 	j := 0
 	for _, k := range m.keys {
@@ -441,11 +442,11 @@ func (m *FilesMap) FprintText(w io.Writer, head, pad string) {
 func (m *FilesMap) Table(head, pad string) string {
 	buf := new(bytes.Buffer)
 	m.Fprint(buf, OTableFormatMode, head, pad)
-	return TrimFrontEndSpaceLine(string(buf.Bytes()))
+	return paw.TrimFrontEndSpaceLine(string(buf.Bytes()))
 }
 
 // FprintTable print `FilesMap` in table mode with `head`
-func (m *FilesMap) FprintTable(w io.Writer, tp *TableFormat, head string) {
+func (m *FilesMap) FprintTable(w io.Writer, tp *paw.TableFormat, head string) {
 	tp.Prepare(w)
 	tp.SetBeforeMessage(head)
 	tp.PrintSart()
@@ -482,8 +483,8 @@ func (m *FilesMap) FprintTable(w io.Writer, tp *TableFormat, head string) {
 }
 
 func trimPath(path string) string {
-	mpath := TrimPrefix(path, "./")
-	mpath = TrimSuffix(mpath, "/")
+	mpath := paw.TrimPrefix(path, "./")
+	mpath = paw.TrimSuffix(mpath, "/")
 	return mpath
 }
 
@@ -491,12 +492,12 @@ func trimPath(path string) string {
 func (m *FilesMap) Tree(head, pad string) string {
 	buf := new(bytes.Buffer)
 	m.FprintTree(buf, head, pad)
-	return TrimFrontEndSpaceLine(string(buf.Bytes()))
+	return paw.TrimFrontEndSpaceLine(string(buf.Bytes()))
 }
 
 // FprintTree print out `FilesMap` in tree mode
 func (m *FilesMap) FprintTree(w io.Writer, head, pad string) {
-	fmt.Fprintln(w, PaddingString(head, pad))
+	fmt.Fprintln(w, paw.PaddingString(head, pad))
 	fmt.Fprintln(w, pad)
 
 	// root, rootPath := ".", m.root
@@ -573,7 +574,7 @@ func (m *FilesMap) FprintTree(w io.Writer, head, pad string) {
 	// 	}
 	// }
 
-	fmt.Fprintln(w, PaddingString(tree.String(), pad))
+	fmt.Fprintln(w, paw.PaddingString(tree.String(), pad))
 	fmt.Fprintf(w, "%s%d directories, %d files\n", pad, m.NDirectories(), m.NFiles())
 	keys := make([]string, len(m.keys))
 	copy(keys, m.keys)

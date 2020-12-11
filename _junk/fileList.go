@@ -1,4 +1,4 @@
-package paw
+package _junk
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/treeprint"
 )
@@ -28,14 +29,14 @@ func (fl FileList) String() string {
 	// tf.Prepare(buf)
 	// fl.PrintTable(tf, "")
 	fl.Fprint(buf, OPlainTextMode, "", "")
-	return TrimPrefix(string(buf.Bytes()), "\n")
+	return paw.TrimPrefix(string(buf.Bytes()), "\n")
 }
 
 // GetFilesFunc get files with codintion `exclude` func
 func (fl *FileList) GetFilesFunc(srcFolder string, isRecursive bool, exclude func(file File) bool) {
 	files, err := GetFilesFunc(srcFolder, isRecursive, exclude)
 	if err != nil {
-		Logger.Error(err)
+		paw.Logger.Error(err)
 	}
 	fl.Files = files
 }
@@ -69,10 +70,10 @@ func (fl FileList) Fprint(w io.Writer, mode OutputMode, head, pad string) {
 	case OTreeMode:
 		fl.PrintTree(w, head, pad)
 	case OTableFormatMode:
-		tf := &TableFormat{
+		tf := &paw.TableFormat{
 			Fields:    []string{"No.", "Sorted Files"},
 			LenFields: []int{5, 75},
-			Aligns:    []Align{AlignRight, AlignLeft},
+			Aligns:    []paw.Align{paw.AlignRight, paw.AlignLeft},
 			Padding:   pad,
 		}
 		fl.FprintTable(w, tf, head)
@@ -83,7 +84,7 @@ func (fl FileList) Fprint(w io.Writer, mode OutputMode, head, pad string) {
 
 // PrintTree print out FileList in tree mode
 func (fl FileList) PrintTree(w io.Writer, head, pad string) {
-	fmt.Fprintln(w, PaddingString(head, pad))
+	fmt.Fprintln(w, paw.PaddingString(head, pad))
 	root, rootPath := findRoot(fl.Files)
 
 	fdm, fdk := collectFiles(fl.Files)
@@ -132,7 +133,7 @@ func (fl FileList) PrintTree(w io.Writer, head, pad string) {
 		}
 	}
 	// fmt.Println("nfd =", nfd, "nfl =", nfl)
-	fmt.Fprintln(w, PaddingString(tree.String(), pad))
+	fmt.Fprintln(w, paw.PaddingString(tree.String(), pad))
 	fmt.Fprintf(w, "%s%d directories, %d files\n", pad, nfd-1, nfl)
 }
 
@@ -180,7 +181,7 @@ func findRoot(files []File) (root, fullpath string) {
 
 // FprintText print out FileList in plain text mode
 func (fl FileList) FprintText(w io.Writer, head, pad string) {
-	fmt.Fprintln(w, PaddingString(head, pad))
+	fmt.Fprintln(w, paw.PaddingString(head, pad))
 	fmt.Fprintln(w, pad)
 	nSubFolders := CountSubfolders(fl.Files)
 	nFiles := len(fl.Files)
@@ -198,7 +199,7 @@ func (fl FileList) FprintText(w io.Writer, head, pad string) {
 }
 
 // FprintTable print files with `TableFormat` and `head`
-func (fl FileList) FprintTable(w io.Writer, tp *TableFormat, head string) {
+func (fl FileList) FprintTable(w io.Writer, tp *paw.TableFormat, head string) {
 	tp.Prepare(w)
 	tp.SetBeforeMessage(head)
 	tp.PrintSart()

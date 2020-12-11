@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/_junk"
 	"github.com/shyang107/paw/cast"
 )
 
@@ -29,11 +30,11 @@ func exFilesMap(sourceFolder string) {
 	// regexPattern := `\.git|\$RECYCLE\.BIN|desktop\.ini|funk|afero`
 	// regexPattern := `\.git|\$RECYCLE\.BIN|desktop\.ini`
 	// head += "	- regexPattern:	`" + regexPattern + "`"
-	head += "	- regexPattern:	`" + paw.ExcludePattern + "`"
+	head += "	- regexPattern:	`" + _junk.ExcludePattern + "`"
 
 	// re := regexp.MustCompile(regexPattern)
 
-	fm := paw.NewFilesMap()
+	fm := _junk.NewFilesMap()
 	// exclude := func(f paw.File) bool {
 	// 	return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
 	// }
@@ -47,7 +48,7 @@ func exFilesMap(sourceFolder string) {
 	pad := "# "
 	// fm.Fprint(os.Stdout, paw.OPlainTextMode, head, pad)
 	// fm.Fprint(os.Stdout, paw.OTableFormatMode, head, pad)
-	fm.Fprint(os.Stdout, paw.OTreeMode, head, pad)
+	fm.Fprint(os.Stdout, _junk.OTreeMode, head, pad)
 	// fm.FprintText(os.Stdout, head, pad)
 	// fmt.Println(fm)
 	// fmt.Println(fm.Text(head, pad))

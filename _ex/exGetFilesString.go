@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/_junk"
 )
 
 func exGetFilesString() {
@@ -40,8 +41,8 @@ func exGetFilesString() {
 	tp.SetBeforeMessage(hsb.String())
 	tp.PrintSart()
 
-	files, err := paw.GetFilesFuncString("../", isRecursive,
-		func(f paw.File) bool {
+	files, err := _junk.GetFilesFuncString("../", isRecursive,
+		func(f _junk.File) bool {
 			return !(len(f.FileName) == 0 || strings.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
 		})
 	if err != nil {

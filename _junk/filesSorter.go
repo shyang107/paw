@@ -1,4 +1,4 @@
-package paw
+package _junk
 
 import "sort"
 

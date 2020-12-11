@@ -1,4 +1,4 @@
-package paw
+package _junk
 
 import (
 	"bytes"
@@ -15,6 +15,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
+	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/funk"
 	"github.com/shyang107/paw/treeprint"
@@ -307,10 +308,10 @@ func (m *PathMap) Fprint(w io.Writer, mode OutputMode, head, pad string) {
 	case OTreeMode:
 		m.FprintTree(w, head, pad)
 	case OTableFormatMode:
-		tf := &TableFormat{
+		tf := &paw.TableFormat{
 			Fields:    []string{"No.", "Files"},
 			LenFields: []int{5, 75},
-			Aligns:    []Align{AlignRight, AlignLeft},
+			Aligns:    []paw.Align{paw.AlignRight, paw.AlignLeft},
 			Padding:   pad,
 		}
 		m.FprintTable(w, tf, head)
@@ -323,18 +324,18 @@ func (m *PathMap) Fprint(w io.Writer, mode OutputMode, head, pad string) {
 func (m *PathMap) Tree(head, pad string) string {
 	buf := new(bytes.Buffer)
 	m.FprintTree(buf, head, pad)
-	return TrimFrontEndSpaceLine(string(buf.Bytes()))
+	return paw.TrimFrontEndSpaceLine(string(buf.Bytes()))
 }
 
 // FprintTree print out in tree mode
 func (m *PathMap) FprintTree(w io.Writer, head, pad string) {
 	if len(head) > 0 {
-		fmt.Fprintln(w, PaddingString(head, pad))
+		fmt.Fprintln(w, paw.PaddingString(head, pad))
 	}
 	fmt.Fprintln(w, pad)
 	buf := new(bytes.Buffer)
 	foutputTreeX2(buf, m.GetRoot(), m.GetDirs(), m.GetFolder())
-	fmt.Fprintln(w, PaddingString(string(buf.Bytes()), pad))
+	fmt.Fprintln(w, paw.PaddingString(string(buf.Bytes()), pad))
 }
 
 func foutputTree(w io.Writer, root string, dirs []string, folder map[string][]string) {
@@ -390,7 +391,7 @@ func printTreeColor(w io.Writer, s string) {
 		fmt.Fprintln(w, s)
 		return
 	}
-	s = TrimFrontEndSpaceLine(s)
+	s = paw.TrimFrontEndSpaceLine(s)
 	buf := new(bytes.Buffer)
 
 	lines := strings.Split(s, "\n")
@@ -425,7 +426,7 @@ func printTreeColor(w io.Writer, s string) {
 			buf.WriteString(cstr + "\n") // print match
 			continue
 		} else {
-			Logger.Errorln("file")
+			paw.Logger.Errorln("file")
 			continue
 		}
 	}
@@ -475,7 +476,7 @@ func foutputTreeX2(w io.Writer, root string, dirs []string, folder map[string][]
 	for i, dir := range dirs {
 		nd++
 		fullpath := filepath.Join(root, dir)
-		ds := NewFileSummary(fullpath, root)
+		ds := paw.NewFileSummary(fullpath, root)
 		// dirpath := ds.RelDir
 		level := levelm[dir]
 		meta := getSubdirsMeta(dir, dirs, folder)
@@ -496,7 +497,7 @@ func foutputTreeX2(w io.Writer, root string, dirs []string, folder map[string][]
 		continue
 		for j, file := range folder[dir] {
 			fullpath := filepath.Join(root, dir, file)
-			fs := NewFileSummary(fullpath, root)
+			fs := paw.NewFileSummary(fullpath, root)
 			edge := EdgeTypeMid
 			// edge := getEdge(i, j, dir, dirs, folder, level, levelm)
 			cstr, _ := FileColorStr(fullpath, fs.Name)
@@ -508,7 +509,7 @@ func foutputTreeX2(w io.Writer, root string, dirs []string, folder map[string][]
 	fmt.Fprintf(w, "%d directories, %d files.\n", nd, nf)
 }
 
-func getEdge(id, jf int, ds *FileSummary, dirs []string, folder map[string][]string, level int, levelm map[string]int, dm map[string][]string) string {
+func getEdge(id, jf int, ds *paw.FileSummary, dirs []string, folder map[string][]string, level int, levelm map[string]int, dm map[string][]string) string {
 
 	buf := []byte{} // new(bytes.Buffer)
 	sp := " "
@@ -602,28 +603,28 @@ func getNumSubdirs(root string, dirs []string) int {
 	return nd - 1
 }
 
-func transferToFileSummary(root, dir, file string) *FileSummary {
+func transferToFileSummary(root, dir, file string) *paw.FileSummary {
 	if len(file) == 0 {
 		fullpath := filepath.Join(root, dir)
-		fs := NewFileSummary(fullpath, root)
+		fs := paw.NewFileSummary(fullpath, root)
 		return fs
 	}
 	fullpath := filepath.Join(root, dir, file)
-	fs := NewFileSummary(fullpath, root)
+	fs := paw.NewFileSummary(fullpath, root)
 	return fs
 }
 
-func transferToFileSummaryList(root string, dirs []string, folder map[string][]string) []*FileSummary {
-	fs := []*FileSummary{}
+func transferToFileSummaryList(root string, dirs []string, folder map[string][]string) []*paw.FileSummary {
+	fs := []*paw.FileSummary{}
 	for _, d := range dirs {
 		if len(folder[d]) == 0 {
 			fullpath := filepath.Join(root, d)
-			fs = append(fs, NewFileSummary(fullpath, root))
+			fs = append(fs, paw.NewFileSummary(fullpath, root))
 			continue
 		}
 		for _, f := range folder[d] {
 			fullpath := filepath.Join(root, d, f)
-			fs = append(fs, NewFileSummary(fullpath, root))
+			fs = append(fs, paw.NewFileSummary(fullpath, root))
 		}
 	}
 	return fs
@@ -659,7 +660,7 @@ func printFileSummary(fullpath, root string) {
 
 	// fullpath = filepath.Join(root, dirs[2], folder[dirs[2]][0])
 	// printFileSummary(fullpath, root)
-	fs := NewFileSummary(fullpath, root)
+	fs := paw.NewFileSummary(fullpath, root)
 	fmt.Printf("      root: %q\n", root)
 	fmt.Printf("  fullpath: %q\n", fullpath)
 	fmt.Printf("   AbsPath: %q\n", fs.AbsPath)
@@ -822,17 +823,17 @@ func (m *PathMap) Table(head, pad string) string {
 	SetNoColor()
 	m.Fprint(buf, OTableFormatMode, head, pad)
 	ResumNoColor()
-	return TrimFrontEndSpaceLine(string(buf.Bytes()))
+	return paw.TrimFrontEndSpaceLine(string(buf.Bytes()))
 }
 
 // FprintTable print out in table mode with `head`
-func (m *PathMap) FprintTable(w io.Writer, tf *TableFormat, head string) {
+func (m *PathMap) FprintTable(w io.Writer, tf *paw.TableFormat, head string) {
 	tf.Prepare(w)
 	tf.SetBeforeMessage(head)
 	foutputTable(tf, m.GetRoot(), m.GetDirs(), m.GetFolder())
 }
 
-func foutputTable(tf *TableFormat, root string, dirs []string, folder map[string][]string) {
+func foutputTable(tf *paw.TableFormat, root string, dirs []string, folder map[string][]string) {
 
 	nd, nf := 0, 0
 
@@ -884,16 +885,16 @@ func (m *PathMap) Text(head, pad string) string {
 	SetNoColor()
 	m.Fprint(buf, OPlainTextMode, head, pad)
 	ResumNoColor()
-	return TrimFrontEndSpaceLine(string(buf.Bytes()))
+	return paw.TrimFrontEndSpaceLine(string(buf.Bytes()))
 }
 
 // FprintText print out in plain text mode
 func (m *PathMap) FprintText(w io.Writer, head, pad string) {
-	fmt.Fprintln(w, PaddingString(head, pad))
+	fmt.Fprintln(w, paw.PaddingString(head, pad))
 	fmt.Fprintln(w, pad)
 	buf := new(bytes.Buffer)
 	foutputText(buf, m.GetRoot(), m.GetDirs(), m.GetFolder())
-	fmt.Fprintln(w, PaddingString(string(buf.Bytes()), pad))
+	fmt.Fprintln(w, paw.PaddingString(string(buf.Bytes()), pad))
 	fmt.Fprintln(w, pad)
 }
 
@@ -1043,8 +1044,8 @@ func walkDir(root string, dirs *[]string, folder *map[string][]string, cond *pmC
 	visitFile := func(path string, info os.FileInfo, err error) error {
 		// fmt.Println(path)
 		if err != nil {
-			Logger.Errorln(err) // can't walk here,
-			return nil          // but continue walking elsewhere
+			paw.Logger.Errorln(err) // can't walk here,
+			return nil              // but continue walking elsewhere
 		}
 
 		// apath, _ := filepath.Abs(path)

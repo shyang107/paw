@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/_junk"
 	"github.com/shyang107/paw/cast"
 )
 
@@ -34,22 +35,22 @@ func exGrouppingFiles4() {
 	// regexPattern := `\.git|\$RECYCLE\.BIN|desktop\.ini|funk|afero`
 	// regexPattern := `\.git|\$RECYCLE\.BIN|desktop\.ini`
 	// head += "	- regexPattern:	`" + regexPattern + "`"
-	head += "	- regexPattern:	`" + paw.ExcludePattern + "`"
+	head += "	- regexPattern:	`" + _junk.ExcludePattern + "`"
 
 	// re := regexp.MustCompile(regexPattern)
 
-	fileList := paw.FileList{}
+	fileList := _junk.FileList{}
 	// exclude := func(f paw.File) bool {
 	// 	return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
 	// }
-	exclude := func(f paw.File) bool {
-		return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || paw.REUsuallyExclude.MatchString(f.FullPath))
+	exclude := func(f _junk.File) bool {
+		return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || _junk.REUsuallyExclude.MatchString(f.FullPath))
 	}
 	fileList.GetFilesFunc(sourceFolder, isRecursive, exclude)
 	fileList.OrderedByFolder()
 	// fileList.Print(os.Stdout, paw.OPlainTextMode, head, "# ")
 	// fileList.Print(os.Stdout, paw.OTableFormatMode, head, "# ")
-	fileList.Fprint(os.Stdout, paw.OTreeMode, head, "# ")
+	fileList.Fprint(os.Stdout, _junk.OTreeMode, head, "# ")
 	// fmt.Println(fileList)
 }
 
@@ -78,13 +79,13 @@ func exGrouppingFiles3() {
 
 	re := regexp.MustCompile(regexPattern)
 
-	fileList := paw.FileList{}
+	fileList := _junk.FileList{}
 	fileList.GetFilesFunc(sourceFolder, isRecursive,
-		func(f paw.File) bool {
+		func(f _junk.File) bool {
 			return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
 		})
 	fileList.OrderedByFolder()
-	fileList.Fprint(os.Stdout, paw.OTableFormatMode, head, "# ")
+	fileList.Fprint(os.Stdout, _junk.OTableFormatMode, head, "# ")
 	// fmt.Println(head)
 	// fmt.Println(fileList)
 }
@@ -121,15 +122,15 @@ func exGrouppingFiles2() {
 	tp.SetBeforeMessage(hsb.String())
 	tp.PrintSart()
 
-	files, err := paw.GetFilesFunc(sourceFolder, isRecursive,
-		func(f paw.File) bool {
+	files, err := _junk.GetFilesFunc(sourceFolder, isRecursive,
+		func(f _junk.File) bool {
 			return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath))
 		})
 	if err != nil {
 		paw.Logger.Error(err)
 	}
 
-	paw.GrouppingFiles(files)
+	_junk.GrouppingFiles(files)
 
 	oFolder := files[0].Folder
 	gcount := 1
@@ -191,16 +192,16 @@ func exGrouppingFiles1() {
 	tp.SetBeforeMessage(hsb.String())
 	tp.PrintSart()
 
-	files, err := paw.GetFilesFunc(sourceFolder, isRecursive,
-		func(f paw.File) bool {
+	files, err := _junk.GetFilesFunc(sourceFolder, isRecursive,
+		func(f _junk.File) bool {
 			return len(f.FileName) == 0 || strings.HasPrefix(f.FileName, prefix) || re.MatchString(f.FullPath)
 		})
 	if err != nil {
 		paw.Logger.Error(err)
 	}
-	sfiles := make([]paw.File, len(files))
+	sfiles := make([]_junk.File, len(files))
 	copy(sfiles, files)
-	paw.GrouppingFiles(sfiles)
+	_junk.GrouppingFiles(sfiles)
 
 	oFolder := sfiles[0].Folder
 	for i, f := range files {

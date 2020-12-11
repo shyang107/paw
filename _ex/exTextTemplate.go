@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/_junk"
 )
 
 func exTextTemplate() {
@@ -66,15 +67,15 @@ func exTextTemplate() {
 	}
 
 	re := regexp.MustCompile(opt.RegexPattern)
-	files, err := paw.GetFilesFunc(opt.SourceFolder, opt.IsRecursive,
-		func(f paw.File) bool {
+	files, err := _junk.GetFilesFunc(opt.SourceFolder, opt.IsRecursive,
+		func(f _junk.File) bool {
 			return (len(f.FileName) == 0 || paw.HasPrefix(f.FileName, opt.Prefix) || re.MatchString(f.FullPath))
 		})
 	if err != nil {
 		paw.Logger.Error(err)
 	}
 
-	paw.GrouppingFiles(files)
+	_junk.GrouppingFiles(files)
 
 	const rowSection = `{{ range $i,$v := . }}{{ printf "%5d %-80s\n" $i $v.ShortPath }}{{ end }}`
 	tmplR, err := template.New("rows").Parse(rowSection)

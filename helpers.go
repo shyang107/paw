@@ -1,8 +1,10 @@
 package paw
 
 import (
+	"math/rand"
 	"reflect"
 	"runtime"
+	"time"
 
 	"github.com/uniplaces/carbon"
 	// log "github.com/sirupsen/logrus"
@@ -25,4 +27,21 @@ func GetDate() string {
 	// return time.Now().Format("Jan. 2, 2006")
 	return carbon.Now().Format(carbon.FormattedDateFormat)
 
+}
+
+// NewRand return a instance of
+func NewRand() *rand.Rand {
+	// return rand.New(rand.NewSource(time.Now().Unix()))
+	return rand.New(rand.NewSource(time.Now().UnixNano()))
+}
+
+// Shuffle randomly shuffle the order of `slice`
+func Shuffle(slice []interface{}) {
+	r := NewRand()
+	for len(slice) > 0 {
+		n := len(slice)
+		randIndex := r.Intn(n)
+		slice[n-1], slice[randIndex] = slice[randIndex], slice[n-1]
+		slice = slice[:n-1]
+	}
 }
