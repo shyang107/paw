@@ -673,7 +673,8 @@ func getColorAttribute(code string) []color.Attribute {
 func FileLSColorStr(fullpath, s string) (string, error) {
 	file, ext := getColorExt(fullpath)
 	if ext == "«link»" {
-		link, err := os.Readlink(fullpath)
+		// link, err := os.Readlink(fullpath)
+		link, err := filepath.EvalSymlinks(fullpath)
 		if err != nil {
 			ext = "no"
 		} else {
