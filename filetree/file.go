@@ -54,9 +54,9 @@ func ConstructFile(path string) *File {
 	if err != nil {
 		return nil
 	}
-	// dir := filepath.Dir(path)
-	// basename := filepath.Base(path)
-	dir, basename := filepath.Split(path)
+	dir := filepath.Dir(path)
+	basename := filepath.Base(path)
+	// dir, basename := filepath.Split(path)
 	ext := filepath.Ext(path)
 	file := strings.TrimSuffix(basename, ext)
 	return &File{
@@ -69,9 +69,40 @@ func ConstructFile(path string) *File {
 	}
 }
 
-// func (f File) String() string {
-// 	return f.Path
-// }
+const (
+	// RootMark = "."
+	RootMark = "."
+)
+
+// ConstructFileRelTo will the pointer of instance of `File`, and is a constructor of `File`, but `File.Dir` is sub-directory of `root`
+// 	If `path` == `root`, then
+// 		f.Dir = "."
+func ConstructFileRelTo(path, root string) *File {
+	path, _ = filepath.Abs(path)
+	root, _ = filepath.Abs(root)
+	f := ConstructFile(path)
+	if f.IsDir() {
+		f.Dir = strings.Replace(f.Path, root, ".", 1)
+	} else {
+		f.Dir = strings.Replace(f.Dir, root, ".", 1)
+	}
+	// if f.Dir == "." {
+	// 	f.Dir = "./"
+	// 	// f.BaseName = "."
+	// 	// f.File = ""
+	// }
+	return f
+}
+
+func (f File) String() string {
+	// return f.Path
+	if NoColor {
+		return f.BaseName
+	}
+
+	cvalue, _ := FileLSColorStr(f.Path, f.BaseName)
+	return cvalue
+}
 
 // LSColorString will return a color string using LS_COLORS according to `f.Path` of file
 func (f *File) LSColorString(s string) string {
@@ -90,8 +121,30 @@ func (f *File) IsRegular() bool {
 }
 
 // PathSlice will split `f.Path` following Spearator, seperating it into a string slice.
-// 	1. If the first element is empty string that means the prefix of `f.path` is `PathSeparator`
-// 	2. If `f` is the path of a regular file (not a directory), the last elment is base name of `f`.
 func (f *File) PathSlice() []string {
 	return strings.Split(f.Path, PathSeparator)
 }
+
+// DirSlice will split `f.Dir` following Spearator, seperating it into a string slice.
+func (f *File) DirSlice() []string {
+	return strings.Split(f.Dir, PathSeparator)
+}
+
+// // SubPath will return sub-directory based on `root`.
+// //  1. If `root` is equal to `f.Dir`, then return "./".
+// // 	2. If `root` is not the prefix of `f.Dir`, then return `f.Dir`.
+// func (f *File) SubPath(root string) string {
+// 	sub := strings.TrimPrefix(f.Dir, root)
+// 	if len(sub) == 0 {
+// 		return "./"
+// 	}
+// 	return sub
+// }
+
+// // SubPathSlice will split `f.SubPath(root)` following Spearator, seperating it into a string slice.
+// // 	The the last element will be empty string, and remove.
+// func (f *File) SubPathSlice(root string) []string {
+// 	ss := strings.Split(f.SubPath(root), PathSeparator)
+// 	ns := len(ss)
+// 	return ss[:ns-1]
+// }

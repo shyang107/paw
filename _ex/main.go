@@ -73,6 +73,7 @@ func main() {
 	// exRegEx2()
 	// root := os.Args[1]
 	// root := "../"
+	root := "../"
 	// root, _ := homedir.Expand("~")
 	// root, _ := homedir.Expand("~/Downloads")
 	// root, _ := homedir.Expand("~/Downloads/0")
@@ -81,7 +82,8 @@ func main() {
 	// exFilesMap(root)
 	// exPathMap(root)
 	// exColor()
-	exFile()
+	// exFile()
+	exFileTree(root)
 }
 
 func exPathMap1(root string) {
