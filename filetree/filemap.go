@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/treeprint"
 )
 
@@ -150,8 +151,8 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 	return nil
 }
 
-// ToTreeString will return the string of tree view
-func (f *FileList) ToTreeString() string {
+// ToTreeString will return the string of FileList in tree form
+func (f *FileList) ToTreeString(pad string) string {
 
 	tree := treeprint.New()
 
@@ -187,7 +188,7 @@ func (f *FileList) ToTreeString() string {
 	buf.Write(tree.Bytes())
 	buf.WriteByte('\n')
 	buf.WriteString(fmt.Sprintf("%d directoris, %d files.", f.NDirs(), f.NFiles()))
-	return string(buf.Bytes())
+	return paw.PaddingString(string(buf.Bytes()), pad)
 }
 
 func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
@@ -205,4 +206,55 @@ func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
 		}
 	}
 	return pre
+}
+
+// ToTableString will return the strings of FileList in table form
+func (f *FileList) ToTableString(pad string) string {
+
+	var (
+		buf    = new(bytes.Buffer)
+		nDirs  = f.NDirs()
+		nFiles = f.NFiles()
+		dirs   = f.Dirs()
+		fm     = f.Map()
+	)
+
+	tf := &paw.TableFormat{
+		Fields:    []string{"No.", "Files"},
+		LenFields: []int{5, 80},
+		Aligns:    []paw.Align{paw.AlignRight, paw.AlignLeft},
+		Padding:   pad,
+	}
+	tf.Prepare(buf)
+
+	head := fmt.Sprintf("Root directory: %q", f.Root())
+	tf.SetBeforeMessage(head)
+
+	tf.PrintSart()
+
+	for i, dir := range dirs {
+		for j, file := range fm[dir] {
+			if file.IsDir() {
+				if strings.EqualFold(file.Dir, RootMark) {
+					tf.PrintRow("", fmt.Sprintf("[%v]. root (%v)", i, file.LSColorString(f.Root())))
+				} else {
+					tf.PrintRow("", fmt.Sprintf("[%v]. subfolder: %v", i, file.LSColorString(file.Dir)))
+				}
+				continue
+			}
+			tf.PrintRow(j, file)
+		}
+
+		tf.PrintRow("", fmt.Sprintf("Sum: %v files.", len(fm[dir])-1))
+
+		if i == len(dirs)-1 {
+			break
+		}
+		tf.PrintMiddleSepLine()
+	}
+	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files\n", nDirs, nFiles))
+
+	tf.PrintEnd()
+
+	return string(buf.Bytes())
 }

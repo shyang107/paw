@@ -49,7 +49,8 @@ func readDirs(root string) {
 
 	fl.FindFiles(-1, ignore)
 	// spew.Dump(fl.Dirs())
-	fmt.Println(fl.ToTreeString())
+	// fmt.Println(fl.ToTreeString("# "))
+	fmt.Println(fl.ToTableString("# "))
 }
 
 var pad string
