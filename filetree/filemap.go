@@ -105,15 +105,15 @@ func (f *FileList) AddFile(file *File) {
 	f.store[file.Dir] = append(f.store[file.Dir], file)
 }
 
-// SkipFile is used as a return value from IgnoreFn to indicate that
+// ErrSkipFile is used as a return value from IgnoreFn to indicate that
 // the regular file named in the call is to be skipped. It is not returned
 // as an error by any function.
-var SkipFile = errors.New("skip the file")
+var ErrSkipFile = errors.New("skip the file")
 
-// SkipDir is used as a return value from WalkFuncs to indicate that
+// ErrSkipDir is used as a return value from WalkFuncs to indicate that
 // the directory named in the call is to be skipped. It is not returned
 // as an error by any function.
-var SkipDir = filepath.SkipDir
+var ErrSkipDir = filepath.SkipDir
 
 // IgnoreFn is the type of the function called for each file or directory
 // visited by FindFiles. The f argument contains the File argument to FindFiles.
@@ -123,8 +123,8 @@ var SkipDir = filepath.SkipDir
 // to handle that error (and FindFiles will not descend into that directory). In the
 // case of an error, the info argument will be nil. If an error is returned,
 // processing stops. The sole exception is when the function returns the special
-// value SkipDir or SkipFile. If the function returns SkipDir when invoked on a directory,
-// FindFiles skips the directory's contents entirely. If the function returns SkipDir
+// value ErrSkipDir or ErrSkipFile. If the function returns ErrSkipDir when invoked on a directory,
+// FindFiles skips the directory's contents entirely. If the function returns ErrSkipDir
 // when invoked on a non-directory file, FindFiles skips the remaining files in the
 // containing directory.
 // If the returned error is SkipFile when inviked on a file, FindFiles will skip the file.
@@ -139,10 +139,10 @@ var DefaultIgnoreFn = func(f *File, err error) error {
 		return err
 	}
 	if f.IsDir() && strings.HasPrefix(f.BaseName, ".") {
-		return SkipDir
+		return ErrSkipDir
 	}
 	if strings.HasPrefix(f.BaseName, ".") {
-		return SkipFile
+		return ErrSkipFile
 	}
 	return nil
 }
@@ -172,7 +172,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 		for _, fi := range fis {
 			file := ConstructFileRelTo(root+PathSeparator+fi.Name(), root)
 			err := ignore(file, nil)
-			if err == SkipFile {
+			if err == ErrSkipFile {
 				continue
 			}
 			f.AddFile(file)
@@ -187,10 +187,10 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 				}
 			}
 			err1 := ignore(file, err)
-			if err1 == SkipFile {
+			if err1 == ErrSkipFile {
 				return nil
 			}
-			if err1 == SkipDir {
+			if err1 == ErrSkipDir {
 				return err1
 			}
 			f.AddFile(file)
