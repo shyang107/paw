@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/filetree"
@@ -23,23 +22,23 @@ func readDirs(root string) {
 	}
 
 	fl := filetree.NewFileList(root)
-	ignore := func(f *filetree.File, err error) error {
-		if err != nil {
-			return err
-		}
-		if f.IsDir() && strings.HasPrefix(f.BaseName, ".") {
-			return filetree.SkipDir
-		}
-		if strings.HasPrefix(f.BaseName, ".") {
-			return filetree.SkipFile
-		}
-		if strings.Contains(f.Dir, ".git") {
-			return filetree.SkipFile
-		}
-		return nil
-	}
-
-	fl.FindFiles(-1, ignore)
+	// ignore := func(f *filetree.File, err error) error {
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if f.IsDir() && strings.HasPrefix(f.BaseName, ".") {
+	// 		return filetree.SkipDir
+	// 	}
+	// 	if strings.HasPrefix(f.BaseName, ".") {
+	// 		return filetree.SkipFile
+	// 	}
+	// 	// if strings.Contains(f.Dir, ".git") {
+	// 	// 	return filetree.SkipFile
+	// 	// }
+	// 	return nil
+	// }
+	// fl.FindFiles(-1, ignore)
+	fl.FindFiles(-1, nil)
 	// spew.Dump(fl.Dirs())
 	// fmt.Println(fl.ToTreeString("# "))
 	// fmt.Println(fl.ToTableString("# "))

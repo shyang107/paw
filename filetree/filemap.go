@@ -130,15 +130,37 @@ var SkipDir = filepath.SkipDir
 // If the returned error is SkipFile when inviked on a file, FindFiles will skip the file.
 type IgnoreFn func(f *File, err error) error
 
+// DefaultIgnoreFn is default IgnoreFn using in FindFiles
+//
+// 	Skip file: prefix "." of files
+// 	Skip folder: prefix "." of directory
+var DefaultIgnoreFn = func(f *File, err error) error {
+	if err != nil {
+		return err
+	}
+	if f.IsDir() && strings.HasPrefix(f.BaseName, ".") {
+		return SkipDir
+	}
+	if strings.HasPrefix(f.BaseName, ".") {
+		return SkipFile
+	}
+	return nil
+}
+
 // FindFiles will find files using codintion `ignore` func
 // 	depth : depth of subfolders
 // 		< 0 : walk through all directories of {root directory}
 // 		0 : {root directory}/*
 // 		1 : {root directory}/{level 1 directory}/*
 //		...
-// 	ignore IgnoreFn func(f *File, err error) error
+// 	`ignore` IgnoreFn func(f *File, err error) error
 // 		ignoring condition of files or directory
+// 		`ignore` == nil, using `DefaultIgnoreFn`
 func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
+	if ignore == nil {
+		ignore = DefaultIgnoreFn
+	}
+
 	root := f.Root()
 	switch {
 	case depth == 0: //{root directory}/*
