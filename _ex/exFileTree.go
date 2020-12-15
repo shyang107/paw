@@ -31,18 +31,22 @@ func readDirs(root string) {
 	}
 
 	fl := filetree.NewFileList(root)
-	ignore := func(f *filetree.File) bool {
-		// if f.IsDir() {
-		// 	return true
-		// }
+	ignore := func(f *filetree.File, err error) error {
+		if err != nil {
+			return err
+		}
+		if f.IsDir() && strings.HasPrefix(f.BaseName, ".") {
+			return filetree.SkipDir
+		}
 		if strings.HasPrefix(f.BaseName, ".") {
-			return true
+			return filetree.SkipFile
 		}
 		if strings.Contains(f.Dir, ".git") {
-			return true
+			return filetree.SkipFile
 		}
-		return false
+		return nil
 	}
+
 	fl.FindFiles(-1, ignore)
 	// spew.Dump(fl.Dirs())
 	fmt.Println(fl.ToTreeString())
