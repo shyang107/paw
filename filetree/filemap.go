@@ -35,6 +35,38 @@ func NewFileList(root string) FileList {
 	}
 }
 
+func (f FileList) String() string {
+	var (
+		w    = new(bytes.Buffer)
+		dirs = f.Dirs()
+		fm   = f.Map()
+	)
+
+	j := 0
+	for i, dir := range dirs {
+		for _, file := range fm[dir] {
+			if file.IsDir() {
+				if strings.EqualFold(file.Dir, RootMark) {
+					fmt.Fprintf(w, "D%v. root (%v)\n", i, file.LSColorString(f.Root()))
+				} else {
+					fmt.Fprintf(w, "D%v. subfolder: %v\n", i, file.LSColorString(file.Dir))
+				}
+				continue
+			}
+			j++
+			fmt.Fprintf(w, "  %v. %v\n", j, file)
+		}
+
+		if i == len(dirs)-1 {
+			break
+		}
+	}
+
+	fmt.Fprintln(w, "")
+	fmt.Fprintf(w, "%d directories, %d Files\n", f.NDirs(), f.NFiles())
+	return string(w.Bytes())
+}
+
 // Root will return the `root` field (root directory)
 func (f *FileList) Root() string {
 	return f.root
