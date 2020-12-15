@@ -153,6 +153,11 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 
 // ToTreeString will return the string of FileList in tree form
 func (f *FileList) ToTreeString(pad string) string {
+	return string(f.ToTree(pad))
+}
+
+// ToTree will return the []byte of FileList in tree form
+func (f *FileList) ToTree(pad string) []byte {
 
 	tree := treeprint.New()
 
@@ -188,7 +193,16 @@ func (f *FileList) ToTreeString(pad string) string {
 	buf.Write(tree.Bytes())
 	buf.WriteByte('\n')
 	buf.WriteString(fmt.Sprintf("%d directoris, %d files.", f.NDirs(), f.NFiles()))
-	return paw.PaddingString(string(buf.Bytes()), pad)
+	// buf.WriteByte('\n')
+	b := make([]byte, len(buf.Bytes()))
+	b = append(b, pad...)
+	for _, v := range buf.Bytes() {
+		b = append(b, v)
+		if v == '\n' {
+			b = append(b, pad...)
+		}
+	}
+	return b
 }
 
 func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
@@ -208,8 +222,13 @@ func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
 	return pre
 }
 
-// ToTableString will return the strings of FileList in table form
+// ToTableString will return the string of FileList in table form
 func (f *FileList) ToTableString(pad string) string {
+	return string(f.ToTable(pad))
+}
+
+// ToTable will return the []byte of FileList in table form
+func (f *FileList) ToTable(pad string) []byte {
 
 	var (
 		buf    = new(bytes.Buffer)
@@ -252,9 +271,57 @@ func (f *FileList) ToTableString(pad string) string {
 		}
 		tf.PrintMiddleSepLine()
 	}
-	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files\n", nDirs, nFiles))
+	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files", nDirs, nFiles))
 
 	tf.PrintEnd()
 
-	return string(buf.Bytes())
+	return buf.Bytes()
+}
+
+// ToTextString will return the string of FileList in table form
+func (f *FileList) ToTextString(pad string) string {
+	return string(f.ToText(pad))
+}
+
+// ToText will return the []byte of FileList in table form
+func (f *FileList) ToText(pad string) []byte {
+	var (
+		w     = new(bytes.Buffer)
+		dirs  = f.Dirs()
+		fm    = f.Map()
+		width = 80
+	)
+
+	// fmt.Fprintln(w, pad)
+	fmt.Fprintf(w, "%sRoot directory: %q\n", pad, f.Root())
+	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", width))
+
+	ppad := ""
+	for i, dir := range dirs {
+		for j, file := range fm[dir] {
+			if file.IsDir() {
+				if strings.EqualFold(file.Dir, RootMark) {
+					fmt.Fprintf(w, "%sD%v. root (%v)\n", pad, i, file.LSColorString(f.Root()))
+				} else {
+					ppad = strings.Repeat("   ", len(file.DirSlice())-1)
+					fmt.Fprintf(w, "%sD%v. subfolder: %v\n", pad+ppad, i, file.LSColorString(file.Dir))
+				}
+				continue
+			}
+			fmt.Fprintf(w, "%s  %v. %v\n", pad+ppad, j, file)
+		}
+
+		fmt.Fprintf(w, "%s  Sum: %v files.\n", pad+ppad, len(fm[dir])-1)
+
+		if i == len(dirs)-1 {
+			break
+		}
+		fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("-", width))
+	}
+
+	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", width))
+	fmt.Fprintln(w, pad)
+	fmt.Fprintf(w, "%s%d directories, %d Files\n", pad, f.NDirs(), f.NFiles())
+	// fmt.Fprintln(w, pad)
+	return w.Bytes()
 }
