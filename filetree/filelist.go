@@ -9,9 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/go-units"
-
-	"github.com/shyang107/paw/cast"
+	"code.cloudfoundry.org/bytefmt"
 
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/treeprint"
@@ -50,17 +48,17 @@ func (f FileList) String() string {
 	for i, dir := range dirs {
 		for _, file := range fm[dir] {
 			mode := file.Stat.Mode()
-			size := units.BytesSize(cast.ToFloat64(file.Stat.Size()))
+			size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
 				if strings.EqualFold(file.Dir, RootMark) {
-					fmt.Fprintf(w, "D%v. %10v %6v root (%v)\n", i, mode, size, file.LSColorString(f.Root()))
+					fmt.Fprintf(w, "D%v. %10v %6s root (%v)\n", i, mode, size, file.LSColorString(f.Root()))
 				} else {
-					fmt.Fprintf(w, "D%v. %10v %6v %v\n", i, mode, size, file.LSColorString(file.Dir))
+					fmt.Fprintf(w, "D%v. %10v %6s %v\n", i, mode, size, file.LSColorString(file.Dir))
 				}
 				continue
 			}
 			j++
-			fmt.Fprintf(w, "  %4v. %10v %12v %v\n", j, mode, size, file)
+			fmt.Fprintf(w, "  %4v. %10v %6s %v\n", j, mode, size, file)
 		}
 
 		if i == len(dirs)-1 {
@@ -300,7 +298,7 @@ func (f *FileList) ToTable(pad string) []byte {
 
 	tf := &paw.TableFormat{
 		Fields:    []string{"No.", "Mode", "Size", "Files"},
-		LenFields: []int{5, 10, 12, 80},
+		LenFields: []int{5, 10, 6, 80},
 		Aligns:    []paw.Align{paw.AlignRight, paw.AlignRight, paw.AlignRight, paw.AlignLeft},
 		Padding:   pad,
 	}
@@ -313,17 +311,17 @@ func (f *FileList) ToTable(pad string) []byte {
 
 	for i, dir := range dirs {
 		for j, file := range fm[dir] {
+			mode := file.Stat.Mode()
+			size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
 				if strings.EqualFold(file.Dir, RootMark) {
-					tf.PrintRow("", file.Stat.Mode(), "", fmt.Sprintf("[%v]. root (%v)", i, file.LSColorString(f.Root())))
+					tf.PrintRow("", mode, size, fmt.Sprintf("[%v]. root (%v)", i, file.LSColorString(f.Root())))
 				} else {
-					tf.PrintRow("", file.Stat.Mode(), "", fmt.Sprintf("[%v]. subfolder: %v", i, file.LSColorString(file.Dir)))
+					tf.PrintRow("", mode, size, fmt.Sprintf("[%v]. subfolder: %v", i, file.LSColorString(file.Dir)))
 				}
 				continue
 			}
-			size := cast.ToFloat64(file.Stat.Size())
-			lsize := units.BytesSize(size)
-			tf.PrintRow(j, file.Stat.Mode(), lsize, file)
+			tf.PrintRow(j, mode, size, file)
 		}
 
 		tf.PrintRow("", "", "", fmt.Sprintf("Sum: %v files.", len(fm[dir])-1))
@@ -362,17 +360,17 @@ func (f *FileList) ToText(pad string) []byte {
 	for i, dir := range dirs {
 		for j, file := range fm[dir] {
 			mode := file.Stat.Mode()
-			size := units.BytesSize(cast.ToFloat64(file.Stat.Size()))
+			size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
 				if strings.EqualFold(file.Dir, RootMark) {
-					fmt.Fprintf(w, "%sD%v. %10v %6v root (%v)\n", pad, i, mode, size, file.LSColorString(f.Root()))
+					fmt.Fprintf(w, "%sD%v. %10v %6s root (%v)\n", pad, i, mode, size, file.LSColorString(f.Root()))
 				} else {
 					ppad = strings.Repeat("   ", len(file.DirSlice())-1)
-					fmt.Fprintf(w, "%sD%v. %10v %6v %v\n", pad+ppad, i, mode, size, file.LSColorString(file.Dir))
+					fmt.Fprintf(w, "%sD%v. %10v %6s %v\n", pad+ppad, i, mode, size, file.LSColorString(file.Dir))
 				}
 				continue
 			}
-			fmt.Fprintf(w, "%s  %3v. %10v %12v %v\n", pad+ppad, j, mode, size, file)
+			fmt.Fprintf(w, "%s  %3v. %10v %6s %v\n", pad+ppad, j, mode, size, file)
 		}
 
 		fmt.Fprintf(w, "%s  Sum: %v files.\n", pad+ppad, len(fm[dir])-1)
