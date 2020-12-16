@@ -13,8 +13,8 @@ func exFileTree(root string) {
 	// walk(root)
 	// constructFile(root)
 	readDirs(root)
-
 }
+
 func readDirs(root string) {
 	root, err := filepath.Abs(root)
 	if err != nil {
@@ -42,6 +42,6 @@ func readDirs(root string) {
 	// spew.Dump(fl.Dirs())
 	// fmt.Println(fl.ToTreeString("# "))
 	// fmt.Println(fl.ToTableString("# "))
-	// fmt.Println(fl.ToTextString("# "))
-	fmt.Println(fl)
+	fmt.Println(fl.ToTextString("# "))
+	// fmt.Println(fl)
 }
