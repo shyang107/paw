@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+
+	"github.com/shyang107/paw/cast"
+	"github.com/shyang107/paw/godirwalk"
 
 	"code.cloudfoundry.org/bytefmt"
 
@@ -23,6 +26,7 @@ type FileList struct {
 	root  string   // root directory
 	store FileMap  // all files in `root` directory
 	dirs  []string // keys of `store`
+	depth int
 }
 
 // NewFileList will return the instance of `FileList`
@@ -43,22 +47,42 @@ func (f FileList) String() string {
 		dirs = f.Dirs()
 		fm   = f.Map()
 	)
-
+	r := fm[dirs[0]][0]
+	i1 := len(cast.ToString(f.NDirs()))
+	j1 := len(cast.ToString(f.NFiles()))
+	if f.depth == 0 {
+		if i1 < j1 {
+			i1 = j1
+		} else {
+			j1 = i1
+		}
+	}
+	// i1 := len(cast.ToString(len(dirs)))
 	j := 0
 	for i, dir := range dirs {
+		istr := r.LSColorString(fmt.Sprintf("%[2]*[1]d.", i, i1))
 		for _, file := range fm[dir] {
 			mode := file.Stat.Mode()
 			size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
 				if strings.EqualFold(file.Dir, RootMark) {
-					fmt.Fprintf(w, "D%v. %10v %6s root (%v)\n", i, mode, size, file.LSColorString(f.Root()))
+					fmt.Fprintf(w, "%v %10v %6s root (%v)\n", istr, mode, size, file.LSColorString(f.Root()))
 				} else {
-					fmt.Fprintf(w, "D%v. %10v %6s %v\n", i, mode, size, file.LSColorString(file.Dir))
+					if f.depth != 0 {
+						fmt.Fprintf(w, "%v %10v %6s %v\n", istr, mode, size, file.LSColorString(file.Dir))
+					} else {
+						fmt.Fprintf(w, "%v %10v %6s %v\n", istr, mode, size, file)
+					}
 				}
 				continue
 			}
 			j++
-			fmt.Fprintf(w, "  %4v. %10v %6s %v\n", j, mode, size, file)
+			jstr := fmt.Sprintf("%[2]*[1]d", j, j1)
+			if f.depth == 0 {
+				fmt.Fprintf(w, "%v. %10v %6s %v\n", jstr, mode, size, file)
+			} else {
+				fmt.Fprintf(w, "    %v. %10v %6s %v\n", jstr, mode, size, file)
+			}
 		}
 
 		if i == len(dirs)-1 {
@@ -109,15 +133,15 @@ func (f *FileList) AddFile(file *File) {
 	f.store[file.Dir] = append(f.store[file.Dir], file)
 }
 
-// ErrSkipFile is used as a return value from IgnoreFn to indicate that
+// SkipFile is used as a return value from IgnoreFn to indicate that
 // the regular file named in the call is to be skipped. It is not returned
 // as an error by any function.
-var ErrSkipFile = errors.New("skip the file")
+var SkipFile = errors.New("skip the file")
 
-// ErrSkipDir is used as a return value from WalkFuncs to indicate that
+// SkipDir is used as a return value from WalkFuncs to indicate that
 // the directory named in the call is to be skipped. It is not returned
 // as an error by any function.
-var ErrSkipDir = filepath.SkipDir
+var SkipDir = filepath.SkipDir
 
 // IgnoreFn is the type of the function called for each file or directory
 // visited by FindFiles. The f argument contains the File argument to FindFiles.
@@ -132,6 +156,7 @@ var ErrSkipDir = filepath.SkipDir
 // when invoked on a non-directory file, FindFiles skips the remaining files in the
 // containing directory.
 // If the returned error is SkipFile when inviked on a file, FindFiles will skip the file.
+// TODO maybe has a better way
 type IgnoreFn func(f *File, err error) error
 
 // DefaultIgnoreFn is default IgnoreFn using in FindFiles
@@ -143,10 +168,10 @@ var DefaultIgnoreFn = func(f *File, err error) error {
 		return err
 	}
 	if f.IsDir() && strings.HasPrefix(f.BaseName, ".") {
-		return ErrSkipDir
+		return SkipDir
 	}
 	if strings.HasPrefix(f.BaseName, ".") {
-		return ErrSkipFile
+		return SkipFile
 	}
 	return nil
 }
@@ -164,44 +189,90 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 	if ignore == nil {
 		ignore = DefaultIgnoreFn
 	}
-
+	f.depth = depth
 	root := f.Root()
 	switch {
 	case depth == 0: //{root directory}/*
-		fis, err := ioutil.ReadDir(root)
+		// fis, err := ioutil.ReadDir(root)
+		// if err != nil {
+		// 	return errors.New(root + ": " + err.Error())
+		// }
+
+		// for _, fi := range fis {
+		// 	file := ConstructFileRelTo(root+PathSeparator+fi.Name(), root)
+		// 	err := ignore(file, nil)
+		// 	if err == SkipFile || err == SkipDir{
+		// 		continue
+		// 	}
+		// 	f.AddFile(file)
+		// }
+		files, err := godirwalk.ReadDirnames(root, nil)
 		if err != nil {
 			return errors.New(root + ": " + err.Error())
 		}
-
-		for _, fi := range fis {
-			file := ConstructFileRelTo(root+PathSeparator+fi.Name(), root)
+		sort.Strings(files)
+		file := ConstructFileRelTo(root, root)
+		f.AddFile(file)
+		for _, name := range files {
+			file := ConstructFileRelTo(root+PathSeparator+name, root)
 			err := ignore(file, nil)
-			if err == ErrSkipFile {
+			if err == SkipFile || err == SkipDir {
 				continue
 			}
 			f.AddFile(file)
 		}
 	default: //walk through all directories of {root directory}
-		visit := func(path string, info os.FileInfo, err error) error {
-			file := ConstructFileRelTo(path, root)
-			idepth := len(file.DirSlice()) - 1
-			if depth > 0 {
-				if idepth > depth {
+		// visit := func(path string, info os.FileInfo, err error) error {
+		// 	file := ConstructFileRelTo(path, root)
+		// 	idepth := len(file.DirSlice()) - 1
+		// 	if depth > 0 {
+		// 		if idepth > depth {
+		// 			return nil
+		// 		}
+		// 	}
+		// 	err1 := ignore(file, err)
+		// 	if err1 == ErrSkipFile {
+		// 		return nil
+		// 	}
+		// 	if err1 == ErrSkipDir {
+		// 		return err1
+		// 	}
+		// 	f.AddFile(file)
+		// 	return nil
+		// }
+
+		// err := filepath.Walk(root, visit)
+		// if err != nil {
+		// 	return errors.New(root + ": " + err.Error())
+		// }
+		err := godirwalk.Walk(root, &godirwalk.Options{
+			Callback: func(path string, de *godirwalk.Dirent) error {
+				file := ConstructFileRelTo(path, root)
+				idepth := len(file.DirSlice()) - 1
+				if depth > 0 {
+					if idepth > depth {
+						return nil
+					}
+				}
+				err1 := ignore(file, nil)
+				if err1 == SkipFile {
 					return nil
 				}
-			}
-			err1 := ignore(file, err)
-			if err1 == ErrSkipFile {
+				if err1 == SkipDir {
+					return err1
+				}
+				f.AddFile(file)
 				return nil
-			}
-			if err1 == ErrSkipDir {
-				return err1
-			}
-			f.AddFile(file)
-			return nil
-		}
+			},
+			ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
+				fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 
-		err := filepath.Walk(root, visit)
+				// For the purposes of this example, a simple SkipNode will suffice,
+				// although in reality perhaps additional logic might be called for.
+				return godirwalk.SkipNode
+			},
+			// Unsorted: true, // set true for faster yet non-deterministic enumeration (see godoc)
+		})
 		if err != nil {
 			return errors.New(root + ": " + err.Error())
 		}
@@ -224,6 +295,7 @@ func (f *FileList) ToTree(pad string) []byte {
 	ntf := 0
 	var one, pre treeprint.Tree
 	fm := f.Map()
+
 	// var branch []treeprint.Tree
 	for i, dir := range dirs {
 		files := f.Map()[dir]
@@ -237,13 +309,15 @@ func (f *FileList) ToTree(pad string) []byte {
 					one = tree
 				} else {
 					pre = preTree(dir, fm, tree)
-					one = pre.AddMetaBranch(nf-1, file)
+					if f.depth != 0 {
+						one = pre.AddMetaBranch(nf-1, file)
+					} else {
+						one = pre.AddBranch(file)
+					}
 				}
 				continue
 			}
 			// add file node
-			if i == 0 {
-			}
 			one.AddNode(file)
 		}
 	}
@@ -304,7 +378,8 @@ func (f *FileList) ToTable(pad string) []byte {
 	}
 	tf.Prepare(buf)
 
-	head := fmt.Sprintf("Root directory: %q", f.Root())
+	r := fm[dirs[0]][0]
+	head := fmt.Sprintf("Root directory: %v", r.LSColorString(f.Root()))
 	tf.SetBeforeMessage(head)
 
 	tf.PrintSart()
@@ -314,23 +389,31 @@ func (f *FileList) ToTable(pad string) []byte {
 			mode := file.Stat.Mode()
 			size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
-				if strings.EqualFold(file.Dir, RootMark) {
-					tf.PrintRow("", mode, size, fmt.Sprintf("[%v]. root (%v)", i, file.LSColorString(f.Root())))
-				} else {
-					tf.PrintRow("", mode, size, fmt.Sprintf("[%v]. subfolder: %v", i, file.LSColorString(file.Dir)))
+				idx := fmt.Sprintf("D%d", i)
+				if f.depth != 0 {
+					if strings.EqualFold(file.Dir, RootMark) {
+						tf.PrintRow(idx, mode, size, file.LSColorString(f.Root()))
+					} else {
+						tf.PrintRow(idx, mode, size, file.LSColorString(file.Dir))
+					}
+				} else if i > 0 {
+					tf.PrintRow(idx, mode, size, file)
+
 				}
 				continue
 			}
 			tf.PrintRow(j, mode, size, file)
 		}
+		if f.depth != 0 {
+			tf.PrintRow("", "", "", fmt.Sprintf("Sum: %v files.", len(fm[dir])-1))
 
-		tf.PrintRow("", "", "", fmt.Sprintf("Sum: %v files.", len(fm[dir])-1))
-
-		if i == len(dirs)-1 {
-			break
+			if i == len(dirs)-1 {
+				break
+			}
+			tf.PrintMiddleSepLine()
 		}
-		tf.PrintMiddleSepLine()
 	}
+
 	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files", nDirs, nFiles))
 
 	tf.PrintEnd()
@@ -353,32 +436,55 @@ func (f *FileList) ToText(pad string) []byte {
 	)
 
 	// fmt.Fprintln(w, pad)
-	fmt.Fprintf(w, "%sRoot directory: %q\n", pad, f.Root())
+	r := fm[dirs[0]][0]
+	fmt.Fprintf(w, "%sRoot directory: %v\n", pad, r.LSColorString(f.Root()))
 	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", width))
 
 	ppad := ""
+
+	i1 := len(cast.ToString(f.NDirs()))
+	j1 := len(cast.ToString(f.NFiles()))
+	if f.depth == 0 {
+		if i1 < j1 {
+			i1 = j1
+		} else {
+			j1 = i1
+		}
+	}
+
 	for i, dir := range dirs {
+		istr := r.LSColorString(fmt.Sprintf("%[2]*[1]d.", i, i1))
 		for j, file := range fm[dir] {
 			mode := file.Stat.Mode()
 			size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
-				if strings.EqualFold(file.Dir, RootMark) {
-					fmt.Fprintf(w, "%sD%v. %10v %6s root (%v)\n", pad, i, mode, size, file.LSColorString(f.Root()))
+				if f.depth != 0 {
+					if strings.EqualFold(file.Dir, RootMark) {
+						fmt.Fprintf(w, "%s%v %10v %6s root (%v)\n", pad, istr, mode, size, file.LSColorString(f.Root()))
+					} else {
+						ppad = strings.Repeat("    ", len(file.DirSlice())-1)
+						fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad+ppad, istr, mode, size, file.LSColorString(file.Dir))
+					}
 				} else {
-					ppad = strings.Repeat("   ", len(file.DirSlice())-1)
-					fmt.Fprintf(w, "%sD%v. %10v %6s %v\n", pad+ppad, i, mode, size, file.LSColorString(file.Dir))
+					ppad = strings.Repeat("    ", len(file.DirSlice())-1)
+					fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad+ppad, istr, mode, size, file.LSColorString(file.Dir))
 				}
 				continue
 			}
-			fmt.Fprintf(w, "%s  %3v. %10v %6s %v\n", pad+ppad, j, mode, size, file)
+			if f.depth != 0 {
+				j1 = len(cast.ToString(len(fm[dir]) - 1))
+			}
+			jstr := fmt.Sprintf("%[2]*[1]d.", j, j1)
+			fmt.Fprintf(w, "%s    %v %10v %6s %v\n", pad+ppad, jstr, mode, size, file)
 		}
+		if f.depth != 0 {
+			fmt.Fprintf(w, "%s    Sum: %v files.\n", pad+ppad, len(fm[dir])-1)
 
-		fmt.Fprintf(w, "%s  Sum: %v files.\n", pad+ppad, len(fm[dir])-1)
-
-		if i == len(dirs)-1 {
-			break
+			if i == len(dirs)-1 {
+				break
+			}
+			fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("-", width))
 		}
-		fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("-", width))
 	}
 
 	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", width))

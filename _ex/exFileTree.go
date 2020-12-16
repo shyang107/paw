@@ -40,8 +40,9 @@ func readDirs(root string) {
 	// fl.FindFiles(-1, ignore)
 	fl.FindFiles(-1, nil)
 	// spew.Dump(fl.Dirs())
-	// fmt.Println(fl.ToTreeString("# "))
-	fmt.Println(fl.ToTableString("# "))
+	fmt.Println(fl.ToTreeString("# "))
+	// fmt.Println(fl.ToTableString("# "))
 	// fmt.Println(fl.ToTextString("# "))
 	// fmt.Println(fl)
+	// spew.Dump(fl.Map())
 }
