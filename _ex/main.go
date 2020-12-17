@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/mitchellh/go-homedir"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/_junk"
 	"github.com/shyang107/paw/cast"
@@ -72,9 +73,9 @@ func main() {
 	// exTextTemplate()
 	// exRegEx2()
 	// root := os.Args[1]
-	root := "../"
+	// root := "../"
 	// root, _ := homedir.Expand("~")
-	// root, _ := homedir.Expand("~/Downloads")
+	root, _ := homedir.Expand("~/Downloads")
 	// root, _ := homedir.Expand("~/Downloads/0")
 	// root := "/Users/shyang/go/src/rover/opcc/"
 	// exWalk(root)
@@ -130,7 +131,7 @@ func exPathMap2(root string) {
 					return nil
 				}
 				// fmt.Printf("%d. %s %s %s\n", i, de.ModeType(), osPathname, ext)
-				str, _ := filetree.FileLSColorStr(osPathname, de.Name())
+				str, _ := filetree.FileLSColorString(osPathname, de.Name())
 				// fmt.Printf("%d. %v %s\n", i, de.ModeType(), str)
 				dir := filepath.Dir(osPathname)
 				path := filepath.Join(dir, str)
@@ -154,7 +155,7 @@ func exPathMap(root string) {
 
 	for _, f := range fns {
 		path := filepath.Join(root, f)
-		base, err := filetree.FileLSColorStr(path, f)
+		base, err := filetree.FileLSColorString(path, f)
 		if err != nil {
 			paw.Logger.Errorln(err)
 		}

@@ -41,13 +41,15 @@ func NewFileList(root string) FileList {
 	}
 }
 
+// String ...
+// 	`size` of directory shown in the string, is accumulated size of sub contents
 func (f FileList) String() string {
 	var (
 		w    = new(bytes.Buffer)
 		dirs = f.Dirs()
 		fm   = f.Map()
 	)
-	r := fm[dirs[0]][0]
+
 	i1 := len(cast.ToString(f.NDirs()))
 	j1 := len(cast.ToString(f.NFiles()))
 	if f.depth == 0 {
@@ -59,29 +61,37 @@ func (f FileList) String() string {
 	}
 	// i1 := len(cast.ToString(len(dirs)))
 	j := 0
+	var tsize uint64
 	for i, dir := range dirs {
-		istr := r.LSColorString(fmt.Sprintf("%[2]*[1]d.", i, i1))
+		istr := fmt.Sprintf("%[2]*[1]d.", i, i1)
 		for _, file := range fm[dir] {
+			tsize += file.Size()
 			mode := file.Stat.Mode()
-			size := bytefmt.ByteSize(uint64(file.Stat.Size()))
+			// size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
+				dsize, err := sizes(file.Path)
+				if err != nil {
+					paw.Logger.Error(err)
+				}
+				sdsize := bytefmt.ByteSize(uint64(dsize))
 				if strings.EqualFold(file.Dir, RootMark) {
-					fmt.Fprintf(w, "%v %10v %6s root (%v)\n", istr, mode, size, file.LSColorString(f.Root()))
+					fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("%v %10v %6s root (%v)\n", istr, mode, sdsize, f.Root())))
 				} else {
 					if f.depth != 0 {
-						fmt.Fprintf(w, "%v %10v %6s %v\n", istr, mode, size, file.LSColorString(file.Dir))
+						fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("%v %10v %6s %v\n", istr, mode, sdsize, file.Dir)))
 					} else {
-						fmt.Fprintf(w, "%v %10v %6s %v\n", istr, mode, size, file)
+						fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("%v %10v %6s %v\n", istr, mode, sdsize, file.BaseName)))
 					}
 				}
 				continue
 			}
 			j++
 			jstr := fmt.Sprintf("%[2]*[1]d", j, j1)
+			fsize := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if f.depth == 0 {
-				fmt.Fprintf(w, "%v. %10v %6s %v\n", jstr, mode, size, file)
+				fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("%v. %10v %6s %v\n", jstr, mode, fsize, file.BaseName)))
 			} else {
-				fmt.Fprintf(w, "    %v. %10v %6s %v\n", jstr, mode, size, file)
+				fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("    %v. %10v %6s %v\n", jstr, mode, fsize, file.BaseName)))
 			}
 		}
 
@@ -91,7 +101,7 @@ func (f FileList) String() string {
 	}
 
 	fmt.Fprintln(w, "")
-	fmt.Fprintf(w, "%d directories, %d Files\n", f.NDirs(), f.NFiles())
+	fmt.Fprintf(w, "%d directories, %d files, total %v\n", f.NDirs(), f.NFiles(), bytefmt.ByteSize(tsize))
 	return string(w.Bytes())
 }
 
@@ -206,7 +216,8 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 		// 	}
 		// 	f.AddFile(file)
 		// }
-		files, err := godirwalk.ReadDirnames(root, nil)
+		scratchBuffer := make([]byte, godirwalk.MinimumScratchBufferSize)
+		files, err := godirwalk.ReadDirnames(root, scratchBuffer)
 		if err != nil {
 			return errors.New(root + ": " + err.Error())
 		}
@@ -297,20 +308,28 @@ func (f *FileList) ToTree(pad string) []byte {
 	fm := f.Map()
 
 	// var branch []treeprint.Tree
+	var tsize uint64
 	for i, dir := range dirs {
 		files := f.Map()[dir]
 		nf := len(files) // including dir
 		ntf += (nf - 1)
 		for _, file := range files {
+			tsize += file.Size()
 			if file.IsDir() {
+				dsize, err := sizes(file.Path)
+				if err != nil {
+					paw.Logger.Error(err)
+				}
+				sdsize := bytefmt.ByteSize(uint64(dsize))
 				if i == 0 { // root dir
 					tree.SetValue(fmt.Sprintf("%v\n%v", file.LSColorString(file.Path), file.LSColorString(file.Dir)))
-					tree.SetMetaValue(fmt.Sprintf("%v dirs., %v files", nd-1, nf-1))
+					tree.SetMetaValue(KindLSColorString("di", fmt.Sprintf("%v dirs., %v files, %v", nd-1, nf-1, sdsize)))
 					one = tree
 				} else {
 					pre = preTree(dir, fm, tree)
 					if f.depth != 0 {
-						one = pre.AddMetaBranch(nf-1, file)
+						// one = pre.AddMetaBranch(nf-1, file)
+						one = pre.AddMetaBranch(KindLSColorString("di", fmt.Sprintf("%d files, %v", nf-1, sdsize)), file)
 					} else {
 						one = pre.AddBranch(file)
 					}
@@ -324,7 +343,7 @@ func (f *FileList) ToTree(pad string) []byte {
 	buf := new(bytes.Buffer)
 	buf.Write(tree.Bytes())
 	buf.WriteByte('\n')
-	buf.WriteString(fmt.Sprintf("%d directoris, %d files.", f.NDirs(), f.NFiles()))
+	buf.WriteString(fmt.Sprintf("%d directoris, %d files, total %v.", f.NDirs(), f.NFiles(), bytefmt.ByteSize(tsize)))
 	// buf.WriteByte('\n')
 	b := make([]byte, len(buf.Bytes()))
 	b = append(b, pad...)
@@ -341,12 +360,14 @@ func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
 	dd := strings.Split(dir, PathSeparator)
 	nd := len(dd)
 	var pre treeprint.Tree
+	// fmt.Println(dir, nd)
 	if nd == 2 { // ./xx
 		pre = tree
 	} else { //./xx/...
 		pre = tree
 		for i := 2; i < nd; i++ {
 			predir := strings.Join(dd[:i], PathSeparator)
+			// fmt.Println("\t", i, predir)
 			f := fm[predir][0] // import dir
 			pre = pre.FindByValue(f)
 		}
@@ -355,11 +376,13 @@ func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
 }
 
 // ToTableString will return the string of FileList in table form
+// 	`size` of directory shown in the string, is accumulated size of sub contents
 func (f *FileList) ToTableString(pad string) string {
 	return string(f.ToTable(pad))
 }
 
 // ToTable will return the []byte of FileList in table form
+// 	`size` of directory shown in the returned value, is accumulated size of sub contents
 func (f *FileList) ToTable(pad string) []byte {
 
 	var (
@@ -378,31 +401,43 @@ func (f *FileList) ToTable(pad string) []byte {
 	}
 	tf.Prepare(buf)
 
-	r := fm[dirs[0]][0]
-	head := fmt.Sprintf("Root directory: %v", r.LSColorString(f.Root()))
+	dsize, err := sizes(f.Root())
+	if err != nil {
+		paw.Logger.Error(err)
+	}
+	sdsize := bytefmt.ByteSize(uint64(dsize))
+	head := fmt.Sprintf("Root directory: %v\nSizes: %v", KindLSColorString("di", f.Root()), KindLSColorString("di", sdsize))
 	tf.SetBeforeMessage(head)
 
 	tf.PrintSart()
-
+	SetNoColor()
+	var tsize uint64
 	for i, dir := range dirs {
 		for j, file := range fm[dir] {
+			tsize += file.Size()
 			mode := file.Stat.Mode()
-			size := bytefmt.ByteSize(uint64(file.Stat.Size()))
+			// size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
+				dsize, err := sizes(file.Path)
+				if err != nil {
+					paw.Logger.Error(err)
+				}
+				sdsize := bytefmt.ByteSize(uint64(dsize))
 				idx := fmt.Sprintf("D%d", i)
 				if f.depth != 0 {
 					if strings.EqualFold(file.Dir, RootMark) {
-						tf.PrintRow(idx, mode, size, file.LSColorString(f.Root()))
+						tf.PrintRow(idx, mode, sdsize, file.LSColorString(f.Root()))
 					} else {
-						tf.PrintRow(idx, mode, size, file.LSColorString(file.Dir))
+						tf.PrintRow(idx, mode, sdsize, file.LSColorString(file.Dir))
 					}
 				} else if i > 0 {
-					tf.PrintRow(idx, mode, size, file)
+					tf.PrintRow(idx, mode, sdsize, file)
 
 				}
 				continue
 			}
-			tf.PrintRow(j, mode, size, file)
+			fsize := bytefmt.ByteSize(uint64(file.Stat.Size()))
+			tf.PrintRow(j, mode, fsize, file)
 		}
 		if f.depth != 0 {
 			tf.PrintRow("", "", "", fmt.Sprintf("Sum: %v files.", len(fm[dir])-1))
@@ -414,19 +449,21 @@ func (f *FileList) ToTable(pad string) []byte {
 		}
 	}
 
-	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files", nDirs, nFiles))
+	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files, total %v.", nDirs, nFiles, bytefmt.ByteSize(tsize)))
 
 	tf.PrintEnd()
-
+	DefaultNoColor()
 	return buf.Bytes()
 }
 
 // ToTextString will return the string of FileList in table form
+// 	`size` of directory shown in the string, is accumulated size of sub contents
 func (f *FileList) ToTextString(pad string) string {
 	return string(f.ToText(pad))
 }
 
 // ToText will return the []byte of FileList in table form
+// 	`size` of directory shown in the returned value, is accumulated size of sub contents
 func (f *FileList) ToText(pad string) []byte {
 	var (
 		w     = new(bytes.Buffer)
@@ -436,8 +473,8 @@ func (f *FileList) ToText(pad string) []byte {
 	)
 
 	// fmt.Fprintln(w, pad)
-	r := fm[dirs[0]][0]
-	fmt.Fprintf(w, "%sRoot directory: %v\n", pad, r.LSColorString(f.Root()))
+	cstr := KindLSColorString("di", f.Root())
+	fmt.Fprintf(w, "%sRoot directory: %v\n", pad, cstr)
 	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", width))
 
 	ppad := ""
@@ -452,22 +489,29 @@ func (f *FileList) ToText(pad string) []byte {
 		}
 	}
 
+	var tsize uint64
 	for i, dir := range dirs {
-		istr := r.LSColorString(fmt.Sprintf("%[2]*[1]d.", i, i1))
+		istr := KindLSColorString("di", fmt.Sprintf("%[2]*[1]d.", i, i1))
 		for j, file := range fm[dir] {
+			tsize += file.Size()
 			mode := file.Stat.Mode()
-			size := bytefmt.ByteSize(uint64(file.Stat.Size()))
+			// size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
+				dsize, err := sizes(file.Path)
+				if err != nil {
+					paw.Logger.Error(err)
+				}
+				sdsize := KindLSColorString("di", bytefmt.ByteSize(uint64(dsize)))
 				if f.depth != 0 {
 					if strings.EqualFold(file.Dir, RootMark) {
-						fmt.Fprintf(w, "%s%v %10v %6s root (%v)\n", pad, istr, mode, size, file.LSColorString(f.Root()))
+						fmt.Fprintf(w, "%s%v %10v %6s root (%v)\n", pad, istr, mode, sdsize, file.LSColorString(f.Root()))
 					} else {
 						ppad = strings.Repeat("    ", len(file.DirSlice())-1)
-						fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad+ppad, istr, mode, size, file.LSColorString(file.Dir))
+						fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad+ppad, istr, mode, sdsize, file.LSColorString(file.Dir))
 					}
 				} else {
 					ppad = strings.Repeat("    ", len(file.DirSlice())-1)
-					fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad+ppad, istr, mode, size, file.LSColorString(file.Dir))
+					fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad+ppad, istr, mode, sdsize, file.LSColorString(file.Dir))
 				}
 				continue
 			}
@@ -475,7 +519,9 @@ func (f *FileList) ToText(pad string) []byte {
 				j1 = len(cast.ToString(len(fm[dir]) - 1))
 			}
 			jstr := fmt.Sprintf("%[2]*[1]d.", j, j1)
-			fmt.Fprintf(w, "%s    %v %10v %6s %v\n", pad+ppad, jstr, mode, size, file)
+			fsize := bytefmt.ByteSize(uint64(file.Stat.Size()))
+			sizefile := file.LSColorString(fmt.Sprintf("%8s %v", fsize, file))
+			fmt.Fprintf(w, "%s    %v %10v %v\n", pad+ppad, jstr, mode, sizefile)
 		}
 		if f.depth != 0 {
 			fmt.Fprintf(w, "%s    Sum: %v files.\n", pad+ppad, len(fm[dir])-1)
@@ -489,7 +535,69 @@ func (f *FileList) ToText(pad string) []byte {
 
 	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", width))
 	fmt.Fprintln(w, pad)
-	fmt.Fprintf(w, "%s%d directories, %d Files\n", pad, f.NDirs(), f.NFiles())
+	fmt.Fprintf(w, "%s%d directories, %d files, total %v.\n", pad, f.NDirs(), f.NFiles(), bytefmt.ByteSize(tsize))
 	// fmt.Fprintln(w, pad)
 	return w.Bytes()
+}
+
+// func below here, invoked from godirwalk/examples/sizes
+//  `sizes()`, `sizesStack`, `newSizesStack()`, `(s *sizesStack) EnterDirectory()`, `(s *sizesStack) LeaveDirectory()`, `(s *sizesStack) Accumulate(i int64)`
+
+func sizes(osDirname string) (int64, error) {
+	var size int64
+	sizes := newSizesStack()
+	return size, godirwalk.Walk(osDirname, &godirwalk.Options{
+		Callback: func(osPathname string, de *godirwalk.Dirent) error {
+			if de.IsDir() {
+				sizes.EnterDirectory()
+				return nil
+			}
+
+			st, err := os.Stat(osPathname)
+			if err != nil {
+				return err
+			}
+
+			size = st.Size()
+			sizes.Accumulate(size)
+
+			return nil
+		},
+		ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
+			paw.Logger.Error(err)
+			return godirwalk.SkipNode
+		},
+		PostChildrenCallback: func(osPathname string, de *godirwalk.Dirent) error {
+			size = sizes.LeaveDirectory()
+			sizes.Accumulate(size) // add this directory's size to parent directory.
+			return nil
+		},
+	})
+}
+
+// sizesStack encapsulates operations on stack of directory sizes, with similar
+// but slightly modified LIFO semantics to push and pop on a regular stack.
+type sizesStack struct {
+	sizes []int64 // stack of sizes
+	top   int     // index of top of stack
+}
+
+func newSizesStack() *sizesStack {
+	// Initialize with dummy value at top of stack to eliminate special cases.
+	return &sizesStack{sizes: make([]int64, 1, 32)}
+}
+
+func (s *sizesStack) EnterDirectory() {
+	s.sizes = append(s.sizes, 0)
+	s.top++
+}
+
+func (s *sizesStack) LeaveDirectory() (i int64) {
+	i, s.sizes = s.sizes[s.top], s.sizes[:s.top]
+	s.top--
+	return i
+}
+
+func (s *sizesStack) Accumulate(i int64) {
+	s.sizes[s.top] += i
 }

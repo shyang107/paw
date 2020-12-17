@@ -100,13 +100,13 @@ func (f File) String() string {
 		return f.BaseName
 	}
 
-	cvalue, _ := FileLSColorStr(f.Path, f.BaseName)
+	cvalue, _ := FileLSColorString(f.Path, f.BaseName)
 	return cvalue
 }
 
 // LSColorString will return a color string using LS_COLORS according to `f.Path` of file
 func (f *File) LSColorString(s string) string {
-	str, _ := FileLSColorStr(f.Path, s)
+	str, _ := FileLSColorString(f.Path, s)
 	return str
 }
 
@@ -118,6 +118,11 @@ func (f *File) IsDir() bool {
 // IsRegular reports whether `f` describes a regular file. That is, it tests that no mode type bits are set.
 func (f *File) IsRegular() bool {
 	return f.Stat.Mode().IsRegular()
+}
+
+// Size will return size of `File`
+func (f *File) Size() uint64 {
+	return uint64(f.Stat.Size())
 }
 
 // PathSlice will split `f.Path` following Spearator, seperating it into a string slice.

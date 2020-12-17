@@ -669,8 +669,8 @@ func getColorAttribute(code string) []color.Attribute {
 	return att
 }
 
-// FileLSColorStr will return the color string of `s` according `fullpath` (xxx.yyy)
-func FileLSColorStr(fullpath, s string) (string, error) {
+// FileLSColorString will return the color string of `s` according `fullpath` (xxx.yyy)
+func FileLSColorString(fullpath, s string) (string, error) {
 	file, ext := getColorExt(fullpath)
 	if ext == "«link»" {
 		// link, err := os.Readlink(fullpath)
@@ -698,6 +698,11 @@ func FileLSColorStr(fullpath, s string) (string, error) {
 		}
 		return colorstr(LSColors["no"], s), nil
 	}
+}
+
+// KindLSColorString will colorful string `s` using key `kind`
+func KindLSColorString(kind, s string) string {
+	return colorstr(LSColors[kind], s)
 }
 
 func colorstr(att []color.Attribute, s string) string {
