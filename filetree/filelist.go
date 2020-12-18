@@ -535,10 +535,12 @@ func (f *FileList) ToText(pad string) []byte {
 	return w.Bytes()
 }
 
+// ToList will return the string of FileList in list form (like as `exa`)
 func (f *FileList) ToListString(pad string) string {
 	return string(f.ToList(pad))
 }
 
+// ToList will return the []byte of FileList in list form (like as `exa`)
 func (f *FileList) ToList(pad string) []byte {
 	var (
 		w              = new(bytes.Buffer)
