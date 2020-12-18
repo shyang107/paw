@@ -36,6 +36,7 @@ type File struct {
 	File     string
 	Ext      string
 	Stat     os.FileInfo
+	Size     uint64
 }
 
 // ConstructFile will the pointer of instance of `File`, and is a constructor of `File`.
@@ -59,6 +60,10 @@ func ConstructFile(path string) *File {
 	// dir, basename := filepath.Split(path)
 	ext := filepath.Ext(path)
 	file := strings.TrimSuffix(basename, ext)
+	var size = uint64(stat.Size())
+	if stat.IsDir() {
+		size, _ = sizes(path)
+	}
 	return &File{
 		Path:     path,
 		Dir:      dir,
@@ -66,6 +71,7 @@ func ConstructFile(path string) *File {
 		File:     file,
 		Ext:      ext,
 		Stat:     stat,
+		Size:     size,
 	}
 }
 
@@ -86,11 +92,6 @@ func ConstructFileRelTo(path, root string) *File {
 	} else {
 		f.Dir = strings.Replace(f.Dir, root, ".", 1)
 	}
-	// if f.Dir == "." {
-	// 	f.Dir = "./"
-	// 	// f.BaseName = "."
-	// 	// f.File = ""
-	// }
 	return f
 }
 
@@ -120,10 +121,10 @@ func (f *File) IsRegular() bool {
 	return f.Stat.Mode().IsRegular()
 }
 
-// Size will return size of `File`
-func (f *File) Size() uint64 {
-	return uint64(f.Stat.Size())
-}
+// // Size will return size of `File`
+// func (f *File) Size() uint64 {
+// 	return uint64(f.Stat.Size())
+// }
 
 // PathSlice will split `f.Path` following Spearator, seperating it into a string slice.
 func (f *File) PathSlice() []string {

@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/mitchellh/go-homedir"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/_junk"
 	"github.com/shyang107/paw/cast"
@@ -73,9 +72,9 @@ func main() {
 	// exTextTemplate()
 	// exRegEx2()
 	// root := os.Args[1]
-	// root := "../"
+	root := "../"
 	// root, _ := homedir.Expand("~")
-	root, _ := homedir.Expand("~/Downloads")
+	// root, _ := homedir.Expand("~/Downloads")
 	// root, _ := homedir.Expand("~/Downloads/0")
 	// root := "/Users/shyang/go/src/rover/opcc/"
 	// exWalk(root)
@@ -83,6 +82,7 @@ func main() {
 	// exPathMap(root)
 	// exColor()
 	// exFile()
+	// exGitstatus(root)
 	exFileTree(root)
 }
 

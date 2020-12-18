@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/fatih/color"
 	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/godirwalk"
 
@@ -23,10 +26,12 @@ type FileMap map[string][]*File
 
 // FileList ...
 type FileList struct {
-	root  string   // root directory
-	store FileMap  // all files in `root` directory
-	dirs  []string // keys of `store`
-	depth int
+	root      string   // root directory
+	store     FileMap  // all files in `root` directory
+	dirs      []string // keys of `store`
+	depth     int
+	totalSize uint64
+	gitstatus GitStatus
 }
 
 // NewFileList will return the instance of `FileList`
@@ -61,19 +66,13 @@ func (f FileList) String() string {
 	}
 	// i1 := len(cast.ToString(len(dirs)))
 	j := 0
-	var tsize uint64
 	for i, dir := range dirs {
 		istr := fmt.Sprintf("%[2]*[1]d.", i, i1)
 		for _, file := range fm[dir] {
-			tsize += file.Size()
+			fsize := file.Size
+			sdsize := bytefmt.ByteSize(fsize)
 			mode := file.Stat.Mode()
-			// size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
-				dsize, err := sizes(file.Path)
-				if err != nil {
-					paw.Logger.Error(err)
-				}
-				sdsize := bytefmt.ByteSize(uint64(dsize))
 				if strings.EqualFold(file.Dir, RootMark) {
 					fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("%v %10v %6s root (%v)\n", istr, mode, sdsize, f.Root())))
 				} else {
@@ -87,11 +86,10 @@ func (f FileList) String() string {
 			}
 			j++
 			jstr := fmt.Sprintf("%[2]*[1]d", j, j1)
-			fsize := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if f.depth == 0 {
-				fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("%v. %10v %6s %v\n", jstr, mode, fsize, file.BaseName)))
+				fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("%v. %10v %6s %v\n", jstr, mode, sdsize, file.BaseName)))
 			} else {
-				fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("    %v. %10v %6s %v\n", jstr, mode, fsize, file.BaseName)))
+				fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("    %v. %10v %6s %v\n", jstr, mode, sdsize, file.BaseName)))
 			}
 		}
 
@@ -101,7 +99,7 @@ func (f FileList) String() string {
 	}
 
 	fmt.Fprintln(w, "")
-	fmt.Fprintf(w, "%d directories, %d files, total %v\n", f.NDirs(), f.NFiles(), bytefmt.ByteSize(tsize))
+	fmt.Fprintf(w, "%d directories, %d files, total %v\n", f.NDirs(), f.NFiles(), bytefmt.ByteSize(f.totalSize))
 	return string(w.Bytes())
 }
 
@@ -134,6 +132,11 @@ func (f *FileList) NFiles() int {
 	return nf
 }
 
+// GetGitStatus will return git short status of `FileList`
+func (f *FileList) GetGitStatus() GitStatus {
+	return f.gitstatus
+}
+
 // AddFile will add file into the file list
 func (f *FileList) AddFile(file *File) {
 	if _, ok := f.store[file.Dir]; !ok {
@@ -141,6 +144,15 @@ func (f *FileList) AddFile(file *File) {
 		f.dirs = append(f.dirs, file.Dir)
 	}
 	f.store[file.Dir] = append(f.store[file.Dir], file)
+	// f.totalSize += file.Size()
+}
+
+func (f *FileList) DisableColor() {
+	SetNoColor()
+}
+
+func (f *FileList) EnableColor() {
+	DefaultNoColor()
 }
 
 // SkipFile is used as a return value from IgnoreFn to indicate that
@@ -199,8 +211,10 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 	if ignore == nil {
 		ignore = DefaultIgnoreFn
 	}
+	f.gitstatus, _ = GetShortStatus(f.Root())
 	f.depth = depth
 	root := f.Root()
+	f.totalSize, _ = sizes(root)
 	switch {
 	case depth == 0: //{root directory}/*
 		// fis, err := ioutil.ReadDir(root)
@@ -307,29 +321,23 @@ func (f *FileList) ToTree(pad string) []byte {
 	var one, pre treeprint.Tree
 	fm := f.Map()
 
-	// var branch []treeprint.Tree
-	var tsize uint64
 	for i, dir := range dirs {
 		files := f.Map()[dir]
 		nf := len(files) // including dir
 		ntf += (nf - 1)
 		for _, file := range files {
-			tsize += file.Size()
+			fsize := file.Size
+			sfsize := bytefmt.ByteSize(fsize)
 			if file.IsDir() {
-				dsize, err := sizes(file.Path)
-				if err != nil {
-					paw.Logger.Error(err)
-				}
-				sdsize := bytefmt.ByteSize(uint64(dsize))
 				if i == 0 { // root dir
 					tree.SetValue(fmt.Sprintf("%v\n%v", file.LSColorString(file.Path), file.LSColorString(file.Dir)))
-					tree.SetMetaValue(KindLSColorString("di", fmt.Sprintf("%v dirs., %v files, %v", nd-1, nf-1, sdsize)))
+					tree.SetMetaValue(KindLSColorString("di", fmt.Sprintf("%v dirs., %v files, %v", nd-1, nf-1, sfsize)))
 					one = tree
 				} else {
 					pre = preTree(dir, fm, tree)
 					if f.depth != 0 {
 						// one = pre.AddMetaBranch(nf-1, file)
-						one = pre.AddMetaBranch(KindLSColorString("di", fmt.Sprintf("%d files, %v", nf-1, sdsize)), file)
+						one = pre.AddMetaBranch(KindLSColorString("di", fmt.Sprintf("%d files, %v", nf-1, sfsize)), file)
 					} else {
 						one = pre.AddBranch(file)
 					}
@@ -343,11 +351,16 @@ func (f *FileList) ToTree(pad string) []byte {
 	buf := new(bytes.Buffer)
 	buf.Write(tree.Bytes())
 	buf.WriteByte('\n')
-	buf.WriteString(fmt.Sprintf("%d directoris, %d files, total %v.", f.NDirs(), f.NFiles(), bytefmt.ByteSize(tsize)))
+	buf.WriteString(fmt.Sprintf("%d directoris, %d files, total %v.", f.NDirs(), f.NFiles(), bytefmt.ByteSize(f.totalSize)))
 	// buf.WriteByte('\n')
-	b := make([]byte, len(buf.Bytes()))
+
+	return paddingTree(pad, buf.Bytes())
+}
+
+func paddingTree(pad string, bytes []byte) []byte {
+	b := make([]byte, len(bytes))
 	b = append(b, pad...)
-	for _, v := range buf.Bytes() {
+	for _, v := range bytes {
 		b = append(b, v)
 		if v == '\n' {
 			b = append(b, pad...)
@@ -401,43 +414,32 @@ func (f *FileList) ToTable(pad string) []byte {
 	}
 	tf.Prepare(buf)
 
-	dsize, err := sizes(f.Root())
-	if err != nil {
-		paw.Logger.Error(err)
-	}
-	sdsize := bytefmt.ByteSize(uint64(dsize))
-	head := fmt.Sprintf("Root directory: %v\nSizes: %v", KindLSColorString("di", f.Root()), KindLSColorString("di", sdsize))
+	sdsize := bytefmt.ByteSize(f.totalSize)
+	head := fmt.Sprintf("Root directory: %v, size: %v", KindLSColorString("di", f.Root()), KindLSColorString("di", sdsize))
 	tf.SetBeforeMessage(head)
 
 	tf.PrintSart()
 	SetNoColor()
-	var tsize uint64
 	for i, dir := range dirs {
 		for j, file := range fm[dir] {
-			tsize += file.Size()
+			fsize := file.Size
+			sfsize := bytefmt.ByteSize(fsize)
 			mode := file.Stat.Mode()
-			// size := bytefmt.ByteSize(uint64(file.Stat.Size()))
 			if file.IsDir() {
-				dsize, err := sizes(file.Path)
-				if err != nil {
-					paw.Logger.Error(err)
-				}
-				sdsize := bytefmt.ByteSize(uint64(dsize))
 				idx := fmt.Sprintf("D%d", i)
 				if f.depth != 0 {
 					if strings.EqualFold(file.Dir, RootMark) {
-						tf.PrintRow(idx, mode, sdsize, file.LSColorString(f.Root()))
+						tf.PrintRow(idx, mode, sfsize, file.LSColorString(f.Root()))
 					} else {
-						tf.PrintRow(idx, mode, sdsize, file.LSColorString(file.Dir))
+						tf.PrintRow(idx, mode, sfsize, file.LSColorString(file.Dir))
 					}
 				} else if i > 0 {
-					tf.PrintRow(idx, mode, sdsize, file)
+					tf.PrintRow(idx, mode, sfsize, file)
 
 				}
 				continue
 			}
-			fsize := bytefmt.ByteSize(uint64(file.Stat.Size()))
-			tf.PrintRow(j, mode, fsize, file)
+			tf.PrintRow(j, mode, sfsize, file)
 		}
 		if f.depth != 0 {
 			tf.PrintRow("", "", "", fmt.Sprintf("Sum: %v files.", len(fm[dir])-1))
@@ -449,7 +451,7 @@ func (f *FileList) ToTable(pad string) []byte {
 		}
 	}
 
-	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files, total %v.", nDirs, nFiles, bytefmt.ByteSize(tsize)))
+	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files, total %v.", nDirs, nFiles, bytefmt.ByteSize(f.totalSize)))
 
 	tf.PrintEnd()
 	DefaultNoColor()
@@ -472,9 +474,8 @@ func (f *FileList) ToText(pad string) []byte {
 		width = 80
 	)
 
-	// fmt.Fprintln(w, pad)
-	cstr := KindLSColorString("di", f.Root())
-	fmt.Fprintf(w, "%sRoot directory: %v\n", pad, cstr)
+	sdsize := bytefmt.ByteSize(f.totalSize)
+	fmt.Fprintf(w, "%sRoot directory: %v, size: %v\n", pad, KindLSColorString("di", f.Root()), KindLSColorString("di", sdsize))
 	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", width))
 
 	ppad := ""
@@ -489,19 +490,15 @@ func (f *FileList) ToText(pad string) []byte {
 		}
 	}
 
-	var tsize uint64
 	for i, dir := range dirs {
 		istr := KindLSColorString("di", fmt.Sprintf("%[2]*[1]d.", i, i1))
 		for j, file := range fm[dir] {
-			tsize += file.Size()
 			mode := file.Stat.Mode()
-			// size := bytefmt.ByteSize(uint64(file.Stat.Size()))
+			fsize := file.Size
+			sfsize := bytefmt.ByteSize(fsize)
+			sizefile := file.LSColorString(fmt.Sprintf("%8s %v", sfsize, file))
 			if file.IsDir() {
-				dsize, err := sizes(file.Path)
-				if err != nil {
-					paw.Logger.Error(err)
-				}
-				sdsize := KindLSColorString("di", bytefmt.ByteSize(uint64(dsize)))
+				sdsize := KindLSColorString("di", sfsize)
 				if f.depth != 0 {
 					if strings.EqualFold(file.Dir, RootMark) {
 						fmt.Fprintf(w, "%s%v %10v %6s root (%v)\n", pad, istr, mode, sdsize, file.LSColorString(f.Root()))
@@ -511,7 +508,7 @@ func (f *FileList) ToText(pad string) []byte {
 					}
 				} else {
 					ppad = strings.Repeat("    ", len(file.DirSlice())-1)
-					fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad+ppad, istr, mode, sdsize, file.LSColorString(file.Dir))
+					fmt.Fprintf(w, "%s%v %10v %v\n", pad+ppad, istr, mode, sizefile)
 				}
 				continue
 			}
@@ -519,8 +516,6 @@ func (f *FileList) ToText(pad string) []byte {
 				j1 = len(cast.ToString(len(fm[dir]) - 1))
 			}
 			jstr := fmt.Sprintf("%[2]*[1]d.", j, j1)
-			fsize := bytefmt.ByteSize(uint64(file.Stat.Size()))
-			sizefile := file.LSColorString(fmt.Sprintf("%8s %v", fsize, file))
 			fmt.Fprintf(w, "%s    %v %10v %v\n", pad+ppad, jstr, mode, sizefile)
 		}
 		if f.depth != 0 {
@@ -535,18 +530,208 @@ func (f *FileList) ToText(pad string) []byte {
 
 	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", width))
 	fmt.Fprintln(w, pad)
-	fmt.Fprintf(w, "%s%d directories, %d files, total %v.\n", pad, f.NDirs(), f.NFiles(), bytefmt.ByteSize(tsize))
+	fmt.Fprintf(w, "%s%d directories, %d files, total %v.\n", pad, f.NDirs(), f.NFiles(), bytefmt.ByteSize(f.totalSize))
 	// fmt.Fprintln(w, pad)
 	return w.Bytes()
+}
+
+func (f *FileList) ToListString(pad string) string {
+	return string(f.ToList(pad))
+}
+
+func (f *FileList) ToList(pad string) []byte {
+	var (
+		w              = new(bytes.Buffer)
+		dirs           = f.Dirs()
+		fm             = f.Map()
+		currentuser, _ = user.Current()
+		urname         = currentuser.Username
+		usergp, _      = user.LookupGroupId(currentuser.Gid)
+		gpname         = usergp.Name
+	)
+
+	ctdsize := bytefmt.ByteSize(f.totalSize)
+	head := fmt.Sprintf("Root directory: %v, size: %v", KindLSColorString("di", f.Root()), KindLSColorString("di", ctdsize))
+	fmt.Fprintln(w, head)
+	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", 80))
+
+	chead := getColorizedHead(pad, urname, gpname)
+	fmt.Fprintln(w, chead)
+	curname, cgpname := getColorizedUGName(urname, gpname)
+
+	for _, dir := range dirs {
+		for _, file := range fm[dir] {
+			fsize := file.Size
+			sfsize := bytefmt.ByteSize(fsize)
+			// tsize += fsize
+			cperm := getColorizePermission(file.Stat.Mode())
+			cmodTime := getColorizedModTime(file.Stat.ModTime())
+			cgit := getColorizedGitStatus(f.GetGitStatus(), file)
+			if file.IsDir() {
+				// cdsize := getColorizedSize(fsize)
+				sdsize := fmt.Sprintf("%6s", bytefmt.ByteSize(fsize))
+				cdsize := KindLSColorString("di", sdsize)
+				if !strings.EqualFold(file.Dir, RootMark) {
+					if f.depth != 0 {
+						cdsize := KindLSColorString("di", sfsize)
+						fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("-", 80))
+						fmt.Fprintf(w, "directory: %v, size: %v\n", KindLSColorString("di", file.Dir), cdsize)
+						fmt.Fprintln(w, chead)
+					}
+					fmt.Fprintf(w, "%s%-11s %s %s %s %14s %s %s\n", pad, cperm, cdsize, curname, cgpname, cmodTime, cgit, file.LSColorString(file.BaseName))
+				}
+				continue
+			}
+			cfsize := getColorizedSize(fsize)
+			fmt.Fprintf(w, "%s%-11s %s %s %s %14s %s %s\n", pad, cperm, cfsize, curname, cgpname, cmodTime, cgit, file.LSColorString(file.BaseName))
+		}
+	}
+	// fmt.Fprintln(w, pad)
+	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", 80))
+	fmt.Fprintf(w, "%s%d directories, %d files, total %v.\n", pad, f.NDirs(), f.NFiles(), bytefmt.ByteSize(f.totalSize))
+	return w.Bytes()
+}
+
+func getColorizedGitStatus(git GitStatus, file *File) string {
+	st := "--"
+	if fst, ok := git.FilesStatus[file.Path]; ok {
+		fst = strings.Replace(fst, " ", "-", 1)
+		fst = strings.Replace(fst, "?", "N", 1)
+		fst = strings.Replace(fst, "A", "N", 1)
+		return getColorizedTag(fst)
+	}
+
+	if file.IsDir() {
+		gits := getGitSlice(git, file)
+		if len(gits) > 0 {
+			// fmt.Println("> ", file.Path, file.Dir, gits)
+			return getColorizedTag(getGitTag(gits))
+		}
+		// else {
+		// 	return st
+		// }
+	}
+	return getColorizedTag(st)
+}
+func getColorizedTag(fst string) string {
+	x := rune(fst[0])
+	y := rune(fst[1])
+	return cpmap[x].Sprint(string(x)) + cpmap[y].Sprint(string(y))
+}
+func getGitTag(gits []string) string {
+	// paw.Logger.Info()
+	x := getGitTagChar(rune(gits[0][0]))
+	y := getGitTagChar(rune(gits[0][1]))
+	for i := 1; i < len(gits); i++ {
+		c := getGitTagChar(rune(gits[i][0]))
+		if c != '-' && x != 'N' {
+			x = c
+		}
+		c = getGitTagChar(rune(gits[i][1]))
+		if c != '-' && y != 'N' {
+			y = c
+		}
+	}
+	return string(x) + string(y)
+}
+
+func getGitTagChar(c rune) rune {
+	if c == '?' || c == 'A' {
+		return 'N'
+	}
+	return c
+}
+
+func getGitSlice(git GitStatus, file *File) []string {
+	gits := []string{}
+	for k, v := range git.FilesStatus {
+		if strings.HasPrefix(k, file.Path) {
+			v = strings.Replace(v, " ", "-", 1)
+			gits = append(gits, v)
+		}
+	}
+	return gits
+}
+
+func getColorizePermission(mode os.FileMode) string {
+	sperm := fmt.Sprintf("%v", mode)
+	cperm := ""
+	for _, p := range sperm {
+		if p == 'd' {
+			cperm += KindLSColorString("di", string(p))
+			continue
+		}
+		cperm += cpmap[p].Sprint(string(p))
+	}
+	return cperm + " "
+}
+
+var cpmap = map[rune]*color.Color{
+	// 'd': color.New(color.FgCyan).Add(color.Concealed),
+	'r': color.New(color.FgYellow).Add(color.Bold),
+	'w': color.New(color.FgRed).Add(color.Bold),
+	'x': color.New(color.FgGreen).Add(color.Bold),
+	'-': color.New(color.Concealed),
+	'.': color.New(color.Concealed),
+	' ': color.New(color.Concealed),                   //unmodified
+	'M': color.New(color.FgBlue).Add(color.Concealed), //modified
+	'A': color.New(color.FgBlue).Add(color.Concealed), //added
+	'D': color.New(color.FgRed).Add(color.Concealed),  //deleted
+	'R': color.New(color.FgBlue).Add(color.Concealed), //renamed
+	'C': color.New(color.FgBlue).Add(color.Concealed), //copied
+	'U': color.New(color.FgBlue).Add(color.Concealed), //updated but unmerged
+	'?': color.New(color.FgHiGreen).Add(color.Bold),   //untracked
+	'N': color.New(color.FgHiGreen).Add(color.Bold),   //untracked
+	'!': color.New(color.FgBlue).Add(color.Concealed), //ignored
+}
+
+func getColorizedSize(size uint64) (csize string) {
+	ssize := fmt.Sprintf("%6s", bytefmt.ByteSize(size))
+	c := color.New(color.FgHiGreen).Add(color.Bold)
+	csize = c.Sprint(ssize)
+	return csize
+}
+
+func getColorizedUGName(urname, gpname string) (curname, cgpname string) {
+	c := color.New(color.FgHiYellow).Add(color.Bold)
+	curname = c.Sprint(urname)
+	cgpname = c.Sprint(gpname)
+	return curname, cgpname
+}
+
+func getColorizedModTime(modTime time.Time) string {
+	c := color.New(color.FgBlue).Add(color.Concealed)
+	s := c.Sprint(modTime.Format("01-02-06 15:04"))
+	return s
+}
+
+func getColorizedHead(pad, username, groupname string) string {
+	c := color.New(color.Concealed).Add(color.Underline)
+
+	width := intmax(4, len(username))
+	huser := fmt.Sprintf("%[2]*[1]s", "User", width)
+	width = intmax(5, len(groupname))
+	hgroup := fmt.Sprintf("%[2]*[1]s", "Group", width)
+
+	ssize := fmt.Sprintf("%6s", "Size")
+	head := fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, c.Sprint("Permissions"), c.Sprint(ssize), c.Sprint(huser), c.Sprint(hgroup), c.Sprint(" Data Modified"), c.Sprint("Git"), c.Sprint("Name"))
+	return head
+}
+
+func intmax(i1, i2 int) int {
+	if i1 >= i2 {
+		return i1
+	}
+	return i2
 }
 
 // func below here, invoked from godirwalk/examples/sizes
 //  `sizes()`, `sizesStack`, `newSizesStack()`, `(s *sizesStack) EnterDirectory()`, `(s *sizesStack) LeaveDirectory()`, `(s *sizesStack) Accumulate(i int64)`
 
-func sizes(osDirname string) (int64, error) {
+func sizes(osDirname string) (uint64, error) {
 	var size int64
 	sizes := newSizesStack()
-	return size, godirwalk.Walk(osDirname, &godirwalk.Options{
+	return uint64(size), godirwalk.Walk(osDirname, &godirwalk.Options{
 		Callback: func(osPathname string, de *godirwalk.Dirent) error {
 			if de.IsDir() {
 				sizes.EnterDirectory()
