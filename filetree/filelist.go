@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/spf13/cast"
 	"github.com/karrick/godirwalk"
+	"github.com/spf13/cast"
 
 	"code.cloudfoundry.org/bytefmt"
 
@@ -21,10 +21,10 @@ import (
 	"github.com/shyang107/paw/treeprint"
 )
 
-// FileMap ...
+// FileMap stores directory map to `map[{{ sub-path }}]{{ *File }}`
 type FileMap map[string][]*File
 
-// FileList ...
+// FileList stores the list information of File
 type FileList struct {
 	root      string   // root directory
 	store     FileMap  // all files in `root` directory
