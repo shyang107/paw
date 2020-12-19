@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/shyang107/paw/cast"
-	"github.com/shyang107/paw/godirwalk"
+	"github.com/spf13/cast"
+	"github.com/karrick/godirwalk"
 
 	"code.cloudfoundry.org/bytefmt"
 

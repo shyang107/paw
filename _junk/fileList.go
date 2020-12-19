@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/shyang107/paw"
-	"github.com/shyang107/paw/cast"
+	"github.com/spf13/cast"
 	"github.com/shyang107/paw/treeprint"
 )
 
