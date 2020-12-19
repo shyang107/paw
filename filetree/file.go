@@ -61,9 +61,9 @@ func ConstructFile(path string) *File {
 	ext := filepath.Ext(path)
 	file := strings.TrimSuffix(basename, ext)
 	var size = uint64(stat.Size())
-	if stat.IsDir() {
-		size, _ = sizes(path)
-	}
+	// if stat.IsDir() {
+	// 	size, _ = sizes(path)
+	// }
 	return &File{
 		Path:     path,
 		Dir:      dir,

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/filetree"
 	"github.com/shyang107/paw/godirwalk"
@@ -19,6 +20,7 @@ func exFileTree(root string) {
 }
 
 func readDirs(root string) {
+	root, _ = homedir.Expand("~")
 	root, err := filepath.Abs(root)
 	if err != nil {
 		paw.Logger.Fatal(err)
@@ -41,14 +43,26 @@ func readDirs(root string) {
 	// 	return nil
 	// }
 	// fl.FindFiles(-1, ignore)
-	fl.FindFiles(-1, nil)
+	fl.FindFiles(0, nil)
 	// spew.Dump(fl.Dirs())
-	// fmt.Println(fl.ToTreeString("# "))
+	fmt.Println(fl.ToTreeString("# "))
 	// fmt.Println(fl.ToTableString("# "))
 	// fmt.Println(fl.ToTextString("# "))
-	fmt.Println(fl.ToListString(""))
+	// fmt.Println(fl.ToListString(""))
 	// fmt.Println(fl)
 	// spew.Dump(fl.Map())
+	// fmt.Println(filetree.KindLSColorString(".sh", "sh"))
+	// fmt.Println(filetree.KindLSColorString(".go", "go"))
+	// fmt.Println(filetree.KindLSColorString("di", "di"))
+	// fmt.Println(filetree.KindLSColorString("fi", "fi"))
+	// fmt.Println(filetree.KindLSColorString("ln", "ln"))
+	// fmt.Println(filetree.KindLSColorString("pi", "pi"))
+	// fmt.Println(filetree.KindLSColorString("so", "so"))
+	// fmt.Println(filetree.KindLSColorString("bd", "bd"))
+	// fmt.Println(filetree.KindLSColorString("cd", "cd"))
+	// fmt.Println(filetree.KindLSColorString("or", "or"))
+	// fmt.Println(filetree.KindLSColorString("mi", "mi"))
+	// fmt.Println(filetree.KindLSColorString("ex", "ex"))
 }
 
 func scan(pathname string) {

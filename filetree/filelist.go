@@ -86,10 +86,15 @@ func (f FileList) String() string {
 			}
 			j++
 			jstr := fmt.Sprintf("%[2]*[1]d", j, j1)
+			name := file.BaseName
+			link := checkAndGetLink(file)
+			if len(link) > 0 {
+				name += " -> " + link
+			}
 			if f.depth == 0 {
-				fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("%v. %10v %6s %v\n", jstr, mode, sdsize, file.BaseName)))
+				fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("%v. %10v %6s %v\n", jstr, mode, sdsize, name)))
 			} else {
-				fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("    %v. %10v %6s %v\n", jstr, mode, sdsize, file.BaseName)))
+				fmt.Fprintf(w, file.LSColorString(fmt.Sprintf("    %v. %10v %6s %v\n", jstr, mode, sdsize, name)))
 			}
 		}
 
@@ -101,6 +106,33 @@ func (f FileList) String() string {
 	fmt.Fprintln(w, "")
 	fmt.Fprintf(w, "%d directories, %d files, total %v\n", f.NDirs(), f.NFiles(), bytefmt.ByteSize(f.totalSize))
 	return string(w.Bytes())
+}
+
+func checkAndGetLink(file *File) (link string) {
+	mode := file.Stat.Mode()
+	if mode&os.ModeSymlink != 0 {
+		alink, err := filepath.EvalSymlinks(file.Path)
+		if err != nil {
+			link += alink + " ERR: " + err.Error()
+		} else {
+			link = alink
+		}
+	}
+
+	return link
+}
+
+func checkAndGetColorLink(file *File) (link string) {
+	mode := file.Stat.Mode()
+	if mode&os.ModeSymlink != 0 {
+		alink, err := filepath.EvalSymlinks(file.Path)
+		if err != nil {
+			link = alink + " ERR: " + err.Error()
+		} else {
+			link, _ = FileLSColorString(alink, alink)
+		}
+	}
+	return link
 }
 
 // Root will return the `root` field (root directory)
@@ -142,9 +174,10 @@ func (f *FileList) AddFile(file *File) {
 	if _, ok := f.store[file.Dir]; !ok {
 		f.store[file.Dir] = []*File{}
 		f.dirs = append(f.dirs, file.Dir)
+		f.totalSize += file.Size
 	}
 	f.store[file.Dir] = append(f.store[file.Dir], file)
-	// f.totalSize += file.Size()
+	f.totalSize += file.Size
 }
 
 func (f *FileList) DisableColor() {
@@ -198,6 +231,8 @@ var DefaultIgnoreFn = func(f *File, err error) error {
 	return nil
 }
 
+var searchDepth = 0
+
 // FindFiles will find files using codintion `ignore` func
 // 	depth : depth of subfolders
 // 		< 0 : walk through all directories of {root directory}
@@ -213,8 +248,12 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 	}
 	f.gitstatus, _ = GetShortStatus(f.Root())
 	f.depth = depth
+	searchDepth = depth
 	root := f.Root()
-	f.totalSize, _ = sizes(root)
+	// if depth = 0 {
+
+	// }
+	// f.totalSize, _ = sizes(root)
 	switch {
 	case depth == 0: //{root directory}/*
 		// fis, err := ioutil.ReadDir(root)
@@ -345,7 +384,12 @@ func (f *FileList) ToTree(pad string) []byte {
 				continue
 			}
 			// add file node
-			one.AddNode(file)
+			link := checkAndGetColorLink(file)
+			if len(link) > 0 {
+				one.AddMetaNode(link, file)
+			} else {
+				one.AddNode(file)
+			}
 		}
 	}
 	buf := new(bytes.Buffer)
@@ -439,7 +483,12 @@ func (f *FileList) ToTable(pad string) []byte {
 				}
 				continue
 			}
-			tf.PrintRow(j, mode, sfsize, file)
+			name := file.LSColorString(file.BaseName)
+			link := checkAndGetLink(file)
+			if len(link) > 0 {
+				name += cpmap['l'].Sprint(" -> ") + link
+			}
+			tf.PrintRow(j, mode, sfsize, name)
 		}
 		if f.depth != 0 {
 			tf.PrintRow("", "", "", fmt.Sprintf("Sum: %v files.", len(fm[dir])-1))
@@ -495,10 +544,11 @@ func (f *FileList) ToText(pad string) []byte {
 		for j, file := range fm[dir] {
 			mode := file.Stat.Mode()
 			fsize := file.Size
-			sfsize := bytefmt.ByteSize(fsize)
-			sizefile := file.LSColorString(fmt.Sprintf("%8s %v", sfsize, file))
+			sfsize := fmt.Sprintf("%6s", bytefmt.ByteSize(fsize))
+			// sizefile := file.LSColorString(fmt.Sprintf("%6s %v", sfsize, file))
 			if file.IsDir() {
 				sdsize := KindLSColorString("di", sfsize)
+				// sdsize := getColorizedSize(fsize)
 				if f.depth != 0 {
 					if strings.EqualFold(file.Dir, RootMark) {
 						fmt.Fprintf(w, "%s%v %10v %6s root (%v)\n", pad, istr, mode, sdsize, file.LSColorString(f.Root()))
@@ -508,7 +558,7 @@ func (f *FileList) ToText(pad string) []byte {
 					}
 				} else {
 					ppad = strings.Repeat("    ", len(file.DirSlice())-1)
-					fmt.Fprintf(w, "%s%v %10v %v\n", pad+ppad, istr, mode, sizefile)
+					fmt.Fprintf(w, "%s%v %10v %v %v\n", pad+ppad, istr, mode, sdsize, file)
 				}
 				continue
 			}
@@ -516,7 +566,12 @@ func (f *FileList) ToText(pad string) []byte {
 				j1 = len(cast.ToString(len(fm[dir]) - 1))
 			}
 			jstr := fmt.Sprintf("%[2]*[1]d.", j, j1)
-			fmt.Fprintf(w, "%s    %v %10v %v\n", pad+ppad, jstr, mode, sizefile)
+			name := file.LSColorString(file.BaseName)
+			link := checkAndGetColorLink(file)
+			if len(link) > 0 {
+				name += cpmap['l'].Sprint(" -> ") + link
+			}
+			fmt.Fprintf(w, "%s    %v %10v %v %v\n", pad+ppad, jstr, mode, getColorizedSize(fsize), name)
 		}
 		if f.depth != 0 {
 			fmt.Fprintf(w, "%s    Sum: %v files.\n", pad+ppad, len(fm[dir])-1)
@@ -564,7 +619,7 @@ func (f *FileList) ToList(pad string) []byte {
 	for _, dir := range dirs {
 		for _, file := range fm[dir] {
 			fsize := file.Size
-			sfsize := bytefmt.ByteSize(fsize)
+			// sfsize := bytefmt.ByteSize(fsize)
 			// tsize += fsize
 			cperm := getColorizePermission(file.Stat.Mode())
 			cmodTime := getColorizedModTime(file.Stat.ModTime())
@@ -575,7 +630,6 @@ func (f *FileList) ToList(pad string) []byte {
 				cdsize := KindLSColorString("di", sdsize)
 				if !strings.EqualFold(file.Dir, RootMark) {
 					if f.depth != 0 {
-						cdsize := KindLSColorString("di", sfsize)
 						fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("-", 80))
 						fmt.Fprintf(w, "directory: %v, size: %v\n", KindLSColorString("di", file.Dir), cdsize)
 						fmt.Fprintln(w, chead)
@@ -585,7 +639,12 @@ func (f *FileList) ToList(pad string) []byte {
 				continue
 			}
 			cfsize := getColorizedSize(fsize)
-			fmt.Fprintf(w, "%s%-11s %s %s %s %14s %s %s\n", pad, cperm, cfsize, curname, cgpname, cmodTime, cgit, file.LSColorString(file.BaseName))
+			name := file.LSColorString(file.BaseName)
+			link := checkAndGetColorLink(file)
+			if len(link) > 0 {
+				name += cpmap['l'].Sprint(" -> ") + link
+			}
+			fmt.Fprintf(w, "%s%-11s %s %s %s %14s %s %s\n", pad, cperm, cfsize, curname, cgpname, cmodTime, cgit, name)
 		}
 	}
 	// fmt.Fprintln(w, pad)
@@ -595,23 +654,22 @@ func (f *FileList) ToList(pad string) []byte {
 }
 
 func getColorizedGitStatus(git GitStatus, file *File) string {
-	st := "--"
-	if fst, ok := git.FilesStatus[file.Path]; ok {
-		fst = strings.Replace(fst, " ", "-", 1)
-		fst = strings.Replace(fst, "?", "N", 1)
-		fst = strings.Replace(fst, "A", "N", 1)
-		return getColorizedTag(fst)
+	// st := "--"
+	st, ok := git.FilesStatus[file.Path]
+	st = strings.Replace(st, " ", "-", -1)
+	st = strings.Replace(st, "??", "-N", -1)
+	st = strings.Replace(st, "?", "N", -1)
+	st = strings.Replace(st, "A", "N", -1)
+	if !ok {
+		st = "--"
+		// return getColorizedTag(st)
 	}
 
 	if file.IsDir() {
 		gits := getGitSlice(git, file)
 		if len(gits) > 0 {
-			// fmt.Println("> ", file.Path, file.Dir, gits)
-			return getColorizedTag(getGitTag(gits))
+			st = getGitTag(gits)
 		}
-		// else {
-		// 	return st
-		// }
 	}
 	return getColorizedTag(st)
 }
@@ -648,7 +706,11 @@ func getGitSlice(git GitStatus, file *File) []string {
 	gits := []string{}
 	for k, v := range git.FilesStatus {
 		if strings.HasPrefix(k, file.Path) {
-			v = strings.Replace(v, " ", "-", 1)
+			// v = strings.Replace(v, " ", "-", 1)
+			v = strings.Replace(v, " ", "-", -1)
+			v = strings.Replace(v, "??", "-N", -1)
+			v = strings.Replace(v, "?", "N", -1)
+			v = strings.Replace(v, "A", "N", -1)
 			gits = append(gits, v)
 		}
 	}
@@ -659,20 +721,18 @@ func getColorizePermission(mode os.FileMode) string {
 	sperm := fmt.Sprintf("%v", mode)
 	cperm := ""
 	for _, p := range sperm {
-		if p == 'd' {
-			cperm += KindLSColorString("di", string(p))
-			continue
-		}
 		cperm += cpmap[p].Sprint(string(p))
 	}
 	return cperm + " "
 }
 
 var cpmap = map[rune]*color.Color{
-	// 'd': color.New(color.FgCyan).Add(color.Concealed),
+	'L': color.New(LSColors["ln"]...).Add(color.Concealed),
+	'l': color.New(LSColors["ln"]...).Add(color.Concealed),
+	'd': color.New(LSColors["di"]...).Add(color.Concealed),
 	'r': color.New(color.FgYellow).Add(color.Bold),
 	'w': color.New(color.FgRed).Add(color.Bold),
-	'x': color.New(color.FgGreen).Add(color.Bold),
+	'x': color.New([]color.Attribute{38, 5, 155}...).Add(color.Bold),
 	'-': color.New(color.Concealed),
 	'.': color.New(color.Concealed),
 	' ': color.New(color.Concealed),                   //unmodified
@@ -689,7 +749,8 @@ var cpmap = map[rune]*color.Color{
 
 func getColorizedSize(size uint64) (csize string) {
 	ssize := fmt.Sprintf("%6s", bytefmt.ByteSize(size))
-	c := color.New(color.FgHiGreen).Add(color.Bold)
+	// c := color.New(color.FgHiGreen).Add(color.Bold)
+	c := color.New([]color.Attribute{38, 5, 155}...).Add(color.Bold)
 	csize = c.Sprint(ssize)
 	return csize
 }

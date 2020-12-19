@@ -1,6 +1,7 @@
 package filetree
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -661,6 +662,7 @@ func getcolors() {
 	}
 	// sort.Strings(exts)
 }
+
 func getColorAttribute(code string) []color.Attribute {
 	att := []color.Attribute{}
 	for _, a := range strings.Split(code, ";") {
@@ -674,12 +676,14 @@ func FileLSColorString(fullpath, s string) (string, error) {
 	file, ext := getColorExt(fullpath)
 	if ext == "«link»" {
 		// link, err := os.Readlink(fullpath)
-		link, err := filepath.EvalSymlinks(fullpath)
+		ext = "ln"
+		_, err := filepath.EvalSymlinks(fullpath)
 		if err != nil {
-			ext = "no"
-		} else {
-			file, ext = getColorExt(link)
+			ext = "or"
 		}
+		// else {
+		// 	file, ext = getColorExt(link)
+		// }
 	}
 	switch {
 	case NoColor:
@@ -702,7 +706,11 @@ func FileLSColorString(fullpath, s string) (string, error) {
 
 // KindLSColorString will colorful string `s` using key `kind`
 func KindLSColorString(kind, s string) string {
-	return colorstr(LSColors[kind], s)
+	att, ok := LSColors[kind]
+	if !ok {
+		att = LSColors["fi"]
+	}
+	return colorstr(att, s)
 }
 
 func colorstr(att []color.Attribute, s string) string {
@@ -716,14 +724,20 @@ func getColorExt(fullpath string) (file, ext string) {
 	if err != nil {
 		return "", "no"
 	}
-	switch mode := fi.Mode(); {
+	mode := fi.Mode()
+	sperm := fmt.Sprintf("%v", mode)
+	switch {
 	case mode.IsDir(): // d: is a directory 資料夾模式
 		ext = "di" // di = directory
 	case mode&os.ModeSymlink != 0: // L: symbolic link 象徵性的關聯
 		ext = "«link»"
-	// ext = "ln" // ln = symbolic link
-	// if !HasFile(fullpath) { // or = symbolic link pointing to a non-existent file (orphan)
-	// 	ext = "or"
+		// ext = "ln"
+		// link, err := filepath.EvalSymlinks(fullpath)
+		// if err != nil {
+		// 	ext = "or"
+		// } else {
+		// 	_, ext = getColorExt(link)
+		// }
 	// } else { // mi = non-existent file pointed to by a symbolic link (visible when you type ls -l)
 	// 	ext = "mi"
 	// }
@@ -733,11 +747,13 @@ func getColorExt(fullpath string) (file, ext string) {
 		ext = "pi" //pi = fifo file
 	// case mode&os.ModeDevice != 0:
 	// 	ext = ""
-
 	// bd = block (buffered) special file
-	// cd = character (unbuffered) special file
-
-	// ex = file which is executable (ie. has 'x' set in permissions)
+	case mode&os.ModeCharDevice != 0:
+		// cd = character (unbuffered) special file
+		ext = "cd"
+	case mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x"):
+		// ex = file which is executable (ie. has 'x' set in permissions)
+		ext = "ex"
 	default: // fi = file
 		ext = filepath.Ext(fullpath)
 	}
