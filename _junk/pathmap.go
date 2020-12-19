@@ -16,9 +16,9 @@ import (
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/treeprint"
 	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
-	"github.com/shyang107/paw/treeprint"
 )
 
 var (
@@ -476,7 +476,7 @@ func foutputTreeX2(w io.Writer, root string, dirs []string, folder map[string][]
 	for i, dir := range dirs {
 		nd++
 		fullpath := filepath.Join(root, dir)
-		ds := paw.NewFileSummary(fullpath, root)
+		ds := NewFileSummary(fullpath, root)
 		// dirpath := ds.RelDir
 		level := levelm[dir]
 		meta := getSubdirsMeta(dir, dirs, folder)
@@ -497,7 +497,7 @@ func foutputTreeX2(w io.Writer, root string, dirs []string, folder map[string][]
 		continue
 		for j, file := range folder[dir] {
 			fullpath := filepath.Join(root, dir, file)
-			fs := paw.NewFileSummary(fullpath, root)
+			fs := NewFileSummary(fullpath, root)
 			edge := EdgeTypeMid
 			// edge := getEdge(i, j, dir, dirs, folder, level, levelm)
 			cstr, _ := FileColorStr(fullpath, fs.Name)
@@ -509,7 +509,7 @@ func foutputTreeX2(w io.Writer, root string, dirs []string, folder map[string][]
 	fmt.Fprintf(w, "%d directories, %d files.\n", nd, nf)
 }
 
-func getEdge(id, jf int, ds *paw.FileSummary, dirs []string, folder map[string][]string, level int, levelm map[string]int, dm map[string][]string) string {
+func getEdge(id, jf int, ds *FileSummary, dirs []string, folder map[string][]string, level int, levelm map[string]int, dm map[string][]string) string {
 
 	buf := []byte{} // new(bytes.Buffer)
 	sp := " "
@@ -603,28 +603,28 @@ func getNumSubdirs(root string, dirs []string) int {
 	return nd - 1
 }
 
-func transferToFileSummary(root, dir, file string) *paw.FileSummary {
+func transferToFileSummary(root, dir, file string) *FileSummary {
 	if len(file) == 0 {
 		fullpath := filepath.Join(root, dir)
-		fs := paw.NewFileSummary(fullpath, root)
+		fs := NewFileSummary(fullpath, root)
 		return fs
 	}
 	fullpath := filepath.Join(root, dir, file)
-	fs := paw.NewFileSummary(fullpath, root)
+	fs := NewFileSummary(fullpath, root)
 	return fs
 }
 
-func transferToFileSummaryList(root string, dirs []string, folder map[string][]string) []*paw.FileSummary {
-	fs := []*paw.FileSummary{}
+func transferToFileSummaryList(root string, dirs []string, folder map[string][]string) []*FileSummary {
+	fs := []*FileSummary{}
 	for _, d := range dirs {
 		if len(folder[d]) == 0 {
 			fullpath := filepath.Join(root, d)
-			fs = append(fs, paw.NewFileSummary(fullpath, root))
+			fs = append(fs, NewFileSummary(fullpath, root))
 			continue
 		}
 		for _, f := range folder[d] {
 			fullpath := filepath.Join(root, d, f)
-			fs = append(fs, paw.NewFileSummary(fullpath, root))
+			fs = append(fs, NewFileSummary(fullpath, root))
 		}
 	}
 	return fs
@@ -660,7 +660,7 @@ func printFileSummary(fullpath, root string) {
 
 	// fullpath = filepath.Join(root, dirs[2], folder[dirs[2]][0])
 	// printFileSummary(fullpath, root)
-	fs := paw.NewFileSummary(fullpath, root)
+	fs := NewFileSummary(fullpath, root)
 	fmt.Printf("      root: %q\n", root)
 	fmt.Printf("  fullpath: %q\n", fullpath)
 	fmt.Printf("   AbsPath: %q\n", fs.AbsPath)

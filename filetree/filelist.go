@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/spf13/cast"
 	"github.com/karrick/godirwalk"
+	"github.com/spf13/cast"
 
 	"code.cloudfoundry.org/bytefmt"
 
@@ -21,10 +21,10 @@ import (
 	"github.com/shyang107/paw/treeprint"
 )
 
-// FileMap ...
+// FileMap stores directory map to `map[{{ sub-path }}]{{ *File }}`
 type FileMap map[string][]*File
 
-// FileList ...
+// FileList stores the list information of File
 type FileList struct {
 	root      string   // root directory
 	store     FileMap  // all files in `root` directory
@@ -643,8 +643,10 @@ func (f *FileList) ToList(pad string) []byte {
 			cgit := getColorizedGitStatus(f.GetGitStatus(), file)
 			if file.IsDir() {
 				// cdsize := getColorizedSize(fsize)
-				sdsize := fmt.Sprintf("%6s", bytefmt.ByteSize(fsize))
-				cdsize := KindLSColorString("di", sdsize)
+				// sdsize := fmt.Sprintf("%6s", bytefmt.ByteSize(fsize))
+				// cdsize := KindLSColorString("di", sdsize)
+				sdsize := fmt.Sprintf("%6s", "--")
+				cdsize := cpmap['-'].Sprint(sdsize)
 				if !strings.EqualFold(file.Dir, RootMark) {
 					if f.depth != 0 {
 						fmt.Fprintf(w, "%sdirectory: %v, size: %v\n", pad, KindLSColorString("di", file.Dir), KindLSColorString("di", bytefmt.ByteSize(fsize)))

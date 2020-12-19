@@ -1,10 +1,12 @@
-package paw
+package _junk
 
 import (
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/shyang107/paw"
 )
 
 // FileSummary store the summary of file
@@ -42,7 +44,7 @@ func NewFileSummary(fullpath, rootdir string) *FileSummary {
 	ext := filepath.Ext(fullpath)
 	fi, err := os.Lstat(fullpath)
 	if err != nil {
-		Logger.Errorln(fullpath, err)
+		paw.Logger.Errorln(fullpath, err)
 	}
 
 	fs := &FileSummary{
@@ -61,7 +63,7 @@ func NewFileSummary(fullpath, rootdir string) *FileSummary {
 func (f *FileSummary) Info() os.FileInfo {
 	fi, err := os.Lstat(f.AbsPath)
 	if err != nil {
-		Logger.Errorln(f.AbsPath, err)
+		paw.Logger.Errorln(f.AbsPath, err)
 	}
 	return fi
 }
