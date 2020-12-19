@@ -42,8 +42,8 @@ func exGitstatus(path string) {
 }
 func getGit(git filetree.GitStatus, file *filetree.File) string {
 	st := "--"
-	if st, ok := git.FilesStatus[file.Path]; ok {
-		return st
+	if xy, ok := git.FilesStatus[file.Path]; ok {
+		return xy.String()
 	}
 	if file.IsDir() {
 		gits := getGitSlice(git, file)
@@ -87,8 +87,8 @@ func getGitSlice(git filetree.GitStatus, file *filetree.File) []string {
 	gits := []string{}
 	for k, v := range git.FilesStatus {
 		if strings.HasPrefix(k, file.Path) {
-			v = strings.Replace(v, " ", "-", 1)
-			gits = append(gits, v)
+			ss := strings.Replace(v.String(), " ", "-", 1)
+			gits = append(gits, ss)
 		}
 	}
 	return gits

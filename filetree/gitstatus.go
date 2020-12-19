@@ -18,7 +18,7 @@ import (
 type GitStatus struct {
 	NoGit       bool
 	Branch      string
-	FilesStatus map[string]string // == map[string]XY
+	FilesStatus map[string]XY // == map[string]XY
 	// XY are ??
 	// ' ' = unmodified
 	// M = modified
@@ -54,6 +54,20 @@ type GitStatus struct {
 	// ?           ?    untracked
 	// !           !    ignored
 	// -------------------------------------------------
+}
+
+type XY []rune
+
+func (s XY) String() string {
+	var str string
+	for _, c := range s {
+		str += string(c)
+	}
+	return str
+}
+
+func ToXY(st string) XY {
+	return XY{rune(st[0]), rune(st[1])}
 }
 
 //GetShortStatus read the git status of the repository located at path
@@ -95,7 +109,7 @@ func ParseShort(root string, r io.Reader) GitStatus {
 		break
 	}
 
-	fs := make(map[string]string)
+	fs := make(map[string]XY)
 	for s.Scan() {
 		if len(s.Text()) < 1 {
 			continue
@@ -103,7 +117,7 @@ func ParseShort(root string, r io.Reader) GitStatus {
 		st := s.Text()
 		file := filepath.Join(root, st[3:])
 		// gstat := strings.Replace(st[:2], " ", "-", -1)
-		fs[file] = st[:2]
+		fs[file] = []rune{rune(st[0]), rune(st[1])}
 	}
 	return GitStatus{
 		NoGit:       false,
