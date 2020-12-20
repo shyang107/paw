@@ -480,10 +480,10 @@ func (f *FileList) ToTable(pad string) []byte {
 		for j, file := range fm[dir] {
 			fsize := file.Size
 			sfsize := bytefmt.ByteSize(fsize)
-			sumsize += fsize
 			mode := file.Stat.Mode()
 			if file.IsDir() {
 				idx := fmt.Sprintf("D%d", i)
+				sfsize = "--"
 				if f.depth != 0 {
 					if strings.EqualFold(file.Dir, RootMark) {
 						tf.PrintRow(idx, mode, sfsize, file.LSColorString(f.Root()))
@@ -496,6 +496,7 @@ func (f *FileList) ToTable(pad string) []byte {
 				}
 				continue
 			}
+			sumsize += fsize
 			name := file.LSColorString(file.BaseName)
 			link := checkAndGetLink(file)
 			if len(link) > 0 {
@@ -559,25 +560,27 @@ func (f *FileList) ToText(pad string) []byte {
 			mode := file.Stat.Mode()
 			cperm := getColorizePermission(mode)
 			fsize := file.Size
-			sfsize := fmt.Sprintf("%6s", bytefmt.ByteSize(fsize))
+			// sfsize := fmt.Sprintf("%6s", bytefmt.ByteSize(fsize))
 			// sizefile := file.LSColorString(fmt.Sprintf("%6s %v", sfsize, file))
-			sumsize += fsize
 			if file.IsDir() {
-				sdsize := KindLSColorString("di", sfsize)
+				// sdsize := KindLSColorString("di", sfsize)
 				// sdsize := getColorizedSize(fsize)
+				sdsize := fmt.Sprintf("%6s", "--")
+				cdsize := cpmap['-'].Sprint(sdsize)
 				if f.depth != 0 {
 					if strings.EqualFold(file.Dir, RootMark) {
-						fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad, istr, cperm, sdsize, file.LSColorString(file.BaseName))
+						fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad, istr, cperm, cdsize, file.LSColorString(file.BaseName))
 					} else {
 						ppad = strings.Repeat("    ", len(file.DirSlice())-1)
-						fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad+ppad, istr, cperm, sdsize, file.LSColorString(file.Dir))
+						fmt.Fprintf(w, "%s%v %10v %6s %v\n", pad+ppad, istr, cperm, cdsize, file.LSColorString(file.Dir))
 					}
 				} else {
 					ppad = strings.Repeat("    ", len(file.DirSlice())-1)
-					fmt.Fprintf(w, "%s%v %10v %v %v\n", pad+ppad, istr, mode, sdsize, file.LSColorString(RootMark))
+					fmt.Fprintf(w, "%s%v %10v %v %v\n", pad+ppad, istr, mode, cdsize, file.LSColorString(RootMark))
 				}
 				continue
 			}
+			sumsize += fsize
 			if f.depth != 0 {
 				j1 = len(cast.ToString(len(fm[dir]) - 1))
 			}
@@ -637,7 +640,6 @@ func (f *FileList) ToList(pad string) []byte {
 		for _, file := range fm[dir] {
 			fsize := file.Size
 			// sfsize := bytefmt.ByteSize(fsize)
-			sumsize += fsize
 			cperm := getColorizePermission(file.Stat.Mode())
 			cmodTime := getColorizedModTime(file.Stat.ModTime())
 			cgit := getColorizedGitStatus(f.GetGitStatus(), file)
@@ -656,6 +658,7 @@ func (f *FileList) ToList(pad string) []byte {
 				}
 				continue
 			}
+			sumsize += fsize
 			cfsize := getColorizedSize(fsize)
 			name := file.LSColorString(file.BaseName)
 			link := checkAndGetColorLink(file)
