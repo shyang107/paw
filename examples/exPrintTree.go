@@ -33,14 +33,14 @@ func exPrintTree2() {
 func exPrintTree1() {
 	data := []treeprint.Org{
 		// {"A001", "Dept1", "0 -----th top"},
-		{"A001", "Dept1", "0"},
-		{"A011", "Dept2", "0"},
-		{"A002", "subDept1", "A001"},
-		{"A005", "subDept2", "A001"},
-		{"A003", "sub_subDept1", "A002"},
-		{"A006", "gran_subDept", "A003"},
-		{"A004", "sub_subDept2", "A002"},
-		{"A012", "subDept1", "A011"},
+		{OrgID: "A001", OrgName: "Dept1", ParentID: "0"},
+		{OrgID: "A011", OrgName: "Dept2", ParentID: "0"},
+		{OrgID: "A002", OrgName: "subDept1", ParentID: "A001"},
+		{OrgID: "A005", OrgName: "subDept2", ParentID: "A001"},
+		{OrgID: "A003", OrgName: "sub_subDept1", ParentID: "A002"},
+		{OrgID: "A006", OrgName: "gran_subDept", ParentID: "A003"},
+		{OrgID: "A004", OrgName: "sub_subDept2", ParentID: "A002"},
+		{OrgID: "A012", OrgName: "subDept1", ParentID: "A011"},
 	}
 
 	treeprint.PrintOrgTree("ORG", data, "0", 3)
