@@ -27,7 +27,7 @@ func readDirs(root string) {
 	}
 
 	fl := filetree.NewFileList(root)
-	fl.FindFiles(0, nil)
+	fl.FindFiles(-1, nil)
 
 	// spew.Dump(fl.Dirs())
 	// fmt.Println(fl.ToTreeString("# "))

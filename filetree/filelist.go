@@ -281,7 +281,7 @@ var DefaultIgnoreFn = func(f *File, err error) error {
 	return nil
 }
 
-var searchDepth = 0
+// var searchDepth = 0
 
 // FindFiles will find files using codintion `ignore` func
 // 	depth : depth of subfolders
@@ -298,7 +298,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 	}
 	f.gitstatus, _ = GetShortStatus(f.Root())
 	f.depth = depth
-	searchDepth = depth
+	// searchDepth = depth
 	root := f.Root()
 	// if depth = 0 {
 
