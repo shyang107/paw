@@ -88,9 +88,18 @@ func ConstructFileRelTo(path, root string) *File {
 	root, _ = filepath.Abs(root)
 	f := ConstructFile(path)
 	if f.IsDir() {
-		f.Dir = strings.Replace(f.Path, root, ".", 1)
-	} else {
+		if f.Path == root {
+			f.Dir = strings.Replace(f.Path, root, ".", 1)
+		} else {
+			f.Dir = strings.Replace(f.Path, root, "..", 1)
+		}
+		return f
+	}
+
+	if f.Dir == root {
 		f.Dir = strings.Replace(f.Dir, root, ".", 1)
+	} else {
+		f.Dir = strings.Replace(f.Dir, root, "..", 1)
 	}
 	return f
 }

@@ -30,13 +30,24 @@ func readDirs(root string) {
 	fl.FindFiles(-1, nil)
 
 	// spew.Dump(fl.Dirs())
-	// fmt.Println(fl.ToTreeString("# "))
+	fmt.Println(fl.ToTreeString("# "))
 	// fmt.Println(fl.ToTableString("# "))
 	// fmt.Println(fl.ToTextString("# "))
-	fmt.Println(fl.ToListString("# "))
+	// fmt.Println(fl.ToListString("# "))
 	// fmt.Println(fl)
-
+	// listfl(fl)
 }
+func listfl(fl *filetree.FileList) {
+	dirs := fl.Dirs()
+	fm := fl.Map()
+	for i, dir := range dirs {
+		fmt.Println(i, dir)
+		for j, file := range fm[dir] {
+			fmt.Println("    ", j+1, file)
+		}
+	}
+}
+
 func lscolors() {
 	// spew.Dump(fl.Map())
 	// fmt.Println(filetree.KindLSColorString(".sh", "sh"))
