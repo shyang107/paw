@@ -9,9 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
-	"github.com/fatih/color"
 	"github.com/karrick/godirwalk"
 	"github.com/spf13/cast"
 
@@ -393,28 +391,28 @@ func (f *FileList) ToTree(pad string) []byte {
 	tree := treeprint.New()
 
 	dirs := f.Dirs()
-	nd := len(dirs) // including root
+	// nd := len(dirs) // including root
 	ntf := 0
 	var one, pre treeprint.Tree
 	fm := f.Map()
 
 	for i, dir := range dirs {
 		files := f.Map()[dir]
-		nf := getNFiles(files) // excluding dir
-		ntf += nf
+		ndirs, nfiles := getNDirsFiles(files) // excluding the dir
+		ntf += nfiles
 		for jj, file := range files {
 			// fsize := file.Size
 			// sfsize := bytefmt.ByteSize(fsize)
 			if jj == 0 && file.IsDir() {
 				if i == 0 { // root dir
-					tree.SetValue(fmt.Sprintf("%v\n%v", file.LSColorString(file.Path), file.LSColorString(file.Dir)))
-					tree.SetMetaValue(KindLSColorString("di", fmt.Sprintf("%v dirs., %v files", nd-1, nf-1)))
+					tree.SetValue(fmt.Sprintf("%v (%v)", file.LSColorString(file.Dir), file.LSColorString(file.Path)))
+					tree.SetMetaValue(KindLSColorString("di", fmt.Sprintf("%d dirs", ndirs)+", "+KindLSColorString("fi", fmt.Sprintf("%d files", nfiles))))
 					one = tree
 				} else {
 					pre = preTree(dir, fm, tree)
 					if f.depth != 0 {
 						// one = pre.AddMetaBranch(nf-1, file)
-						one = pre.AddMetaBranch(KindLSColorString("di", fmt.Sprintf("%d files", nf-1)), file)
+						one = pre.AddMetaBranch(KindLSColorString("di", fmt.Sprintf("%d dirs", ndirs)+", "+KindLSColorString("fi", fmt.Sprintf("%d files", nfiles))), file)
 					} else {
 						one = pre.AddBranch(file)
 					}
@@ -439,46 +437,6 @@ func (f *FileList) ToTree(pad string) []byte {
 	// buf.WriteByte('\n')
 
 	return paddingTree(pad, buf.Bytes())
-}
-
-func getNFiles(files []*File) int {
-	nf := 0
-	for _, file := range files {
-		if !file.IsDir() {
-			nf++
-		}
-	}
-	return nf
-}
-func paddingTree(pad string, bytes []byte) []byte {
-	b := make([]byte, len(bytes))
-	b = append(b, pad...)
-	for _, v := range bytes {
-		b = append(b, v)
-		if v == '\n' {
-			b = append(b, pad...)
-		}
-	}
-	return b
-}
-
-func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
-	dd := strings.Split(dir, PathSeparator)
-	nd := len(dd)
-	var pre treeprint.Tree
-	// fmt.Println(dir, nd)
-	if nd == 2 { // ./xx
-		pre = tree
-	} else { //./xx/...
-		pre = tree
-		for i := 2; i < nd; i++ {
-			predir := strings.Join(dd[:i], PathSeparator)
-			// fmt.Println("\t", i, predir)
-			f := fm[predir][0] // import dir
-			pre = pre.FindByValue(f)
-		}
-	}
-	return pre
 }
 
 // ToTableString will return the string of FileList in table form
@@ -604,6 +562,7 @@ func (f *FileList) ToText(pad string) []byte {
 		istr := KindLSColorString("di", fmt.Sprintf("%[2]*[1]d.", i, i1))
 		sumsize := uint64(0)
 		nfiles := 0
+		ndirs := 0
 		for jj, file := range fm[dir] {
 			mode := file.Stat.Mode()
 			cperm := getColorizePermission(mode)
@@ -615,10 +574,10 @@ func (f *FileList) ToText(pad string) []byte {
 			if jj == 0 && file.IsDir() {
 				if f.depth != 0 {
 					if strings.EqualFold(file.Dir, RootMark) {
-						fmt.Fprintf(w, "%s%v %v\n", pad, istr, file.LSColorString(file.Dir))
+						printFileItem(w, pad, istr, cperm, file.LSColorString(file.Dir)+" ("+file.LSColorString(f.Root())+")")
 					} else {
 						ppad = strings.Repeat("    ", len(file.DirSlice())-1)
-						fmt.Fprintf(w, "%s%v %v\n", pad+ppad, istr, file.LSColorString(file.Dir))
+						printFileItem(w, pad+ppad, istr, cperm, file.LSColorString(file.Dir))
 					}
 				} else {
 					ppad = strings.Repeat("    ", len(file.DirSlice())-1)
@@ -636,17 +595,19 @@ func (f *FileList) ToText(pad string) []byte {
 				nfiles++
 				jstr = fmt.Sprintf("%[2]*[1]d.", j, j1)
 			} else {
-				jstr = fmt.Sprintf("%[2]*[1]s", " ", j1)
+				ndirs++
+				jstr = KindLSColorString("di", fmt.Sprintf("%[2]*[1]d.", ndirs, j1))
 			}
 			name := file.LSColorString(file.BaseName)
 			link := checkAndGetColorLink(file)
 			if len(link) > 0 {
 				name += cpmap['l'].Sprint(" -> ") + link
 			}
-			fmt.Fprintf(w, "%s    %v %10v %v %v\n", pad+ppad, jstr, cperm, cfsize, name)
+			// fmt.Fprintf(w, "%s    %v %10v %v %v\n", pad+ppad, jstr, cperm, cfsize, name)
+			printFileItem(w, pad+ppad+"    ", jstr, cperm, cfsize, name)
 		}
 		if f.depth != 0 {
-			fmt.Fprintf(w, "%s    Sum: %v files, size: %v.\n", pad+ppad, nfiles, bytefmt.ByteSize(sumsize))
+			printDirSummary(w, pad+ppad+"    ", ndirs, nfiles, sumsize)
 
 			if i != len(dirs)-1 {
 				fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("-", width))
@@ -689,12 +650,13 @@ func (f *FileList) ToList(pad string) []byte {
 
 	for i, dir := range dirs {
 		sumsize := uint64(0)
+		nfiles := 0
+		ndirs := 0
 		for jj, file := range fm[dir] {
 			cperm := getColorizePermission(file.Stat.Mode())
 			cmodTime := getColorizedModTime(file.Stat.ModTime())
 			cgit := getColorizedGitStatus(f.GetGitStatus(), file)
 			fsize := file.Size
-			// sfsize := bytefmt.ByteSize(fsize)
 			cfsize := getColorizedSize(fsize)
 			if file.IsDir() {
 				cfsize = cpmap['-'].Sprint(fmt.Sprintf("%6s", "-"))
@@ -706,9 +668,13 @@ func (f *FileList) ToList(pad string) []byte {
 						fmt.Fprintf(w, "%s%v\n", pad, KindLSColorString("di", reldir))
 						fmt.Fprintln(w, chead)
 					}
-					// fmt.Fprintf(w, "%s%-11s %s %s %s %14s %s %s\n", pad, cperm, cfsize, curname, cgpname, cmodTime, cgit, file.LSColorString(file.BaseName))
 				}
 				continue
+			}
+			if file.IsDir() {
+				ndirs++
+			} else {
+				nfiles++
 			}
 			sumsize += fsize
 			name := file.LSColorString(file.BaseName)
@@ -716,11 +682,11 @@ func (f *FileList) ToList(pad string) []byte {
 			if len(link) > 0 {
 				name += cpmap['l'].Sprint(" -> ") + link
 			}
-			fmt.Fprintf(w, "%s%-11s %s %s %s %14s %s %s\n", pad, cperm, cfsize, curname, cgpname, cmodTime, cgit, name)
+			printFileItem(w, pad, cperm, cfsize, curname, cgpname, cmodTime, cgit, name)
 		}
-		if f.depth != 0 {
-			fmt.Fprintf(w, "%sSum: %v files, size: %v.\n", pad, len(fm[dir])-1, bytefmt.ByteSize(sumsize))
 
+		if f.depth != 0 {
+			printDirSummary(w, pad, ndirs, nfiles, sumsize)
 			if i == len(dirs)-1 {
 				break
 			}
@@ -731,242 +697,4 @@ func (f *FileList) ToList(pad string) []byte {
 	fmt.Fprintf(w, "%s%s\n", pad, strings.Repeat("=", 80))
 	fmt.Fprintf(w, "%s%d directories, %d files, total %v.\n", pad, f.NDirs(), f.NFiles(), bytefmt.ByteSize(f.totalSize))
 	return w.Bytes()
-}
-
-func getColorizedGitStatus(git GitStatus, file *File) string {
-	st := "--"
-	xy, ok := git.FilesStatus[file.Path]
-
-	if ok {
-		xy = checkXY(xy)
-		st = xy.String()
-	}
-
-	if file.IsDir() {
-		gits := getGitSlice(git, file)
-		if len(gits) > 0 {
-			st = getGitTag(gits)
-		}
-	}
-	return getColorizedTag(st)
-}
-
-func checkXY(xy XY) XY {
-	st := xy.String()
-	st = strings.Replace(st, " ", "-", -1)
-	st = strings.Replace(st, "??", "-N", -1)
-	st = strings.Replace(st, "?", "N", -1)
-	st = strings.Replace(st, "A", "N", -1)
-	return ToXY(st)
-}
-
-func getColorizedTag(fst string) string {
-	x := rune(fst[0])
-	y := rune(fst[1])
-	return cpmap[x].Sprint(string(x)) + cpmap[y].Sprint(string(y))
-}
-
-func getGitTag(gits []string) string {
-	// paw.Logger.Info()
-	x := getGitTagChar(rune(gits[0][0]))
-	y := getGitTagChar(rune(gits[0][1]))
-	for i := 1; i < len(gits); i++ {
-		c := getGitTagChar(rune(gits[i][0]))
-		if c != '-' && x != 'N' {
-			x = c
-		}
-		c = getGitTagChar(rune(gits[i][1]))
-		if c != '-' && y != 'N' {
-			y = c
-		}
-	}
-	return string(x) + string(y)
-}
-
-func getGitTagChar(c rune) rune {
-	if c == '?' || c == 'A' {
-		return 'N'
-	}
-	return c
-}
-
-func getGitSlice(git GitStatus, file *File) []string {
-	gits := []string{}
-	for k, v := range git.FilesStatus {
-		if strings.HasPrefix(k, file.Path) {
-			xy := checkXY(v)
-			gits = append(gits, xy.String())
-		}
-	}
-	return gits
-}
-
-func getColorizePermission(mode os.FileMode) string {
-	sperm := fmt.Sprintf("%v", mode)
-	c := ""
-	// fmt.Println(len(s))
-	for i := 0; i < len(sperm); i++ {
-		s := string(sperm[i])
-		cs := s
-		if cs != "-" {
-			switch i {
-			case 0:
-				switch s {
-				case "d":
-					cs = "di"
-				case "L":
-					cs = "ln"
-				}
-			case 1, 2, 3:
-				cs = "u" + s
-			case 4, 5, 6:
-				cs = "g" + s
-			case 7, 8, 9:
-				cs = "t" + s
-			}
-		}
-		if i == 0 && cs == "-" {
-			s = "."
-		}
-		c += color.New(EXAColors[cs]...).Add(color.Bold).Sprint(s)
-	}
-
-	return c
-}
-
-var cpmap = map[rune]*color.Color{
-	'L': color.New(LSColors["ln"]...).Add(color.Concealed),
-	'l': color.New(LSColors["ln"]...).Add(color.Concealed),
-	'd': color.New(LSColors["di"]...).Add(color.Concealed),
-	'r': color.New(color.FgYellow).Add(color.Bold),
-	'w': color.New(color.FgRed).Add(color.Bold),
-	'x': color.New([]color.Attribute{38, 5, 155}...).Add(color.Bold),
-	'-': color.New(color.Concealed),
-	'.': color.New(color.Concealed),
-	' ': color.New(color.Concealed), //unmodified
-	// 'M': color.New(color.FgBlue).Add(color.Concealed), //modified
-	// 'A': color.New(color.FgBlue).Add(color.Concealed), //added
-	// 'D': color.New(color.FgRed).Add(color.Concealed),  //deleted
-	// 'R': color.New(color.FgBlue).Add(color.Concealed), //renamed
-	// 'C': color.New(color.FgBlue).Add(color.Concealed), //copied
-	// 'U': color.New(color.FgBlue).Add(color.Concealed), //updated but unmerged
-	// '?': color.New(color.FgHiGreen).Add(color.Bold),   //untracked
-	// 'N': color.New(color.FgHiGreen).Add(color.Bold),   //untracked
-	// '!': color.New(color.FgBlue).Add(color.Concealed), //ignored
-	'M': color.New(EXAColors["gm"]...), //modified
-	'A': color.New(EXAColors["ga"]...), //added
-	'D': color.New(EXAColors["gd"]...), //deleted
-	'R': color.New(EXAColors["gv"]...), //renamed
-	'C': color.New(EXAColors["gt"]...), //copied
-	'U': color.New(EXAColors["gt"]...), //updated but unmerged
-	'?': color.New(EXAColors["gm"]...), //untracked
-	'N': color.New(EXAColors["ga"]...), //untracked
-	'!': color.New(EXAColors["-"]...),  //ignored
-}
-
-func getColorizedSize(size uint64) (csize string) {
-	ssize := fmt.Sprintf("%6s", bytefmt.ByteSize(size))
-	ssize = strings.ToLower(ssize)
-	// c := color.New(color.FgHiGreen).Add(color.Bold)
-	cn := color.New(EXAColors["sn"]...).Add(color.Bold)
-	cu := color.New(EXAColors["sn"]...)
-	ns := len(ssize)
-	csize = cn.Sprint(ssize[:ns-1]) + cu.Sprint(ssize[ns-1:])
-	return csize
-}
-
-func getColorizedUGName(urname, gpname string) (curname, cgpname string) {
-	cu := color.New(EXAColors["uu"]...).Add(color.Bold)
-	cg := color.New(EXAColors["gu"]...).Add(color.Bold)
-	curname = cu.Sprint(urname)
-	cgpname = cg.Sprint(gpname)
-	return curname, cgpname
-}
-
-func getColorizedModTime(modTime time.Time) string {
-	c := color.New(EXAColors["da"]...)
-	s := c.Sprint(modTime.Format("01-02-06 15:04"))
-	return s
-}
-
-func getColorizedHead(pad, username, groupname string) string {
-	c := color.New(EXAColors["hd"]...).Add(color.Underline)
-
-	width := intmax(4, len(username))
-	huser := fmt.Sprintf("%[2]*[1]s", "User", width)
-	width = intmax(5, len(groupname))
-	hgroup := fmt.Sprintf("%[2]*[1]s", "Group", width)
-
-	ssize := fmt.Sprintf("%6s", "Size")
-	head := fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, c.Sprint("Permissions"), c.Sprint(ssize), c.Sprint(huser), c.Sprint(hgroup), c.Sprint(" Data Modified"), c.Sprint("Git"), c.Sprint("Name"))
-	return head
-}
-
-func intmax(i1, i2 int) int {
-	if i1 >= i2 {
-		return i1
-	}
-	return i2
-}
-
-// func below here, invoked from godirwalk/examples/sizes
-//  `sizes()`, `sizesStack`, `newSizesStack()`, `(s *sizesStack) EnterDirectory()`, `(s *sizesStack) LeaveDirectory()`, `(s *sizesStack) Accumulate(i int64)`
-
-func sizes(osDirname string) (uint64, error) {
-	var size int64
-	sizes := newSizesStack()
-	return uint64(size), godirwalk.Walk(osDirname, &godirwalk.Options{
-		Callback: func(osPathname string, de *godirwalk.Dirent) error {
-			if de.IsDir() {
-				sizes.EnterDirectory()
-				return nil
-			}
-
-			st, err := os.Stat(osPathname)
-			if err != nil {
-				return err
-			}
-
-			size = st.Size()
-			sizes.Accumulate(size)
-
-			return nil
-		},
-		ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
-			paw.Logger.Error(err)
-			return godirwalk.SkipNode
-		},
-		PostChildrenCallback: func(osPathname string, de *godirwalk.Dirent) error {
-			size = sizes.LeaveDirectory()
-			sizes.Accumulate(size) // add this directory's size to parent directory.
-			return nil
-		},
-	})
-}
-
-// sizesStack encapsulates operations on stack of directory sizes, with similar
-// but slightly modified LIFO semantics to push and pop on a regular stack.
-type sizesStack struct {
-	sizes []int64 // stack of sizes
-	top   int     // index of top of stack
-}
-
-func newSizesStack() *sizesStack {
-	// Initialize with dummy value at top of stack to eliminate special cases.
-	return &sizesStack{sizes: make([]int64, 1, 32)}
-}
-
-func (s *sizesStack) EnterDirectory() {
-	s.sizes = append(s.sizes, 0)
-	s.top++
-}
-
-func (s *sizesStack) LeaveDirectory() (i int64) {
-	i, s.sizes = s.sizes[s.top], s.sizes[:s.top]
-	s.top--
-	return i
-}
-
-func (s *sizesStack) Accumulate(i int64) {
-	s.sizes[s.top] += i
 }
