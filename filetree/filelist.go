@@ -238,6 +238,28 @@ func (f *FileList) EnableColor() {
 	DefaultNoColor()
 }
 
+type FileSortByPathP []*File
+
+func (a FileSortByPathP) Len() int           { return len(a) }
+func (a FileSortByPathP) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a FileSortByPathP) Less(i, j int) bool { return a[i].BaseName < a[j].BaseName }
+
+func (f *FileList) Sort() {
+	sort.Strings(f.dirs)
+
+	for _, dir := range f.dirs {
+		fm := FileSortByPathP(f.store[dir])
+		for _, file := range fm {
+			fmt.Println("Before:", file)
+		}
+		sort.Sort(fm)
+		for _, file := range fm {
+			fmt.Println("After:", file)
+		}
+		f.store[dir] = fm
+	}
+}
+
 // SkipFile is used as a return value from IgnoreFn to indicate that
 // the regular file named in the call is to be skipped. It is not returned
 // as an error by any function.
@@ -324,7 +346,10 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 		if err != nil {
 			return errors.New(root + ": " + err.Error())
 		}
-		sort.Strings(files)
+
+		sort.Slice(files, func(i, j int) bool {
+			return strings.ToLower(files[i]) < strings.ToLower(files[j])
+		})
 		file := ConstructFileRelTo(root, root)
 		f.AddFile(file)
 		for _, name := range files {
@@ -335,6 +360,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 			}
 			f.AddFile(file)
 		}
+		// f.Sort()
 	default: //walk through all directories of {root directory}
 		// visit := func(path string, info os.FileInfo, err error) error {
 		// 	file := ConstructFileRelTo(path, root)
@@ -365,15 +391,11 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 				idepth := len(file.DirSlice()) - 1
 				if depth > 0 {
 					if idepth > depth {
-						return nil
+						return godirwalk.SkipThis
 					}
 				}
-				err1 := ignore(file, nil)
-				if err1 == SkipFile {
-					return nil
-				}
-				if err1 == SkipDir {
-					return err1
+				if err1 := ignore(file, nil); err1 == SkipFile || err1 == SkipDir {
+					return godirwalk.SkipThis
 				}
 				f.AddFile(file)
 				return nil
@@ -385,10 +407,19 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 				// although in reality perhaps additional logic might be called for.
 				return godirwalk.SkipNode
 			},
-			// Unsorted: true, // set true for faster yet non-deterministic enumeration (see godoc)
+			Unsorted: true, // set true for faster yet non-deterministic enumeration (see godoc)
 		})
 		if err != nil {
 			return errors.New(root + ": " + err.Error())
+		}
+		// sort
+		sort.Slice(f.dirs, func(i, j int) bool {
+			return strings.ToLower(f.dirs[i]) < strings.ToLower(f.dirs[j])
+		})
+		for _, dir := range f.dirs {
+			sort.Slice(f.store[dir], func(i, j int) bool {
+				return strings.ToLower(f.store[dir][i].Path) < strings.ToLower(f.store[dir][j].Path)
+			})
 		}
 	}
 	return nil

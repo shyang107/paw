@@ -163,3 +163,9 @@ func (f *File) DirSlice() []string {
 // 	ns := len(ss)
 // 	return ss[:ns-1]
 // }
+
+type FileSortByPath []File
+
+func (a FileSortByPath) Len() int           { return len(a) }
+func (a FileSortByPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a FileSortByPath) Less(i, j int) bool { return a[i].Path < a[j].Path }
