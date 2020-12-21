@@ -566,7 +566,7 @@ func (f *FileList) ToTable(pad string) []byte {
 			mode := file.Stat.Mode()
 			if jj == 0 && file.IsDir() {
 				idx := fmt.Sprintf("D%d", i)
-				sfsize = "--"
+				sfsize = "-"
 				if f.depth != 0 {
 					if strings.EqualFold(file.Dir, RootMark) {
 						tf.PrintRow(idx, mode, sfsize, file.LSColorString(f.Root()))
@@ -653,7 +653,7 @@ func (f *FileList) ToText(pad string) []byte {
 			fsize := file.Size
 			cfsize := getColorizedSize(fsize)
 			if file.IsDir() {
-				cfsize = cpmap['-'].Sprint(fmt.Sprintf("%6s", "--"))
+				cfsize = cpmap['-'].Sprint(fmt.Sprintf("%6s", "-"))
 			}
 			if jj == 0 && file.IsDir() {
 				if f.depth != 0 {
@@ -740,7 +740,7 @@ func (f *FileList) ToList(pad string) []byte {
 			// sfsize := bytefmt.ByteSize(fsize)
 			cfsize := getColorizedSize(fsize)
 			if file.IsDir() {
-				cfsize = cpmap['-'].Sprint(fmt.Sprintf("%6s", "--"))
+				cfsize = cpmap['-'].Sprint(fmt.Sprintf("%6s", "-"))
 			}
 			if jj == 0 && file.IsDir() {
 				reldir := file.Dir
@@ -846,11 +846,35 @@ func getGitSlice(git GitStatus, file *File) []string {
 
 func getColorizePermission(mode os.FileMode) string {
 	sperm := fmt.Sprintf("%v", mode)
-	cperm := ""
-	for _, p := range sperm {
-		cperm += cpmap[p].Sprint(string(p))
+	c := ""
+	// fmt.Println(len(s))
+	for i := 0; i < len(sperm); i++ {
+		s := string(sperm[i])
+		cs := s
+		if cs != "-" {
+			switch i {
+			case 0:
+				switch s {
+				case "d":
+					cs = "di"
+				case "L":
+					cs = "ln"
+				}
+			case 1, 2, 3:
+				cs = "u" + s
+			case 4, 5, 6:
+				cs = "g" + s
+			case 7, 8, 9:
+				cs = "t" + s
+			}
+		}
+		if i == 0 && cs == "-" {
+			s = "."
+		}
+		c += color.New(EXAColors[cs]...).Add(color.Bold).Sprint(s)
 	}
-	return cperm + " "
+
+	return c
 }
 
 var cpmap = map[rune]*color.Color{
@@ -862,41 +886,54 @@ var cpmap = map[rune]*color.Color{
 	'x': color.New([]color.Attribute{38, 5, 155}...).Add(color.Bold),
 	'-': color.New(color.Concealed),
 	'.': color.New(color.Concealed),
-	' ': color.New(color.Concealed),                   //unmodified
-	'M': color.New(color.FgBlue).Add(color.Concealed), //modified
-	'A': color.New(color.FgBlue).Add(color.Concealed), //added
-	'D': color.New(color.FgRed).Add(color.Concealed),  //deleted
-	'R': color.New(color.FgBlue).Add(color.Concealed), //renamed
-	'C': color.New(color.FgBlue).Add(color.Concealed), //copied
-	'U': color.New(color.FgBlue).Add(color.Concealed), //updated but unmerged
-	'?': color.New(color.FgHiGreen).Add(color.Bold),   //untracked
-	'N': color.New(color.FgHiGreen).Add(color.Bold),   //untracked
-	'!': color.New(color.FgBlue).Add(color.Concealed), //ignored
+	' ': color.New(color.Concealed), //unmodified
+	// 'M': color.New(color.FgBlue).Add(color.Concealed), //modified
+	// 'A': color.New(color.FgBlue).Add(color.Concealed), //added
+	// 'D': color.New(color.FgRed).Add(color.Concealed),  //deleted
+	// 'R': color.New(color.FgBlue).Add(color.Concealed), //renamed
+	// 'C': color.New(color.FgBlue).Add(color.Concealed), //copied
+	// 'U': color.New(color.FgBlue).Add(color.Concealed), //updated but unmerged
+	// '?': color.New(color.FgHiGreen).Add(color.Bold),   //untracked
+	// 'N': color.New(color.FgHiGreen).Add(color.Bold),   //untracked
+	// '!': color.New(color.FgBlue).Add(color.Concealed), //ignored
+	'M': color.New(EXAColors["gm"]...), //modified
+	'A': color.New(EXAColors["ga"]...), //added
+	'D': color.New(EXAColors["gd"]...), //deleted
+	'R': color.New(EXAColors["gv"]...), //renamed
+	'C': color.New(EXAColors["gt"]...), //copied
+	'U': color.New(EXAColors["gt"]...), //updated but unmerged
+	'?': color.New(EXAColors["gm"]...), //untracked
+	'N': color.New(EXAColors["ga"]...), //untracked
+	'!': color.New(EXAColors["-"]...),  //ignored
 }
 
 func getColorizedSize(size uint64) (csize string) {
 	ssize := fmt.Sprintf("%6s", bytefmt.ByteSize(size))
+	ssize = strings.ToLower(ssize)
 	// c := color.New(color.FgHiGreen).Add(color.Bold)
-	c := color.New([]color.Attribute{38, 5, 155}...).Add(color.Bold)
-	csize = c.Sprint(ssize)
+	cn := color.New(EXAColors["sn"]...).Add(color.Bold)
+	cu := color.New(EXAColors["sn"]...)
+	ns := len(ssize)
+	csize = cn.Sprint(ssize[:ns-1]) + cu.Sprint(ssize[ns-1:])
 	return csize
 }
 
 func getColorizedUGName(urname, gpname string) (curname, cgpname string) {
-	c := color.New(color.FgHiYellow).Add(color.Bold)
-	curname = c.Sprint(urname)
-	cgpname = c.Sprint(gpname)
+	cu := color.New(EXAColors["uu"]...).Add(color.Bold)
+	cg := color.New(EXAColors["gu"]...).Add(color.Bold)
+	curname = cu.Sprint(urname)
+	cgpname = cg.Sprint(gpname)
 	return curname, cgpname
 }
 
 func getColorizedModTime(modTime time.Time) string {
-	c := color.New(color.FgBlue).Add(color.Concealed)
+	c := color.New(EXAColors["da"]...)
 	s := c.Sprint(modTime.Format("01-02-06 15:04"))
 	return s
 }
 
 func getColorizedHead(pad, username, groupname string) string {
-	c := color.New(color.Concealed).Add(color.Underline)
+	c := color.New(EXAColors["hd"]...).Add(color.Underline)
 
 	width := intmax(4, len(username))
 	huser := fmt.Sprintf("%[2]*[1]s", "User", width)

@@ -30,7 +30,38 @@ var (
 		"mi": "non-existent file pointed to by a symbolic link (visible when you type ls -l)",
 		"ex": "file which is executable (ie. has 'x' set in permissions)",
 	}
-
+	EXAColors = map[string][]color.Attribute{
+		"fi": LSColors["fi"],
+		"di": LSColors["di"],
+		"ex": LSColors["ex"],
+		// "ur": LSColors["ex"],
+		"ur": []color.Attribute{38, 5, 230}, // user +r bit
+		"uw": []color.Attribute{38, 5, 209}, // user +w bit
+		"ux": []color.Attribute{38, 5, 156}, // user +x bit (files)
+		"ue": []color.Attribute{38, 5, 156}, // user +x bit (file types)
+		"gr": []color.Attribute{38, 5, 230}, // group +r bit
+		"gw": []color.Attribute{38, 5, 209}, // group +w bit
+		"gx": []color.Attribute{38, 5, 156}, // group +x bit
+		"tr": []color.Attribute{38, 5, 230}, // others +r bit
+		"tw": []color.Attribute{38, 5, 209}, // others +w bit
+		"tx": []color.Attribute{38, 5, 156}, // others +x bit
+		"sn": []color.Attribute{38, 5, 156}, // size number
+		"sb": []color.Attribute{38, 5, 156}, // size unit
+		"uu": []color.Attribute{38, 5, 230}, // user is you
+		"un": []color.Attribute{38, 5, 214}, // user is not you
+		"gu": []color.Attribute{38, 5, 230}, // group with you in it
+		"gn": []color.Attribute{38, 5, 214}, // group without you
+		"da": []color.Attribute{38, 5, 117}, // timestamp
+		// "hd": []color.Attribute{4, 38, 5, 15}, // head
+		"hd": []color.Attribute{38, 5, 251}, // head
+		"-":  []color.Attribute{38, 5, 8},   // Concealed
+		".":  []color.Attribute{38, 5, 8},   // Concealed
+		"ga": []color.Attribute{38, 5, 156}, // git new
+		"gm": []color.Attribute{38, 5, 117}, // git modified
+		"gd": []color.Attribute{38, 5, 209}, // git deleted
+		"gv": []color.Attribute{38, 5, 230}, // git renamed
+		"gt": []color.Attribute{38, 5, 135}, // git type change
+	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file
 	LSColors = map[string][]color.Attribute{
@@ -53,6 +84,8 @@ var (
 		"st":                   []color.Attribute{38, 5, 86, 48, 5, 234},
 		"tw":                   []color.Attribute{48, 5, 235, 38, 5, 139, 3},
 		"LS_COLORS":            []color.Attribute{48, 5, 89, 38, 5, 197, 1, 3, 4, 7},
+		"-":                    []color.Attribute{38, 5, 8}, // Concealed
+		".":                    []color.Attribute{38, 5, 8}, // Concealed
 		"README":               []color.Attribute{38, 5, 220, 1},
 		"README.rst":           []color.Attribute{38, 5, 220, 1},
 		"README.md":            []color.Attribute{38, 5, 220, 1},
