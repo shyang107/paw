@@ -303,8 +303,6 @@ var DefaultIgnoreFn = func(f *File, err error) error {
 	return nil
 }
 
-// var searchDepth = 0
-
 // FindFiles will find files using codintion `ignore` func
 // 	depth : depth of subfolders
 // 		< 0 : walk through all directories of {root directory}
@@ -320,27 +318,9 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 	}
 	f.gitstatus, _ = GetShortStatus(f.Root())
 	f.depth = depth
-	// searchDepth = depth
 	root := f.Root()
-	// if depth = 0 {
-
-	// }
-	// f.totalSize, _ = sizes(root)
 	switch {
 	case depth == 0: //{root directory}/*
-		// fis, err := ioutil.ReadDir(root)
-		// if err != nil {
-		// 	return errors.New(root + ": " + err.Error())
-		// }
-
-		// for _, fi := range fis {
-		// 	file := ConstructFileRelTo(root+PathSeparator+fi.Name(), root)
-		// 	err := ignore(file, nil)
-		// 	if err == SkipFile || err == SkipDir{
-		// 		continue
-		// 	}
-		// 	f.AddFile(file)
-		// }
 		scratchBuffer := make([]byte, godirwalk.MinimumScratchBufferSize)
 		files, err := godirwalk.ReadDirnames(root, scratchBuffer)
 		if err != nil {
@@ -362,29 +342,6 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 		}
 		// f.Sort()
 	default: //walk through all directories of {root directory}
-		// visit := func(path string, info os.FileInfo, err error) error {
-		// 	file := ConstructFileRelTo(path, root)
-		// 	idepth := len(file.DirSlice()) - 1
-		// 	if depth > 0 {
-		// 		if idepth > depth {
-		// 			return nil
-		// 		}
-		// 	}
-		// 	err1 := ignore(file, err)
-		// 	if err1 == ErrSkipFile {
-		// 		return nil
-		// 	}
-		// 	if err1 == ErrSkipDir {
-		// 		return err1
-		// 	}
-		// 	f.AddFile(file)
-		// 	return nil
-		// }
-
-		// err := filepath.Walk(root, visit)
-		// if err != nil {
-		// 	return errors.New(root + ": " + err.Error())
-		// }
 		err := godirwalk.Walk(root, &godirwalk.Options{
 			Callback: func(path string, de *godirwalk.Dirent) error {
 				file := ConstructFileRelTo(path, root)
