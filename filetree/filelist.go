@@ -698,3 +698,25 @@ func (f *FileList) ToList(pad string) []byte {
 	fmt.Fprintf(w, "%s%d directories, %d files, total %v.\n", pad, f.NDirs(), f.NFiles(), bytefmt.ByteSize(f.totalSize))
 	return w.Bytes()
 }
+
+// ToListTreeString will return the string of `ToListTree(pad)` in list+tree form (like as `exa -T(--tree)`)
+func (f *FileList) ToListTreeString(pad string) string {
+	return string(f.ToListTree(pad))
+}
+
+// ToListTree will return the []byte of FileList in list+tree form (like as `exa -T(--tree)`)
+func (f *FileList) ToListTree(pad string) []byte {
+	// TODO ToListTree(pad)
+	var (
+		w = new(bytes.Buffer)
+		// dirs             = f.Dirs()
+		// fm               = f.Map()
+		// currentuser, _   = user.Current()
+		// urname           = currentuser.Username
+		// usergp, _        = user.LookupGroupId(currentuser.Gid)
+		// gpname           = usergp.Name
+		// curname, cgpname = getColorizedUGName(urname, gpname)
+	)
+
+	return w.Bytes()
+}
