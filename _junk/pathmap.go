@@ -16,9 +16,9 @@ import (
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
 	"github.com/shyang107/paw"
-	"github.com/shyang107/paw/treeprint"
 	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
+	"github.com/xlab/treeprint"
 )
 
 var (

@@ -11,9 +11,8 @@ import (
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
-
 	"github.com/shyang107/paw"
-	"github.com/shyang107/paw/treeprint"
+	"github.com/xlab/treeprint"
 )
 
 // FilesMap store files ordered by folder, use folder name as the key

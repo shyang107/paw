@@ -9,6 +9,9 @@ import (
 
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/filetree"
+	// "github.com/shyang107/paw/3rd-party/filetree"
+	// "github.com/shyang107/paw/filetree"
+	// "github.com/xlab/treeprint"
 )
 
 func exFileTree(root string) {

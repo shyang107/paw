@@ -56,6 +56,10 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 
 	cedge := KindLSColorString("-", string(edge))
 	name := getName(file)
+	if file.IsDir() {
+		dinf := getDirInfo(fl, file)
+		name = dinf + " " + name
+	}
 
 	fmt.Fprintf(wr, "%v %v\n", cedge, name)
 }
@@ -123,6 +127,23 @@ func getDirName(path string, root string) string {
 		name += cpmap['l'].Sprint(" -> ") + link
 	}
 	return name
+}
+
+func getDirInfo(fl *FileList, file *File) string {
+	nd, nf := 0, 0
+	if file.IsDir() {
+		files := fl.Map()[file.Dir]
+		for _, f := range files {
+			if f.IsDir() {
+				nd++
+			} else {
+				nf++
+			}
+		}
+	}
+	di := fmt.Sprintf("%v dirs", nd-1)
+	fi := fmt.Sprintf("%v files", nf)
+	return "[" + KindEXAColorString("di", di) + ", " + KindEXAColorString("fi", fi) + "]"
 }
 
 // func getLTName(file *File) string {

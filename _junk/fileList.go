@@ -7,9 +7,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/xlab/treeprint"
+
 	"github.com/shyang107/paw"
+
 	"github.com/spf13/cast"
-	"github.com/shyang107/paw/treeprint"
 )
 
 // // Files []File

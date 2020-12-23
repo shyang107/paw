@@ -736,12 +736,14 @@ func toListTree(f *FileList, pad string, isMeta bool) []byte {
 
 	// print root file
 	meta := pad
-	name := getName(file)
+	name := getDirInfo(f, file) + " " + getName(file)
+
 	if isMeta {
 		meta = getMeta(pad, file, f.GetGitStatus())
-	} else {
-		meta += "[" + KindLSColorString("di", fmt.Sprintf("%d dirs", f.NDirs())) + ", " + KindLSColorString("fi", fmt.Sprintf("%d files", f.NFiles())) + "] "
 	}
+	// else {
+	// 	meta += "[" + KindLSColorString("di", fmt.Sprintf("%d dirs", f.NDirs())) + ", " + KindLSColorString("fi", fmt.Sprintf("%d files", f.NFiles())) + "] "
+	// }
 
 	buf.WriteString(fmt.Sprintf("%v%v", meta, name))
 	buf.WriteByte('\n')

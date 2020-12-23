@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/shyang107/paw/treeprint"
+	"github.com/xlab/treeprint"
 )
 
 func exPrintTree2() {
@@ -30,18 +30,19 @@ func exPrintTree2() {
 	fmt.Println(tree.String())
 }
 
-func exPrintTree1() {
-	data := []treeprint.Org{
-		// {"A001", "Dept1", "0 -----th top"},
-		{OrgID: "A001", OrgName: "Dept1", ParentID: "0"},
-		{OrgID: "A011", OrgName: "Dept2", ParentID: "0"},
-		{OrgID: "A002", OrgName: "subDept1", ParentID: "A001"},
-		{OrgID: "A005", OrgName: "subDept2", ParentID: "A001"},
-		{OrgID: "A003", OrgName: "sub_subDept1", ParentID: "A002"},
-		{OrgID: "A006", OrgName: "gran_subDept", ParentID: "A003"},
-		{OrgID: "A004", OrgName: "sub_subDept2", ParentID: "A002"},
-		{OrgID: "A012", OrgName: "subDept1", ParentID: "A011"},
-	}
+// func exPrintTree1() {
 
-	treeprint.PrintOrgTree("ORG", data, "0", 3)
-}
+// 	data := []treeprint.Org{
+// 		// {"A001", "Dept1", "0 -----th top"},
+// 		{OrgID: "A001", OrgName: "Dept1", ParentID: "0"},
+// 		{OrgID: "A011", OrgName: "Dept2", ParentID: "0"},
+// 		{OrgID: "A002", OrgName: "subDept1", ParentID: "A001"},
+// 		{OrgID: "A005", OrgName: "subDept2", ParentID: "A001"},
+// 		{OrgID: "A003", OrgName: "sub_subDept1", ParentID: "A002"},
+// 		{OrgID: "A006", OrgName: "gran_subDept", ParentID: "A003"},
+// 		{OrgID: "A004", OrgName: "sub_subDept2", ParentID: "A002"},
+// 		{OrgID: "A012", OrgName: "subDept1", ParentID: "A011"},
+// 	}
+
+// 	treeprint.PrintOrgTree("ORG", data, "0", 3)
+// }
