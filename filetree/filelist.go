@@ -47,7 +47,11 @@ func NewFileList(root string) *FileList {
 // String ...
 // 	`size` of directory shown in the string, is accumulated size of sub contents
 func (f FileList) String() string {
-	return f.ToTextString("")
+	SetNoColor()
+	str := f.ToTextString("")
+	DefaultNoColor()
+	return str
+
 	var (
 		w    = new(bytes.Buffer)
 		dirs = f.Dirs()
@@ -120,13 +124,11 @@ func (f FileList) String() string {
 			fmt.Fprintf(w, "%s\n", strings.Repeat("-", 80))
 		}
 
-		// if i == len(dirs)-1 {
-		// 	break
-		// }
 	}
 	fmt.Fprintf(w, "%s\n", strings.Repeat("=", 80))
-	// fmt.Fprintln(w, "")
-	fmt.Fprintf(w, "%d directories, %d files, total %v\n", f.NDirs(), f.NFiles(), bytefmt.ByteSize(f.totalSize))
+
+	printTotalSummary(w, "", f.NDirs(), f.NFiles(), f.totalSize)
+
 	return string(w.Bytes())
 }
 
@@ -579,7 +581,8 @@ func (f *FileList) ToText(pad string) []byte {
 			if jj == 0 && file.IsDir() {
 				if f.depth != 0 {
 					if strings.EqualFold(file.Dir, RootMark) {
-						printFileItem(w, pad, istr, cperm, file.LSColorString(file.Dir)+" ("+getDirName(f.Root(), "")+")")
+						// printFileItem(w, pad, istr, cperm, file.LSColorString(file.Dir)+" ("+getDirName(f.Root(), "")+")")
+						printFileItem(w, pad, istr, cperm, getDirName(f.Root(), ""))
 					} else {
 						ppad = strings.Repeat("    ", len(file.DirSlice())-1)
 						printFileItem(w, pad+ppad, istr, cperm, getDirName(file.Dir, f.Root()))

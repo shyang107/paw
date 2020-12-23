@@ -670,11 +670,13 @@ func init() {
 // SetNoColor will set `true` to `NoColor`
 func SetNoColor() {
 	NoColor = true
+	color.NoColor = NoColor
 }
 
 // DefaultNoColor will resume the default value of `NoColor`
 func DefaultNoColor() {
 	NoColor = os.Getenv("TERM") == "dumb" || !(isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()))
+	color.NoColor = NoColor
 }
 
 func getcolors() {

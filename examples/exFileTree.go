@@ -34,8 +34,8 @@ func readDirs(root string) {
 	// fmt.Println(fl.ToTableString("# "))
 	// fmt.Println(fl.ToTextString("# "))
 	// fmt.Println(fl.ToListString("# "))
-	// fmt.Println(fl.ToListTreeString("# "))
-	fmt.Println(fl)
+	fmt.Println(fl.ToListTreeString("# "))
+	// fmt.Println(fl)
 	// listfl(fl)
 }
 func listfl(fl *filetree.FileList) {
