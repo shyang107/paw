@@ -53,14 +53,15 @@ var (
 		"gn": []color.Attribute{38, 5, 214}, // group without you
 		"da": []color.Attribute{38, 5, 117}, // timestamp
 		// "hd": []color.Attribute{4, 38, 5, 15}, // head
-		"hd": []color.Attribute{38, 5, 251}, // head
-		"-":  []color.Attribute{38, 5, 8},   // Concealed
-		".":  []color.Attribute{38, 5, 8},   // Concealed
-		"ga": []color.Attribute{38, 5, 156}, // git new
-		"gm": []color.Attribute{38, 5, 117}, // git modified
-		"gd": []color.Attribute{38, 5, 209}, // git deleted
-		"gv": []color.Attribute{38, 5, 230}, // git renamed
-		"gt": []color.Attribute{38, 5, 135}, // git type change
+		"hd":  []color.Attribute{38, 5, 251}, // head
+		"-":   []color.Attribute{38, 5, 8},   // Concealed
+		".":   []color.Attribute{38, 5, 8},   // Concealed
+		"ga":  []color.Attribute{38, 5, 156}, // git new
+		"gm":  []color.Attribute{38, 5, 117}, // git modified
+		"gd":  []color.Attribute{38, 5, 209}, // git deleted
+		"gv":  []color.Attribute{38, 5, 230}, // git renamed
+		"gt":  []color.Attribute{38, 5, 135}, // git type change
+		"dir": []color.Attribute{38, 5, 189}, //addition 'dir'
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file
@@ -742,6 +743,13 @@ func KindLSColorString(kind, s string) string {
 	att, ok := LSColors[kind]
 	if !ok {
 		att = LSColors["fi"]
+	}
+	return colorstr(att, s)
+}
+func KindEXAColorString(kind, s string) string {
+	att, ok := EXAColors[kind]
+	if !ok {
+		att = EXAColors["fi"]
 	}
 	return colorstr(att, s)
 }
