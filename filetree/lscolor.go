@@ -56,6 +56,7 @@ var (
 		"hd":  []color.Attribute{38, 5, 251}, // head
 		"-":   []color.Attribute{38, 5, 8},   // Concealed
 		".":   []color.Attribute{38, 5, 8},   // Concealed
+		" ":   []color.Attribute{38, 5, 8},   // Concealed
 		"ga":  []color.Attribute{38, 5, 156}, // git new
 		"gm":  []color.Attribute{38, 5, 117}, // git modified
 		"gd":  []color.Attribute{38, 5, 209}, // git deleted
@@ -802,4 +803,14 @@ func getColorExt(fullpath string) (file, ext string) {
 	}
 
 	return filepath.Base(fullpath), ext
+}
+
+// NewLSColor will return `*color.Color` using `LSColors[key]`
+func NewLSColor(key string) *color.Color {
+	return color.New(LSColors[key]...)
+}
+
+// NewEXAColor will return `*color.Color` using `EXAColors[key]`
+func NewEXAColor(key string) *color.Color {
+	return color.New(EXAColors[key]...)
 }

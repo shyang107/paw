@@ -346,40 +346,32 @@ func getColorizePermission(mode os.FileMode) string {
 		if i == 0 && cs == "-" {
 			s = "."
 		}
-		c += color.New(EXAColors[cs]...).Add(color.Bold).Sprint(s)
+		// c += color.New(EXAColors[cs]...).Add(color.Bold).Sprint(s)
+		c += NewEXAColor(cs).Add(color.Bold).Sprint(s)
 	}
 
 	return c + " "
 }
 
 var cpmap = map[rune]*color.Color{
-	'L': color.New(LSColors["ln"]...).Add(color.Concealed),
-	'l': color.New(LSColors["ln"]...).Add(color.Concealed),
-	'd': color.New(LSColors["di"]...).Add(color.Concealed),
-	'r': color.New(color.FgYellow).Add(color.Bold),
-	'w': color.New(color.FgRed).Add(color.Bold),
-	'x': color.New([]color.Attribute{38, 5, 155}...).Add(color.Bold),
-	'-': color.New(color.Concealed),
-	'.': color.New(color.Concealed),
-	' ': color.New(color.Concealed), //unmodified
-	// 'M': color.New(color.FgBlue).Add(color.Concealed), //modified
-	// 'A': color.New(color.FgBlue).Add(color.Concealed), //added
-	// 'D': color.New(color.FgRed).Add(color.Concealed),  //deleted
-	// 'R': color.New(color.FgBlue).Add(color.Concealed), //renamed
-	// 'C': color.New(color.FgBlue).Add(color.Concealed), //copied
-	// 'U': color.New(color.FgBlue).Add(color.Concealed), //updated but unmerged
-	// '?': color.New(color.FgHiGreen).Add(color.Bold),   //untracked
-	// 'N': color.New(color.FgHiGreen).Add(color.Bold),   //untracked
-	// '!': color.New(color.FgBlue).Add(color.Concealed), //ignored
-	'M': color.New(EXAColors["gm"]...), //modified
-	'A': color.New(EXAColors["ga"]...), //added
-	'D': color.New(EXAColors["gd"]...), //deleted
-	'R': color.New(EXAColors["gv"]...), //renamed
-	'C': color.New(EXAColors["gt"]...), //copied
-	'U': color.New(EXAColors["gt"]...), //updated but unmerged
-	'?': color.New(EXAColors["gm"]...), //untracked
-	'N': color.New(EXAColors["ga"]...), //untracked
-	'!': color.New(EXAColors["-"]...),  //ignored
+	'L': NewLSColor("ln").Add(color.Concealed),
+	'l': NewLSColor("ln").Add(color.Concealed),
+	'd': NewLSColor("di").Add(color.Concealed),
+	'r': NewEXAColor("ur").Add(color.Bold),
+	'w': NewEXAColor("uw").Add(color.Bold),
+	'x': NewEXAColor("ux").Add(color.Bold),
+	'-': NewEXAColor("-"),  //color.New(color.Concealed),
+	'.': NewEXAColor("."),  //color.New(color.Concealed),
+	' ': NewEXAColor(" "),  //color.New(color.Concealed), //unmodified
+	'M': NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //modified
+	'A': NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //added
+	'D': NewEXAColor("gd"), //color.New(EXAColors["gd"]...), //deleted
+	'R': NewEXAColor("gv"), //color.New(EXAColors["gv"]...), //renamed
+	'C': NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //copied
+	'U': NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //updated but unmerged
+	'?': NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //untracked
+	'N': NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //untracked
+	'!': NewEXAColor("-"),  //color.New(EXAColors["-"]...),  //ignored
 }
 
 func getColorizedSize(size uint64) (csize string) {
@@ -387,30 +379,26 @@ func getColorizedSize(size uint64) (csize string) {
 	nss := len(ss)
 	sn := fmt.Sprintf("%5s", ss[:nss-1])
 	su := strings.ToLower(ss[nss-1:])
-	// c := color.New(color.FgHiGreen).Add(color.Bold)
-	cn := color.New(EXAColors["sn"]...).Add(color.Bold)
-	cu := color.New(EXAColors["sb"]...)
+	cn := NewEXAColor("sn").Add(color.Bold)
+	cu := NewEXAColor("sb")
 	csize = cn.Sprint(sn) + cu.Sprint(su)
 	return csize
 }
 
 func getColorizedUGName(urname, gpname string) (curname, cgpname string) {
-	cu := color.New(EXAColors["uu"]...).Add(color.Bold)
-	cg := color.New(EXAColors["gu"]...).Add(color.Bold)
+	cu := NewEXAColor("uu").Add(color.Bold)
+	cg := NewEXAColor("gu").Add(color.Bold)
 	curname = cu.Sprint(urname)
 	cgpname = cg.Sprint(gpname)
 	return curname, cgpname
 }
 
 func getColorizedModTime(modTime time.Time) string {
-	c := color.New(EXAColors["da"]...)
-	s := c.Sprint(modTime.Format("01-02-06 15:04"))
-	return s
+	return NewEXAColor("da").Sprint(modTime.Format("01-02-06 15:04"))
 }
 
 func getColorizedHead(pad, username, groupname string) string {
-	c := color.New(EXAColors["hd"]...).Add(color.Underline)
-
+	c := NewEXAColor("hd").Add(color.Underline)
 	width := intmax(4, len(username))
 	huser := fmt.Sprintf("%[2]*[1]s", "User", width)
 	width = intmax(5, len(groupname))
