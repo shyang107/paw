@@ -39,8 +39,8 @@ type File struct {
 	Size     uint64
 }
 
-// ConstructFile will the pointer of instance of `File`, and is a constructor of `File`.
-func ConstructFile(path string) *File {
+// NewFile will the pointer of instance of `File`, and is a constructor of `File`.
+func NewFile(path string) *File {
 	// path = strings.TrimSuffix(path, "/")
 	var err error
 	if strings.HasPrefix(path, "~") {
@@ -80,13 +80,13 @@ const (
 	RootMark = "."
 )
 
-// ConstructFileRelTo will the pointer of instance of `File`, and is a constructor of `File`, but `File.Dir` is sub-directory of `root`
+// NewFileRelTo will the pointer of instance of `File`, and is a constructor of `File`, but `File.Dir` is sub-directory of `root`
 // 	If `path` == `root`, then
 // 		f.Dir = "."
-func ConstructFileRelTo(path, root string) *File {
+func NewFileRelTo(path, root string) *File {
 	path, _ = filepath.Abs(path)
 	root, _ = filepath.Abs(root)
-	f := ConstructFile(path)
+	f := NewFile(path)
 	if f.IsDir() {
 		if f.Path == root {
 			f.Dir = strings.Replace(f.Path, root, ".", 1)
@@ -145,24 +145,40 @@ func (f *File) DirSlice() []string {
 	return strings.Split(f.Dir, PathSeparator)
 }
 
-// // SubPath will return sub-directory based on `root`.
-// //  1. If `root` is equal to `f.Dir`, then return "./".
-// // 	2. If `root` is not the prefix of `f.Dir`, then return `f.Dir`.
-// func (f *File) SubPath(root string) string {
-// 	sub := strings.TrimPrefix(f.Dir, root)
-// 	if len(sub) == 0 {
-// 		return "./"
-// 	}
-// 	return sub
-// }
+// ColorBaseName will return a colorful string of BaseName using LS_COLORS like as exa
+func (f *File) ColorBaseName() string {
+	return getName(f)
+}
 
-// // SubPathSlice will split `f.SubPath(root)` following Spearator, seperating it into a string slice.
-// // 	The the last element will be empty string, and remove.
-// func (f *File) SubPathSlice(root string) []string {
-// 	ss := strings.Split(f.SubPath(root), PathSeparator)
-// 	ns := len(ss)
-// 	return ss[:ns-1]
-// }
+// ColorPermission will return a colorful string of Stat.Mode() like as exa
+func (f *File) ColorPermission() string {
+	return getColorizePermission(f.Stat.Mode())
+}
+
+// ColorModifyTime will return a colorful string of Stat.ModTime() like as exa
+func (f *File) ColorModifyTime() string {
+	return getColorizedModTime(f.Stat.ModTime())
+}
+
+// ColorGitStatus will return a colorful string of git status like as exa
+func (f *File) ColorGitStatus(git GitStatus) string {
+	return getColorizedGitStatus(git, f)
+}
+
+// ColorSize will return a colorful string of Size for human-reading like as exa
+func (f *File) ColorSize() string {
+	return getColorizedSize(f.Size)
+}
+
+// ColorDirName will return a colorful string of {{dir of Path}}+{{name of path }} for human-reading like as exa
+func (f *File) ColorDirName(root string) string {
+	return getDirName(f.Path, root)
+}
+
+// ColorMeta will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File)
+func (f *File) ColorMeta(git GitStatus) string {
+	return getMeta("", f, git)
+}
 
 type FileSortByPath []File
 
