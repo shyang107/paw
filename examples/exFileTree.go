@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/afero"
+
 	"github.com/karrick/godirwalk"
 
 	"github.com/shyang107/paw"
@@ -20,6 +22,7 @@ func exFileTree(root string) {
 	// constructFile(root)
 	readDirs(root)
 	// scan(root)
+	// xafero(root)
 }
 
 func readDirs(root string) {
@@ -30,7 +33,7 @@ func readDirs(root string) {
 	}
 
 	fl := filetree.NewFileList(root)
-	fl.FindFiles(0, nil)
+	fl.FindFiles(-1, nil)
 
 	// spew.Dump(fl.Dirs())
 	// fmt.Println(fl.ToTreeString("# "))
@@ -41,6 +44,38 @@ func readDirs(root string) {
 	// fmt.Println(fl)
 	// listfl(fl)
 }
+
+var appFs = afero.NewMemMapFs()
+
+func xafero(root string) {
+	root, err := filepath.Abs(root)
+	if err != nil {
+		paw.Logger.Fatal(err)
+	}
+	// re := regexp.MustCompile(`^[^.].+$`)
+	// re := regexp.MustCompile(`^[.].+$`)
+
+	// fmt.Println(re.String(), `.git`, !re.MatchString(`.git`))
+	a := afero.Afero{
+		Fs: afero.NewOsFs(),
+		// Fs: afero.NewRegexpFs(afero.NewOsFs(), re),
+	}
+
+	fis, err := a.ReadDir(root)
+	if err != nil {
+		paw.Logger.Fatal(err)
+	}
+	git, _ := filetree.GetShortStatus(root)
+	for i, fi := range fis {
+		if paw.HasPrefix(fi.Name(), ".") {
+			continue
+		}
+		file := filetree.NewFile(root + "/" + fi.Name())
+		fmt.Printf("%2d %s %v\n", i+1, file.ColorMeta(git),
+			file)
+	}
+}
+
 func listfl(fl *filetree.FileList) {
 	dirs := fl.Dirs()
 	fm := fl.Map()

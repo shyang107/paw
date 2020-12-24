@@ -22,7 +22,7 @@ func fileSomeMethods() {
 	for i := 0; i < len(path); i++ {
 		p := path[i]
 		fmt.Println(i+1, p)
-		f := filetree.ConstructFile(p)
+		f := filetree.NewFile(p)
 		cstr := f.LSColorString(f.BaseName)
 		s := filepath.Join(f.Dir, cstr)
 		fmt.Println("  ", s)
@@ -48,7 +48,7 @@ func newFile() {
 	for i := 0; i < len(path); i++ {
 		p := path[i]
 		fmt.Println(p)
-		f := filetree.ConstructFile(p)
+		f := filetree.NewFile(p)
 		spew.Dump(*f)
 	}
 }
