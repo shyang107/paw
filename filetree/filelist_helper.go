@@ -41,7 +41,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 
 	meta := pad
 	if isMeta {
-		meta = getMeta(pad, file, git)
+		meta += file.ColorMeta(git) //getMeta(pad, file, git)
 	}
 
 	fmt.Fprintf(wr, "%v", meta)
@@ -55,9 +55,9 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	}
 
 	cedge := KindLSColorString("-", string(edge))
-	name := getName(file)
-	if file.IsDir() {
-		dinf := getDirInfo(fl, file)
+	name := file.ColorBaseName() //getName(file)
+	if file.IsDir() && fl.depth == -1 {
+		dinf := fl.DirInfo(file) //getDirInfo(fl, file)
 		name = dinf + " " + name
 	}
 
@@ -112,7 +112,7 @@ func isEnded(levelsEnded []int, level int) bool {
 }
 
 func getDirName(path string, root string) string {
-	file := ConstructFile(path)
+	file := NewFile(path)
 	name := file.LSColorString(file.BaseName)
 	if file.IsDir() {
 		dir, _ := filepath.Split(file.Path)
@@ -159,6 +159,25 @@ func getName(file *File) string {
 		name += cpmap['l'].Sprint(" -> ") + link
 	}
 	return name
+}
+func checkAndGetColorLink(file *File) (link string) {
+	mode := file.Stat.Mode()
+	if mode&os.ModeSymlink != 0 {
+		alink, err := filepath.EvalSymlinks(file.Path)
+		if err != nil {
+			link = alink + " ERR: " + err.Error()
+		} else {
+			link, _ = FileLSColorString(alink, alink)
+		}
+	}
+	return link
+}
+
+func checkAndGetLink(file *File) (link string) {
+	SetNoColor()
+	link = checkAndGetColorLink(file)
+	DefaultNoColor()
+	return link
 }
 
 func getMeta(pad string, file *File, git GitStatus) string {
@@ -319,6 +338,10 @@ func getGitSlice(git GitStatus, file *File) []string {
 	return gits
 }
 
+// GetColorizePermission will return a colorful string of mode
+func GetColorizePermission(mode os.FileMode) string {
+	return getColorizePermission(mode)
+}
 func getColorizePermission(mode os.FileMode) string {
 	sperm := fmt.Sprintf("%v", mode)
 	c := ""
@@ -374,6 +397,10 @@ var cpmap = map[rune]*color.Color{
 	'!': NewEXAColor("-"),  //color.New(EXAColors["-"]...),  //ignored
 }
 
+// GetColorizedSize will return a humman-readable and colorful string of size
+func GetColorizedSize(size uint64) string {
+	return getColorizedSize(size)
+}
 func getColorizedSize(size uint64) (csize string) {
 	ss := bytefmt.ByteSize(size)
 	nss := len(ss)
@@ -393,6 +420,10 @@ func getColorizedUGName(urname, gpname string) (curname, cgpname string) {
 	return curname, cgpname
 }
 
+// GetColorizedTime will return a colorful string of time
+func GetColorizedTime(modTime time.Time) string {
+	return getColorizedModTime(modTime)
+}
 func getColorizedModTime(modTime time.Time) string {
 	return NewEXAColor("da").Sprint(modTime.Format("01-02-06 15:04"))
 }
