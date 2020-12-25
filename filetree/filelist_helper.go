@@ -1,16 +1,14 @@
 package filetree
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"os/user"
 	"path/filepath"
-	"strings"
+
 	"time"
 
-	"code.cloudfoundry.org/bytefmt"
 	"github.com/fatih/color"
 	"github.com/karrick/godirwalk"
 	"github.com/shyang107/paw"
@@ -28,7 +26,7 @@ var (
 	EdgeTypeMid      = treeprint.EdgeTypeMid
 	EdgeTypeEnd      = treeprint.EdgeTypeEnd
 	IndentSize       = treeprint.IndentSize
-	SpaceIndentSize  = strings.Repeat(" ", IndentSize)
+	SpaceIndentSize  = paw.Repeat(" ", IndentSize)
 	currentuser, _   = user.Current()
 	urname           = currentuser.Username
 	usergp, _        = user.LookupGroupId(currentuser.Gid)
@@ -41,23 +39,23 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 
 	meta := pad
 	if isMeta {
-		meta += file.ColorMeta(git) //getMeta(pad, file, git)
+		meta += file.ColorMeta(git)
 	}
 
 	fmt.Fprintf(wr, "%v", meta)
 	for i := 0; i < level; i++ {
 		if isEnded(levelsEnded, i) {
-			fmt.Fprint(wr, strings.Repeat(" ", IndentSize+1))
+			fmt.Fprint(wr, paw.Repeat(" ", IndentSize+1))
 			continue
 		}
 		cedge := KindLSColorString("-", string(EdgeTypeLink))
-		fmt.Fprintf(wr, "%v%s", cedge, strings.Repeat(" ", IndentSize))
+		fmt.Fprintf(wr, "%v%s", cedge, paw.Repeat(" ", IndentSize))
 	}
 
 	cedge := KindLSColorString("-", string(edge))
-	name := file.ColorBaseName() //getName(file)
+	name := file.ColorBaseName()
 	if file.IsDir() && fl.depth == -1 {
-		dinf := fl.DirInfo(file) //getDirInfo(fl, file)
+		dinf := fl.DirInfo(file)
 		name = dinf + " " + name
 	}
 
@@ -90,8 +88,8 @@ func isLast(file *File, fl *FileList) (isLastPreBranch, hasFiles bool) {
 	dir := file.Dir
 	hasFiles = len(fl.Map()[dir]) > 1
 
-	ddir := strings.Split(dir, PathSeparator)
-	pdir := strings.Join(ddir[:len(ddir)-1], PathSeparator)
+	ddir := paw.Split(dir, PathSeparator)
+	pdir := paw.Join(ddir[:len(ddir)-1], PathSeparator)
 	pfiles := fl.Map()[pdir]
 	iplast := len(pfiles) - 1
 	for i, pfile := range pfiles {
@@ -111,6 +109,11 @@ func isEnded(levelsEnded []int, level int) bool {
 	return false
 }
 
+// GetColorizedDirName will return a colorful string of {{ dir }}/{{ name }}
+func GetColorizedDirName(path string, root string) string {
+	return getDirName(path, root)
+}
+
 func getDirName(path string, root string) string {
 	file := NewFile(path)
 	name := file.LSColorString(file.BaseName)
@@ -118,7 +121,7 @@ func getDirName(path string, root string) string {
 		dir, _ := filepath.Split(file.Path)
 		if len(root) > 0 {
 			// dir = strings.TrimPrefix(dir, root)
-			dir = strings.Replace(dir, root, "..", 1)
+			dir = paw.Replace(dir, root, "..", 1)
 		}
 		name = KindEXAColorString("dir", dir) + name
 	}
@@ -144,54 +147,6 @@ func getDirInfo(fl *FileList, file *File) string {
 	di := fmt.Sprintf("%v dirs", nd-1)
 	fi := fmt.Sprintf("%v files", nf)
 	return "[" + KindEXAColorString("di", di) + ", " + KindEXAColorString("fi", fi) + "]"
-}
-
-// func getLTName(file *File) string {
-func getName(file *File) string {
-	name := file.LSColorString(file.BaseName)
-	if file.IsDir() && file.Dir == RootMark {
-		// name = file.LSColorString(file.Dir) + " (" + file.LSColorString(file.Path) + ")"
-		dir, _ := filepath.Split(file.Path)
-		name = KindEXAColorString("dir", dir) + name
-	}
-	link := checkAndGetColorLink(file)
-	if len(link) > 0 {
-		name += cpmap['l'].Sprint(" -> ") + link
-	}
-	return name
-}
-func checkAndGetColorLink(file *File) (link string) {
-	mode := file.Stat.Mode()
-	if mode&os.ModeSymlink != 0 {
-		alink, err := filepath.EvalSymlinks(file.Path)
-		if err != nil {
-			link = alink + " ERR: " + err.Error()
-		} else {
-			link, _ = FileLSColorString(alink, alink)
-		}
-	}
-	return link
-}
-
-func checkAndGetLink(file *File) (link string) {
-	SetNoColor()
-	link = checkAndGetColorLink(file)
-	DefaultNoColor()
-	return link
-}
-
-func getMeta(pad string, file *File, git GitStatus) string {
-	buf := new(bytes.Buffer)
-	cperm := getColorizePermission(file.Stat.Mode())
-	cmodTime := getColorizedModTime(file.Stat.ModTime())
-	cgit := getColorizedGitStatus(git, file)
-	fsize := file.Size
-	cfsize := getColorizedSize(fsize)
-	if file.IsDir() {
-		cfsize = KindLSColorString("-", fmt.Sprintf("%6s", "-"))
-	}
-	printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime, cgit)
-	return string(buf.Bytes())
 }
 
 func printLTList(w io.Writer, pad string, parameters ...string) {
@@ -230,7 +185,7 @@ func paddingTree(pad string, bytes []byte) []byte {
 }
 
 func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
-	dd := strings.Split(dir, PathSeparator)
+	dd := paw.Split(dir, PathSeparator)
 	nd := len(dd)
 	var pre treeprint.Tree
 	// fmt.Println(dir, nd)
@@ -239,7 +194,7 @@ func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
 	} else { //./xx/...
 		pre = tree
 		for i := 2; i < nd; i++ {
-			predir := strings.Join(dd[:i], PathSeparator)
+			predir := paw.Join(dd[:i], PathSeparator)
 			// fmt.Println("\t", i, predir)
 			f := fm[predir][0] // import dir
 			pre = pre.FindByValue(f)
@@ -253,11 +208,11 @@ func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
 //
 
 func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	fmt.Fprintf(w, "%s%v directories, %v files, size: %v.\n", pad, ndirs, nfiles, bytefmt.ByteSize(sumsize))
+	fmt.Fprintf(w, "%s%v directories, %v files, size: %v.\n", pad, ndirs, nfiles, ByteSize(sumsize))
 }
 
 func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	fmt.Fprintf(w, "%s\n%s%v directories, %v files, total %v.\n", pad, pad, ndirs, nfiles, bytefmt.ByteSize(sumsize))
+	fmt.Fprintf(w, "%s\n%s%v directories, %v files, total %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
 }
 
 func printFileItem(w io.Writer, pad string, parameters ...string) {
@@ -290,10 +245,10 @@ func getColorizedGitStatus(git GitStatus, file *File) string {
 
 func checkXY(xy XY) XY {
 	st := xy.String()
-	st = strings.Replace(st, " ", "-", -1)
-	st = strings.Replace(st, "??", "-N", -1)
-	st = strings.Replace(st, "?", "N", -1)
-	st = strings.Replace(st, "A", "N", -1)
+	st = paw.Replace(st, " ", "-", -1)
+	st = paw.Replace(st, "??", "-N", -1)
+	st = paw.Replace(st, "?", "N", -1)
+	st = paw.Replace(st, "A", "N", -1)
 	return ToXY(st)
 }
 
@@ -330,7 +285,7 @@ func getGitTagChar(c rune) rune {
 func getGitSlice(git GitStatus, file *File) []string {
 	gits := []string{}
 	for k, v := range git.FilesStatus {
-		if strings.HasPrefix(k, file.Path) {
+		if paw.HasPrefix(k, file.Path) {
 			xy := checkXY(v)
 			gits = append(gits, xy.String())
 		}
@@ -402,10 +357,10 @@ func GetColorizedSize(size uint64) string {
 	return getColorizedSize(size)
 }
 func getColorizedSize(size uint64) (csize string) {
-	ss := bytefmt.ByteSize(size)
+	ss := ByteSize(size)
 	nss := len(ss)
 	sn := fmt.Sprintf("%5s", ss[:nss-1])
-	su := strings.ToLower(ss[nss-1:])
+	su := paw.ToLower(ss[nss-1:])
 	cn := NewEXAColor("sn").Add(color.Bold)
 	cu := NewEXAColor("sb")
 	csize = cn.Sprint(sn) + cu.Sprint(su)

@@ -684,20 +684,12 @@ func getcolors() {
 	colorenv := os.Getenv("LS_COLORS")
 	args := strings.Split(colorenv, ":")
 
-	// colors := make(map[string]string)
-	// ctypes := make(map[string]string)
-	// exts := []string{}
 	for _, a := range args {
-		// fmt.Printf("%v\t", a)
 		kv := strings.Split(a, "=")
-
-		// fmt.Printf("%v\n", kv)
 		if len(kv) == 2 {
 			LSColors[kv[0]] = getColorAttribute(kv[1])
-			// exts = append(exts, kv[0])
 		}
 	}
-	// sort.Strings(exts)
 }
 
 func getColorAttribute(code string) []color.Attribute {

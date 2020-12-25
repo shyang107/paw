@@ -29,7 +29,7 @@ func readDirs(root string) {
 	// root, _ = homedir.Expand("~")
 	root, err := filepath.Abs(root)
 	if err != nil {
-		paw.Logger.Fatal(err)
+		paw.Logger.Error(err)
 	}
 
 	fl := filetree.NewFileList(root)

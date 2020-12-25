@@ -10,8 +10,6 @@ import (
 	"github.com/karrick/godirwalk"
 	"github.com/spf13/cast"
 
-	"code.cloudfoundry.org/bytefmt"
-
 	"github.com/shyang107/paw"
 	// "github.com/shyang107/paw/treeprint"
 )
@@ -317,7 +315,7 @@ func (f *FileList) ToTree(pad string) []byte {
 // 		ntf += nfiles
 // 		for jj, file := range files {
 // 			// fsize := file.Size
-// 			// sfsize := bytefmt.ByteSize(fsize)
+// 			// sfsize := ByteSize(fsize)
 // 			if jj == 0 && file.IsDir() {
 // 				if i == 0 { // root dir
 // 					// tree.SetValue(fmt.Sprintf("%v (%v)", file.LSColorString(file.Dir), file.LSColorString(file.Path)))
@@ -382,7 +380,7 @@ func (f *FileList) ToTable(pad string) []byte {
 	}
 	tf.Prepare(buf)
 
-	sdsize := bytefmt.ByteSize(f.totalSize)
+	sdsize := ByteSize(f.totalSize)
 	head := fmt.Sprintf("Root directory: %v, size: %v", f.Root(), sdsize)
 	tf.SetBeforeMessage(head)
 
@@ -393,7 +391,7 @@ func (f *FileList) ToTable(pad string) []byte {
 		ndirs, nfiles := 0, 0
 		for jj, file := range fm[dir] {
 			fsize := file.Size
-			sfsize := bytefmt.ByteSize(fsize)
+			sfsize := ByteSize(fsize)
 			mode := file.Stat.Mode()
 			if jj == 0 && file.IsDir() {
 				idx := fmt.Sprintf("D%d", i)
@@ -427,7 +425,7 @@ func (f *FileList) ToTable(pad string) []byte {
 		}
 		if f.depth != 0 {
 			// printDirSummary(buf, pad, ndirs, nfiles, sumsize)
-			tf.PrintRow("", "", "", fmt.Sprintf("%v directories, %v files, size: %v.", ndirs, nfiles, bytefmt.ByteSize(sumsize)))
+			tf.PrintRow("", "", "", fmt.Sprintf("%v directories, %v files, size: %v.", ndirs, nfiles, ByteSize(sumsize)))
 
 			if i != len(dirs)-1 {
 				tf.PrintMiddleSepLine()
@@ -435,7 +433,7 @@ func (f *FileList) ToTable(pad string) []byte {
 		}
 	}
 
-	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files, total %v.", nDirs, nFiles, bytefmt.ByteSize(f.totalSize)))
+	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files, total %v.", nDirs, nFiles, ByteSize(f.totalSize)))
 	tf.PrintEnd()
 
 	f.EnableColor()
@@ -459,23 +457,15 @@ func (f *FileList) ToText(pad string) []byte {
 		width = 80
 	)
 
-	sdsize := bytefmt.ByteSize(f.totalSize)
+	sdsize := ByteSize(f.totalSize)
 	fmt.Fprintf(w, "%sRoot directory: %v, size: %v\n", pad, getDirName(f.Root(), ""), KindLSColorString("di", sdsize))
 	fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("=", width))
 
 	ppad := ""
 
 	i1 := len(cast.ToString(f.NDirs()))
-	j1 := len(cast.ToString(f.NFiles()))
-	if f.depth == 0 {
-		if i1 < j1 {
-			i1 = j1
-		} else {
-			j1 = i1
-		}
-	}
+	j1 := intmax(i1, len(cast.ToString(f.NFiles())))
 	j := 0
-
 	for i, dir := range dirs {
 		istr := KindLSColorString("di", fmt.Sprintf("%[2]*[1]d.", i, i1))
 		sumsize := uint64(0)
@@ -551,7 +541,7 @@ func (f *FileList) ToList(pad string) []byte {
 		chead = f.GetHead4Meta(pad, urname, gpname)
 	)
 
-	ctdsize := bytefmt.ByteSize(f.totalSize)
+	ctdsize := ByteSize(f.totalSize)
 	head := fmt.Sprintf("%sRoot directory: %v, size: %v", pad, getDirName(f.Root(), ""), KindLSColorString("di", ctdsize))
 	fmt.Fprintln(w, head)
 	fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("=", 80))
@@ -564,16 +554,16 @@ func (f *FileList) ToList(pad string) []byte {
 		nfiles := 0
 		ndirs := 0
 		for jj, file := range fm[dir] {
-			if jj == 0 && file.IsDir() {
-				if !paw.EqualFold(file.Dir, RootMark) {
-					if f.depth != 0 {
-						fmt.Fprintf(w, "%s%v\n", pad, file.ColorDirName(f.Root()))
-						fmt.Fprintln(w, chead)
-					}
-				}
-				continue
-			}
 			if file.IsDir() {
+				if jj == 0 {
+					if !paw.EqualFold(file.Dir, RootMark) {
+						if f.depth != 0 {
+							fmt.Fprintf(w, "%s%v\n", pad, file.ColorDirName(f.Root()))
+							fmt.Fprintln(w, chead)
+						}
+					}
+					continue
+				}
 				ndirs++
 			} else {
 				nfiles++
@@ -585,10 +575,9 @@ func (f *FileList) ToList(pad string) []byte {
 
 		if f.depth != 0 {
 			printDirSummary(w, pad, ndirs, nfiles, sumsize)
-			if i == len(dirs)-1 {
-				break
+			if i < len(dirs)-1 {
+				fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("-", 80))
 			}
-			fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("-", 80))
 		}
 	}
 
@@ -614,9 +603,9 @@ func toListTree(f *FileList, pad string, isMeta bool) []byte {
 		fm  = f.Map()
 	)
 
-	// print heat
+	// print head
 	if isMeta {
-		chead := f.GetHead4Meta(pad, urname, gpname) //getColorizedHead(pad, urname, gpname)
+		chead := f.GetHead4Meta(pad, urname, gpname)
 		buf.WriteString(chead)
 		buf.WriteByte('\n')
 	}
@@ -635,6 +624,7 @@ func toListTree(f *FileList, pad string, isMeta bool) []byte {
 
 	buf.WriteString(fmt.Sprintf("%v%v", meta, name))
 	buf.WriteByte('\n')
+
 	// print files in the root dir
 	git := f.GetGitStatus()
 	level := 0

@@ -1,6 +1,8 @@
 package filetree
 
 import (
+	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -150,6 +152,40 @@ func (f *File) ColorBaseName() string {
 	return getName(f)
 }
 
+// func getLTName(file *File) string {
+func getName(file *File) string {
+	name := file.LSColorString(file.BaseName)
+	if file.IsDir() && file.Dir == RootMark {
+		dir, _ := filepath.Split(file.Path)
+		name = KindEXAColorString("dir", dir) + name
+	}
+	link := checkAndGetColorLink(file)
+	if len(link) > 0 {
+		name += cpmap['l'].Sprint(" -> ") + link
+	}
+	return name
+}
+
+func checkAndGetColorLink(file *File) (link string) {
+	mode := file.Stat.Mode()
+	if mode&os.ModeSymlink != 0 {
+		alink, err := filepath.EvalSymlinks(file.Path)
+		if err != nil {
+			link = alink + " ERR: " + err.Error()
+		} else {
+			link, _ = FileLSColorString(alink, alink)
+		}
+	}
+	return link
+}
+
+func checkAndGetLink(file *File) (link string) {
+	SetNoColor()
+	link = checkAndGetColorLink(file)
+	DefaultNoColor()
+	return link
+}
+
 // ColorPermission will return a colorful string of Stat.Mode() like as exa
 func (f *File) ColorPermission() string {
 	return getColorizePermission(f.Stat.Mode())
@@ -157,7 +193,7 @@ func (f *File) ColorPermission() string {
 
 // ColorModifyTime will return a colorful string of Stat.ModTime() like as exa
 func (f *File) ColorModifyTime() string {
-	return getColorizedModTime(f.Stat.ModTime())
+	return GetColorizedTime(f.Stat.ModTime())
 }
 
 // ColorGitStatus will return a colorful string of git status like as exa
@@ -167,17 +203,31 @@ func (f *File) ColorGitStatus(git GitStatus) string {
 
 // ColorSize will return a colorful string of Size for human-reading like as exa
 func (f *File) ColorSize() string {
-	return getColorizedSize(f.Size)
+	return GetColorizedSize(f.Size)
 }
 
 // ColorDirName will return a colorful string of {{dir of Path}}+{{name of path }} for human-reading like as exa
 func (f *File) ColorDirName(root string) string {
-	return getDirName(f.Path, root)
+	return GetColorizedDirName(f.Path, root)
 }
 
 // ColorMeta will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File)
 func (f *File) ColorMeta(git GitStatus) string {
 	return getMeta("", f, git)
+}
+
+func getMeta(pad string, file *File, git GitStatus) string {
+	buf := new(bytes.Buffer)
+	cperm := getColorizePermission(file.Stat.Mode())
+	cmodTime := getColorizedModTime(file.Stat.ModTime())
+	cgit := getColorizedGitStatus(git, file)
+	fsize := file.Size
+	cfsize := getColorizedSize(fsize)
+	if file.IsDir() {
+		cfsize = KindLSColorString("-", fmt.Sprintf("%6s", "-"))
+	}
+	printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime, cgit)
+	return string(buf.Bytes())
 }
 
 type FileSortByPath []File
