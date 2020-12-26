@@ -25,6 +25,8 @@ _testmain.go
 
 *.out
 
+ex
+
 #GoLand
 .idea
 
