@@ -41,6 +41,9 @@ func readDirs(root string) {
 	// fmt.Println(fl.ToTextString("# "))
 	// fmt.Println(fl.ToListString("# "))
 	fmt.Println(fl.ToListTreeString("# "))
+	// fl.SetWriters(os.Stdout)
+	// fl.ToListTreeString("# ")
+	// fmt.Println("out:\n", out)
 	// fmt.Println(fl)
 	// listfl(fl)
 }

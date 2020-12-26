@@ -69,4 +69,5 @@ func main() {
 	// exFile()
 	// exGitstatus(root)
 	exFileTree(root)
+	// checkType()
 }
