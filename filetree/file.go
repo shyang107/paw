@@ -186,22 +186,26 @@ func checkAndGetLink(file *File) (link string) {
 	return link
 }
 
-// ColorPermission will return a colorful string of Stat.Mode() like as exa
+// ColorPermission will return a colorful string of Stat.Mode() like as exa.
+// The length of placeholder in terminal is 10.
 func (f *File) ColorPermission() string {
 	return getColorizePermission(f.Stat.Mode())
 }
 
-// ColorModifyTime will return a colorful string of Stat.ModTime() like as exa
+// ColorModifyTime will return a colorful string of Stat.ModTime() like as exa.
+// The length of placeholder in terminal is 14.
 func (f *File) ColorModifyTime() string {
 	return GetColorizedTime(f.Stat.ModTime())
 }
 
-// ColorGitStatus will return a colorful string of git status like as exa
+// ColorGitStatus will return a colorful string of git status like as exa.
+// The length of placeholder in terminal is 3.
 func (f *File) ColorGitStatus(git GitStatus) string {
 	return getColorizedGitStatus(git, f)
 }
 
-// ColorSize will return a colorful string of Size for human-reading like as exa
+// ColorSize will return a colorful string of Size for human-reading like as exa.
+// The length of placeholder in terminal is 6.
 func (f *File) ColorSize() string {
 	return GetColorizedSize(f.Size)
 }

@@ -208,11 +208,12 @@ func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
 //
 
 func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	fmt.Fprintf(w, "%s%v directories, %v files, size: %v.\n", pad, ndirs, nfiles, ByteSize(sumsize))
+	msg := KindLSColorString("-", fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize)))
+	fmt.Fprintf(w, msg)
 }
 
 func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	fmt.Fprintf(w, "%s\n%s%v directories, %v files, total %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
+	fmt.Fprintf(w, "%s\n%s%v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
 }
 
 func printFileItem(w io.Writer, pad string, parameters ...string) {
@@ -225,6 +226,8 @@ func printFileItem(w io.Writer, pad string, parameters ...string) {
 	// fmt.Fprintf(w, "%s%s %s %s %s %s %s %s\n", pad, cperm, cfsize, curname, cgpname, cmodTime, cgit, name)
 }
 
+// getColorizedGitStatus will return a colorful string of shrot status of git.
+// The length of placeholder in terminal is 3.
 func getColorizedGitStatus(git GitStatus, file *File) string {
 	st := "--"
 	xy, ok := git.FilesStatus[file.Path]
@@ -294,6 +297,7 @@ func getGitSlice(git GitStatus, file *File) []string {
 }
 
 // GetColorizePermission will return a colorful string of mode
+// The length of placeholder in terminal is 10.
 func GetColorizePermission(mode os.FileMode) string {
 	return getColorizePermission(mode)
 }
@@ -352,7 +356,8 @@ var cpmap = map[rune]*color.Color{
 	'!': NewEXAColor("-"),  //color.New(EXAColors["-"]...),  //ignored
 }
 
-// GetColorizedSize will return a humman-readable and colorful string of size
+// GetColorizedSize will return a humman-readable and colorful string of size.
+// The length of placeholder in terminal is 6.
 func GetColorizedSize(size uint64) string {
 	return getColorizedSize(size)
 }
@@ -375,7 +380,8 @@ func getColorizedUGName(urname, gpname string) (curname, cgpname string) {
 	return curname, cgpname
 }
 
-// GetColorizedTime will return a colorful string of time
+// GetColorizedTime will return a colorful string of time.
+// The length of placeholder in terminal is 14.
 func GetColorizedTime(modTime time.Time) string {
 	return getColorizedModTime(modTime)
 }
