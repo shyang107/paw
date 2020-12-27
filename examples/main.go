@@ -68,6 +68,7 @@ func main() {
 	// exColor()
 	// exFile()
 	// exGitstatus(root)
-	exFileTree(root)
+	// exFileTree(root)
 	// checkType()
+	exPrintDir(root)
 }

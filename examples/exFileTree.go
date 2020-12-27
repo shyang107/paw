@@ -73,7 +73,7 @@ func xafero(root string) {
 		if paw.HasPrefix(fi.Name(), ".") {
 			continue
 		}
-		file := filetree.NewFile(root + "/" + fi.Name())
+		file, _ := filetree.NewFile(root + "/" + fi.Name())
 		fmt.Printf("%2d %s %v\n", i+1, file.ColorMeta(git),
 			file)
 	}
