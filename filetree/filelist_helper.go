@@ -475,3 +475,11 @@ func (s *sizesStack) LeaveDirectory() (i int64) {
 func (s *sizesStack) Accumulate(i int64) {
 	s.sizes[s.top] += i
 }
+
+// ByLowerString is using in sort.Sort(data)
+// 	paw.ToLower(a[i]) < paw.ToLower(a[j])
+type ByLowerString []string
+
+func (a ByLowerString) Len() int           { return len(a) }
+func (a ByLowerString) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByLowerString) Less(i, j int) bool { return paw.ToLower(a[i]) < paw.ToLower(a[j]) }

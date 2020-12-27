@@ -244,8 +244,16 @@ func getMeta(pad string, file *File, git GitStatus) string {
 	return string(buf.Bytes())
 }
 
-type FileSortByPath []File
+// type FileSortByPath []File
 
-func (a FileSortByPath) Len() int           { return len(a) }
-func (a FileSortByPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a FileSortByPath) Less(i, j int) bool { return a[i].Path < a[j].Path }
+// func (a FileSortByPath) Len() int           { return len(a) }
+// func (a FileSortByPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+// func (a FileSortByPath) Less(i, j int) bool { return a[i].Path < a[j].Path }
+
+// ByLowerFilePath is using in sort.Sort(data).
+// 	paw.ToLower(a[i].Path) < paw.ToLower(a[j].Path)
+type ByLowerFilePath []*File
+
+func (a ByLowerFilePath) Len() int           { return len(a) }
+func (a ByLowerFilePath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByLowerFilePath) Less(i, j int) bool { return paw.ToLower(a[i].Path) < paw.ToLower(a[j].Path) }

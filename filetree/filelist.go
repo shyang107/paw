@@ -272,15 +272,14 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			return errors.New(root + ": " + err.Error())
 		}
 
-		sort.Slice(files, func(i, j int) bool {
-			return paw.ToLower(files[i]) < paw.ToLower(files[j])
-		})
+		sort.Sort(ByLowerString(files))
 
 		file, err := NewFileRelTo(root, root)
 		if err != nil {
 			return err
 		}
 		f.AddFile(file)
+
 		for _, name := range files {
 			file, err := NewFileRelTo(root+PathSeparator+name, root)
 			if err != nil {
@@ -331,13 +330,10 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 		}
 
 		// sort
-		sort.Slice(f.dirs, func(i, j int) bool {
-			return paw.ToLower(f.dirs[i]) < paw.ToLower(f.dirs[j])
-		})
+		sort.Sort(ByLowerString(f.dirs))
+
 		for _, dir := range f.dirs {
-			sort.Slice(f.store[dir], func(i, j int) bool {
-				return paw.ToLower(f.store[dir][i].Path) < paw.ToLower(f.store[dir][j].Path)
-			})
+			sort.Sort(ByLowerFilePath(f.store[dir]))
 		}
 	}
 	return nil
