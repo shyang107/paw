@@ -232,74 +232,57 @@ func printFileItem(w io.Writer, pad string, parameters ...string) {
 	// fmt.Fprintf(w, "%s%s %s %s %s %s %s %s\n", pad, cperm, cfsize, curname, cgpname, cmodTime, cgit, name)
 }
 
+var ckxy = map[rune]rune{
+	'M': 'M', //modified
+	// "A": "A", //added
+	'A': 'N',
+	'D': 'D', //deleted
+	'R': 'R', //renamed
+	'C': 'C', //copied
+	'U': 'U', //updated but unmerged
+	'?': 'N', //untracked
+	' ': '-',
+	'!': 'N', //ignore
+}
+
 // getColorizedGitStatus will return a colorful string of shrot status of git.
 // The length of placeholder in terminal is 3.
 func getColorizedGitStatus(git GitStatus, file *File) string {
-	st := "--"
+	x, y := '-', '-'
+
 	xy, ok := git.FilesStatus[file.Path]
 
 	if ok {
-		xy = checkXY(xy)
-		st = xy.String()
+		x, y = xy.Split()
+		x = ckxy[x]
+		y = ckxy[y]
 	}
 
 	if file.IsDir() {
-		gits := getGitSlice(git, file)
-		if len(gits) > 0 {
-			st = getGitTag(gits)
+		// gits := getGitSlice(git, file)
+		for k, v := range git.FilesStatus {
+			if paw.HasPrefix(k, file.Path) {
+				vx, vy := v.Split()
+				cx := ckxy[vx]
+				cy := ckxy[vy]
+				if cx != '-' && x != 'N' {
+					x = cx
+				}
+				if cy != '-' && y != 'N' {
+					y = cy
+				}
+			}
 		}
 	}
-	return getColorizedTag(st)
-}
 
-func checkXY(xy XY) XY {
-	st := xy.String()
-	st = paw.Replace(st, " ", "-", -1)
-	st = paw.Replace(st, "??", "-N", -1)
-	st = paw.Replace(st, "?", "N", -1)
-	st = paw.Replace(st, "A", "N", -1)
-	return ToXY(st)
-}
-
-func getColorizedTag(fst string) string {
-	x := rune(fst[0])
-	y := rune(fst[1])
-	return " " + cpmap[x].Sprint(string(x)) + cpmap[y].Sprint(string(y))
-}
-
-func getGitTag(gits []string) string {
-	// paw.Logger.Info()
-	x := getGitTagChar(rune(gits[0][0]))
-	y := getGitTagChar(rune(gits[0][1]))
-	for i := 1; i < len(gits); i++ {
-		c := getGitTagChar(rune(gits[i][0]))
-		if c != '-' && x != 'N' {
-			x = c
-		}
-		c = getGitTagChar(rune(gits[i][1]))
-		if c != '-' && y != 'N' {
-			y = c
-		}
+	var sx, sy string
+	if x == 'N' && y == 'N' {
+		sx, sy = "-", "N"
+	} else {
+		sx, sy = string(x), string(y)
 	}
-	return string(x) + string(y)
-}
 
-func getGitTagChar(c rune) rune {
-	if c == '?' || c == 'A' {
-		return 'N'
-	}
-	return c
-}
-
-func getGitSlice(git GitStatus, file *File) []string {
-	gits := []string{}
-	for k, v := range git.FilesStatus {
-		if paw.HasPrefix(k, file.Path) {
-			xy := checkXY(v)
-			gits = append(gits, xy.String())
-		}
-	}
-	return gits
+	return " " + cpmap[x].Sprint(sx) + cpmap[y].Sprint(sy)
 }
 
 // GetColorizePermission will return a colorful string of mode

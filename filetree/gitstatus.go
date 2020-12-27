@@ -65,6 +65,11 @@ func (s XY) String() string {
 	}
 	return str
 }
+func (s XY) Split() (x, y rune) {
+	x = s[0]
+	y = s[1]
+	return x, y
+}
 
 func ToXY(st string) XY {
 	return XY{rune(st[0]), rune(st[1])}
