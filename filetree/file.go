@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/shyang107/paw"
 )
 
 // filetree is tree structure of files
@@ -42,7 +43,7 @@ type File struct {
 }
 
 // NewFile will the pointer of instance of `File`, and is a constructor of `File`.
-func NewFile(path string) *File {
+func NewFile(path string) (*File, error) {
 	// path = strings.TrimSuffix(path, "/")
 	var err error
 	if strings.HasPrefix(path, "~") {
@@ -51,11 +52,11 @@ func NewFile(path string) *File {
 		path, err = filepath.Abs(path)
 	}
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	stat, err := os.Lstat(path)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	dir := filepath.Dir(path)
 	basename := filepath.Base(path)
@@ -74,7 +75,7 @@ func NewFile(path string) *File {
 		Ext:      ext,
 		Stat:     stat,
 		Size:     size,
-	}
+	}, nil
 }
 
 const (
@@ -85,25 +86,34 @@ const (
 // NewFileRelTo will the pointer of instance of `File`, and is a constructor of `File`, but `File.Dir` is sub-directory of `root`
 // 	If `path` == `root`, then
 // 		f.Dir = "."
-func NewFileRelTo(path, root string) *File {
-	path, _ = filepath.Abs(path)
-	root, _ = filepath.Abs(root)
-	f := NewFile(path)
+func NewFileRelTo(path, root string) (*File, error) {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+	root, err = filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
+	f, err := NewFile(path)
+	if err != nil {
+		return nil, err
+	}
 	if f.IsDir() {
 		if f.Path == root {
-			f.Dir = strings.Replace(f.Path, root, ".", 1)
+			f.Dir = paw.Replace(f.Path, root, ".", 1)
 		} else {
-			f.Dir = strings.Replace(f.Path, root, "..", 1)
+			f.Dir = paw.Replace(f.Path, root, "..", 1)
 		}
-		return f
+		return f, nil
 	}
 
 	if f.Dir == root {
-		f.Dir = strings.Replace(f.Dir, root, ".", 1)
+		f.Dir = paw.Replace(f.Dir, root, ".", 1)
 	} else {
-		f.Dir = strings.Replace(f.Dir, root, "..", 1)
+		f.Dir = paw.Replace(f.Dir, root, "..", 1)
 	}
-	return f
+	return f, nil
 }
 
 func (f File) String() string {

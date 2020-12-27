@@ -214,15 +214,10 @@ func (f *FileList) Sort() {
 	}
 }
 
-// SkipFile is used as a return value from IgnoreFn to indicate that
-// the regular file named in the call is to be skipped. It is not returned
-// as an error by any function.
-var SkipFile = errors.New("skip the file")
-
-// SkipDir is used as a return value from WalkFuncs to indicate that
-// the directory named in the call is to be skipped. It is not returned
-// as an error by any function.
-var SkipDir = filepath.SkipDir
+// SkipThis is used as a return value indicate that the regular path
+// (file or directory) named in the Callback is to be skipped.
+// It is not returned as an error by any function.
+var SkipThis = errors.New("skip the path")
 
 // IgnoreFn is the type of the function called for each file or directory
 // visited by FindFiles. The f argument contains the File argument to FindFiles.
@@ -237,22 +232,19 @@ var SkipDir = filepath.SkipDir
 // when invoked on a non-directory file, FindFiles skips the remaining files in the
 // containing directory.
 // If the returned error is SkipFile when inviked on a file, FindFiles will skip the file.
-// TODO maybe has a better way
-type IgnoreFn func(f *File, err error) error
+type IgnoreFunc func(f *File, err error) error
 
 // DefaultIgnoreFn is default IgnoreFn using in FindFiles
 //
-// 	Skip file: prefix "." of files
-// 	Skip folder: prefix "." of directory
+// _, file := filepath.Split(f.Path)
+// 	Skip file: prefix "." of file
 var DefaultIgnoreFn = func(f *File, err error) error {
 	if err != nil {
 		return err
 	}
-	if f.IsDir() && paw.HasPrefix(f.BaseName, ".") {
-		return SkipDir
-	}
-	if paw.HasPrefix(f.BaseName, ".") {
-		return SkipFile
+	_, file := filepath.Split(f.Path)
+	if paw.HasPrefix(file, ".") {
+		return SkipThis
 	}
 	return nil
 }
@@ -265,17 +257,17 @@ var DefaultIgnoreFn = func(f *File, err error) error {
 // 	ignore: IgnoreFn func(f *File, err error) error
 // 		ignoring condition of files or directory
 // 		ignore == nil, using DefaultIgnoreFn
-func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
+func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	if ignore == nil {
 		ignore = DefaultIgnoreFn
 	}
 	f.gitstatus, _ = GetShortStatus(f.Root())
 	f.depth = depth
 	root := f.Root()
-	switch {
-	case depth == 0: //{root directory}/*
-		scratchBuffer := make([]byte, godirwalk.MinimumScratchBufferSize)
-		files, err := godirwalk.ReadDirnames(root, scratchBuffer)
+	switch depth {
+	case 0: //{root directory}/*
+		// scratchBuffer := make([]byte, godirwalk.MinimumScratchBufferSize)
+		files, err := godirwalk.ReadDirnames(root, nil)
 		if err != nil {
 			return errors.New(root + ": " + err.Error())
 		}
@@ -283,30 +275,45 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 		sort.Slice(files, func(i, j int) bool {
 			return paw.ToLower(files[i]) < paw.ToLower(files[j])
 		})
-		file := NewFileRelTo(root, root)
+
+		file, err := NewFileRelTo(root, root)
+		if err != nil {
+			return err
+		}
 		f.AddFile(file)
 		for _, name := range files {
-			file := NewFileRelTo(root+PathSeparator+name, root)
-			err := ignore(file, nil)
-			if err == SkipFile || err == SkipDir {
+			file, err := NewFileRelTo(root+PathSeparator+name, root)
+			if err != nil {
+				return err
+			}
+			if err := ignore(file, nil); err == SkipThis {
 				continue
 			}
+			// else {
+			// 	return err
+			// }
 			f.AddFile(file)
 		}
 		// f.Sort()
 	default: //walk through all directories of {root directory}
 		err := godirwalk.Walk(root, &godirwalk.Options{
 			Callback: func(path string, de *godirwalk.Dirent) error {
-				file := NewFileRelTo(path, root)
+				file, err := NewFileRelTo(path, root)
+				if err != nil {
+					return err
+				}
 				idepth := len(file.DirSlice()) - 1
 				if depth > 0 {
 					if idepth > depth {
 						return godirwalk.SkipThis
 					}
 				}
-				if err1 := ignore(file, nil); err1 == SkipFile || err1 == SkipDir {
+				if err1 := ignore(file, nil); err1 == SkipThis {
 					return godirwalk.SkipThis
 				}
+				// else {
+				// 	return err1
+				// }
 				f.AddFile(file)
 				return nil
 			},
@@ -322,6 +329,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFn) error {
 		if err != nil {
 			return errors.New(root + ": " + err.Error())
 		}
+
 		// sort
 		sort.Slice(f.dirs, func(i, j int) bool {
 			return paw.ToLower(f.dirs[i]) < paw.ToLower(f.dirs[j])
@@ -659,12 +667,6 @@ func toListTree(f *FileList, pad string, isMeta bool) []byte {
 	)
 	buf.Reset()
 
-	// print head
-	if isMeta {
-		chead := f.GetHead4Meta(pad, urname, gpname)
-		fmt.Fprintf(w, "%v\n", chead)
-	}
-
 	files := fm[RootMark]
 	file := files[0]
 	nfiles := len(files)
@@ -672,11 +674,15 @@ func toListTree(f *FileList, pad string, isMeta bool) []byte {
 	// print root file
 	meta := pad
 	if isMeta {
+		// print head
+		chead := f.GetHead4Meta(pad, urname, gpname)
+		fmt.Fprintf(w, "%v\n", chead)
+
 		meta += file.ColorMeta(f.GetGitStatus())
+	} else {
+		meta += f.DirInfo(file) + " "
 	}
-
-	name := file.ColorBaseName()
-
+	name := fmt.Sprintf("%v (%v)", file.LSColorString("."), file.ColorBaseName())
 	fmt.Fprintf(w, "%v%v\n", meta, name)
 
 	// print files in the root dir

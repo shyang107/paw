@@ -58,6 +58,12 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 		dinf := fl.DirInfo(file)
 		name = dinf + " " + name
 	}
+	// if fl != nil {
+	// 	if file.IsDir() && fl.depth == -1 {
+	// 		dinf := fl.DirInfo(file)
+	// 		name = dinf + " " + name
+	// 	}
+	// }
 
 	fmt.Fprintf(wr, "%v %v\n", cedge, name)
 }
@@ -115,7 +121,7 @@ func GetColorizedDirName(path string, root string) string {
 }
 
 func getDirName(path string, root string) string {
-	file := NewFile(path)
+	file, _ := NewFile(path)
 	name := file.LSColorString(file.BaseName)
 	if file.IsDir() {
 		dir, _ := filepath.Split(file.Path)
