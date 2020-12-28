@@ -2,7 +2,6 @@ package paw
 
 import (
 	"os/exec"
-	"strings"
 )
 
 var (
@@ -39,9 +38,9 @@ func GetTitleAndURL(browser string) (t, u string, err error) {
 		// log.Warningln(err)
 		return "", "", err
 	}
-	str := strings.TrimSpace(string(out))
-	tus := strings.Split(str, sep)
-	t, u = strings.TrimSpace(tus[0]), strings.TrimSpace(tus[1])
+	str := TrimSpace(string(out))
+	tus := Split(str, sep)
+	t, u = TrimSpace(tus[0]), TrimSpace(tus[1])
 	return t, u, nil
 }
 

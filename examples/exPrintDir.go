@@ -14,8 +14,8 @@ func exPrintDir(root string) {
 		// OutOpt : filetree.PDListView,
 		// OutOpt : filetree.PDTreeView,
 		// OutOpt: filetree.PDListView | filetree.PDTreeView,
-		OutOpt: filetree.PDLevelView,
-		// OutOpt : filetree.PDTable,
+		// OutOpt: filetree.PDLevelView,
+		OutOpt: filetree.PDTableView,
 		// Ignore: filetree.DefaultIgnoreFn,
 	}
 	err := filetree.PrintDir(os.Stdout, root, opt)

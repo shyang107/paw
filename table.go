@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/spf13/cast"
 )
@@ -83,10 +82,10 @@ var (
 
 // PaddingString add pad-prefix in every line of string
 func PaddingString(s string, pad string) string {
-	if !strings.Contains(s, "\n") {
+	if !Contains(s, "\n") {
 		return pad + s
 	}
-	ss := strings.Split(s, "\n")
+	ss := Split(s, "\n")
 	// sb := strings.Builder{}
 	sb := ""
 	for i := 0; i < len(ss)-1; i++ {
@@ -178,14 +177,14 @@ func (t *TableFormat) setBanner() {
 		tlen += lsep
 	}
 	tlen += t.LenFields[llf-1]
-	t.topBanner = strings.Repeat(t.TopChar, tlen)
-	t.botBanner = strings.Repeat(t.BottomChar, tlen)
+	t.topBanner = Repeat(t.TopChar, tlen)
+	t.botBanner = Repeat(t.BottomChar, tlen)
 	sb.Reset()
 	for i := 0; i < llf-1; i++ {
-		sb.WriteString(strings.Repeat(t.MiddleChar, t.LenFields[i]))
+		sb.WriteString(Repeat(t.MiddleChar, t.LenFields[i]))
 		sb.WriteString(t.Sep)
 	}
-	sb.WriteString(strings.Repeat(t.MiddleChar, t.LenFields[llf-1]))
+	sb.WriteString(Repeat(t.MiddleChar, t.LenFields[llf-1]))
 	t.midBanner = sb.String()
 	sb.Reset()
 	if len(t.Padding) > 0 {
@@ -226,20 +225,20 @@ func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align
 		s := ""
 		switch al {
 		case AlignLeft:
-			s = v + strings.Repeat(space, wd-nh-na)
+			s = v + Repeat(space, wd-nh-na)
 		case AlignRight:
-			s = strings.Repeat(space, wd-nh-na) + v
+			s = Repeat(space, wd-nh-na) + v
 		case AlignCenter:
 			lv := nh + na
 			nr := (wd - lv) / 2
 			nl := wd - lv - nr
-			s = strings.Repeat(space, nl) + v + strings.Repeat(space, nr)
+			s = Repeat(space, nl) + v + Repeat(space, nr)
 		}
 		sb.WriteString(s + sep)
 	}
 	str := sb.String()
 	if !t.isAbbrSymbol {
-		t.isAbbrSymbol = strings.Contains(str, abbrSymbol)
+		t.isAbbrSymbol = Contains(str, abbrSymbol)
 	}
 	return padding + str
 }
@@ -274,7 +273,7 @@ func (t *TableFormat) PrintMiddleSepLine() {
 func (t *TableFormat) PrintEnd() {
 	if t.isAbbrSymbol {
 		fmt.Fprintln(t.writer,
-			strings.ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
+			ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
 		fmt.Fprintln(t.writer, t.Padding+"* '"+abbrSymbol+"' : abbreviated symbol of a term")
 	}
 	fmt.Fprintln(t.writer, t.botBanner)
