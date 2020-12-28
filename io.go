@@ -31,7 +31,7 @@ func LineCount(r io.Reader) (int, error) {
 //
 // modify from "github.com/liuzl/goutil"
 func FileLineCount(f string) (int, error) {
-	if strings.HasSuffix(strings.ToLower(f), ".gz") {
+	if HasSuffix(strings.ToLower(f), ".gz") {
 		fr, err := os.Open(f)
 		if err != nil {
 			return 0, err

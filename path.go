@@ -19,22 +19,24 @@ func HasFile(filename string) bool {
 	return false
 }
 
-// IsFileExist return true that `fileName` exist or false for not exist
-func IsFileExist(fileName string) bool {
-	fi, err := os.Stat(fileName)
-	if os.IsNotExist(err) {
-		return false
+// IsFileExist reports whether the named file exists as a boolean
+func IsFileExist(name string) bool {
+	if fi, err := os.Stat(name); err == nil {
+		if fi.Mode().IsRegular() {
+			return true
+		}
 	}
-	return !fi.IsDir()
+	return false
 }
 
-// IsDirExists return true that `dir` is dir or false for not
-func IsDirExists(dir string) bool {
-	fi, err := os.Stat(dir)
-	if os.IsNotExist(err) {
-		return false
+// IsDirExists reports whether the dir exists as a boolean
+func IsDirExist(name string) bool {
+	if fi, err := os.Stat(name); err == nil {
+		if fi.Mode().IsDir() {
+			return true
+		}
 	}
-	return fi.IsDir()
+	return false
 }
 
 // IsPathExists return true that `path` is dir or false for not
