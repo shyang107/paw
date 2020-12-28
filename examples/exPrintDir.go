@@ -8,13 +8,16 @@ import (
 )
 
 func exPrintDir(root string) {
-	opt := filetree.NewPrintDirOption()
-	opt.Depth = -1
-	// opt.OutOpt = filetree.PDList
-	// opt.OutOpt = filetree.PDTree
-	opt.OutOpt = filetree.PDList | filetree.PDTree
-	// opt.OutOpt = filetree.PDLevel
-	// opt.OutOpt = filetree.PDTable
+	// opt := filetree.NewPrintDirOption()
+	opt := &filetree.PrintDirOption{
+		Depth: -1,
+		// OutOpt : filetree.PDListView,
+		// OutOpt : filetree.PDTreeView,
+		// OutOpt: filetree.PDListView | filetree.PDTreeView,
+		OutOpt: filetree.PDLevelView,
+		// OutOpt : filetree.PDTable,
+		// Ignore: filetree.DefaultIgnoreFn,
+	}
 	err := filetree.PrintDir(os.Stdout, root, opt)
 	if err != nil {
 		paw.Logger.Error(err)

@@ -52,7 +52,7 @@ func (f FileList) String() string {
 	oldwr := f.writer
 	f.writer = new(bytes.Buffer)
 	f.DisableColor()
-	str := f.ToTextString("")
+	str := f.ToLevelViewString("")
 	f.EnableColor()
 	f.writer = oldwr
 	return str
@@ -339,14 +339,14 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	return nil
 }
 
-// ToTreeString will return the string of FileList in tree form
-func (f *FileList) ToTreeString(pad string) string {
-	return string(f.ToTree(pad))
+// ToTreeViewString will return the string of FileList in tree form
+func (f *FileList) ToTreeViewString(pad string) string {
+	return string(f.ToTreeView(pad))
 }
 
-// ToTree will return the []byte of FileList in tree form
-func (f *FileList) ToTree(pad string) []byte {
-	return toListTree(f, pad, false)
+// ToTreeView will return the []byte of FileList in tree form
+func (f *FileList) ToTreeView(pad string) []byte {
+	return toListTreeView(f, pad, false)
 }
 
 // // ToTree will return the []byte of FileList in tree form
@@ -403,15 +403,15 @@ func (f *FileList) ToTree(pad string) []byte {
 // 	return paddingTree(pad, buf.Bytes())
 // }
 
-// ToTableString will return the string of FileList in table form
+// ToTableViewString will return the string of FileList in table form
 // 	`size` of directory shown in the string, is accumulated size of sub contents
-func (f *FileList) ToTableString(pad string) string {
-	return string(f.ToTable(pad))
+func (f *FileList) ToTableViewString(pad string) string {
+	return string(f.ToTableView(pad))
 }
 
-// ToTable will return the []byte of FileList in table form
+// ToTableView will return the []byte of FileList in table form
 // 	`size` of directory shown in the returned value, is accumulated size of sub contents
-func (f *FileList) ToTable(pad string) []byte {
+func (f *FileList) ToTableView(pad string) []byte {
 
 	var (
 		// w      = new(bytes.Buffer)
@@ -495,15 +495,15 @@ func (f *FileList) ToTable(pad string) []byte {
 	return buf.Bytes()
 }
 
-// ToTextString will return the string of FileList in table form
+// ToLevelViewString will return the string of FileList in table form
 // 	`size` of directory shown in the string, is accumulated size of sub contents
-func (f *FileList) ToTextString(pad string) string {
-	return string(f.ToText(pad))
+func (f *FileList) ToLevelViewString(pad string) string {
+	return string(f.ToLevelView(pad))
 }
 
-// ToText will return the []byte of FileList in table form
+// ToLevelView will return the []byte of FileList in table form
 // 	`size` of directory shown in the returned value, is accumulated size of sub contents
-func (f *FileList) ToText(pad string) []byte {
+func (f *FileList) ToLevelView(pad string) []byte {
 	var (
 		// w     = new(bytes.Buffer)
 		buf   = f.Buffer()
@@ -521,7 +521,7 @@ func (f *FileList) ToText(pad string) []byte {
 	ppad := ""
 
 	i1 := len(cast.ToString(f.NDirs()))
-	j1 := intmax(i1, len(cast.ToString(f.NFiles())))
+	j1 := max(i1, len(cast.ToString(f.NFiles())))
 	j := 0
 	for i, dir := range dirs {
 		istr := KindLSColorString("di", fmt.Sprintf("%[2]*[1]d.", i, i1))
@@ -579,13 +579,13 @@ func (f *FileList) ToText(pad string) []byte {
 	return buf.Bytes()
 }
 
-// ToList will return the string of FileList in list form (like as `exa`)
-func (f *FileList) ToListString(pad string) string {
-	return string(f.ToList(pad))
+// ToListView will return the string of FileList in list form (like as `exa`)
+func (f *FileList) ToListViewString(pad string) string {
+	return string(f.ToListView(pad))
 }
 
-// ToList will return the []byte of FileList in list form (like as `exa`)
-func (f *FileList) ToList(pad string) []byte {
+// ToListView will return the []byte of FileList in list form (like as `exa`)
+func (f *FileList) ToListView(pad string) []byte {
 	var (
 		// w     = new(bytes.Buffer)
 		buf   = f.Buffer()
@@ -644,17 +644,17 @@ func (f *FileList) ToList(pad string) []byte {
 	return buf.Bytes()
 }
 
-// ToListTreeString will return the string of `ToListTree(pad)` in list+tree form (like as `exa -T(--tree)`)
-func (f *FileList) ToListTreeString(pad string) string {
-	return string(f.ToListTree(pad))
+// ToListTreeViewString will return the string of `ToListViewTree(pad)` in list+tree form (like as `exa -T(--tree)`)
+func (f *FileList) ToListTreeViewString(pad string) string {
+	return string(f.ToListTreeView(pad))
 }
 
-// ToListTree will return the []byte of FileList in list+tree form (like as `exa -T(--tree)`)
-func (f *FileList) ToListTree(pad string) []byte {
-	return toListTree(f, pad, true)
+// ToListTreeView will return the []byte of FileList in list+tree form (like as `exa -T(--tree)`)
+func (f *FileList) ToListTreeView(pad string) []byte {
+	return toListTreeView(f, pad, true)
 }
 
-func toListTree(f *FileList, pad string, isMeta bool) []byte {
+func toListTreeView(f *FileList, pad string, isMeta bool) []byte {
 	var (
 		buf = f.Buffer()
 		// w  = new(bytes.Buffer)

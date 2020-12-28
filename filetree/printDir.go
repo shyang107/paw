@@ -24,7 +24,7 @@ type PrintDirOption struct {
 func NewPrintDirOption() *PrintDirOption {
 	return &PrintDirOption{
 		Depth:  0,
-		OutOpt: PDList,
+		OutOpt: PDListView,
 		Ignore: DefaultIgnoreFn,
 	}
 }
@@ -32,14 +32,14 @@ func NewPrintDirOption() *PrintDirOption {
 type PrintDirType int
 
 const (
-	// PDList is the option of list view using in PrintDir
-	PDList PrintDirType = 1 << iota // 1 << 0 which is 00000001
-	// PDTree is the option of tree view using in PrintDir
-	PDTree // 1 << 1 which is 00000010
-	// PDLevel is the option of level view using in PrintDir
-	PDLevel // 1 << 2 which is 00000100
-	// PDTable is the option of table view using in PrintDir
-	PDTable
+	// PDListView is the option of list view using in PrintDir
+	PDListView PrintDirType = 1 << iota // 1 << 0 which is 00000001
+	// PDTreeView is the option of tree view using in PrintDir
+	PDTreeView // 1 << 1 which is 00000010
+	// PDLevelView is the option of level view using in PrintDir
+	PDLevelView // 1 << 2 which is 00000100
+	// PDTableView is the option of table view using in PrintDir
+	PDTableView
 )
 
 // PrintDir will find files using codintion `ignore` func
@@ -48,22 +48,25 @@ func PrintDir(w io.Writer, path string, opt *PrintDirOption) error {
 	if err != nil {
 		return err
 	}
+	if opt.Ignore == nil {
+		opt.Ignore = DefaultIgnoreFn
+	}
 
 	fl := NewFileList(root)
 	fl.SetWriters(w)
 	fl.FindFiles(opt.Depth, opt.Ignore)
 
 	switch opt.OutOpt {
-	case PDList:
-		fl.ToList("")
-	case PDTree:
-		fl.ToTree("")
-	case PDList | PDTree:
-		fl.ToListTree("")
-	case PDLevel:
-		fl.ToText("")
-	case PDTable:
-		fl.ToTable("")
+	case PDListView:
+		fl.ToListView("")
+	case PDTreeView:
+		fl.ToTreeView("")
+	case PDListView | PDTreeView:
+		fl.ToListTreeView("")
+	case PDLevelView:
+		fl.ToLevelView("")
+	case PDTableView:
+		fl.ToTableView("")
 	default:
 		return errors.New("No this option of PrintDir")
 	}

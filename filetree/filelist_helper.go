@@ -380,9 +380,9 @@ func getColorizedModTime(modTime time.Time) string {
 
 func getColorizedHead(pad, username, groupname string) string {
 	c := NewEXAColor("hd").Add(color.Underline)
-	width := intmax(4, len(username))
+	width := max(4, len(username))
 	huser := fmt.Sprintf("%[2]*[1]s", "User", width)
-	width = intmax(5, len(groupname))
+	width = max(5, len(groupname))
 	hgroup := fmt.Sprintf("%[2]*[1]s", "Group", width)
 
 	ssize := fmt.Sprintf("%6s", "Size")
@@ -390,7 +390,7 @@ func getColorizedHead(pad, username, groupname string) string {
 	return head
 }
 
-func intmax(i1, i2 int) int {
+func max(i1, i2 int) int {
 	if i1 >= i2 {
 		return i1
 	}
