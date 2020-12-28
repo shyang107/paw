@@ -6,7 +6,6 @@ import (
 	"compress/gzip"
 	"io"
 	"os"
-	"strings"
 )
 
 // LineCount counts the number of '\n' for reader `r`
@@ -31,7 +30,7 @@ func LineCount(r io.Reader) (int, error) {
 //
 // modify from "github.com/liuzl/goutil"
 func FileLineCount(f string) (int, error) {
-	if HasSuffix(strings.ToLower(f), ".gz") {
+	if HasSuffix(ToLower(f), ".gz") {
 		fr, err := os.Open(f)
 		if err != nil {
 			return 0, err
@@ -69,7 +68,7 @@ func ForEachLine(br *bufio.Reader, callback func(string) error) error {
 		} else if err != nil {
 			return err
 		}
-		line = strings.TrimSuffix(line, "\n")
+		line = TrimSuffix(line, "\n")
 		if line == "" {
 			if !stop {
 				if err = callback(line); err != nil {

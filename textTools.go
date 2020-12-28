@@ -1,6 +1,7 @@
 package paw
 
 import (
+	"bufio"
 	"bytes"
 	"io/ioutil"
 	"strings"
@@ -803,4 +804,24 @@ func TrimFrontEndSpaceLine(content string) string {
 	}
 	lines = append([]string{}, lines[fIdx:eIdx]...)
 	return strings.Join(lines, "\n")
+}
+
+type StringBuilder strings.Builder
+
+// NewStringReader returns a new Reader reading from s. It is similar to bytes.NewBufferString but more efficient and read-only.
+func NewStringReader(s string) *strings.Reader {
+	return strings.NewReader(s)
+}
+
+// NewBuffer creates and initializes a new Buffer using buf as its initial contents. The new Buffer takes ownership of buf, and the caller should not use buf after this call. NewBuffer is intended to prepare a Buffer to read existing data. It can also be used to set the initial size of the internal buffer for writing. To do that, buf should have the desired capacity but a length of zero.
+//
+// In most cases, new(Buffer) (or just declaring a Buffer variable) is sufficient to initialize a Buffer.
+func NewBuffer(buf []byte) *bytes.Buffer {
+	return bytes.NewBuffer(buf)
+}
+
+// NewReader returns a new Reader whose buffer has the default size.
+func NewBufioReader(s string) *bufio.Reader {
+	// return bufio.NewReader(NewReader(s))
+	return bufio.NewReader(NewBuffer([]byte(s)))
 }
