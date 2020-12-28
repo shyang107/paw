@@ -35,10 +35,10 @@ var (
 )
 
 func printLTFile(wr io.Writer, level int, levelsEnded []int,
-	edge treeprint.EdgeType, fl *FileList, file *File, git GitStatus, pad string, isMeta bool) {
+	edge treeprint.EdgeType, fl *FileList, file *File, git GitStatus, pad string) {
 
 	meta := pad
-	if isMeta {
+	if pdview == PListTreeView {
 		meta += file.ColorMeta(git)
 	}
 
@@ -58,18 +58,12 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 		dinf := fl.DirInfo(file)
 		name = dinf + " " + name
 	}
-	// if fl != nil {
-	// 	if file.IsDir() && fl.depth == -1 {
-	// 		dinf := fl.DirInfo(file)
-	// 		name = dinf + " " + name
-	// 	}
-	// }
 
 	fmt.Fprintf(wr, "%v %v\n", cedge, name)
 }
 
 func printLTDir(wr io.Writer, level int, levelsEnded []int,
-	edge treeprint.EdgeType, fl *FileList, file *File, git GitStatus, pad string, isMeta bool) {
+	edge treeprint.EdgeType, fl *FileList, file *File, git GitStatus, pad string) {
 	fm := fl.Map()
 	files := fm[file.Dir]
 	nfiles := len(files)
@@ -82,10 +76,10 @@ func printLTDir(wr io.Writer, level int, levelsEnded []int,
 			levelsEnded = append(levelsEnded, level)
 		}
 
-		printLTFile(wr, level, levelsEnded, edge, fl, file, git, pad, isMeta)
+		printLTFile(wr, level, levelsEnded, edge, fl, file, git, pad)
 
 		if file.IsDir() && len(fm[file.Dir]) > 1 {
-			printLTDir(wr, level+1, levelsEnded, edge, fl, file, git, pad, isMeta)
+			printLTDir(wr, level+1, levelsEnded, edge, fl, file, git, pad)
 		}
 	}
 }

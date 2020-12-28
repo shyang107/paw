@@ -10,15 +10,15 @@ import (
 func exPrintDir(root string) {
 	// opt := filetree.NewPrintDirOption()
 	opt := &filetree.PrintDirOption{
-		Depth: -1,
-		// OutOpt : filetree.PDListView,
-		// OutOpt : filetree.PDTreeView,
-		// OutOpt: filetree.PDListView | filetree.PDTreeView,
-		// OutOpt: filetree.PDLevelView,
-		OutOpt: filetree.PDTableView,
-		// Ignore: filetree.DefaultIgnoreFn,
+		Depth:  -1,
+		OutOpt: filetree.PListView,
+		// OutOpt: filetree.PTreeView,
+		// OutOpt: filetree.PListTreeView,
+		// OutOpt: filetree.PLevelView,
+		// OutOpt: filetree.PTableView,
+		Ignore: filetree.DefaultIgnoreFn,
 	}
-	err := filetree.PrintDir(os.Stdout, root, opt)
+	err := filetree.PrintDir(os.Stdout, root, opt, "> ")
 	if err != nil {
 		paw.Logger.Error(err)
 	}

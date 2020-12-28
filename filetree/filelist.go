@@ -288,9 +288,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			if err := ignore(file, nil); err == SkipThis {
 				continue
 			}
-			// else {
-			// 	return err
-			// }
+
 			f.AddFile(file)
 		}
 		// f.Sort()
@@ -310,9 +308,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 				if err1 := ignore(file, nil); err1 == SkipThis {
 					return godirwalk.SkipThis
 				}
-				// else {
-				// 	return err1
-				// }
+
 				f.AddFile(file)
 				return nil
 			},
@@ -346,7 +342,8 @@ func (f *FileList) ToTreeViewString(pad string) string {
 
 // ToTreeView will return the []byte of FileList in tree form
 func (f *FileList) ToTreeView(pad string) []byte {
-	return toListTreeView(f, pad, false)
+	pdview = PTreeView
+	return toListTreeView(f, pad)
 }
 
 // // ToTree will return the []byte of FileList in tree form
@@ -651,16 +648,19 @@ func (f *FileList) ToListTreeViewString(pad string) string {
 
 // ToListTreeView will return the []byte of FileList in list+tree form (like as `exa -T(--tree)`)
 func (f *FileList) ToListTreeView(pad string) []byte {
-	return toListTreeView(f, pad, true)
+	pdview = PListTreeView
+	return toListTreeView(f, pad)
 }
 
-func toListTreeView(f *FileList, pad string, isMeta bool) []byte {
+func toListTreeView(f *FileList, pad string) []byte {
 	var (
 		buf = f.Buffer()
 		// w  = new(bytes.Buffer)
-		w  = f.Writer()
-		fm = f.Map()
+		w   = f.Writer()
+		fm  = f.Map()
+		git = f.GetGitStatus()
 	)
+
 	buf.Reset()
 
 	files := fm[RootMark]
@@ -669,20 +669,19 @@ func toListTreeView(f *FileList, pad string, isMeta bool) []byte {
 
 	// print root file
 	meta := pad
-	if isMeta {
-		// print head
+	switch pdview {
+	case PListTreeView:
 		chead := f.GetHead4Meta(pad, urname, gpname)
 		fmt.Fprintf(w, "%v\n", chead)
-
 		meta += file.ColorMeta(f.GetGitStatus())
-	} else {
+	case PTreeView:
 		meta += f.DirInfo(file) + " "
 	}
+
 	name := fmt.Sprintf("%v (%v)", file.LSColorString("."), file.ColorBaseName())
 	fmt.Fprintf(w, "%v%v\n", meta, name)
 
 	// print files in the root dir
-	git := f.GetGitStatus()
 	level := 0
 	var levelsEnded []int
 	for i := 1; i < nfiles; i++ {
@@ -693,10 +692,10 @@ func toListTreeView(f *FileList, pad string, isMeta bool) []byte {
 			levelsEnded = append(levelsEnded, level)
 		}
 
-		printLTFile(w, level, levelsEnded, edge, f, file, git, pad, isMeta)
+		printLTFile(w, level, levelsEnded, edge, f, file, git, pad)
 
 		if file.IsDir() && len(fm[file.Dir]) > 1 {
-			printLTDir(w, level+1, levelsEnded, edge, f, file, git, pad, isMeta)
+			printLTDir(w, level+1, levelsEnded, edge, f, file, git, pad)
 		}
 	}
 

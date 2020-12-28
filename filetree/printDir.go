@@ -24,7 +24,7 @@ type PrintDirOption struct {
 func NewPrintDirOption() *PrintDirOption {
 	return &PrintDirOption{
 		Depth:  0,
-		OutOpt: PDListView,
+		OutOpt: PListView,
 		Ignore: DefaultIgnoreFn,
 	}
 }
@@ -32,18 +32,22 @@ func NewPrintDirOption() *PrintDirOption {
 type PrintDirType int
 
 const (
-	// PDListView is the option of list view using in PrintDir
-	PDListView PrintDirType = 1 << iota // 1 << 0 which is 00000001
-	// PDTreeView is the option of tree view using in PrintDir
-	PDTreeView // 1 << 1 which is 00000010
-	// PDLevelView is the option of level view using in PrintDir
-	PDLevelView // 1 << 2 which is 00000100
-	// PDTableView is the option of table view using in PrintDir
-	PDTableView
+	// PListView is the option of list view using in PrintDir
+	PListView PrintDirType = 1 << iota // 1 << 0 which is 00000001
+	// PTreeView is the option of tree view using in PrintDir
+	PTreeView // 1 << 1 which is 00000010
+	// PLevelView is the option of level view using in PrintDir
+	PLevelView // 1 << 2 which is 00000100
+	// PTableView is the option of table view using in PrintDir
+	PTableView
+	// PListTreeView is the option of combining list & tree view using in PrintDir
+	PListTreeView = PListView | PTreeView
 )
 
+var pdview PrintDirType
+
 // PrintDir will find files using codintion `ignore` func
-func PrintDir(w io.Writer, path string, opt *PrintDirOption) error {
+func PrintDir(w io.Writer, path string, opt *PrintDirOption, pad string) error {
 	root, err := filepath.Abs(path)
 	if err != nil {
 		return err
@@ -52,21 +56,23 @@ func PrintDir(w io.Writer, path string, opt *PrintDirOption) error {
 		opt.Ignore = DefaultIgnoreFn
 	}
 
+	pdview = opt.OutOpt
+
 	fl := NewFileList(root)
 	fl.SetWriters(w)
 	fl.FindFiles(opt.Depth, opt.Ignore)
 
 	switch opt.OutOpt {
-	case PDListView:
-		fl.ToListView("")
-	case PDTreeView:
-		fl.ToTreeView("")
-	case PDListView | PDTreeView:
-		fl.ToListTreeView("")
-	case PDLevelView:
-		fl.ToLevelView("")
-	case PDTableView:
-		fl.ToTableView("")
+	case PListView:
+		fl.ToListView(pad)
+	case PTreeView:
+		fl.ToTreeView(pad)
+	case PListTreeView:
+		fl.ToListTreeView(pad)
+	case PLevelView:
+		fl.ToLevelView(pad)
+	case PTableView:
+		fl.ToTableView(pad)
 	default:
 		return errors.New("No this option of PrintDir")
 	}
