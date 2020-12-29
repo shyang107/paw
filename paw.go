@@ -53,10 +53,11 @@ func init() {
 	// Logger.SetReportCaller(true)
 	// Logger.SetOutput(os.Stdout)
 	// Logger.SetFormatter(nestedFormatter)
-	gologInit(os.Stdout, os.Stdout, os.Stderr)
+	GologInit(os.Stdout, os.Stdout, os.Stderr)
 }
 
-func gologInit(
+// GologInit initializes logger
+func GologInit(
 	infoHandle io.Writer,
 	warnHandle io.Writer,
 	errorHandle io.Writer) {
