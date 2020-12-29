@@ -2,10 +2,14 @@ package paw
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/fatih/color"
 
 	"github.com/sirupsen/logrus"
 	// nested "github.com/antonfisher/nested-logrus-formatter"
@@ -38,11 +42,36 @@ var (
 	}
 )
 
+var (
+	Info    *log.Logger
+	Warning *log.Logger
+	Error   *log.Logger
+)
+
 func init() {
 	// Logger.SetLevel(logrus.InfoLevel)
 	// Logger.SetReportCaller(true)
 	// Logger.SetOutput(os.Stdout)
 	// Logger.SetFormatter(nestedFormatter)
+	gologInit(os.Stdout, os.Stdout, os.Stderr)
+}
+
+func gologInit(
+	infoHandle io.Writer,
+	warnHandle io.Writer,
+	errorHandle io.Writer) {
+
+	Info = log.New(infoHandle,
+		color.New(color.FgBlue).Add(color.Bold).Sprint("[INFO] "),
+		log.Ldate|log.Ltime|log.Lshortfile)
+
+	Warning = log.New(warnHandle,
+		color.New(color.FgYellow).Add(color.Bold).Sprint("[WARNING] "),
+		log.Ldate|log.Ltime|log.Lshortfile)
+
+	Error = log.New(errorHandle,
+		color.New(color.FgRed).Add(color.Bold).Sprint("[ERROR] "),
+		log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 // SetLoggerFieldsOrder set `nestedFormatter.FieldsOrder`

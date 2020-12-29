@@ -59,6 +59,7 @@ func PrintDir(w io.Writer, path string, opt *PrintDirOption, pad string) error {
 	pdview = opt.OutOpt
 
 	fl := NewFileList(root)
+	// fl.IsSort = false
 	fl.SetWriters(w)
 	fl.FindFiles(opt.Depth, opt.Ignore)
 

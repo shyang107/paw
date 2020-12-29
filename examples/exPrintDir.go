@@ -10,10 +10,10 @@ import (
 func exPrintDir(root string) {
 	// opt := filetree.NewPrintDirOption()
 	opt := &filetree.PrintDirOption{
-		Depth:  -1,
-		OutOpt: filetree.PListView,
+		Depth: -1,
+		// OutOpt: filetree.PListView,
 		// OutOpt: filetree.PTreeView,
-		// OutOpt: filetree.PListTreeView,
+		OutOpt: filetree.PListTreeView,
 		// OutOpt: filetree.PLevelView,
 		// OutOpt: filetree.PTableView,
 		Ignore: filetree.DefaultIgnoreFn,
@@ -22,4 +22,7 @@ func exPrintDir(root string) {
 	if err != nil {
 		paw.Logger.Error(err)
 	}
+	paw.Info.Println("exPrintDir")
+	paw.Warning.Println("exPrintDir")
+	paw.Error.Println("exPrintDir")
 }

@@ -29,6 +29,7 @@ type FileList struct {
 	buf       *bytes.Buffer
 	writer    io.Writer
 	// writers   []io.Writer
+	IsSort bool
 }
 
 // NewFileList will return the instance of `FileList`
@@ -37,10 +38,11 @@ func NewFileList(root string) *FileList {
 		return &FileList{}
 	}
 	fl := &FileList{
-		root:  root,
-		store: make(map[string][]*File),
-		dirs:  []string{},
-		buf:   new(bytes.Buffer),
+		root:   root,
+		store:  make(map[string][]*File),
+		dirs:   []string{},
+		buf:    new(bytes.Buffer),
+		IsSort: true,
 	}
 	fl.SetWriters(fl.buf)
 	return fl
@@ -132,10 +134,10 @@ func (f *FileList) NFiles() int {
 
 // NSubDirsAndFiles will return the number of sub-dirs and sub-files in dir
 func (f *FileList) NSubDirsAndFiles(dir string) (ndirs, nfiles int) {
-	if _, ok := f.Map()[dir]; !ok {
+	if _, ok := f.store[dir]; !ok {
 		return ndirs, nfiles
 	}
-	return getNDirsFiles(f.Map()[dir])
+	return getNDirsFiles(f.store[dir])
 }
 
 // DirInfo will return the colorful string of sub-dir ( file.IsDir is true)
@@ -198,21 +200,21 @@ func (a FileSortByPathP) Len() int           { return len(a) }
 func (a FileSortByPathP) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a FileSortByPathP) Less(i, j int) bool { return a[i].BaseName < a[j].BaseName }
 
-func (f *FileList) Sort() {
-	sort.Strings(f.dirs)
+// func (f *FileList) Sort() {
+// 	sort.Strings(f.dirs)
 
-	for _, dir := range f.dirs {
-		fm := FileSortByPathP(f.store[dir])
-		for _, file := range fm {
-			fmt.Println("Before:", file)
-		}
-		sort.Sort(fm)
-		for _, file := range fm {
-			fmt.Println("After:", file)
-		}
-		f.store[dir] = fm
-	}
-}
+// 	for _, dir := range f.dirs {
+// 		fm := FileSortByPathP(f.store[dir])
+// 		for _, file := range fm {
+// 			fmt.Println("Before:", file)
+// 		}
+// 		sort.Sort(fm)
+// 		for _, file := range fm {
+// 			fmt.Println("After:", file)
+// 		}
+// 		f.store[dir] = fm
+// 	}
+// }
 
 // SkipThis is used as a return value indicate that the regular path
 // (file or directory) named in the Callback is to be skipped.
@@ -261,9 +263,9 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	if ignore == nil {
 		ignore = DefaultIgnoreFn
 	}
-	f.gitstatus, _ = GetShortStatus(f.Root())
+	f.gitstatus, _ = GetShortStatus(f.root)
 	f.depth = depth
-	root := f.Root()
+	root := f.root
 	switch depth {
 	case 0: //{root directory}/*
 		// scratchBuffer := make([]byte, godirwalk.MinimumScratchBufferSize)
@@ -271,8 +273,9 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 		if err != nil {
 			return errors.New(root + ": " + err.Error())
 		}
-
-		sort.Sort(ByLowerString(files))
+		if f.IsSort {
+			sort.Sort(ByLowerString(files))
+		}
 
 		file, err := NewFileRelTo(root, root)
 		if err != nil {
@@ -291,7 +294,6 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 
 			f.AddFile(file)
 		}
-		// f.Sort()
 	default: //walk through all directories of {root directory}
 		err := godirwalk.Walk(root, &godirwalk.Options{
 			Callback: func(path string, de *godirwalk.Dirent) error {
@@ -324,12 +326,13 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 		if err != nil {
 			return errors.New(root + ": " + err.Error())
 		}
+		if f.IsSort {
+			// sort
+			sort.Sort(ByLowerString(f.dirs))
 
-		// sort
-		sort.Sort(ByLowerString(f.dirs))
-
-		for _, dir := range f.dirs {
-			sort.Sort(ByLowerFilePath(f.store[dir]))
+			for _, dir := range f.dirs {
+				sort.Sort(ByLowerFilePath(f.store[dir]))
+			}
 		}
 	}
 	return nil
@@ -346,60 +349,6 @@ func (f *FileList) ToTreeView(pad string) []byte {
 	return toListTreeView(f, pad)
 }
 
-// // ToTree will return the []byte of FileList in tree form
-// func (f *FileList) ToTree(pad string) []byte {
-
-// 	tree := treeprint.New()
-
-// 	dirs := f.Dirs()
-// 	// nd := len(dirs) // including root
-// 	ntf := 0
-// 	var one, pre treeprint.Tree
-// 	fm := f.Map()
-
-// 	for i, dir := range dirs {
-// 		files := f.Map()[dir]
-// 		ndirs, nfiles := getNDirsFiles(files) // excluding the dir
-// 		ntf += nfiles
-// 		for jj, file := range files {
-// 			// fsize := file.Size
-// 			// sfsize := ByteSize(fsize)
-// 			if jj == 0 && file.IsDir() {
-// 				if i == 0 { // root dir
-// 					// tree.SetValue(fmt.Sprintf("%v (%v)", file.LSColorString(file.Dir), file.LSColorString(file.Path)))
-// 					tree.SetValue(getName(file))
-// 					tree.SetMetaValue(KindLSColorString("di", fmt.Sprintf("%d dirs", ndirs)+", "+KindLSColorString("fi", fmt.Sprintf("%d files", nfiles))))
-// 					one = tree
-// 				} else {
-// 					pre = preTree(dir, fm, tree)
-// 					if f.depth != 0 {
-// 						// one = pre.AddMetaBranch(nf-1, file)
-// 						one = pre.AddMetaBranch(KindLSColorString("di", fmt.Sprintf("%d dirs", ndirs)+", "+KindLSColorString("fi", fmt.Sprintf("%d files", nfiles))), file)
-// 					} else {
-// 						one = pre.AddBranch(file)
-// 					}
-// 				}
-// 				continue
-// 			}
-// 			// add file node
-// 			link := checkAndGetColorLink(file)
-// 			if !file.IsDir() {
-// 				if len(link) > 0 {
-// 					one.AddMetaNode(link, file)
-// 				} else {
-// 					one.AddNode(file)
-// 				}
-// 			}
-// 		}
-// 	}
-// 	buf := new(bytes.Buffer)
-// 	buf.Write(tree.Bytes())
-
-// 	printTotalSummary(buf, "", f.NDirs(), f.NFiles(), f.totalSize)
-
-// 	return paddingTree(pad, buf.Bytes())
-// }
-
 // ToTableViewString will return the string of FileList in table form
 // 	`size` of directory shown in the string, is accumulated size of sub contents
 func (f *FileList) ToTableViewString(pad string) string {
@@ -412,12 +361,12 @@ func (f *FileList) ToTableView(pad string) []byte {
 
 	var (
 		// w      = new(bytes.Buffer)
-		buf    = f.Buffer()
-		w      = f.Writer()
+		buf    = f.buf    //f.Buffer()
+		w      = f.writer //f.Writer()
 		nDirs  = f.NDirs()
 		nFiles = f.NFiles()
-		dirs   = f.Dirs()
-		fm     = f.Map()
+		dirs   = f.dirs  //f.Dirs()
+		fm     = f.store //f.Map()
 	)
 	buf.Reset()
 
@@ -432,7 +381,7 @@ func (f *FileList) ToTableView(pad string) []byte {
 	tf.Prepare(w)
 
 	sdsize := ByteSize(f.totalSize)
-	head := fmt.Sprintf("Root directory: %v, size ≈ %v", f.Root(), sdsize)
+	head := fmt.Sprintf("Root directory: %v, size ≈ %v", f.root, sdsize)
 	tf.SetBeforeMessage(head)
 
 	tf.PrintSart()
@@ -456,7 +405,7 @@ func (f *FileList) ToTableView(pad string) []byte {
 					if paw.EqualFold(file.Dir, RootMark) {
 						tf.PrintRow(idx, mode, sfsize, file.ColorDirName(""))
 					} else {
-						tf.PrintRow(idx, mode, sfsize, file.ColorDirName(f.Root()))
+						tf.PrintRow(idx, mode, sfsize, file.ColorDirName(f.root))
 					}
 				}
 				continue
@@ -512,35 +461,33 @@ func (f *FileList) ToLevelView(pad string) []byte {
 	buf.Reset()
 
 	sdsize := ByteSize(f.totalSize)
-	fmt.Fprintf(w, "%sRoot directory: %v, size ≈ %v\n", pad, getDirName(f.Root(), ""), KindLSColorString("di", sdsize))
+	fmt.Fprintf(w, "%sRoot directory: %v, size ≈ %v\n", pad, getDirName(f.root, ""), KindLSColorString("di", sdsize))
 	fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("=", width))
-
-	ppad := ""
 
 	i1 := len(cast.ToString(f.NDirs()))
 	j1 := max(i1, len(cast.ToString(f.NFiles())))
 	j := 0
 	for i, dir := range dirs {
+		ppad := pad
 		istr := KindLSColorString("di", fmt.Sprintf("%[2]*[1]d.", i, i1))
 		sumsize := uint64(0)
 		nfiles := 0
 		ndirs := 0
-		files := fm[dir]
-		for jj, file := range files {
+		for jj, file := range fm[dir] {
 			cperm := file.ColorPermission()
 			fsize := file.Size
 			cfsize := file.ColorSize()
 			if file.IsDir() {
 				cfsize = NewEXAColor("-").Sprint(fmt.Sprintf("%6s", "-"))
 				if jj == 0 {
-					ppad = paw.Repeat("    ", len(file.DirSlice())-1)
-					name := file.ColorDirName(f.Root())
+					ppad += paw.Repeat("    ", len(file.DirSlice())-1)
+					name := file.ColorDirName(f.root)
 					if f.depth != 0 {
 						if paw.EqualFold(file.Dir, RootMark) {
-							ppad = ""
+							ppad = pad
 							name = file.ColorDirName("")
 						}
-						printFileItem(w, pad+ppad, istr, cperm, name)
+						printFileItem(w, ppad, istr, cperm, name)
 					}
 					continue
 				}
@@ -559,18 +506,18 @@ func (f *FileList) ToLevelView(pad string) []byte {
 				jstr = KindLSColorString("di", fmt.Sprintf("%[2]*[1]d.", ndirs, j1))
 			}
 			name := file.ColorBaseName()
-			printFileItem(w, pad+ppad+"    ", jstr, cperm, cfsize, name)
+			printFileItem(w, ppad+"    ", jstr, cperm, cfsize, name)
 		}
 		if f.depth != 0 {
-			printDirSummary(w, pad+ppad+"    ", ndirs, nfiles, sumsize)
+			printDirSummary(w, ppad+"    ", ndirs, nfiles, sumsize)
 
 			if i != len(dirs)-1 {
-				fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("-", width))
+				printBanner(w, pad, "-", width)
 			}
 		}
 	}
 
-	fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("=", width))
+	printBanner(w, pad, "=", width)
 	printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
 
 	return buf.Bytes()
@@ -585,16 +532,17 @@ func (f *FileList) ToListViewString(pad string) string {
 func (f *FileList) ToListView(pad string) []byte {
 	var (
 		// w     = new(bytes.Buffer)
-		buf   = f.Buffer()
-		w     = f.Writer()
-		dirs  = f.Dirs()
-		fm    = f.Map()
+		buf   = f.buf
+		w     = f.writer
+		dirs  = f.dirs
+		fm    = f.store
 		chead = f.GetHead4Meta(pad, urname, gpname)
 	)
 	buf.Reset()
 
 	ctdsize := ByteSize(f.totalSize)
-	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getDirName(f.Root(), ""), KindLSColorString("di", ctdsize))
+
+	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getDirName(f.root, ""), KindLSColorString("di", ctdsize))
 	fmt.Fprintln(w, head)
 	fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("=", 80))
 
@@ -610,7 +558,7 @@ func (f *FileList) ToListView(pad string) []byte {
 				if jj == 0 {
 					if !paw.EqualFold(file.Dir, RootMark) {
 						if f.depth != 0 {
-							fmt.Fprintf(w, "%s%v\n", pad, file.ColorDirName(f.Root()))
+							fmt.Fprintf(w, "%s%v\n", pad, file.ColorDirName(f.root))
 							fmt.Fprintln(w, chead)
 						}
 					}
@@ -623,19 +571,18 @@ func (f *FileList) ToListView(pad string) []byte {
 			if !file.IsDir() {
 				sumsize += file.Size
 			}
-			name := file.ColorBaseName()
-			fmt.Fprintf(w, "%s%s%s\n", pad, file.ColorMeta(git), name)
+			fmt.Fprintf(w, "%s%s%s\n", pad, file.ColorMeta(git), file.ColorBaseName())
 		}
 
 		if f.depth != 0 {
 			printDirSummary(w, pad, ndirs, nfiles, sumsize)
 			if i < len(dirs)-1 {
-				fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("-", 80))
+				printBanner(w, pad, "-", 80)
 			}
 		}
 	}
 
-	fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("=", 80))
+	printBanner(w, pad, "=", 80)
 	printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
 
 	return buf.Bytes()
@@ -657,7 +604,7 @@ func toListTreeView(f *FileList, pad string) []byte {
 		buf = f.Buffer()
 		// w  = new(bytes.Buffer)
 		w   = f.Writer()
-		fm  = f.Map()
+		fm  = f.store
 		git = f.GetGitStatus()
 	)
 

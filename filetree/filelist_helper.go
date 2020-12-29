@@ -391,6 +391,10 @@ func max(i1, i2 int) int {
 	return i2
 }
 
+func printBanner(w io.Writer, pad string, mark string, length int) {
+	fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat(mark, length))
+}
+
 // func below here, invoked from godirwalk/examples/sizes
 //  `sizes()`, `sizesStack`, `newSizesStack()`, `(s *sizesStack) EnterDirectory()`, `(s *sizesStack) LeaveDirectory()`, `(s *sizesStack) Accumulate(i int64)`
 
@@ -460,3 +464,57 @@ type ByLowerString []string
 func (a ByLowerString) Len() int           { return len(a) }
 func (a ByLowerString) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByLowerString) Less(i, j int) bool { return paw.ToLower(a[i]) < paw.ToLower(a[j]) }
+
+// // ToTree will return the []byte of FileList in tree form
+// func (f *FileList) ToTree(pad string) []byte {
+
+// 	tree := treeprint.New()
+
+// 	dirs := f.Dirs()
+// 	// nd := len(dirs) // including root
+// 	ntf := 0
+// 	var one, pre treeprint.Tree
+// 	fm := f.Map()
+
+// 	for i, dir := range dirs {
+// 		files := f.Map()[dir]
+// 		ndirs, nfiles := getNDirsFiles(files) // excluding the dir
+// 		ntf += nfiles
+// 		for jj, file := range files {
+// 			// fsize := file.Size
+// 			// sfsize := ByteSize(fsize)
+// 			if jj == 0 && file.IsDir() {
+// 				if i == 0 { // root dir
+// 					// tree.SetValue(fmt.Sprintf("%v (%v)", file.LSColorString(file.Dir), file.LSColorString(file.Path)))
+// 					tree.SetValue(getName(file))
+// 					tree.SetMetaValue(KindLSColorString("di", fmt.Sprintf("%d dirs", ndirs)+", "+KindLSColorString("fi", fmt.Sprintf("%d files", nfiles))))
+// 					one = tree
+// 				} else {
+// 					pre = preTree(dir, fm, tree)
+// 					if f.depth != 0 {
+// 						// one = pre.AddMetaBranch(nf-1, file)
+// 						one = pre.AddMetaBranch(KindLSColorString("di", fmt.Sprintf("%d dirs", ndirs)+", "+KindLSColorString("fi", fmt.Sprintf("%d files", nfiles))), file)
+// 					} else {
+// 						one = pre.AddBranch(file)
+// 					}
+// 				}
+// 				continue
+// 			}
+// 			// add file node
+// 			link := checkAndGetColorLink(file)
+// 			if !file.IsDir() {
+// 				if len(link) > 0 {
+// 					one.AddMetaNode(link, file)
+// 				} else {
+// 					one.AddNode(file)
+// 				}
+// 			}
+// 		}
+// 	}
+// 	buf := new(bytes.Buffer)
+// 	buf.Write(tree.Bytes())
+
+// 	printTotalSummary(buf, "", f.NDirs(), f.NFiles(), f.totalSize)
+
+// 	return paddingTree(pad, buf.Bytes())
+// }
