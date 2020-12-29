@@ -29,7 +29,7 @@ func IsFileExist(name string) bool {
 	return false
 }
 
-// IsDirExists reports whether the dir exists as a boolean
+// IsDirExist reports whether the dir exists as a boolean
 func IsDirExist(name string) bool {
 	if fi, err := os.Stat(name); err == nil {
 		if fi.Mode().IsDir() {
@@ -37,6 +37,11 @@ func IsDirExist(name string) bool {
 		}
 	}
 	return false
+}
+
+// IsExists reports whether the file or dir exists as a boolean
+func IsExist(name string) bool {
+	return IsDirExist(name) || IsFileExist(name)
 }
 
 // IsPathExists return true that `path` is dir or false for not
