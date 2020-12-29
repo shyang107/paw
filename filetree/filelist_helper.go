@@ -20,22 +20,23 @@ import (
 //
 // ToListTree
 //
+type EdgeType string
 
 var (
-	EdgeTypeLink     = treeprint.EdgeTypeLink
-	EdgeTypeMid      = treeprint.EdgeTypeMid
-	EdgeTypeEnd      = treeprint.EdgeTypeEnd
-	IndentSize       = treeprint.IndentSize
-	SpaceIndentSize  = paw.Repeat(" ", IndentSize)
-	currentuser, _   = user.Current()
-	urname           = currentuser.Username
-	usergp, _        = user.LookupGroupId(currentuser.Gid)
-	gpname           = usergp.Name
-	curname, cgpname = getColorizedUGName(urname, gpname)
+	EdgeTypeLink     EdgeType = "│"   //treeprint.EdgeTypeLink
+	EdgeTypeMid      EdgeType = "├──" //treeprint.EdgeTypeMid
+	EdgeTypeEnd      EdgeType = "└──" //treeprint.EdgeTypeEnd
+	IndentSize                = 3     //treeprint.IndentSize
+	SpaceIndentSize           = paw.Repeat(" ", IndentSize)
+	currentuser, _            = user.Current()
+	urname                    = currentuser.Username
+	usergp, _                 = user.LookupGroupId(currentuser.Gid)
+	gpname                    = usergp.Name
+	curname, cgpname          = getColorizedUGName(urname, gpname)
 )
 
 func printLTFile(wr io.Writer, level int, levelsEnded []int,
-	edge treeprint.EdgeType, fl *FileList, file *File, git GitStatus, pad string) {
+	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string) {
 
 	meta := pad
 	if pdview == PListTreeView {
@@ -63,7 +64,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 }
 
 func printLTDir(wr io.Writer, level int, levelsEnded []int,
-	edge treeprint.EdgeType, fl *FileList, file *File, git GitStatus, pad string) {
+	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string) {
 	fm := fl.Map()
 	files := fm[file.Dir]
 	nfiles := len(files)
