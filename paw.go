@@ -53,26 +53,40 @@ func init() {
 	// Logger.SetReportCaller(true)
 	// Logger.SetOutput(os.Stdout)
 	// Logger.SetFormatter(nestedFormatter)
-	GologInit(os.Stdout, os.Stdout, os.Stderr)
+	GologInit(os.Stdout, os.Stdout, os.Stderr, true)
 }
 
 // GologInit initializes logger
 func GologInit(
 	infoHandle io.Writer,
 	warnHandle io.Writer,
-	errorHandle io.Writer) {
+	errorHandle io.Writer,
+	isVerbose bool) {
+	if isVerbose {
+		Info = log.New(infoHandle,
+			color.New(color.FgBlue).Add(color.Bold).Sprint("[INFO] "),
+			log.Ldate|log.Ltime|log.Lshortfile)
 
+		Warning = log.New(warnHandle,
+			color.New(color.FgYellow).Add(color.Bold).Sprint("[WARNING] "),
+			log.Ldate|log.Ltime|log.Lshortfile)
+
+		Error = log.New(errorHandle,
+			color.New(color.FgRed).Add(color.Bold).Sprint("[ERROR] "),
+			log.Ldate|log.Ltime|log.Lshortfile)
+		return
+	}
 	Info = log.New(infoHandle,
 		color.New(color.FgBlue).Add(color.Bold).Sprint("[INFO] "),
-		log.Ldate|log.Ltime|log.Lshortfile)
+		log.Ldate|log.Ltime)
 
 	Warning = log.New(warnHandle,
 		color.New(color.FgYellow).Add(color.Bold).Sprint("[WARNING] "),
-		log.Ldate|log.Ltime|log.Lshortfile)
+		log.Ldate|log.Ltime)
 
 	Error = log.New(errorHandle,
 		color.New(color.FgRed).Add(color.Bold).Sprint("[ERROR] "),
-		log.Ldate|log.Ltime|log.Lshortfile)
+		log.Ldate|log.Ltime)
 }
 
 // SetLoggerFieldsOrder set `nestedFormatter.FieldsOrder`
