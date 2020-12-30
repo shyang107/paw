@@ -373,7 +373,7 @@ func getColorizedModTime(modTime time.Time) string {
 	return NewEXAColor("da").Sprint(modTime.Format("01-02-06 15:04"))
 }
 
-func getColorizedHead(pad, username, groupname string) string {
+func getColorizedHead(pad, username, groupname string, git GitStatus) string {
 	c := NewEXAColor("hd").Add(color.Underline)
 	width := max(4, len(username))
 	huser := fmt.Sprintf("%[2]*[1]s", "User", width)
@@ -381,7 +381,12 @@ func getColorizedHead(pad, username, groupname string) string {
 	hgroup := fmt.Sprintf("%[2]*[1]s", "Group", width)
 
 	ssize := fmt.Sprintf("%6s", "Size")
-	head := fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, c.Sprint("Permissions"), c.Sprint(ssize), c.Sprint(huser), c.Sprint(hgroup), c.Sprint(" Data Modified"), c.Sprint("Git"), c.Sprint("Name"))
+	head := ""
+	if git.NoGit {
+		head = fmt.Sprintf("%s%s %s %s %s %14s %s", pad, c.Sprint("Permissions"), c.Sprint(ssize), c.Sprint(huser), c.Sprint(hgroup), c.Sprint(" Data Modified"), c.Sprint("Name"))
+	} else {
+		head = fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, c.Sprint("Permissions"), c.Sprint(ssize), c.Sprint(huser), c.Sprint(hgroup), c.Sprint(" Data Modified"), c.Sprint("Git"), c.Sprint("Name"))
+	}
 	return head
 }
 

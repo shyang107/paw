@@ -2,6 +2,7 @@ package filetree
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"path/filepath"
 )
@@ -52,6 +53,20 @@ func PrintDir(w io.Writer, path string, opt *PrintDirOption, pad string) error {
 	if err != nil {
 		return err
 	}
+
+	file, err := NewFile(path)
+	if err != nil {
+		return err
+	}
+	if file.IsRegular() {
+		git, _ := GetShortStatus(file.Dir)
+		chead := getColorizedHead("", urname, gpname, git)
+		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getDirName(file.Dir, ""))
+		fmt.Fprintln(w, chead)
+		fmt.Fprintf(w, "%s%s%s\n", pad, file.ColorMeta(git), file.ColorBaseName())
+		return nil
+	}
+
 	if opt.Ignore == nil {
 		opt.Ignore = DefaultIgnoreFn
 	}

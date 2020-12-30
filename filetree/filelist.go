@@ -151,8 +151,8 @@ func (f *FileList) GetGitStatus() GitStatus {
 }
 
 // GetHead4Meta will return a colorful string of head line for meta information of File
-func (f *FileList) GetHead4Meta(pad, username, groupname string) string {
-	return getColorizedHead(pad, username, groupname)
+func (f *FileList) GetHead4Meta(pad, username, groupname string, git GitStatus) string {
+	return getColorizedHead(pad, username, groupname, git)
 }
 
 // AddFile will add file into the file list
@@ -536,7 +536,8 @@ func (f *FileList) ToListView(pad string) []byte {
 		w     = f.writer
 		dirs  = f.dirs
 		fm    = f.store
-		chead = f.GetHead4Meta(pad, urname, gpname)
+		git   = f.GetGitStatus()
+		chead = f.GetHead4Meta(pad, urname, gpname, git)
 	)
 	buf.Reset()
 
@@ -548,7 +549,6 @@ func (f *FileList) ToListView(pad string) []byte {
 
 	fmt.Fprintln(w, chead)
 
-	git := f.GetGitStatus()
 	for i, dir := range dirs {
 		sumsize := uint64(0)
 		nfiles := 0
@@ -618,7 +618,7 @@ func toListTreeView(f *FileList, pad string) []byte {
 	meta := pad
 	switch pdview {
 	case PListTreeView:
-		chead := f.GetHead4Meta(pad, urname, gpname)
+		chead := f.GetHead4Meta(pad, urname, gpname, git)
 		fmt.Fprintf(w, "%v\n", chead)
 		meta += file.ColorMeta(f.GetGitStatus())
 	case PTreeView:

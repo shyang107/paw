@@ -116,15 +116,15 @@ func NewFileRelTo(path, root string) (*File, error) {
 	return f, nil
 }
 
-func (f File) String() string {
-	// return f.Path
-	if NoColor {
-		return f.BaseName
-	}
+// func (f File) String() string {
+// 	// return f.Path
+// 	if NoColor {
+// 		return f.BaseName
+// 	}
 
-	cvalue, _ := FileLSColorString(f.Path, f.BaseName)
-	return cvalue
-}
+// 	cvalue, _ := FileLSColorString(f.Path, f.BaseName)
+// 	return cvalue
+// }
 
 // LSColorString will return a color string using LS_COLORS according to `f.Path` of file
 func (f *File) LSColorString(s string) string {
@@ -234,13 +234,17 @@ func getMeta(pad string, file *File, git GitStatus) string {
 	buf := new(bytes.Buffer)
 	cperm := getColorizePermission(file.Stat.Mode())
 	cmodTime := getColorizedModTime(file.Stat.ModTime())
-	cgit := getColorizedGitStatus(git, file)
 	fsize := file.Size
 	cfsize := getColorizedSize(fsize)
 	if file.IsDir() {
 		cfsize = KindLSColorString("-", fmt.Sprintf("%6s", "-"))
 	}
-	printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime, cgit)
+	if git.NoGit {
+		printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime)
+	} else {
+		cgit := getColorizedGitStatus(git, file)
+		printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime, cgit)
+	}
 	return string(buf.Bytes())
 }
 
