@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/mattn/go-runewidth"
+
 	"github.com/karrick/godirwalk"
 	"github.com/spf13/cast"
 
@@ -545,7 +547,7 @@ func (f *FileList) ToListView(pad string) []byte {
 
 	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getDirName(f.root, ""), KindLSColorString("di", ctdsize))
 	fmt.Fprintln(w, head)
-	fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("=", 80))
+	printBanner(w, pad, "=", 80)
 
 	fmt.Fprintln(w, chead)
 
@@ -650,4 +652,191 @@ func toListTreeView(f *FileList, pad string) []byte {
 	printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
 
 	return buf.Bytes()
+}
+
+// ToClassifyView will return the string of FileList to display type indicator by file names (like as `exa -F` or `exa --classify`)
+func (f *FileList) ToClassifyViewString(pad string) string {
+	return string(f.ToClassifyView(pad))
+}
+
+// ToClassifyView will return the []byte of FileList to display type indicator by file names (like as `exa -F` or `exa --classify`)
+func (f *FileList) ToClassifyView(pad string) []byte {
+	var (
+		buf              = f.buf
+		w                = f.writer
+		dirs             = f.dirs
+		fm               = f.store
+		_, terminalWidth = getTerminalSize()
+	)
+	buf.Reset()
+
+	for i, dir := range dirs {
+		if f.depth != 0 {
+			fmt.Fprintf(w, "%v\n", fm[dir][0].ColorDirName(f.root))
+			if len(fm[dir]) == 1 {
+				fmt.Fprintln(w)
+				continue
+			}
+		}
+
+		files := fm[dir][1:]
+		lens, sumlen := getleng(files)
+		if sumlen <= terminalWidth {
+			classifyPrintFiles(w, files)
+		} else {
+			classifyGridPrintFiles(w, files, lens, sumlen, terminalWidth)
+		}
+
+		if f.depth == 0 {
+			break
+		} else {
+			// printDirSummary(w,ndirs, nfiles, sumsize)
+			if i < len(dirs)-1 {
+				fmt.Fprintln(w)
+			}
+		}
+	}
+
+	printTotalSummary(w, "", f.NDirs(), f.NFiles(), f.totalSize)
+
+	b := padding(pad, buf.Bytes())
+
+	return b
+}
+
+func classifyGridPrintFiles(w io.Writer, files []*File, lens []int, sumlen int, twidth int) {
+
+	nFields := calNFields(lens, twidth)
+	widths := calWidth(lens, nFields, twidth)
+	nFields = len(widths)
+
+	nfolds := len(lens) / len(widths)
+	for i := 0; i < nfolds; i++ {
+		for iw := 0; iw < nFields; iw++ {
+			il := i*nFields + iw
+			ns := widths[iw] - runewidth.StringWidth(files[il].BaseName)
+			tail := ""
+			if files[il].IsDir() {
+				tail += "/" + paw.Repeat(" ", ns-1)
+			} else {
+				tail += paw.Repeat(" ", ns)
+			}
+			fmt.Fprintf(w, "%v", files[il].ColorBaseName()+tail)
+		}
+		fmt.Fprintln(w)
+	}
+
+	nw := nfolds * nFields
+	if len(lens) > nw {
+		for i := nw; i < len(lens); i++ {
+			iw := i - nw
+			ns := widths[iw] - runewidth.StringWidth(files[i].BaseName)
+			tail := ""
+			if files[i].IsDir() {
+				tail += "/" + paw.Repeat(" ", ns-1)
+			} else {
+				tail += paw.Repeat(" ", ns)
+			}
+			fmt.Fprintf(w, "%v", files[i].ColorBaseName()+tail)
+		}
+		fmt.Fprintln(w)
+	}
+	// fmt.Fprintln(w)
+}
+
+func calWidth(lens []int, nFields, limit int) (widths []int) {
+	nfolds := len(lens) / nFields
+	widths = make([]int, nFields)
+	copy(widths, lens[:nFields])
+	for i := 0; i < nfolds; i++ {
+		for iw := 0; iw < nFields; iw++ {
+			il := i*nFields + iw
+			if widths[iw] < lens[il] {
+				widths[iw] = lens[il]
+			}
+		}
+	}
+
+	nw := nfolds * nFields
+	if len(lens) > nw {
+		for i := nw; i < len(lens); i++ {
+			iw := i - nw
+			if widths[iw] < lens[i] {
+				widths[iw] = lens[i]
+			}
+		}
+	}
+
+	sw := sum(widths)
+	if sw > limit {
+		end := 0
+		s := sum(widths)
+		for i := len(widths) - 1; i > 0; i-- {
+			s -= widths[i]
+			if s < limit {
+				end = i
+				break
+			}
+		}
+		widths = calWidth(lens, end, limit)
+	}
+	return widths
+}
+
+func sum(a []int) int {
+	s := 0
+	for _, v := range a {
+		s += v
+	}
+	return s
+}
+
+func calNFields(lens []int, limit int) int {
+	count := len(lens)
+	n := 0
+	for i := 0; i < len(lens); i++ {
+		sum := 0
+		for j := i; j < len(lens); j++ {
+			sum += lens[j]
+			if sum > limit {
+				n = j - 1
+				break
+			}
+		}
+		if n < count {
+			count = n
+		}
+	}
+	return count
+}
+
+func classifyPrintFiles(w io.Writer, files []*File) {
+	// if len(files) == 0 {
+	// 	fmt.Fprintln(w)
+	// 	return
+	// }
+
+	for _, file := range files {
+		if file.IsDir() {
+			fmt.Fprintf(w, "%s/  ", file.ColorBaseName())
+		} else {
+			fmt.Fprintf(w, "%s  ", file.ColorBaseName())
+		}
+	}
+	fmt.Fprintln(w)
+}
+
+func getleng(files []*File) (leng []int, sum int) {
+	sum = 0
+	for _, file := range files {
+		lenstr := runewidth.StringWidth(file.BaseName) + 2
+		// h, a := paw.CountPlaceHolder(file.BaseName)
+		// lenstr := h + a + 2
+		if file.IsDir() {
+			lenstr++
+		}
+		leng = append(leng, lenstr)
+		sum += lenstr
+	}
+	return leng, sum
 }
