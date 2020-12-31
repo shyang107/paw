@@ -100,7 +100,7 @@ func GetHomeDir() string {
 // MakeAll check path and create like as `make -p path`
 func MakeAll(path string) error {
 	// check
-	if IsPathExists(path) {
+	if IsPathExist(path) {
 		return nil
 	}
 	err := os.MkdirAll(path, os.ModePerm) // 0755
@@ -108,7 +108,7 @@ func MakeAll(path string) error {
 		return err
 	}
 	// check again
-	if !IsPathExists(path) {
+	if !IsPathExist(path) {
 		return fmt.Errorf("Makeall: fail to create %q", path)
 	}
 	return nil
