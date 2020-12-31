@@ -44,8 +44,8 @@ func IsExist(name string) bool {
 	return IsDirExist(name) || IsFileExist(name)
 }
 
-// IsPathExists return true that `path` is dir or false for not
-func IsPathExists(path string) bool {
+// IsPathExist return whether the path exists.
+func IsPathExist(path string) bool {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		// path/to/whatever does not exist
 		return false

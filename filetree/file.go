@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/shyang107/paw"
@@ -142,13 +144,89 @@ func (f *File) IsRegular() bool {
 	return f.Stat.Mode().IsRegular()
 }
 
-// IsLink() report whether File describes a system link.
+// IsLink() report whether File describes a symbolic link.
 func (f *File) IsLink() bool {
 	mode := f.Stat.Mode()
 	if mode&os.ModeSymlink != 0 {
 		return true
 	}
 	return false
+}
+
+// IsFile reports whether File describes a file (not directory and symbolic link).
+func (f *File) IsFile() bool {
+	// if !f.IsDir() && !f.IsLink() {
+	// 	return true
+	// }
+	// return false
+	return nodeTypeFromFileInfo(f.Stat) == "file"
+}
+
+func nodeTypeFromFileInfo(fi os.FileInfo) string {
+	switch fi.Mode() & (os.ModeType | os.ModeCharDevice) {
+	case 0:
+		return "file"
+	case os.ModeDir:
+		return "dir"
+	case os.ModeSymlink:
+		return "symlink"
+	case os.ModeDevice | os.ModeCharDevice:
+		return "chardev"
+	case os.ModeDevice:
+		return "dev"
+	case os.ModeNamedPipe:
+		return "fifo"
+	case os.ModeSocket:
+		return "socket"
+	}
+
+	return ""
+}
+
+// linux int64
+// fileInfo, _ := os.Stat(path)
+// stat_t := fileInfo.Sys().(*syscall.Stat_t)
+// fmt.Println(stat_t.Atim.Sec)
+// fmt.Println(stat_t.Ctim.Sec)
+// fmt.Println(stat_t.Mtim.Sec)
+//
+// darwin int64
+// fileInfo, _ := os.Stat(path)
+// stat_t := fileInfo.Sys().(*syscall.Stat_t)
+// fmt.Println(stat_t.Atimespec.Sec)
+// fmt.Println(stat_t.Ctimespec.Sec)
+// fmt.Println(stat_t.Mtimespec.Sec)
+//
+// windows int64
+// fileInfo, _ := os.Stat(path)
+// wFileSys := fileInfo.Sys().(*syscall.Win32FileAttributeData)
+// tNanSeconds := wFileSys.CreationTime.Nanoseconds()  /// 返回的是纳秒
+// tSec := tNanSeconds/1e9
+
+// AccessTime reports the last access time of File.
+func (f *File) AccessTime() time.Time {
+	statT := f.Stat.Sys().(*syscall.Stat_t)
+	// return timespecToTime(statT.Atimespec)
+	return time.Unix(statT.Atimespec.Unix())
+}
+
+// CreateTime reports the create time of file.
+func (f *File) CreateTime() time.Time {
+	statT := f.Stat.Sys().(*syscall.Stat_t)
+	// return timespecToTime(statT.Ctimespec)
+	return time.Unix(statT.Ctimespec.Unix())
+}
+
+// ModifiedTime reports the modify time of file.
+func (f *File) ModifiedTime() time.Time {
+	// statT := f.Stat.Sys().(*syscall.Stat_t)
+	// return timespecToTime(statT.Mtimespec)
+	// return time.Unix(statT.Mtimespec.Unix())
+	return f.Stat.ModTime()
+}
+
+func timespecToTime(ts syscall.Timespec) time.Time {
+	return time.Unix(int64(ts.Sec), int64(ts.Nsec))
 }
 
 // // Size will return size of `File`
