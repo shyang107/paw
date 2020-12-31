@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/mitchellh/go-homedir"
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
 )
@@ -57,8 +58,8 @@ func main() {
 	// exTextTemplate()
 	// exRegEx2()
 	// root := os.Args[1]
-	root := "../"
-	// root, _ := homedir.Expand("~")
+	// root := "../"
+	root, _ := homedir.Expand("~")
 	// root, _ := homedir.Expand("~/Downloads")
 	// root, _ := homedir.Expand("~/Downloads/0")
 	// root := "/Users/shyang/go/src/rover/opcc/"

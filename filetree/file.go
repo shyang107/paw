@@ -142,6 +142,15 @@ func (f *File) IsRegular() bool {
 	return f.Stat.Mode().IsRegular()
 }
 
+// IsLink() report whether File describes a system link.
+func (f *File) IsLink() bool {
+	mode := f.Stat.Mode()
+	if mode&os.ModeSymlink != 0 {
+		return true
+	}
+	return false
+}
+
 // // Size will return size of `File`
 // func (f *File) Size() uint64 {
 // 	return uint64(f.Stat.Size())

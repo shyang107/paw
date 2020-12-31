@@ -716,12 +716,18 @@ func classifyGridPrintFiles(w io.Writer, files []*File, lens []int, sumlen int, 
 			il := i*nFields + iw
 			ns := widths[iw] - runewidth.StringWidth(files[il].BaseName)
 			tail := ""
+			cname := files[il].ColorBaseName()
 			if files[il].IsDir() {
-				tail += "/" + paw.Repeat(" ", ns-1)
+				tail = "/" + paw.Repeat(" ", ns-1)
 			} else {
-				tail += paw.Repeat(" ", ns)
+				if files[il].IsLink() {
+					cname = files[il].LSColorString(files[il].BaseName)
+					tail = "@" + paw.Repeat(" ", ns-1)
+				} else {
+					tail = paw.Repeat(" ", ns)
+				}
 			}
-			fmt.Fprintf(w, "%v", files[il].ColorBaseName()+tail)
+			fmt.Fprintf(w, "%v", cname+tail)
 		}
 		fmt.Fprintln(w)
 	}
@@ -732,12 +738,17 @@ func classifyGridPrintFiles(w io.Writer, files []*File, lens []int, sumlen int, 
 			iw := i - nw
 			ns := widths[iw] - runewidth.StringWidth(files[i].BaseName)
 			tail := ""
+			cname := files[i].ColorBaseName()
 			if files[i].IsDir() {
-				tail += "/" + paw.Repeat(" ", ns-1)
+				tail = "/" + paw.Repeat(" ", ns-1)
 			} else {
-				tail += paw.Repeat(" ", ns)
+				if files[i].IsLink() {
+					cname = files[i].LSColorString(files[i].BaseName)
+					tail = "@" + paw.Repeat(" ", ns-1)
+				}
+				tail = paw.Repeat(" ", ns)
 			}
-			fmt.Fprintf(w, "%v", files[i].ColorBaseName()+tail)
+			fmt.Fprintf(w, "%v", cname+tail)
 		}
 		fmt.Fprintln(w)
 	}
@@ -811,16 +822,16 @@ func calNFields(lens []int, limit int) int {
 }
 
 func classifyPrintFiles(w io.Writer, files []*File) {
-	// if len(files) == 0 {
-	// 	fmt.Fprintln(w)
-	// 	return
-	// }
 
 	for _, file := range files {
+		cname := file.ColorBaseName()
+		if file.IsLink() {
+			cname = file.LSColorString(file.BaseName) + "@"
+		}
 		if file.IsDir() {
-			fmt.Fprintf(w, "%s/  ", file.ColorBaseName())
+			fmt.Fprintf(w, "%s/  ", cname)
 		} else {
-			fmt.Fprintf(w, "%s  ", file.ColorBaseName())
+			fmt.Fprintf(w, "%s  ", cname)
 		}
 	}
 	fmt.Fprintln(w)

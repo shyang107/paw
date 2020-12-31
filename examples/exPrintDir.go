@@ -10,12 +10,13 @@ import (
 func exPrintDir(root string) {
 	// opt := filetree.NewPrintDirOption()
 	opt := &filetree.PrintDirOption{
-		Depth: -1,
+		Depth: 0,
 		// OutOpt: filetree.PListView,
 		// OutOpt: filetree.PTreeView,
-		OutOpt: filetree.PListTreeView,
+		// OutOpt: filetree.PListTreeView,
 		// OutOpt: filetree.PLevelView,
 		// OutOpt: filetree.PTableView,
+		OutOpt: filetree.PClassifyView,
 		Ignore: filetree.DefaultIgnoreFn,
 	}
 	err := filetree.PrintDir(os.Stdout, root, opt, "> ")
