@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/karrick/godirwalk"
 	"github.com/shyang107/paw"
+	"github.com/spf13/cast"
 
 	// "github.com/shyang107/paw/treeprint"
 	"github.com/xlab/treeprint"
@@ -173,7 +175,7 @@ func getNDirsFiles(files []*File) (ndirs, nfiles int) {
 	return ndirs - 1, nfiles
 }
 
-func paddingTree(pad string, bytes []byte) []byte {
+func padding(pad string, bytes []byte) []byte {
 	b := make([]byte, len(bytes))
 	b = append(b, pad...)
 	for _, v := range bytes {
@@ -470,6 +472,21 @@ type ByLowerString []string
 func (a ByLowerString) Len() int           { return len(a) }
 func (a ByLowerString) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByLowerString) Less(i, j int) bool { return paw.ToLower(a[i]) < paw.ToLower(a[j]) }
+
+func getTerminalSize() (height, width int) {
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	out, err := cmd.Output()
+	if err != nil {
+		// log.Fatal(err)
+		paw.Error.Println("run stty, err: ", err)
+		return 38, 100
+	}
+	size := paw.Split(paw.TrimSuffix(string(out), "\n"), " ")
+	height = cast.ToInt(size[0])
+	width = cast.ToInt(size[1])
+	return height, width
+}
 
 // // ToTree will return the []byte of FileList in tree form
 // func (f *FileList) ToTree(pad string) []byte {

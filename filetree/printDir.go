@@ -41,6 +41,8 @@ const (
 	PLevelView // 1 << 2 which is 00000100
 	// PTableView is the option of table view using in PrintDir
 	PTableView
+	// PClassifyView display type indicator by file names (like as `exa -F` or `exa --classify`) in PrintDir
+	PClassifyView
 	// PListTreeView is the option of combining list & tree view using in PrintDir
 	PListTreeView = PListView | PTreeView
 )
@@ -89,6 +91,8 @@ func PrintDir(w io.Writer, path string, opt *PrintDirOption, pad string) error {
 		fl.ToLevelView(pad)
 	case PTableView:
 		fl.ToTableView(pad)
+	case PClassifyView:
+		fl.ToClassifyView(pad)
 	default:
 		return errors.New("No this option of PrintDir")
 	}
