@@ -343,10 +343,6 @@ func (f *FileList) SetDirsSorter(by DirsBy) {
 // 	Map[dir][]*file: ToLower(a[i].Path) < ToLower(a[j].Path)
 func (f *FileList) Sort() {
 	f.SortBy(f.dirsBy, f.filesBy)
-	// f.dirsBy.Sort(f.dirs)
-	// for _, dir := range f.dirs {
-	// 	f.filesBy.Sort(f.store[dir])
-	// }
 }
 
 func (f *FileList) SortBy(dirsBy DirsBy, filesBy FilesBy) {
@@ -360,7 +356,9 @@ func (f *FileList) SortBy(dirsBy DirsBy, filesBy FilesBy) {
 	}
 	f.dirsBy.Sort(f.dirs)
 	for _, dir := range f.dirs {
-		f.filesBy.Sort(f.store[dir])
+		if len(f.store[dir]) > 1 {
+			f.filesBy.Sort(f.store[dir][1:])
+		}
 	}
 }
 
