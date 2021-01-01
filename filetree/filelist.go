@@ -313,60 +313,8 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	}
 	if f.IsSort {
 		f.Sort()
-<<<<<<< HEAD
 	}
 	return nil
-}
-
-var (
-	DefaultFilesBy FilesBy = func(fi *File, fj *File) bool {
-		return paw.ToLower(fi.Path) < paw.ToLower(fj.Path)
-	}
-	DefaultDirsBy DirsBy = func(di string, dj string) bool {
-		return paw.ToLower(di) < paw.ToLower(dj)
-	}
-)
-
-// SetFilesSorter will set sorter of Files of FileList
-func (f *FileList) SetFilesSorter(by FilesBy) {
-	f.filesBy = by
-}
-
-// SetDirsSorter will set sorter of Dirs of FileList
-func (f *FileList) SetDirsSorter(by DirsBy) {
-	f.dirsBy = by
-}
-
-// Sort will sort FileList by sorter of dirsBy and filesBy.
-//
-// Default:
-// 	Dirs: ToLower(a[i]) < ToLower(a[j])
-// 	Map[dir][]*file: ToLower(a[i].Path) < ToLower(a[j].Path)
-func (f *FileList) Sort() {
-	f.SortBy(f.dirsBy, f.filesBy)
-	// f.dirsBy.Sort(f.dirs)
-	// for _, dir := range f.dirs {
-	// 	f.filesBy.Sort(f.store[dir])
-	// }
-}
-
-func (f *FileList) SortBy(dirsBy DirsBy, filesBy FilesBy) {
-	f.SetDirsSorter(dirsBy)
-	f.SetFilesSorter(filesBy)
-	if dirsBy == nil {
-		f.SetDirsSorter(DefaultDirsBy)
-	}
-	if filesBy == nil {
-		f.SetFilesSorter(DefaultFilesBy)
-	}
-	f.dirsBy.Sort(f.dirs)
-	for _, dir := range f.dirs {
-		if len(f.store[dir]) > 1 {
-			f.filesBy.Sort(f.store[dir][1:])
-		}
-=======
->>>>>>> 521f3e30d5dde22b433e0a51ace18f75ced40dc5
-	}
 }
 
 var (
