@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+
+	"github.com/shyang107/paw"
 )
 
 // PrintDirOption is the option of PrintDir
@@ -49,8 +51,33 @@ const (
 
 var pdview PrintDirType
 
+// PrintDirSort defines sorting way view of PrintDir
+//
+// Defaut:
+//  increasing sort by lower name of path
+type PDirSortOption struct {
+	IsSort  bool
+	SortWay PDSortFlag
+}
+
+type PDSortFlag int
+
+const (
+	PDSort PDSortFlag = 1 << iota
+	PDSortReverse
+	pdSortKeyName
+	pdSortKeyMTime
+	pdSortKeySize
+	PDSortByName         = PDSort | pdSortKeyName
+	PDSortByMtime        = PDSort | pdSortKeyMTime
+	PDSortBySize         = PDSort | pdSortKeySize
+	PDSortByReverseName  = PDSortByName | PDSortReverse
+	PDSortByReverseMtime = PDSortByMtime | PDSortReverse
+	PDSortByReverseSize  = PDSortBySize | PDSortReverse
+)
+
 // PrintDir will find files using codintion `ignore` func
-func PrintDir(w io.Writer, path string, opt *PrintDirOption, pad string) error {
+func PrintDir(w io.Writer, path string, opt *PrintDirOption, s *PDirSortOption, pad string) error {
 	root, err := filepath.Abs(path)
 	if err != nil {
 		return err
@@ -78,6 +105,49 @@ func PrintDir(w io.Writer, path string, opt *PrintDirOption, pad string) error {
 	fl := NewFileList(root)
 	// fl.IsSort = false
 	fl.SetWriters(w)
+
+	fl.IsSort = s.IsSort
+	if !fl.IsSort {
+		goto FIND
+	}
+
+	if opt.OutOpt != PTreeView || opt.OutOpt != PListTreeView {
+		if s.IsSort {
+			switch s.SortWay {
+			case PDSortByMtime:
+				// paw.Info.Println("PDSortByMtime")
+				fl.SetFilesSorter(func(fi, fj *File) bool {
+					return fi.ModifiedTime().Before(fj.ModifiedTime())
+				})
+			case PDSortBySize:
+				// paw.Info.Println("PDSortBySize")
+				fl.SetFilesSorter(func(fi, fj *File) bool {
+					return fi.Size < fj.Size
+				})
+			case PDSortByReverseName:
+				// paw.Info.Println("PDSortByReverseName")
+				fl.SetFilesSorter(func(fi, fj *File) bool {
+					return paw.ToLower(fi.Path) > paw.ToLower(fj.Path)
+				})
+			case PDSortByReverseMtime:
+				// paw.Info.Println("PDSortByReverseMtime")
+				fl.SetFilesSorter(func(fi, fj *File) bool {
+					return fi.ModifiedTime().After(fj.ModifiedTime())
+				})
+			case PDSortByReverseSize:
+				// paw.Info.Println("PDSortByReverseSize")
+				fl.SetFilesSorter(func(fi, fj *File) bool {
+					return fi.Size > fj.Size
+				})
+			default: //case PDSortByName :
+				// paw.Info.Println("PDSortByName")
+				fl.SetFilesSorter(func(fi, fj *File) bool {
+					return paw.ToLower(fi.Path) < paw.ToLower(fj.Path)
+				})
+			}
+		}
+	}
+FIND:
 	fl.FindFiles(opt.Depth, opt.Ignore)
 
 	switch opt.OutOpt {

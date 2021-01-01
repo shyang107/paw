@@ -23,6 +23,7 @@ func exPrintDir(root string) {
 	if err != nil {
 		paw.Logger.Error(err)
 	}
+
 	paw.Info.Println("exPrintDir")
 	paw.Warning.Println("exPrintDir")
 	paw.Error.Println("exPrintDir")

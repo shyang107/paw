@@ -31,7 +31,9 @@ type FileList struct {
 	buf       *bytes.Buffer
 	writer    io.Writer
 	// writers   []io.Writer
-	IsSort bool
+	IsSort  bool // increasing order of Lower(path)
+	filesBy FilesBy
+	dirsBy  DirsBy
 }
 
 // NewFileList will return the instance of `FileList`
@@ -40,11 +42,13 @@ func NewFileList(root string) *FileList {
 		return &FileList{}
 	}
 	fl := &FileList{
-		root:   root,
-		store:  make(map[string][]*File),
-		dirs:   []string{},
-		buf:    new(bytes.Buffer),
-		IsSort: true,
+		root:    root,
+		store:   make(map[string][]*File),
+		dirs:    []string{},
+		buf:     new(bytes.Buffer),
+		IsSort:  true,
+		filesBy: nil,
+		dirsBy:  nil,
 	}
 	fl.SetWriters(fl.buf)
 	return fl
@@ -196,28 +200,6 @@ func (f *FileList) EnableColor() {
 	DefaultNoColor()
 }
 
-type FileSortByPathP []*File
-
-func (a FileSortByPathP) Len() int           { return len(a) }
-func (a FileSortByPathP) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a FileSortByPathP) Less(i, j int) bool { return a[i].BaseName < a[j].BaseName }
-
-// func (f *FileList) Sort() {
-// 	sort.Strings(f.dirs)
-
-// 	for _, dir := range f.dirs {
-// 		fm := FileSortByPathP(f.store[dir])
-// 		for _, file := range fm {
-// 			fmt.Println("Before:", file)
-// 		}
-// 		sort.Sort(fm)
-// 		for _, file := range fm {
-// 			fmt.Println("After:", file)
-// 		}
-// 		f.store[dir] = fm
-// 	}
-// }
-
 // SkipThis is used as a return value indicate that the regular path
 // (file or directory) named in the Callback is to be skipped.
 // It is not returned as an error by any function.
@@ -328,16 +310,60 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 		if err != nil {
 			return errors.New(root + ": " + err.Error())
 		}
-		if f.IsSort {
-			// sort
-			sort.Sort(ByLowerString(f.dirs))
-
-			for _, dir := range f.dirs {
-				sort.Sort(ByLowerFilePath(f.store[dir]))
-			}
-		}
+	}
+	if f.IsSort {
+		f.Sort()
 	}
 	return nil
+}
+
+var (
+	DefaultFilesBy FilesBy = func(fi *File, fj *File) bool {
+		return paw.ToLower(fi.Path) < paw.ToLower(fj.Path)
+	}
+	DefaultDirsBy DirsBy = func(di string, dj string) bool {
+		return paw.ToLower(di) < paw.ToLower(dj)
+	}
+)
+
+// SetFilesSorter will set sorter of Files of FileList
+func (f *FileList) SetFilesSorter(by FilesBy) {
+	f.filesBy = by
+}
+
+// SetDirsSorter will set sorter of Dirs of FileList
+func (f *FileList) SetDirsSorter(by DirsBy) {
+	f.dirsBy = by
+}
+
+// Sort will sort FileList by sorter of dirsBy and filesBy.
+//
+// Default:
+// 	Dirs: ToLower(a[i]) < ToLower(a[j])
+// 	Map[dir][]*file: ToLower(a[i].Path) < ToLower(a[j].Path)
+func (f *FileList) Sort() {
+	f.SortBy(f.dirsBy, f.filesBy)
+	// f.dirsBy.Sort(f.dirs)
+	// for _, dir := range f.dirs {
+	// 	f.filesBy.Sort(f.store[dir])
+	// }
+}
+
+func (f *FileList) SortBy(dirsBy DirsBy, filesBy FilesBy) {
+	f.SetDirsSorter(dirsBy)
+	f.SetFilesSorter(filesBy)
+	if dirsBy == nil {
+		f.SetDirsSorter(DefaultDirsBy)
+	}
+	if filesBy == nil {
+		f.SetFilesSorter(DefaultFilesBy)
+	}
+	f.dirsBy.Sort(f.dirs)
+	for _, dir := range f.dirs {
+		if len(f.store[dir]) > 1 {
+			f.filesBy.Sort(f.store[dir][1:])
+		}
+	}
 }
 
 // ToTreeViewString will return the string of FileList in tree form
