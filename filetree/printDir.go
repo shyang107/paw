@@ -107,6 +107,7 @@ func PrintDir(w io.Writer, path string, opt *PrintDirOption, s *PDirSortOption, 
 	fl.SetWriters(w)
 
 	fl.IsSort = s.IsSort
+<<<<<<< HEAD
 	if !fl.IsSort {
 		goto FIND
 	}
@@ -148,6 +149,43 @@ func PrintDir(w io.Writer, path string, opt *PrintDirOption, s *PDirSortOption, 
 		}
 	}
 FIND:
+=======
+	if s.IsSort {
+		switch s.SortWay {
+		case PDSortByMtime:
+			// paw.Info.Println("PDSortByMtime")
+			fl.SetFilesSorter(func(fi, fj *File) bool {
+				return fi.ModifiedTime().Before(fj.ModifiedTime())
+			})
+		case PDSortBySize:
+			// paw.Info.Println("PDSortBySize")
+			fl.SetFilesSorter(func(fi, fj *File) bool {
+				return fi.Size < fj.Size
+			})
+		case PDSortByReverseName:
+			// paw.Info.Println("PDSortByReverseName")
+			fl.SetFilesSorter(func(fi, fj *File) bool {
+				return paw.ToLower(fi.Path) > paw.ToLower(fj.Path)
+			})
+		case PDSortByReverseMtime:
+			// paw.Info.Println("PDSortByReverseMtime")
+			fl.SetFilesSorter(func(fi, fj *File) bool {
+				return fi.ModifiedTime().After(fj.ModifiedTime())
+			})
+		case PDSortByReverseSize:
+			// paw.Info.Println("PDSortByReverseSize")
+			fl.SetFilesSorter(func(fi, fj *File) bool {
+				return fi.Size > fj.Size
+			})
+		default: //case PDSortByName :
+			// paw.Info.Println("PDSortByName")
+			fl.SetFilesSorter(func(fi, fj *File) bool {
+				return paw.ToLower(fi.Path) < paw.ToLower(fj.Path)
+			})
+		}
+	}
+
+>>>>>>> 521f3e30d5dde22b433e0a51ace18f75ced40dc5
 	fl.FindFiles(opt.Depth, opt.Ignore)
 
 	switch opt.OutOpt {
