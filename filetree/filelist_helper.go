@@ -42,7 +42,8 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 
 	meta := pad
 	if pdview == PListTreeView {
-		meta += file.ColorMeta(git)
+		tmeta, _ := file.ColorMeta(git)
+		meta += tmeta
 	}
 
 	fmt.Fprintf(wr, "%v", meta)
@@ -318,7 +319,7 @@ func getColorizePermission(mode os.FileMode) string {
 		c += NewEXAColor(cs).Add(color.Bold).Sprint(s)
 	}
 
-	return c + " "
+	return c
 }
 
 var cpmap = map[rune]*color.Color{

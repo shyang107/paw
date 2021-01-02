@@ -571,13 +571,28 @@ func (f *FileList) ToLevelView(pad string) []byte {
 	return buf.Bytes()
 }
 
-// ToListView will return the string of FileList in list form (like as `exa`)
+// ToListView will return the string of FileList in list form (like as `exa --header --long --time-style=iso --group --git`)
 func (f *FileList) ToListViewString(pad string) string {
 	return string(f.ToListView(pad))
 }
 
-// ToListView will return the []byte of FileList in list form (like as `exa`)
+// ToListView will return the []byte of FileList in list form (like as `exa --header --long --time-style=iso --group --git`)
 func (f *FileList) ToListView(pad string) []byte {
+	return toListView(f, pad, false)
+}
+
+// ToListExtendView will return the string of FileList in extend list form (like as `exa --header --long --time-style=iso --group --git -@`)
+func (f *FileList) ToListExtendViewString(pad string) string {
+	return string(f.ToListExtendView(pad))
+}
+
+// ToListExtendView will return the []byte of FileList in extend list form (like as `exa --header --long --time-style=iso --group --git --@`)
+func (f *FileList) ToListExtendView(pad string) []byte {
+	return toListView(f, pad, true)
+}
+
+// toListView will return the []byte of FileList in list form (like as `exa --header --long --time-style=iso --group --git`)
+func toListView(f *FileList, pad string, isExtended bool) []byte {
 	var (
 		// w     = new(bytes.Buffer)
 		buf   = f.buf
@@ -619,7 +634,21 @@ func (f *FileList) ToListView(pad string) []byte {
 			if !file.IsDir() {
 				sumsize += file.Size
 			}
-			fmt.Fprintf(w, "%s%s%s\n", pad, file.ColorMeta(git), file.ColorBaseName())
+			meta, metalength := file.ColorMeta(git)
+			fmt.Fprintf(w, "%s%s%s\n", pad, meta, file.ColorBaseName())
+			if isExtended {
+				nx := len(file.XAttributes)
+				sp := paw.Repeat(" ", metalength)
+				if nx > 0 {
+					edge := EdgeTypeMid
+					for i := 0; i < nx; i++ {
+						if i == nx-1 {
+							edge = EdgeTypeEnd
+						}
+						fmt.Fprintf(w, "%s%s%s %s\n", pad, sp, NewEXAColor("-").Sprint(edge), file.XAttributes[i])
+					}
+				}
+			}
 		}
 
 		if f.depth != 0 {
@@ -668,7 +697,8 @@ func toListTreeView(f *FileList, pad string) []byte {
 	case PListTreeView:
 		chead := f.GetHead4Meta(pad, urname, gpname, git)
 		fmt.Fprintf(w, "%v\n", chead)
-		meta += file.ColorMeta(f.GetGitStatus())
+		tmeta, _ := file.ColorMeta(f.GetGitStatus())
+		meta += tmeta
 	case PTreeView:
 		meta += f.DirInfo(file) + " "
 	}
