@@ -74,8 +74,8 @@ func xafero(root string) {
 			continue
 		}
 		file, _ := filetree.NewFile(root + "/" + fi.Name())
-		fmt.Printf("%2d %s %v\n", i+1, file.ColorMeta(git),
-			file)
+		meta, _ := file.ColorMeta(git)
+		fmt.Printf("%2d %s %v\n", i+1, meta, file)
 	}
 }
 

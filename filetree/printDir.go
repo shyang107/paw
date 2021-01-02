@@ -37,10 +37,12 @@ type PrintDirType int
 const (
 	// PListView is the option of list view using in PrintDir
 	PListView PrintDirType = 1 << iota // 1 << 0 which is 00000001
+	// PListExtendView is the option of list view icluding extend attributes using in PrintDir
+	PListExtendView
 	// PTreeView is the option of tree view using in PrintDir
-	PTreeView // 1 << 1 which is 00000010
+	PTreeView
 	// PLevelView is the option of level view using in PrintDir
-	PLevelView // 1 << 2 which is 00000100
+	PLevelView
 	// PTableView is the option of table view using in PrintDir
 	PTableView
 	// PClassifyView display type indicator by file names (like as `exa -F` or `exa --classify`) in PrintDir
@@ -94,6 +96,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, s *
 		opt = &PrintDirOption{
 			Depth:  0,
 			OutOpt: PListView,
+			// OutOpt: PListExtendView,
 			// OutOpt: PTreeView,
 			// OutOpt: PListTreeView,
 			// OutOpt: PLevelView,
@@ -111,7 +114,8 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, s *
 		chead := getColorizedHead("", urname, gpname, git)
 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getDirName(file.Dir, ""))
 		fmt.Fprintln(w, chead)
-		fmt.Fprintf(w, "%s%s%s\n", pad, file.ColorMeta(git), file.ColorBaseName())
+		meta, _ := file.ColorMeta(git)
+		fmt.Fprintf(w, "%s%s%s\n", pad, meta, file.ColorBaseName())
 		return nil
 	}
 
@@ -183,6 +187,8 @@ FIND:
 	switch opt.OutOpt {
 	case PListView:
 		fl.ToListView(pad)
+	case PListExtendView:
+		fl.ToListExtendView(pad)
 	case PTreeView:
 		fl.ToTreeView(pad)
 	case PListTreeView:
