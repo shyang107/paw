@@ -123,6 +123,11 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, s *
 			case PDSortBySize:
 				// paw.Info.Println("PDSortBySize")
 				fl.SetFilesSorter(func(fi, fj *File) bool {
+					if fl.IsGrouped {
+						if fi.IsDir() && fj.IsDir() {
+							return paw.ToLower(fi.Path) < paw.ToLower(fj.Path)
+						}
+					}
 					return fi.Size < fj.Size
 				})
 			case PDSortByReverseName:
@@ -138,6 +143,11 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, s *
 			case PDSortByReverseSize:
 				// paw.Info.Println("PDSortByReverseSize")
 				fl.SetFilesSorter(func(fi, fj *File) bool {
+					if fl.IsGrouped {
+						if fi.IsDir() && fj.IsDir() {
+							return paw.ToLower(fi.Path) > paw.ToLower(fj.Path)
+						}
+					}
 					return fi.Size > fj.Size
 				})
 			default: //case PDSortByName :
