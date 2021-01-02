@@ -9,7 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
+	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
 )
 
@@ -34,14 +36,17 @@ const (
 // 	`File` is the part of triming the suffix `Ext` of `File`
 // 	`Ext` is the file name extension used by `Path`. The extension is the suffix beginning at the final dot in the final element of path; it is empty if there is no dot.
 // 	`Stat` is `os.Stat(Path)` but ignoring error.
+// 	`Size` is size of File
+// 	`XAttributes` is extend attributes of File but ignore error
 type File struct {
-	Path     string
-	Dir      string
-	BaseName string
-	File     string
-	Ext      string
-	Stat     os.FileInfo
-	Size     uint64
+	Path        string
+	Dir         string
+	BaseName    string
+	File        string
+	Ext         string
+	Stat        os.FileInfo
+	Size        uint64
+	XAttributes []string
 }
 
 // NewFile will the pointer of instance of `File`, and is a constructor of `File`.
@@ -69,14 +74,19 @@ func NewFile(path string) (*File, error) {
 	// if stat.IsDir() {
 	// 	size, _ = sizes(path)
 	// }
+	var list []string
+	if list, err = xattr.List(path); err != nil {
+		return nil, err
+	}
 	return &File{
-		Path:     path,
-		Dir:      dir,
-		BaseName: basename,
-		File:     file,
-		Ext:      ext,
-		Stat:     stat,
-		Size:     size,
+		Path:        path,
+		Dir:         dir,
+		BaseName:    basename,
+		File:        file,
+		Ext:         ext,
+		Stat:        stat,
+		Size:        size,
+		XAttributes: list,
 	}, nil
 }
 
@@ -255,7 +265,8 @@ func getName(file *File) string {
 	}
 	link := checkAndGetColorLink(file)
 	if len(link) > 0 {
-		name += cpmap['l'].Sprint(" -> ") + link
+		// name += cpmap['l'].Sprint(" -> ") + link
+		name += " -> " + link
 	}
 	return name
 }
@@ -267,7 +278,8 @@ func checkAndGetColorLink(file *File) (link string) {
 		if err != nil {
 			link = alink + " ERR: " + err.Error()
 		} else {
-			link, _ = FileLSColorString(alink, alink)
+			// link, _ = FileLSColorString(alink, alink)
+			link = GetColorizedDirName(alink, "")
 		}
 	}
 	return link
@@ -283,7 +295,13 @@ func checkAndGetLink(file *File) (link string) {
 // ColorPermission will return a colorful string of Stat.Mode() like as exa.
 // The length of placeholder in terminal is 10.
 func (f *File) ColorPermission() string {
-	return getColorizePermission(f.Stat.Mode())
+	permission := getColorizePermission(f.Stat.Mode())
+	if len(f.XAttributes) > 0 {
+		permission += NewEXAColor("-").Add(color.Concealed).Sprint("@")
+	} else {
+		permission += " "
+	}
+	return permission
 }
 
 // ColorModifyTime will return a colorful string of Stat.ModTime() like as exa.
@@ -309,25 +327,31 @@ func (f *File) ColorDirName(root string) string {
 	return GetColorizedDirName(f.Path, root)
 }
 
-// ColorMeta will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File)
-func (f *File) ColorMeta(git GitStatus) string {
-	return getMeta("", f, git)
+// ColorMeta will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File) and its' length.
+func (f *File) ColorMeta(git GitStatus) (string, int) {
+	meta, length := getMeta("", f, git)
+	return meta, length
 }
 
-func getMeta(pad string, file *File, git GitStatus) string {
+func getMeta(pad string, file *File, git GitStatus) (string, int) {
+	width := 0
 	buf := new(bytes.Buffer)
-	cperm := getColorizePermission(file.Stat.Mode())
-	cmodTime := getColorizedModTime(file.Stat.ModTime())
-	fsize := file.Size
-	cfsize := getColorizedSize(fsize)
+	cperm := file.ColorPermission()
+	width += len(fmt.Sprintf("%v", file.Stat.Mode())) + 2
+	cmodTime := file.ColorModifyTime()
+	width += len(fmt.Sprint(file.ModifiedTime().Format("01-02-06 15:04"))) + 1
+	cfsize := file.ColorSize()
 	if file.IsDir() {
 		cfsize = KindLSColorString("-", fmt.Sprintf("%6s", "-"))
 	}
+	width += 7
+	width += len(urname) + len(gpname) + 1
 	if git.NoGit {
 		printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime)
 	} else {
-		cgit := getColorizedGitStatus(git, file)
+		cgit := file.ColorGitStatus(git)
+		width += 4
 		printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime, cgit)
 	}
-	return string(buf.Bytes())
+	return string(buf.Bytes()), width + 1
 }
