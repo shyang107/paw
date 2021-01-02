@@ -78,6 +78,12 @@ func NewFile(path string) (*File, error) {
 	if list, err = xattr.List(path); err != nil {
 		return nil, err
 	}
+	if len(list) > 0 {
+		for i := 0; i < len(list); i++ {
+			xl, _ := xattr.Get(path, list[i])
+			list[i] = fmt.Sprintf("%s (len %d)", list[i], len(xl))
+		}
+	}
 	return &File{
 		Path:        path,
 		Dir:         dir,

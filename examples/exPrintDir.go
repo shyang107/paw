@@ -47,4 +47,22 @@ func exPrintDir(root string) {
 	// 	}
 	// }
 
+	// fis, _ := ioutil.ReadDir(r)
+	// for _, fi := range fis {
+	// 	path := filepath.Join(root, fi.Name())
+	// 	var list []string
+	// 	if list, err = xattr.List(path); err != nil {
+	// 		paw.Error.Print(err)
+	// 		continue
+	// 	}
+	// 	if len(list) > 0 {
+	// 		fmt.Println(fi.Name())
+	// 		for _, v := range list {
+	// 			vp, _ := xattr.Get(path, v)
+	// 			fmt.Printf("    %s %d %d\n", v, len(v), len(vp))
+
+	// 		}
+	// 	}
+	// }
+
 }
