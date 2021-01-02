@@ -77,7 +77,7 @@ const (
 )
 
 // PrintDir will find files using codintion `ignore` func
-func PrintDir(w io.Writer, path string, opt *PrintDirOption, s *PDirSortOption, pad string) error {
+func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, s *PDirSortOption, pad string) error {
 	root, err := filepath.Abs(path)
 	if err != nil {
 		return err
@@ -106,6 +106,7 @@ func PrintDir(w io.Writer, path string, opt *PrintDirOption, s *PDirSortOption, 
 	// fl.IsSort = false
 	fl.SetWriters(w)
 
+	fl.IsGrouped = isGrouped
 	fl.IsSort = s.IsSort
 	if !fl.IsSort {
 		goto FIND

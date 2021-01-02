@@ -31,9 +31,10 @@ type FileList struct {
 	buf       *bytes.Buffer
 	writer    io.Writer
 	// writers   []io.Writer
-	IsSort  bool // increasing order of Lower(path)
-	filesBy FilesBy
-	dirsBy  DirsBy
+	IsSort    bool // increasing order of Lower(path)
+	filesBy   FilesBy
+	dirsBy    DirsBy
+	IsGrouped bool // grouping files and directories separetly
 }
 
 // NewFileList will return the instance of `FileList`
@@ -42,13 +43,14 @@ func NewFileList(root string) *FileList {
 		return &FileList{}
 	}
 	fl := &FileList{
-		root:    root,
-		store:   make(map[string][]*File),
-		dirs:    []string{},
-		buf:     new(bytes.Buffer),
-		IsSort:  true,
-		filesBy: nil,
-		dirsBy:  nil,
+		root:      root,
+		store:     make(map[string][]*File),
+		dirs:      []string{},
+		buf:       new(bytes.Buffer),
+		IsSort:    true,
+		filesBy:   nil,
+		dirsBy:    nil,
+		IsGrouped: false,
 	}
 	fl.SetWriters(fl.buf)
 	return fl
@@ -319,6 +321,12 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 
 var (
 	DefaultFilesBy FilesBy = func(fi *File, fj *File) bool {
+
+		if fi.IsDir() && fj.IsFile() {
+			return true
+		} else if fi.IsFile() && fj.IsDir() {
+			return false
+		}
 		return paw.ToLower(fi.Path) < paw.ToLower(fj.Path)
 	}
 	DefaultDirsBy DirsBy = func(di string, dj string) bool {
@@ -357,7 +365,23 @@ func (f *FileList) SortBy(dirsBy DirsBy, filesBy FilesBy) {
 	f.dirsBy.Sort(f.dirs)
 	for _, dir := range f.dirs {
 		if len(f.store[dir]) > 1 {
-			f.filesBy.Sort(f.store[dir][1:])
+			if !f.IsGrouped {
+				f.filesBy.Sort(f.store[dir][1:])
+			} else {
+				sfiles := []*File{}
+				sdirs := []*File{}
+				for _, v := range f.store[dir][1:] {
+					if v.IsDir() {
+						sdirs = append(sdirs, v)
+					} else {
+						sfiles = append(sfiles, v)
+					}
+				}
+				f.filesBy.Sort(sdirs)
+				f.filesBy.Sort(sfiles)
+				copy(f.store[dir][1:], sdirs)
+				copy(f.store[dir][len(sdirs)+1:], sfiles)
+			}
 		}
 	}
 }
