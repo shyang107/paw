@@ -83,6 +83,25 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, s *
 		return err
 	}
 
+	if s == nil {
+		s = &PDirSortOption{
+			IsSort:  true,
+			SortWay: PDSortByName,
+		}
+	}
+
+	if opt == nil {
+		opt = &PrintDirOption{
+			Depth:  0,
+			OutOpt: PListView,
+			// OutOpt: PTreeView,
+			// OutOpt: PListTreeView,
+			// OutOpt: PLevelView,
+			// OutOpt: PTableView,
+			// OutOpt: PClassifyView,
+			Ignore: DefaultIgnoreFn,
+		}
+	}
 	file, err := NewFile(path)
 	if err != nil {
 		return err
@@ -107,11 +126,11 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, s *
 	fl.SetWriters(w)
 
 	fl.IsGrouped = isGrouped
+
 	fl.IsSort = s.IsSort
 	if !fl.IsSort {
 		goto FIND
 	}
-
 	if opt.OutOpt != PTreeView || opt.OutOpt != PListTreeView {
 		if s.IsSort {
 			switch s.SortWay {
