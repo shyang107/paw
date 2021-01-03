@@ -53,11 +53,11 @@ const (
 
 var pdview PrintDirType
 
-// PrintDirSort defines sorting way view of PrintDir
+// PrintDirSortOption defines sorting way view of PrintDir
 //
 // Defaut:
 //  increasing sort by lower name of path
-type PDirSortOption struct {
+type PrintDirSortOption struct {
 	IsSort  bool
 	SortWay PDSortFlag
 }
@@ -78,15 +78,30 @@ const (
 	PDSortByReverseSize  = PDSortBySize | PDSortReverse
 )
 
+type PDFiltFlag int
+
+const (
+	PDFiltNoEmptyDir = 1 << iota
+	PDFiltJustDirs
+	PDFiltJustFiles
+	PDFiltJustDirsButNoEmpty     = PDFiltNoEmptyDir | PDFiltJustDirs
+	PDFiltJustFilesButNoEmptyDir = PDFiltJustFiles
+)
+
+type PrintDirFilterOption struct {
+	IsFilt  bool
+	FiltWay PDFiltFlag
+}
+
 // PrintDir will find files using codintion `ignore` func
-func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, s *PDirSortOption, pad string) error {
+func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sortOpt *PrintDirSortOption, filtOpt *PrintDirFilterOption, pad string) error {
 	root, err := filepath.Abs(path)
 	if err != nil {
 		return err
 	}
 
-	if s == nil {
-		s = &PDirSortOption{
+	if sortOpt == nil {
+		sortOpt = &PrintDirSortOption{
 			IsSort:  true,
 			SortWay: PDSortByName,
 		}
@@ -131,13 +146,13 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, s *
 
 	fl.IsGrouped = isGrouped
 
-	fl.IsSort = s.IsSort
+	fl.IsSort = sortOpt.IsSort
 	if !fl.IsSort {
 		goto FIND
 	}
 	if opt.OutOpt != PTreeView || opt.OutOpt != PListTreeView {
-		if s.IsSort {
-			switch s.SortWay {
+		if sortOpt.IsSort {
+			switch sortOpt.SortWay {
 			case PDSortByMtime:
 				// paw.Info.Println("PDSortByMtime")
 				fl.SetFilesSorter(func(fi, fj *File) bool {
@@ -183,6 +198,23 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, s *
 	}
 FIND:
 	fl.FindFiles(opt.Depth, opt.Ignore)
+
+	if filtOpt != nil && filtOpt.IsFilt {
+		switch filtOpt.FiltWay {
+		case PDFiltNoEmptyDir: // no empty dir
+			flf := NewFileListFilter(fl, []Filter{FiltEmptyDirs})
+			flf.Filt()
+		case PDFiltJustDirs: // no files
+			flf := NewFileListFilter(fl, []Filter{FiltJustDirs})
+			flf.Filt()
+		case PDFiltJustFiles: // PDFiltJustFilesButNoEmptyDir // no dirs
+			flf := NewFileListFilter(fl, []Filter{FiltJustFiles})
+			flf.Filt()
+		case PDFiltJustDirsButNoEmpty: // no file and no empty dir
+			flf := NewFileListFilter(fl, []Filter{FiltEmptyDirs, FiltJustDirs})
+			flf.Filt()
+		}
+	}
 
 	switch opt.OutOpt {
 	case PListView:

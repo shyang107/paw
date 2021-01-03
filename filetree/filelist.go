@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/mattn/go-runewidth"
 
 	"github.com/karrick/godirwalk"
@@ -127,17 +129,17 @@ func (f *FileList) NDirs() int {
 
 // NFiles is the numbers of all files
 func (f *FileList) NFiles() int {
-	var nf int
-	dirs := f.Dirs()
-	fm := f.Map()
+	dirs := f.dirs
+	fm := f.store
+	nf := 0
 	for _, dir := range dirs {
-		for _, file := range fm[dir] {
-			if !file.IsDir() {
+		for _, file := range fm[dir][1:] {
+			if file.IsFile() {
 				nf++
 			}
 		}
 	}
-	return nf
+	return nf //- f.NDirs()
 }
 
 // NSubDirsAndFiles will return the number of sub-dirs and sub-files in dir
@@ -595,12 +597,15 @@ func (f *FileList) ToListExtendView(pad string) []byte {
 func toListView(f *FileList, pad string, isExtended bool) []byte {
 	var (
 		// w     = new(bytes.Buffer)
-		buf   = f.buf
-		w     = f.writer
-		dirs  = f.dirs
-		fm    = f.store
-		git   = f.GetGitStatus()
-		chead = f.GetHead4Meta(pad, urname, gpname, git)
+		buf                     = f.buf
+		w                       = f.writer
+		dirs                    = f.dirs
+		fm                      = f.store
+		git                     = f.GetGitStatus()
+		chead                   = f.GetHead4Meta(pad, urname, gpname, git)
+		ntdirs, nsdirs, ntfiles = 1, 0, 0
+		fNDirs                  = f.NDirs()
+		fNFiles                 = f.NFiles()
 	)
 	buf.Reset()
 
@@ -608,37 +613,53 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 
 	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getDirName(f.root, ""), KindLSColorString("di", ctdsize))
 	fmt.Fprintln(w, head)
+
+	if f.NDirs() == 0 && f.NFiles() == 0 {
+		goto END
+	}
+
 	printBanner(w, pad, "=", 80)
 
-	fmt.Fprintln(w, chead)
-
-	for i, dir := range dirs {
+	if funk.IndexOfString(f.dirs, RootMark) != -1 {
+		fmt.Fprintln(w, chead)
+	}
+	for _, dir := range dirs {
 		sumsize := uint64(0)
 		nfiles := 0
 		ndirs := 0
-		for jj, file := range fm[dir] {
-			if file.IsDir() {
-				if jj == 0 {
-					if !paw.EqualFold(file.Dir, RootMark) {
-						if f.depth != 0 {
-							fmt.Fprintf(w, "%s%v\n", pad, file.ColorDirName(f.root))
-							fmt.Fprintln(w, chead)
-						}
+		sntd := ""
+		if len(fm[dir]) > 1 {
+			if !paw.EqualFold(dir, RootMark) {
+				if f.depth != 0 {
+					// sntd = KindEXAColorString("dir", fmt.Sprintf("D%d:", ntdirs))
+					fmt.Fprintf(w, "%s%s%v\n", pad, sntd, GetColorizedDirName(dir, f.root))
+					if len(fm[dir]) > 1 {
+						ntdirs++
+						fmt.Fprintln(w, chead)
 					}
-					continue
 				}
-				ndirs++
-			} else {
-				nfiles++
 			}
-			if !file.IsDir() {
+		}
+		// fmt.Fprintln(w, chead)
+		for _, file := range fm[dir][1:] {
+			sntf := ""
+			if file.IsDir() {
+				ndirs++
+				nsdirs++
+				// sntf = file.LSColorString(fmt.Sprintf("D%d(%d):", ndirs, nsdirs))
+			}
+			if file.IsFile() {
+				nfiles++
+				ntfiles++
 				sumsize += file.Size
+				// sntf = file.LSColorString(fmt.Sprintf("F%d(%d):", nfiles, ntfiles))
 			}
 			meta, metalength := file.ColorMeta(git)
-			fmt.Fprintf(w, "%s%s%s\n", pad, meta, file.ColorBaseName())
+			fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, meta, file.ColorBaseName())
+
 			if isExtended {
 				nx := len(file.XAttributes)
-				sp := paw.Repeat(" ", metalength)
+				sp := paw.Repeat(" ", metalength+len(sntf))
 				if nx > 0 {
 					edge := EdgeTypeMid
 					for i := 0; i < nx; i++ {
@@ -652,16 +673,30 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 		}
 
 		if f.depth != 0 {
-			printDirSummary(w, pad, ndirs, nfiles, sumsize)
-			if i < len(dirs)-1 {
-				printBanner(w, pad, "-", 80)
+			if len(fm[dir]) > 1 {
+				printDirSummary(w, pad, ndirs, nfiles, sumsize)
+				// if i < len(dirs)-1 && nsdirs < fNDirs && ntfiles < fNFiles {
+				// 	printBanner(w, pad, "-", 80)
+				// }
+				switch {
+				case fNFiles == 0:
+					if nsdirs < fNDirs {
+						printBanner(w, pad, "-", 80)
+					}
+				default:
+					if nsdirs < fNDirs && ntfiles < fNFiles {
+						printBanner(w, pad, "-", 80)
+					}
+				}
 			}
 		}
 	}
-
 	printBanner(w, pad, "=", 80)
-	printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
+END:
+	// printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
+	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
 
+	// spew.Dump(dirs)
 	return buf.Bytes()
 }
 

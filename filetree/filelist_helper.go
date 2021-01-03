@@ -119,7 +119,15 @@ func GetColorizedDirName(path string, root string) string {
 }
 
 func getDirName(path string, root string) string {
-	file, _ := NewFile(path)
+	file, err := NewFile(path)
+	if err != nil {
+		dir, name := filepath.Split(path)
+		if len(root) > 0 {
+			dir = paw.Replace(dir, root, "..", 1)
+		}
+		name = KindEXAColorString("dir", dir) + KindLSColorString("di", name)
+		return name
+	}
 	name := file.LSColorString(file.BaseName)
 	if file.IsDir() {
 		dir, _ := filepath.Split(file.Path)
@@ -217,7 +225,7 @@ func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uin
 }
 
 func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	fmt.Fprintf(w, "%s\n%s%v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
+	fmt.Fprintf(w, "%s\n%sAccumulation: %v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
 }
 
 func printFileItem(w io.Writer, pad string, parameters ...string) {
