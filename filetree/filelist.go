@@ -539,7 +539,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 		goto END
 	}
 
-	for _, dir := range dirs {
+	for i, dir := range dirs {
 		sumsize := uint64(0)
 		nfiles := 0
 		ndirs := 0
@@ -558,12 +558,11 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 				}
 			}
 		}
-
+		fpad := ppad
+		if i > 1 {
+			fpad += sppad
+		}
 		for _, file := range fm[dir][1:] {
-			// sntf := ""
-			// if f.depth != 0 {
-			// 	j1 = len(cast.ToString(len(fm[dir]) - 1))
-			// }
 			jstr := ""
 			if file.IsDir() {
 				ndirs++
@@ -581,8 +580,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 			cfsize := file.ColorSize()
 			ctime := file.ColorModifyTime()
 			name := file.ColorBaseName()
-			printFileItem(w, ppad+sppad, jstr, cperm, cfsize, ctime, name)
-			// fmt.Fprintf(w, "%s%s%s%s\n", pad+sppad, jstr, meta, file.ColorBaseName())
+			printFileItem(w, fpad, jstr, cperm, cfsize, ctime, name)
 			if isExtended {
 				metalength := j1 + 11 + 6 + 14 + 5
 				sp := paw.Repeat(" ", metalength)
@@ -593,24 +591,21 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 						if i == nx-1 {
 							edge = EdgeTypeEnd
 						}
-						fmt.Fprintf(w, "%s%s%s %s\n", ppad+sppad, sp, NewEXAColor("-").Sprint(edge), file.XAttributes[i])
+						fmt.Fprintf(w, "%s%s%s %s\n", fpad, sp, NewEXAColor("-").Sprint(edge), file.XAttributes[i])
 					}
 				}
 			}
 		}
 		if f.depth != 0 {
 			if len(fm[dir]) > 1 {
-				printDirSummary(w, ppad+"    ", ndirs, nfiles, sumsize)
-				// if i < len(dirs)-1 && nsdirs < fNDirs && ntfiles < fNFiles {
-				// 	printBanner(w, pad, "-", 80)
-				// }
+				printDirSummary(w, fpad, ndirs, nfiles, sumsize)
 				switch {
 				case fNFiles == 0:
 					if nsdirs < fNDirs {
 						printBanner(w, pad, "-", 80)
 					}
 				default:
-					if nsdirs < fNDirs && ntfiles < fNFiles {
+					if nsdirs <= fNDirs && ntfiles < fNFiles {
 						printBanner(w, pad, "-", 80)
 					}
 				}
@@ -727,16 +722,13 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 		if f.depth != 0 {
 			if len(fm[dir]) > 1 {
 				printDirSummary(w, pad, ndirs, nfiles, sumsize)
-				// if i < len(dirs)-1 && nsdirs < fNDirs && ntfiles < fNFiles {
-				// 	printBanner(w, pad, "-", 80)
-				// }
 				switch {
 				case fNFiles == 0:
 					if nsdirs < fNDirs {
 						printBanner(w, pad, "-", 80)
 					}
 				default:
-					if nsdirs < fNDirs && ntfiles < fNFiles {
+					if nsdirs <= fNDirs && ntfiles < fNFiles {
 						printBanner(w, pad, "-", 80)
 					}
 				}

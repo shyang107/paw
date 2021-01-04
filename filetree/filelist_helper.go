@@ -158,7 +158,10 @@ func getDirInfo(fl *FileList, file *File) string {
 	}
 	di := fmt.Sprintf("%v dirs", nd-1)
 	fi := fmt.Sprintf("%v files", nf)
-	return "[" + KindEXAColorString("di", di) + ", " + KindEXAColorString("fi", fi) + "]"
+	// return "[" + KindEXAColorString("di", di) + ", " + KindEXAColorString("dir", fi) + "]"
+	return "[" + KindEXAColorString("dir", di) + ", " + KindEXAColorString("dir", fi) + "]"
+	// cl := color.New(EXAColors["dir"]...).Add(color.Underline)
+	// return "[" + cl.Sprint(di+", "+fi) + "]"
 }
 
 func printLTList(w io.Writer, pad string, parameters ...string) {
