@@ -1,7 +1,6 @@
 package filetree
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/thoas/go-funk"
@@ -35,8 +34,20 @@ func (ft *fileListFilter) Filt() {
 func removeFile(s []*File, i int) []*File {
 	return append(s[:i], s[i+1:]...)
 }
+
 func removeString(s []string, i int) []string {
 	return append(s[:i], s[i+1:]...)
+}
+
+func indexOf(files []*File, cond func(f *File) bool) int {
+	idx := -1
+	for i, file := range files {
+		if cond(file) {
+			idx = i
+			break
+		}
+	}
+	return idx
 }
 
 var (
@@ -54,43 +65,43 @@ var (
 				// fmt.Println("empty:", dir, name, pdir, i)
 			}
 			if hasEmpty {
-				jdx := -1
-				for j, file := range fl.store[pdir] {
-					// fmt.Println("    ", j, file.BaseName, name)
-					if file.IsDir() && file.BaseName == name {
-						jdx = j
-						// fmt.Println("    del", pdir, file.BaseName, jdx)
-						break
+				jdx := indexOf(fl.store[pdir], func(f *File) bool {
+					if f.IsDir() && f.BaseName == name {
+						return true
 					}
+					return false
+				})
+				if jdx != -1 {
+					fl.store[pdir] = removeFile(fl.store[pdir], jdx)
 				}
-				fl.store[pdir] = removeFile(fl.store[pdir], jdx)
 				hasEmpty = false
 			}
 		}
 		for _, v := range emptyDirs {
 			delete(fl.store, v)
-			i := funk.IndexOfString(fl.dirs, v)
-			if i != -1 {
-				fl.dirs = removeString(fl.dirs, i)
+			idx := funk.IndexOfString(fl.dirs, v)
+			if idx != -1 {
+				fl.dirs = removeString(fl.dirs, idx)
 			}
 		}
 	}
 
 	FiltJustDirs Filter = func(fl *FileList) {
-		nd, nf := 0, 0
+		// nd, nf := 0, 0
 		for _, dir := range fl.dirs {
 			var dirs []*File
-			for _, file := range fl.store[dir] {
+			// dirs = append(dirs, )
+			for _, file := range fl.store[dir][:] {
 				if file.IsDir() {
 					// nd++
 					dirs = append(dirs, file)
 				}
 			}
 			fl.store[dir] = dirs
-			nd += len(dirs) - 1
+			// nd += len(dirs) - 1
 		}
-		fmt.Println("ndirs:", len(fl.dirs), "nd:", nd, "NDirs:", fl.NDirs())
-		fmt.Println("nstore:", len(fl.store), "nfiles:", nf, "NFiles:", fl.NFiles())
+		// fmt.Println("ndirs:", len(fl.dirs), "nd:", nd, "NDirs:", fl.NDirs())
+		// fmt.Println("nstore:", len(fl.store), "nfiles:", nf, "NFiles:", fl.NFiles())
 	}
 
 	FiltJustFiles Filter = func(fl *FileList) {
@@ -104,6 +115,7 @@ var (
 				continue
 			}
 			var files []*File
+			files = append(files, fl.store[dir][0])
 			for _, file := range fl.store[dir][1:] {
 				if !file.IsDir() {
 					nf++
@@ -118,7 +130,7 @@ var (
 		}
 		fl.dirs = dirs
 		// spew.Dump(fl.dirs)
-		fmt.Println("ndirs:", len(fl.dirs), "nd:", nd, "NDirs:", fl.NDirs())
-		fmt.Println("nstore:", len(fl.store), "nfiles:", nf, "NFiles:", fl.NFiles())
+		// fmt.Println("ndirs:", len(fl.dirs), "nd:", nd, "NDirs:", fl.NDirs())
+		// fmt.Println("nstore:", len(fl.store), "nfiles:", nf, "NFiles:", fl.NFiles())
 	}
 )

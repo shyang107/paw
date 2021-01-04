@@ -225,7 +225,7 @@ func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uin
 }
 
 func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	fmt.Fprintf(w, "%s\n%sAccumulation: %v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
+	fmt.Fprintf(w, "%s\n%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
 }
 
 func printFileItem(w io.Writer, pad string, parameters ...string) {

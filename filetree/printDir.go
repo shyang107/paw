@@ -43,6 +43,8 @@ const (
 	PTreeView
 	// PLevelView is the option of level view using in PrintDir
 	PLevelView
+	// PLevelExtendView is the option of level view icluding extend attributes using in PrintDir
+	PLevelExtendView
 	// PTableView is the option of table view using in PrintDir
 	PTableView
 	// PClassifyView display type indicator by file names (like as `exa -F` or `exa --classify`) in PrintDir
@@ -226,7 +228,9 @@ FIND:
 	case PListTreeView:
 		fl.ToListTreeView(pad)
 	case PLevelView:
-		fl.ToLevelView(pad)
+		fl.ToLevelView(pad, false)
+	case PLevelExtendView:
+		fl.ToLevelView(pad, true)
 	case PTableView:
 		fl.ToTableView(pad)
 	case PClassifyView:

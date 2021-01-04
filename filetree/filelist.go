@@ -134,7 +134,7 @@ func (f *FileList) NFiles() int {
 	nf := 0
 	for _, dir := range dirs {
 		for _, file := range fm[dir][1:] {
-			if file.IsFile() {
+			if file.IsFile() || !file.IsDir() {
 				nf++
 			}
 		}
@@ -408,7 +408,7 @@ func (f *FileList) ToTableViewString(pad string) string {
 // ToTableView will return the []byte of FileList in table form
 // 	`size` of directory shown in the returned value, is accumulated size of sub contents
 func (f *FileList) ToTableView(pad string) []byte {
-
+	// TODO modify ToTableView by filter
 	var (
 		// w      = new(bytes.Buffer)
 		buf    = f.buf    //f.Buffer()
@@ -494,81 +494,133 @@ func (f *FileList) ToTableView(pad string) []byte {
 // ToLevelViewString will return the string of FileList in table form
 // 	`size` of directory shown in the string, is accumulated size of sub contents
 func (f *FileList) ToLevelViewString(pad string) string {
-	return string(f.ToLevelView(pad))
+	return string(f.ToLevelView(pad, false))
+}
+
+// ToLevelExtendViewString will return the string of FileList in table form
+// 	`size` of directory shown in the string, is accumulated size of sub contents
+func (f *FileList) ToLevelExtendViewString(pad string) string {
+	return string(f.ToLevelView(pad, true))
 }
 
 // ToLevelView will return the []byte of FileList in table form
 // 	`size` of directory shown in the returned value, is accumulated size of sub contents
-func (f *FileList) ToLevelView(pad string) []byte {
+// 	If `isExtended` is true to involve extend attribute
+func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 	var (
 		// w     = new(bytes.Buffer)
-		buf   = f.Buffer()
-		w     = f.Writer()
-		dirs  = f.Dirs()
-		fm    = f.Map()
-		width = 80
+		buf     = f.Buffer()
+		w       = f.Writer()
+		dirs    = f.Dirs()
+		fm      = f.Map()
+		width   = 80
+		fNDirs  = f.NDirs()
+		fNFiles = f.NFiles()
+		// git     = f.GetGitStatus()
+		// chead                   = f.GetHead4Meta(pad, urname, gpname, git)
+		ntdirs  = 1
+		nsdirs  = 0
+		ntfiles = 0
+		i1      = len(cast.ToString(fNDirs))
+		j1      = max(i1, len(cast.ToString(fNFiles)))
+		j       = 0
+		sppad   = "    "
 	)
 	buf.Reset()
 
-	sdsize := ByteSize(f.totalSize)
-	fmt.Fprintf(w, "%sRoot directory: %v, size ≈ %v\n", pad, getDirName(f.root, ""), KindLSColorString("di", sdsize))
-	fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat("=", width))
+	ctdsize := ByteSize(f.totalSize)
 
-	i1 := len(cast.ToString(f.NDirs()))
-	j1 := max(i1, len(cast.ToString(f.NFiles())))
-	j := 0
-	for i, dir := range dirs {
-		ppad := pad
-		istr := KindLSColorString("di", fmt.Sprintf("%[2]*[1]d.", i, i1))
+	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getDirName(f.root, ""), KindLSColorString("di", ctdsize))
+	fmt.Fprintln(w, head)
+
+	printBanner(w, pad, "=", width)
+
+	if fNDirs == 0 && fNFiles == 0 {
+		goto END
+	}
+
+	for _, dir := range dirs {
 		sumsize := uint64(0)
 		nfiles := 0
 		ndirs := 0
-		for jj, file := range fm[dir] {
-			cperm := file.ColorPermission()
-			fsize := file.Size
-			cfsize := file.ColorSize()
-			if file.IsDir() {
-				cfsize = NewEXAColor("-").Sprint(fmt.Sprintf("%6s", "-"))
-				if jj == 0 {
-					ppad += paw.Repeat("    ", len(file.DirSlice())-1)
-					name := file.ColorDirName(f.root)
-					if f.depth != 0 {
-						if paw.EqualFold(file.Dir, RootMark) {
-							ppad = pad
-							name = file.ColorDirName("")
-						}
-						printFileItem(w, ppad, istr, cperm, name)
+		ppad := pad
+		// sntd := ""
+		if len(fm[dir]) > 1 {
+			if !paw.EqualFold(dir, RootMark) {
+				if f.depth != 0 {
+					istr := KindLSColorString("di", fmt.Sprintf("G%-[2]*[1]d", ntdirs, i1))
+					ppad += paw.Repeat(sppad, len(paw.Split(dir, PathSeparator))-1)
+					name := GetColorizedDirName(dir, f.root)
+					printFileItem(w, ppad, istr, "", name)
+					if len(fm[dir]) > 1 {
+						ntdirs++
 					}
-					continue
 				}
 			}
-			if f.depth != 0 {
-				j1 = len(cast.ToString(len(fm[dir]) - 1))
-			}
+		}
+
+		for _, file := range fm[dir][1:] {
+			// sntf := ""
+			// if f.depth != 0 {
+			// 	j1 = len(cast.ToString(len(fm[dir]) - 1))
+			// }
 			jstr := ""
-			if !file.IsDir() {
-				sumsize += fsize
-				j++
-				nfiles++
-				jstr = fmt.Sprintf("%[2]*[1]d.", j, j1)
-			} else {
+			if file.IsDir() {
 				ndirs++
-				jstr = KindLSColorString("di", fmt.Sprintf("%[2]*[1]d.", ndirs, j1))
+				nsdirs++
+				jstr = file.LSColorString(fmt.Sprintf("D%-[2]*[1]d", nsdirs, j1))
 			}
+			if file.IsFile() || !file.IsDir() {
+				nfiles++
+				ntfiles++
+				sumsize += file.Size
+				j++
+				jstr = file.LSColorString(fmt.Sprintf("F%-[2]*[1]d", ntfiles, j1))
+			}
+			cperm := file.ColorPermission()
+			cfsize := file.ColorSize()
+			ctime := file.ColorModifyTime()
 			name := file.ColorBaseName()
-			printFileItem(w, ppad+"    ", jstr, cperm, cfsize, name)
+			printFileItem(w, ppad+sppad, jstr, cperm, cfsize, ctime, name)
+			// fmt.Fprintf(w, "%s%s%s%s\n", pad+sppad, jstr, meta, file.ColorBaseName())
+			if isExtended {
+				metalength := j1 + 11 + 6 + 14 + 5
+				sp := paw.Repeat(" ", metalength)
+				nx := len(file.XAttributes)
+				if nx > 0 {
+					edge := EdgeTypeMid
+					for i := 0; i < nx; i++ {
+						if i == nx-1 {
+							edge = EdgeTypeEnd
+						}
+						fmt.Fprintf(w, "%s%s%s %s\n", ppad+sppad, sp, NewEXAColor("-").Sprint(edge), file.XAttributes[i])
+					}
+				}
+			}
 		}
 		if f.depth != 0 {
-			printDirSummary(w, ppad+"    ", ndirs, nfiles, sumsize)
-
-			if i != len(dirs)-1 {
-				printBanner(w, pad, "-", width)
+			if len(fm[dir]) > 1 {
+				printDirSummary(w, ppad+"    ", ndirs, nfiles, sumsize)
+				// if i < len(dirs)-1 && nsdirs < fNDirs && ntfiles < fNFiles {
+				// 	printBanner(w, pad, "-", 80)
+				// }
+				switch {
+				case fNFiles == 0:
+					if nsdirs < fNDirs {
+						printBanner(w, pad, "-", 80)
+					}
+				default:
+					if nsdirs < fNDirs && ntfiles < fNFiles {
+						printBanner(w, pad, "-", 80)
+					}
+				}
 			}
 		}
 	}
 
 	printBanner(w, pad, "=", width)
-	printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
+END:
+	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
 
 	return buf.Bytes()
 }
@@ -614,7 +666,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getDirName(f.root, ""), KindLSColorString("di", ctdsize))
 	fmt.Fprintln(w, head)
 
-	if f.NDirs() == 0 && f.NFiles() == 0 {
+	if fNDirs == 0 && fNFiles == 0 {
 		goto END
 	}
 
@@ -648,7 +700,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 				nsdirs++
 				// sntf = file.LSColorString(fmt.Sprintf("D%d(%d):", ndirs, nsdirs))
 			}
-			if file.IsFile() {
+			if file.IsFile() || !file.IsDir() {
 				nfiles++
 				ntfiles++
 				sumsize += file.Size
@@ -691,6 +743,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 			}
 		}
 	}
+
 	printBanner(w, pad, "=", 80)
 END:
 	// printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
@@ -712,6 +765,7 @@ func (f *FileList) ToListTreeView(pad string) []byte {
 }
 
 func toListTreeView(f *FileList, pad string) []byte {
+	// TODO modify toListTreeView by filter
 	var (
 		buf = f.Buffer()
 		// w  = new(bytes.Buffer)
