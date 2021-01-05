@@ -331,6 +331,7 @@ var (
 		}
 		return paw.ToLower(fi.Path) < paw.ToLower(fj.Path)
 	}
+
 	DefaultDirsBy DirsBy = func(di string, dj string) bool {
 		return paw.ToLower(di) < paw.ToLower(dj)
 	}
@@ -393,22 +394,39 @@ func (f *FileList) ToTreeViewString(pad string) string {
 	return string(f.ToTreeView(pad))
 }
 
+// ToTreeExtendViewString will return the string of FileList in tree form
+func (f *FileList) ToTreeExtendViewString(pad string) string {
+	return string(f.ToTreeExtendView(pad))
+}
+
 // ToTreeView will return the []byte of FileList in tree form
 func (f *FileList) ToTreeView(pad string) []byte {
 	pdview = PTreeView
-	return toListTreeView(f, pad)
+	return toListTreeView(f, pad, false)
+}
+
+// ToTreeExtendView will return the []byte of FileList icluding extend attribute in tree form
+func (f *FileList) ToTreeExtendView(pad string) []byte {
+	pdview = PTreeView
+	return toListTreeView(f, pad, true)
 }
 
 // ToTableViewString will return the string of FileList in table form
 // 	`size` of directory shown in the string, is accumulated size of sub contents
 func (f *FileList) ToTableViewString(pad string) string {
-	return string(f.ToTableView(pad))
+	return string(f.ToTableView(pad, false))
+}
+
+// ToTableExtendViewString will return the string involving extend attribute of FileList in table form
+// 	`size` of directory shown in the string, is accumulated size of sub contents
+func (f *FileList) ToTableExtendViewString(pad string) string {
+	return string(f.ToTableView(pad, true))
 }
 
 // ToTableView will return the []byte of FileList in table form
 // 	`size` of directory shown in the returned value, is accumulated size of sub contents
-func (f *FileList) ToTableView(pad string) []byte {
-	// TODO modify ToTableView by filter
+// 	If `isExtended` is true to involve extend attribute
+func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 	var (
 		// w      = new(bytes.Buffer)
 		buf    = f.buf    //f.Buffer()
@@ -424,7 +442,7 @@ func (f *FileList) ToTableView(pad string) []byte {
 
 	tf := &paw.TableFormat{
 		Fields:    []string{"No.", "Mode", "Size", "Files"},
-		LenFields: []int{5, 10, 6, 80},
+		LenFields: []int{5, 11, 6, 75},
 		Aligns:    []paw.Align{paw.AlignRight, paw.AlignRight, paw.AlignRight, paw.AlignLeft},
 		Padding:   pad,
 	}
@@ -442,7 +460,12 @@ func (f *FileList) ToTableView(pad string) []byte {
 		for jj, file := range fm[dir] {
 			fsize := file.Size
 			sfsize := ByteSize(fsize)
-			mode := file.Stat.Mode()
+			mode := fmt.Sprintf("%v", file.Stat.Mode())
+			if len(file.XAttributes) > 0 {
+				mode += "@"
+			} else {
+				mode += " "
+			}
 			if jj == 0 && file.IsDir() {
 				idx := fmt.Sprintf("D%d", i)
 				sfsize = "-"
@@ -462,14 +485,19 @@ func (f *FileList) ToTableView(pad string) []byte {
 			}
 			jdx := fmt.Sprintf("d%d", ndirs+1)
 			name := file.ColorBaseName()
-			if !file.IsDir() {
+			if !file.IsDir() { // file, symlink, or ...
 				sumsize += fsize
 				j++
 				nfiles++
 				tf.PrintRow(j, mode, sfsize, name)
-			} else {
+			} else { // dir
 				ndirs++
 				tf.PrintRow(jdx, mode, "-", name)
+			}
+			if isExtended {
+				for _, x := range file.XAttributes {
+					tf.PrintRow("", "", "", x)
+				}
 			}
 
 		}
@@ -483,7 +511,7 @@ func (f *FileList) ToTableView(pad string) []byte {
 		}
 	}
 
-	tf.SetAfterMessage(fmt.Sprintf("\n%v directories, %v files, total %v.", nDirs, nFiles, ByteSize(f.totalSize)))
+	tf.SetAfterMessage(fmt.Sprintf("\nAccumulated %v directories, %v files, total %v.", nDirs, nFiles, ByteSize(f.totalSize)))
 	tf.PrintEnd()
 
 	f.EnableColor()
@@ -497,13 +525,13 @@ func (f *FileList) ToLevelViewString(pad string) string {
 	return string(f.ToLevelView(pad, false))
 }
 
-// ToLevelExtendViewString will return the string of FileList in table form
+// ToLevelExtendViewString will return the string involving extend attribute of FileList in level form
 // 	`size` of directory shown in the string, is accumulated size of sub contents
 func (f *FileList) ToLevelExtendViewString(pad string) string {
 	return string(f.ToLevelView(pad, true))
 }
 
-// ToLevelView will return the []byte of FileList in table form
+// ToLevelView will return the []byte of FileList in level form
 // 	`size` of directory shown in the returned value, is accumulated size of sub contents
 // 	If `isExtended` is true to involve extend attribute
 func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
@@ -591,7 +619,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 						if i == nx-1 {
 							edge = EdgeTypeEnd
 						}
-						fmt.Fprintf(w, "%s%s%s %s\n", fpad, sp, NewEXAColor("-").Sprint(edge), file.XAttributes[i])
+						fmt.Fprintf(w, "%s%s%s %s\n", fpad, sp, cdashp.Sprint(edge), cxp.Sprint(file.XAttributes[i]))
 					}
 				}
 			}
@@ -713,7 +741,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 						if i == nx-1 {
 							edge = EdgeTypeEnd
 						}
-						fmt.Fprintf(w, "%s%s%s %s\n", pad, sp, NewEXAColor("-").Sprint(edge), file.XAttributes[i])
+						fmt.Fprintf(w, "%s%s%s %s\n", pad, sp, cdashp.Sprint(edge), cxp.Sprint(file.XAttributes[i]))
 					}
 				}
 			}
@@ -753,11 +781,21 @@ func (f *FileList) ToListTreeViewString(pad string) string {
 // ToListTreeView will return the []byte of FileList in list+tree form (like as `exa -T(--tree)`)
 func (f *FileList) ToListTreeView(pad string) []byte {
 	pdview = PListTreeView
-	return toListTreeView(f, pad)
+	return toListTreeView(f, pad, false)
 }
 
-func toListTreeView(f *FileList, pad string) []byte {
-	// TODO modify toListTreeView by filter
+// ToListTreeExtendViewString will return the string of `ToListViewTree(pad)` in list+tree form (like as `exa -T(--tree)`)
+func (f *FileList) ToListTreeExtendViewString(pad string) string {
+	return string(f.ToListTreeExtendView(pad))
+}
+
+// ToListTreeExtendView will return the []byte of FileList in list+tree form (like as `exa -T(--tree)`)
+func (f *FileList) ToListTreeExtendView(pad string) []byte {
+	pdview = PListTreeView
+	return toListTreeView(f, pad, true)
+}
+
+func toListTreeView(f *FileList, pad string, isExtended bool) []byte {
 	var (
 		buf = f.Buffer()
 		// w  = new(bytes.Buffer)
@@ -798,10 +836,10 @@ func toListTreeView(f *FileList, pad string) []byte {
 			levelsEnded = append(levelsEnded, level)
 		}
 
-		printLTFile(w, level, levelsEnded, edge, f, file, git, pad)
+		printLTFile(w, level, levelsEnded, edge, f, file, git, pad, isExtended)
 
 		if file.IsDir() && len(fm[file.Dir]) > 1 {
-			printLTDir(w, level+1, levelsEnded, edge, f, file, git, pad)
+			printLTDir(w, level+1, levelsEnded, edge, f, file, git, pad, isExtended)
 		}
 	}
 
@@ -871,20 +909,8 @@ func classifyGridPrintFiles(w io.Writer, files []*File, lens []int, sumlen int, 
 	for i := 0; i < nfolds; i++ {
 		for iw := 0; iw < nFields; iw++ {
 			il := i*nFields + iw
-			ns := widths[iw] - runewidth.StringWidth(files[il].BaseName)
-			tail := ""
-			cname := files[il].ColorBaseName()
-			if files[il].IsDir() {
-				tail = "/" + paw.Repeat(" ", ns-1)
-			} else {
-				if files[il].IsLink() {
-					cname = files[il].LSColorString(files[il].BaseName)
-					tail = "@" + paw.Repeat(" ", ns-1)
-				} else {
-					tail = paw.Repeat(" ", ns)
-				}
-			}
-			fmt.Fprintf(w, "%v", cname+tail)
+			name := cgGetFileString(files[il], widths[iw])
+			fmt.Fprintf(w, "%v", name)
 		}
 		fmt.Fprintln(w)
 	}
@@ -893,23 +919,29 @@ func classifyGridPrintFiles(w io.Writer, files []*File, lens []int, sumlen int, 
 	if len(lens) > nw {
 		for i := nw; i < len(lens); i++ {
 			iw := i - nw
-			ns := widths[iw] - runewidth.StringWidth(files[i].BaseName)
-			tail := ""
-			cname := files[i].ColorBaseName()
-			if files[i].IsDir() {
-				tail = "/" + paw.Repeat(" ", ns-1)
-			} else {
-				if files[i].IsLink() {
-					cname = files[i].LSColorString(files[i].BaseName)
-					tail = "@" + paw.Repeat(" ", ns-1)
-				}
-				tail = paw.Repeat(" ", ns)
-			}
-			fmt.Fprintf(w, "%v", cname+tail)
+			name := cgGetFileString(files[i], widths[iw])
+			fmt.Fprintf(w, "%v", name)
 		}
 		fmt.Fprintln(w)
 	}
 	// fmt.Fprintln(w)
+}
+
+func cgGetFileString(file *File, width int) string {
+	ns := width - runewidth.StringWidth(file.BaseName)
+	tail := ""
+	cname := file.ColorBaseName()
+	if file.IsDir() {
+		tail = "/" + paw.Repeat(" ", ns-1)
+	} else {
+		if file.IsLink() {
+			cname = file.LSColorString(file.BaseName)
+			tail = "@" + paw.Repeat(" ", ns-1)
+		} else {
+			tail = paw.Repeat(" ", ns)
+		}
+	}
+	return cname + tail
 }
 
 func calWidth(lens []int, nFields, limit int) (widths []int) {
@@ -951,14 +983,6 @@ func calWidth(lens []int, nFields, limit int) (widths []int) {
 	return widths
 }
 
-func sum(a []int) int {
-	s := 0
-	for _, v := range a {
-		s += v
-	}
-	return s
-}
-
 func calNFields(lens []int, limit int) int {
 	count := len(lens)
 	n := 0
@@ -983,7 +1007,7 @@ func classifyPrintFiles(w io.Writer, files []*File) {
 	for _, file := range files {
 		cname := file.ColorBaseName()
 		if file.IsLink() {
-			cname = file.LSColorString(file.BaseName) + "@"
+			cname = file.LSColorString(file.BaseName) + cxp.Sprint("@")
 		}
 		if file.IsDir() {
 			fmt.Fprintf(w, "%s/  ", cname)

@@ -8,6 +8,8 @@ import (
 	"os/user"
 	"path/filepath"
 
+	"github.com/mattn/go-runewidth"
+
 	"time"
 
 	"github.com/fatih/color"
@@ -30,6 +32,11 @@ var (
 	EdgeTypeEnd      EdgeType = "└──" //treeprint.EdgeTypeEnd
 	IndentSize                = 3     //treeprint.IndentSize
 	SpaceIndentSize           = paw.Repeat(" ", IndentSize)
+	cdashp                    = NewEXAColor("-")
+	cxp                       = NewEXAColor("xattr")
+	chdp                      = NewEXAColor("hd")
+	cdirp                     = NewEXAColor("dir")
+	lsdip                     = NewLSColor("di")
 	currentuser, _            = user.Current()
 	urname                    = currentuser.Username
 	usergp, _                 = user.LookupGroupId(currentuser.Gid)
@@ -37,26 +44,43 @@ var (
 	curname, cgpname          = getColorizedUGName(urname, gpname)
 )
 
+func edgeWidth(edge EdgeType) int {
+	switch edge {
+	case EdgeTypeLink:
+		return 1
+	default:
+		// case EdgeTypeMid:
+		// case EdgeTypeEnd:
+		return 3
+	}
+}
+
 func printLTFile(wr io.Writer, level int, levelsEnded []int,
-	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string) {
+	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool) {
+
+	xlen := runewidth.StringWidth(pad)
 
 	meta := pad
 	if pdview == PListTreeView {
-		tmeta, _ := file.ColorMeta(git)
+		tmeta, lenmeta := file.ColorMeta(git)
 		meta += tmeta
+		xlen += lenmeta
 	}
-
 	fmt.Fprintf(wr, "%v", meta)
+
 	for i := 0; i < level; i++ {
 		if isEnded(levelsEnded, i) {
 			fmt.Fprint(wr, paw.Repeat(" ", IndentSize+1))
+			xlen += (IndentSize + 1)
 			continue
 		}
-		cedge := KindLSColorString("-", string(EdgeTypeLink))
-		fmt.Fprintf(wr, "%v%s", cedge, paw.Repeat(" ", IndentSize))
+		cedge := cdashp.Sprint(EdgeTypeLink) //KindLSColorString("-", string(EdgeTypeLink))
+		// fmt.Fprintf(wr, "%v%s", cedge, paw.Repeat(" ", IndentSize))
+		fmt.Fprintf(wr, "%v%s", cedge, SpaceIndentSize)
+		xlen += (edgeWidth(EdgeTypeLink) + IndentSize)
 	}
 
-	cedge := KindLSColorString("-", string(edge))
+	cedge := cdashp.Sprint(edge) //KindLSColorString("-", string(edge))
 	name := file.ColorBaseName()
 	if file.IsDir() && fl.depth == -1 {
 		dinf := fl.DirInfo(file)
@@ -64,10 +88,26 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	}
 
 	fmt.Fprintf(wr, "%v %v\n", cedge, name)
+	xlen += edgeWidth(edge) + 1 //- IndentSize - level + 1
+	if isExtended {
+		sp := paw.Repeat(" ", xlen)
+		nx := len(file.XAttributes)
+		if nx > 0 {
+			// edge := EdgeTypeMid
+			for i := 0; i < nx; i++ {
+				// if i == nx-1 {
+				// 	edge = EdgeTypeEnd
+				// }
+				// fmt.Fprintf(wr, "%s%s%s %s\n", pad, sp, NewEXAColor("-").Sprint(edge), file.XAttributes[i])
+				// fmt.Fprintf(wr, "%s%s%s %s\n", pad, sp, NewEXAColor("-").Sprint("@"), file.XAttributes[i])
+				fmt.Fprintf(wr, "%s%s%s %s\n", pad, sp, cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
+			}
+		}
+	}
 }
 
 func printLTDir(wr io.Writer, level int, levelsEnded []int,
-	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string) {
+	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool) {
 	fm := fl.Map()
 	files := fm[file.Dir]
 	nfiles := len(files)
@@ -80,10 +120,10 @@ func printLTDir(wr io.Writer, level int, levelsEnded []int,
 			levelsEnded = append(levelsEnded, level)
 		}
 
-		printLTFile(wr, level, levelsEnded, edge, fl, file, git, pad)
+		printLTFile(wr, level, levelsEnded, edge, fl, file, git, pad, isExtended)
 
 		if file.IsDir() && len(fm[file.Dir]) > 1 {
-			printLTDir(wr, level+1, levelsEnded, edge, fl, file, git, pad)
+			printLTDir(wr, level+1, levelsEnded, edge, fl, file, git, pad, isExtended)
 		}
 	}
 }
@@ -125,7 +165,7 @@ func getDirName(path string, root string) string {
 		if len(root) > 0 {
 			dir = paw.Replace(dir, root, "..", 1)
 		}
-		name = KindEXAColorString("dir", dir) + KindLSColorString("di", name)
+		name = cdirp.Sprint(dir) + lsdip.Sprint(name)
 		return name
 	}
 	name := file.LSColorString(file.BaseName)
@@ -135,7 +175,7 @@ func getDirName(path string, root string) string {
 			// dir = strings.TrimPrefix(dir, root)
 			dir = paw.Replace(dir, root, "..", 1)
 		}
-		name = KindEXAColorString("dir", dir) + name
+		name = cdirp.Sprint(dir) + name
 	}
 	link := checkAndGetColorLink(file)
 	if len(link) > 0 {
@@ -159,7 +199,7 @@ func getDirInfo(fl *FileList, file *File) string {
 	di := fmt.Sprintf("%v dirs", nd-1)
 	fi := fmt.Sprintf("%v files", nf)
 	// return "[" + KindEXAColorString("di", di) + ", " + KindEXAColorString("dir", fi) + "]"
-	return "[" + KindEXAColorString("dir", di) + ", " + KindEXAColorString("dir", fi) + "]"
+	return "[" + cdirp.Sprint(di) + ", " + cdirp.Sprint(fi) + "]"
 	// cl := color.New(EXAColors["dir"]...).Add(color.Underline)
 	// return "[" + cl.Sprint(di+", "+fi) + "]"
 }
@@ -223,12 +263,15 @@ func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
 //
 
 func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	msg := KindLSColorString("-", fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize)))
+	// msg := KindLSColorString("-", fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize)))
+	msg := cdashp.Sprint("-", fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize)))
 	fmt.Fprintf(w, msg)
 }
 
 func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	fmt.Fprintf(w, "%s\n%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
+	// fmt.Fprintf(w, "%s\n%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
+	summary := fmt.Sprintf("%s\n%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
+	fmt.Fprintf(w, cdashp.Sprint(summary))
 }
 
 func printFileItem(w io.Writer, pad string, parameters ...string) {
@@ -327,19 +370,19 @@ func getColorizePermission(mode os.FileMode) string {
 			s = "."
 		}
 		// c += color.New(EXAColors[cs]...).Add(color.Bold).Sprint(s)
-		c += NewEXAColor(cs).Add(color.Bold).Sprint(s)
+		c += NewEXAColor(cs).Sprint(s)
 	}
 
 	return c
 }
 
 var cpmap = map[rune]*color.Color{
-	'L': NewLSColor("ln").Add(color.Concealed),
-	'l': NewLSColor("ln").Add(color.Concealed),
-	'd': NewLSColor("di").Add(color.Concealed),
-	'r': NewEXAColor("ur").Add(color.Bold),
-	'w': NewEXAColor("uw").Add(color.Bold),
-	'x': NewEXAColor("ux").Add(color.Bold),
+	'L': NewEXAColor("ln"),
+	'l': NewEXAColor("ln"),
+	'd': NewEXAColor("di"),
+	'r': NewEXAColor("ur"),
+	'w': NewEXAColor("uw"),
+	'x': NewEXAColor("ux"),
 	'-': NewEXAColor("-"),  //color.New(color.Concealed),
 	'.': NewEXAColor("."),  //color.New(color.Concealed),
 	' ': NewEXAColor(" "),  //color.New(color.Concealed), //unmodified
@@ -364,15 +407,15 @@ func getColorizedSize(size uint64) (csize string) {
 	nss := len(ss)
 	sn := fmt.Sprintf("%5s", ss[:nss-1])
 	su := paw.ToLower(ss[nss-1:])
-	cn := NewEXAColor("sn").Add(color.Bold)
+	cn := NewEXAColor("sn")
 	cu := NewEXAColor("sb")
 	csize = cn.Sprint(sn) + cu.Sprint(su)
 	return csize
 }
 
 func getColorizedUGName(urname, gpname string) (curname, cgpname string) {
-	cu := NewEXAColor("uu").Add(color.Bold)
-	cg := NewEXAColor("gu").Add(color.Bold)
+	cu := NewEXAColor("uu")
+	cg := NewEXAColor("gu")
 	curname = cu.Sprint(urname)
 	cgpname = cg.Sprint(gpname)
 	return curname, cgpname
@@ -388,7 +431,6 @@ func getColorizedModTime(modTime time.Time) string {
 }
 
 func getColorizedHead(pad, username, groupname string, git GitStatus) string {
-	c := NewEXAColor("hd").Add(color.Underline)
 	width := max(4, len(username))
 	huser := fmt.Sprintf("%[2]*[1]s", "User", width)
 	width = max(5, len(groupname))
@@ -397,9 +439,9 @@ func getColorizedHead(pad, username, groupname string, git GitStatus) string {
 	ssize := fmt.Sprintf("%6s", "Size")
 	head := ""
 	if git.NoGit {
-		head = fmt.Sprintf("%s%s %s %s %s %14s %s", pad, c.Sprint("Permissions"), c.Sprint(ssize), c.Sprint(huser), c.Sprint(hgroup), c.Sprint(" Data Modified"), c.Sprint("Name"))
+		head = fmt.Sprintf("%s%s %s %s %s %14s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Data Modified"), chdp.Sprint("Name"))
 	} else {
-		head = fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, c.Sprint("Permissions"), c.Sprint(ssize), c.Sprint(huser), c.Sprint(hgroup), c.Sprint(" Data Modified"), c.Sprint("Git"), c.Sprint("Name"))
+		head = fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Data Modified"), chdp.Sprint("Git"), chdp.Sprint("Name"))
 	}
 	return head
 }
@@ -411,8 +453,17 @@ func max(i1, i2 int) int {
 	return i2
 }
 
+func sum(a []int) int {
+	s := 0
+	for _, v := range a {
+		s += v
+	}
+	return s
+}
+
 func printBanner(w io.Writer, pad string, mark string, length int) {
-	fmt.Fprintf(w, "%s%s\n", pad, paw.Repeat(mark, length))
+	banner := fmt.Sprintf("%s%s\n", pad, paw.Repeat(mark, length))
+	fmt.Fprintf(w, cdashp.Sprint(banner))
 }
 
 // func below here, invoked from godirwalk/examples/sizes

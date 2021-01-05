@@ -32,37 +32,39 @@ var (
 	}
 	EXAColors = map[string][]color.Attribute{
 		"fi": LSColors["fi"],
-		"di": LSColors["di"],
+		"di": []color.Attribute{38, 5, 30, 8},
 		"ex": LSColors["ex"],
+		"ln": []color.Attribute{38, 5, 45, 8},
 		// "ur": LSColors["ex"],
-		"ur": []color.Attribute{38, 5, 230}, // user +r bit
-		"uw": []color.Attribute{38, 5, 209}, // user +w bit
-		"ux": []color.Attribute{38, 5, 156}, // user +x bit (files)
-		"ue": []color.Attribute{38, 5, 156}, // user +x bit (file types)
-		"gr": []color.Attribute{38, 5, 230}, // group +r bit
-		"gw": []color.Attribute{38, 5, 209}, // group +w bit
-		"gx": []color.Attribute{38, 5, 156}, // group +x bit
-		"tr": []color.Attribute{38, 5, 230}, // others +r bit
-		"tw": []color.Attribute{38, 5, 209}, // others +w bit
-		"tx": []color.Attribute{38, 5, 156}, // others +x bit
-		"sn": []color.Attribute{38, 5, 156}, // size number
-		"sb": []color.Attribute{38, 5, 156}, // size unit
-		"uu": []color.Attribute{38, 5, 230}, // user is you
-		"un": []color.Attribute{38, 5, 214}, // user is not you
-		"gu": []color.Attribute{38, 5, 230}, // group with you in it
-		"gn": []color.Attribute{38, 5, 214}, // group without you
-		"da": []color.Attribute{38, 5, 117}, // timestamp
+		"ur": []color.Attribute{38, 5, 230, 1}, // user +r bit
+		"uw": []color.Attribute{38, 5, 209, 1}, // user +w bit
+		"ux": []color.Attribute{38, 5, 156, 1}, // user +x bit (files)
+		"ue": []color.Attribute{38, 5, 156, 1}, // user +x bit (file types)
+		"gr": []color.Attribute{38, 5, 230, 1}, // group +r bit
+		"gw": []color.Attribute{38, 5, 209, 1}, // group +w bit
+		"gx": []color.Attribute{38, 5, 156, 1}, // group +x bit
+		"tr": []color.Attribute{38, 5, 230, 1}, // others +r bit
+		"tw": []color.Attribute{38, 5, 209, 1}, // others +w bit
+		"tx": []color.Attribute{38, 5, 156, 1}, // others +x bit
+		"sn": []color.Attribute{38, 5, 156, 1}, // size number
+		"sb": []color.Attribute{38, 5, 156},    // size unit
+		"uu": []color.Attribute{38, 5, 230, 1}, // user is you + 1 -> bold
+		"un": []color.Attribute{38, 5, 214},    // user is not you
+		"gu": []color.Attribute{38, 5, 230, 1}, // group with you in it
+		"gn": []color.Attribute{38, 5, 214},    // group without you
+		"da": []color.Attribute{38, 5, 117, 8}, // timestamp + 8 -> concealed
 		// "hd": []color.Attribute{4, 38, 5, 15}, // head
-		"hd":  []color.Attribute{38, 5, 251}, // head
-		"-":   []color.Attribute{38, 5, 8},   // Concealed
-		".":   []color.Attribute{38, 5, 8},   // Concealed
-		" ":   []color.Attribute{38, 5, 8},   // Concealed
-		"ga":  []color.Attribute{38, 5, 156}, // git new
-		"gm":  []color.Attribute{38, 5, 117}, // git modified
-		"gd":  []color.Attribute{38, 5, 209}, // git deleted
-		"gv":  []color.Attribute{38, 5, 230}, // git renamed
-		"gt":  []color.Attribute{38, 5, 135}, // git type change
-		"dir": []color.Attribute{38, 5, 189}, //addition 'dir'
+		"hd":    []color.Attribute{38, 5, 251, 4},    // head + 4-> underline
+		"-":     []color.Attribute{38, 5, 8},         // Concealed
+		".":     []color.Attribute{38, 5, 8},         // Concealed
+		" ":     []color.Attribute{38, 5, 8},         // Concealed
+		"ga":    []color.Attribute{38, 5, 156},       // git new
+		"gm":    []color.Attribute{38, 5, 117},       // git modified
+		"gd":    []color.Attribute{38, 5, 209},       // git deleted
+		"gv":    []color.Attribute{38, 5, 230},       // git renamed
+		"gt":    []color.Attribute{38, 5, 135},       // git type change
+		"dir":   []color.Attribute{38, 5, 189},       //addition 'dir'
+		"xattr": []color.Attribute{38, 5, 249, 4, 8}, //addition 'xattr'+ 4-> underline
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file
@@ -88,20 +90,20 @@ var (
 		"LS_COLORS":            []color.Attribute{48, 5, 89, 38, 5, 197, 1, 3, 4, 7},
 		"-":                    []color.Attribute{38, 5, 8}, // Concealed
 		".":                    []color.Attribute{38, 5, 8}, // Concealed
-		"README":               []color.Attribute{38, 5, 220, 1},
-		"README.rst":           []color.Attribute{38, 5, 220, 1},
-		"README.md":            []color.Attribute{38, 5, 220, 1},
-		"LICENSE":              []color.Attribute{38, 5, 220, 1},
-		"COPYING":              []color.Attribute{38, 5, 220, 1},
-		"INSTALL":              []color.Attribute{38, 5, 220, 1},
-		"COPYRIGHT":            []color.Attribute{38, 5, 220, 1},
-		"AUTHORS":              []color.Attribute{38, 5, 220, 1},
-		"HISTORY":              []color.Attribute{38, 5, 220, 1},
-		"CONTRIBUTORS":         []color.Attribute{38, 5, 220, 1},
-		"PATENTS":              []color.Attribute{38, 5, 220, 1},
-		"VERSION":              []color.Attribute{38, 5, 220, 1},
-		"NOTICE":               []color.Attribute{38, 5, 220, 1},
-		"CHANGES":              []color.Attribute{38, 5, 220, 1},
+		"README":               []color.Attribute{38, 5, 220, 1, 4},
+		"README.rst":           []color.Attribute{38, 5, 220, 1, 4},
+		"README.md":            []color.Attribute{38, 5, 220, 1, 4},
+		"LICENSE":              []color.Attribute{38, 5, 220, 1, 4},
+		"COPYING":              []color.Attribute{38, 5, 220, 1, 4},
+		"INSTALL":              []color.Attribute{38, 5, 220, 1, 4},
+		"COPYRIGHT":            []color.Attribute{38, 5, 220, 1, 4},
+		"AUTHORS":              []color.Attribute{38, 5, 220, 1, 4},
+		"HISTORY":              []color.Attribute{38, 5, 220, 1, 4},
+		"CONTRIBUTORS":         []color.Attribute{38, 5, 220, 1, 4},
+		"PATENTS":              []color.Attribute{38, 5, 220, 1, 4},
+		"VERSION":              []color.Attribute{38, 5, 220, 1, 4},
+		"NOTICE":               []color.Attribute{38, 5, 220, 1, 4},
+		"CHANGES":              []color.Attribute{38, 5, 220, 1, 4},
 		".log":                 []color.Attribute{38, 5, 190},
 		".txt":                 []color.Attribute{38, 5, 253},
 		".etx":                 []color.Attribute{38, 5, 184},
@@ -313,10 +315,10 @@ var (
 		".vb":                  []color.Attribute{38, 5, 81},
 		".vba":                 []color.Attribute{38, 5, 81},
 		".vbs":                 []color.Attribute{38, 5, 81},
-		"Dockerfile":           []color.Attribute{38, 5, 155},
+		"Dockerfile":           []color.Attribute{38, 5, 155, 4},
 		".dockerignore":        []color.Attribute{38, 5, 240},
-		"Makefile":             []color.Attribute{38, 5, 155},
-		"MANIFEST":             []color.Attribute{38, 5, 243},
+		"Makefile":             []color.Attribute{38, 5, 155, 4},
+		"MANIFEST":             []color.Attribute{38, 5, 243, 4},
 		"pm_to_blib":           []color.Attribute{38, 5, 240},
 		".nix":                 []color.Attribute{38, 5, 155},
 		".dhall":               []color.Attribute{38, 5, 178},

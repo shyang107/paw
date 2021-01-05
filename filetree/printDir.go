@@ -41,16 +41,22 @@ const (
 	PListExtendView
 	// PTreeView is the option of tree view using in PrintDir
 	PTreeView
+	// PTreeExtendView is the option of tree view icluding extend atrribute using in PrintDir
+	PTreeExtendView
 	// PLevelView is the option of level view using in PrintDir
 	PLevelView
 	// PLevelExtendView is the option of level view icluding extend attributes using in PrintDir
 	PLevelExtendView
 	// PTableView is the option of table view using in PrintDir
 	PTableView
+	// PTableView is the option of table view icluding extend attributes using in PrintDir
+	PTableExtendView
 	// PClassifyView display type indicator by file names (like as `exa -F` or `exa --classify`) in PrintDir
 	PClassifyView
 	// PListTreeView is the option of combining list & tree view using in PrintDir
 	PListTreeView = PListView | PTreeView
+	// PListTreeExtendView is the option of combining list & tree view including extend attribute using in PrintDir
+	PListTreeExtendView = PListView | PTreeExtendView
 )
 
 var pdview PrintDirType
@@ -225,14 +231,20 @@ FIND:
 		fl.ToListExtendView(pad)
 	case PTreeView:
 		fl.ToTreeView(pad)
+	case PTreeExtendView:
+		fl.ToTreeExtendView(pad)
 	case PListTreeView:
 		fl.ToListTreeView(pad)
+	case PListTreeExtendView:
+		fl.ToListTreeExtendView(pad)
 	case PLevelView:
 		fl.ToLevelView(pad, false)
 	case PLevelExtendView:
 		fl.ToLevelView(pad, true)
 	case PTableView:
-		fl.ToTableView(pad)
+		fl.ToTableView(pad, false)
+	case PTableExtendView:
+		fl.ToTableView(pad, true)
 	case PClassifyView:
 		fl.ToClassifyView(pad)
 	default:

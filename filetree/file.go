@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
@@ -267,7 +266,7 @@ func getName(file *File) string {
 	name := file.LSColorString(file.BaseName)
 	if file.IsDir() && file.Dir == RootMark {
 		dir, _ := filepath.Split(file.Path)
-		name = KindEXAColorString("dir", dir) + name
+		name = cdirp.Sprint(dir) + name
 	}
 	link := checkAndGetColorLink(file)
 	if len(link) > 0 {
@@ -303,7 +302,7 @@ func checkAndGetLink(file *File) (link string) {
 func (f *File) ColorPermission() string {
 	permission := getColorizePermission(f.Stat.Mode())
 	if len(f.XAttributes) > 0 {
-		permission += NewEXAColor("-").Add(color.Concealed).Sprint("@")
+		permission += cdashp.Sprint("@")
 	} else {
 		permission += " "
 	}
@@ -348,7 +347,7 @@ func getMeta(pad string, file *File, git GitStatus) (string, int) {
 	width += len(fmt.Sprint(file.ModifiedTime().Format("01-02-06 15:04"))) + 1
 	cfsize := file.ColorSize()
 	if file.IsDir() {
-		cfsize = KindLSColorString("-", fmt.Sprintf("%6s", "-"))
+		cfsize = cdashp.Sprint(fmt.Sprintf("%6s", "-"))
 	}
 	width += 7
 	width += len(urname) + len(gpname) + 1
