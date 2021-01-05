@@ -8,6 +8,8 @@ import (
 	"os/user"
 	"path/filepath"
 
+	"github.com/mattn/go-runewidth"
+
 	"time"
 
 	"github.com/fatih/color"
@@ -37,23 +39,39 @@ var (
 	curname, cgpname          = getColorizedUGName(urname, gpname)
 )
 
+func edgeWidth(edge EdgeType) int {
+	switch edge {
+	case EdgeTypeLink:
+		return 1
+	default:
+		// case EdgeTypeMid:
+		// case EdgeTypeEnd:
+		return 3
+	}
+}
+
 func printLTFile(wr io.Writer, level int, levelsEnded []int,
-	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string) {
+	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool) {
+
+	xlen := runewidth.StringWidth(pad)
 
 	meta := pad
 	if pdview == PListTreeView {
-		tmeta, _ := file.ColorMeta(git)
+		tmeta, lenmeta := file.ColorMeta(git)
 		meta += tmeta
+		xlen += lenmeta
 	}
-
 	fmt.Fprintf(wr, "%v", meta)
+
 	for i := 0; i < level; i++ {
 		if isEnded(levelsEnded, i) {
 			fmt.Fprint(wr, paw.Repeat(" ", IndentSize+1))
+			xlen += (IndentSize + 1)
 			continue
 		}
 		cedge := KindLSColorString("-", string(EdgeTypeLink))
 		fmt.Fprintf(wr, "%v%s", cedge, paw.Repeat(" ", IndentSize))
+		xlen += (edgeWidth(EdgeTypeLink) + IndentSize)
 	}
 
 	cedge := KindLSColorString("-", string(edge))
@@ -64,10 +82,26 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	}
 
 	fmt.Fprintf(wr, "%v %v\n", cedge, name)
+	xlen += edgeWidth(edge) + 1 //- IndentSize - level + 1
+	if isExtended {
+		sp := paw.Repeat(" ", xlen)
+		nx := len(file.XAttributes)
+		if nx > 0 {
+			// edge := EdgeTypeMid
+			for i := 0; i < nx; i++ {
+				// if i == nx-1 {
+				// 	edge = EdgeTypeEnd
+				// }
+				// fmt.Fprintf(wr, "%s%s%s %s\n", pad, sp, NewEXAColor("-").Sprint(edge), file.XAttributes[i])
+				// fmt.Fprintf(wr, "%s%s%s %s\n", pad, sp, NewEXAColor("-").Sprint("@"), file.XAttributes[i])
+				fmt.Fprintf(wr, "%s%s%s %s\n", pad, sp, NewEXAColor("-").Sprint("@"), KindEXAColorString("xattr", file.XAttributes[i]))
+			}
+		}
+	}
 }
 
 func printLTDir(wr io.Writer, level int, levelsEnded []int,
-	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string) {
+	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool) {
 	fm := fl.Map()
 	files := fm[file.Dir]
 	nfiles := len(files)
@@ -80,10 +114,10 @@ func printLTDir(wr io.Writer, level int, levelsEnded []int,
 			levelsEnded = append(levelsEnded, level)
 		}
 
-		printLTFile(wr, level, levelsEnded, edge, fl, file, git, pad)
+		printLTFile(wr, level, levelsEnded, edge, fl, file, git, pad, isExtended)
 
 		if file.IsDir() && len(fm[file.Dir]) > 1 {
-			printLTDir(wr, level+1, levelsEnded, edge, fl, file, git, pad)
+			printLTDir(wr, level+1, levelsEnded, edge, fl, file, git, pad, isExtended)
 		}
 	}
 }
