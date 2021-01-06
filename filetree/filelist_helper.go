@@ -264,8 +264,8 @@ func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
 
 func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
 	// msg := KindLSColorString("-", fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize)))
-	msg := cdashp.Sprint("-", fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize)))
-	fmt.Fprintf(w, msg)
+	msg := fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize))
+	fmt.Fprintf(w, cdashp.Sprint(msg))
 }
 
 func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
