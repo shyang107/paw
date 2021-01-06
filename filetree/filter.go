@@ -105,11 +105,11 @@ var (
 	}
 
 	FiltJustFiles Filter = func(fl *FileList) {
-		// spew.Dump(fl.dirs)
+		// // spew.Dump(fl.dirs)
 		FiltEmptyDirs(fl)
 		// spew.Dump(fl.dirs)
 		var dirs []string
-		nd, nf := 0, 0
+		// nd, nf := 0, 0
 		for _, dir := range fl.dirs {
 			if len(fl.store[dir]) <= 1 {
 				continue
@@ -118,10 +118,10 @@ var (
 			files = append(files, fl.store[dir][0])
 			for _, file := range fl.store[dir][1:] {
 				if !file.IsDir() {
-					nf++
+					// nf++
 					files = append(files, file)
 					if funk.IndexOfString(dirs, dir) == -1 {
-						nd++
+						// nd++
 						dirs = append(dirs, file.Dir)
 					}
 				}

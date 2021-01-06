@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"runtime"
 	"sort"
+	"sync"
 
 	"github.com/thoas/go-funk"
 
@@ -37,6 +39,7 @@ type FileList struct {
 	filesBy   FilesBy
 	dirsBy    DirsBy
 	IsGrouped bool // grouping files and directories separetly
+	// mux       sync.Mutex // 互斥鎖
 }
 
 // NewFileList will return the instance of `FileList`
@@ -356,6 +359,7 @@ func (f *FileList) Sort() {
 	f.SortBy(f.dirsBy, f.filesBy)
 }
 
+// SortBy will sort FileList using sorters `dirsBy` and `filesBy`
 func (f *FileList) SortBy(dirsBy DirsBy, filesBy FilesBy) {
 	f.SetDirsSorter(dirsBy)
 	f.SetFilesSorter(filesBy)
@@ -366,24 +370,88 @@ func (f *FileList) SortBy(dirsBy DirsBy, filesBy FilesBy) {
 		f.SetFilesSorter(DefaultFilesBy)
 	}
 	f.dirsBy.Sort(f.dirs)
-	for _, dir := range f.dirs {
-		if len(f.store[dir]) > 1 {
-			if !f.IsGrouped {
-				f.filesBy.Sort(f.store[dir][1:])
+
+	wg := new(sync.WaitGroup)
+	nCPU := runtime.NumCPU()
+	nDirs := len(f.dirs)
+	// paw.Info.Println("nCPU:", nCPU, "nDirs:", nDirs)
+	for i := 0; i < nCPU; i++ {
+		from := i * nDirs / nCPU
+		to := (i + 1) * nDirs / nCPU
+		wg.Add(1)
+		// go sortParts(f, from, to, wg)
+		go func() {
+			defer wg.Done()
+			for j := from; j < to; j++ {
+				dir := f.dirs[j]
+				if len(f.store[dir]) > 1 {
+					if !f.IsGrouped {
+						f.filesBy.Sort(f.store[dir][1:])
+					} else {
+						sfiles := []*File{}
+						sdirs := []*File{}
+						for _, v := range f.store[dir][1:] {
+							if v.IsDir() {
+								sdirs = append(sdirs, v)
+							} else {
+								sfiles = append(sfiles, v)
+							}
+						}
+						f.filesBy.Sort(sdirs)
+						f.filesBy.Sort(sfiles)
+						copy(f.store[dir][1:], sdirs)
+						copy(f.store[dir][len(sdirs)+1:], sfiles)
+					}
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	return
+	// for _, dir := range f.dirs {
+	// 	if len(f.store[dir]) > 1 {
+	// 		if !f.IsGrouped {
+	// 			f.filesBy.Sort(f.store[dir][1:])
+	// 		} else {
+	// 			sfiles := []*File{}
+	// 			sdirs := []*File{}
+	// 			for _, v := range f.store[dir][1:] {
+	// 				if v.IsDir() {
+	// 					sdirs = append(sdirs, v)
+	// 				} else {
+	// 					sfiles = append(sfiles, v)
+	// 				}
+	// 			}
+	// 			f.filesBy.Sort(sdirs)
+	// 			f.filesBy.Sort(sfiles)
+	// 			copy(f.store[dir][1:], sdirs)
+	// 			copy(f.store[dir][len(sdirs)+1:], sfiles)
+	// 		}
+	// 	}
+	// }
+}
+
+func sortParts(fl *FileList, from, to int, wg sync.WaitGroup) {
+	defer wg.Done()
+	for j := from; j < to; j++ {
+		dir := fl.dirs[j]
+		if len(fl.store[dir]) > 1 {
+			if !fl.IsGrouped {
+				fl.filesBy.Sort(fl.store[dir][1:])
 			} else {
 				sfiles := []*File{}
 				sdirs := []*File{}
-				for _, v := range f.store[dir][1:] {
+				for _, v := range fl.store[dir][1:] {
 					if v.IsDir() {
 						sdirs = append(sdirs, v)
 					} else {
 						sfiles = append(sfiles, v)
 					}
 				}
-				f.filesBy.Sort(sdirs)
-				f.filesBy.Sort(sfiles)
-				copy(f.store[dir][1:], sdirs)
-				copy(f.store[dir][len(sdirs)+1:], sfiles)
+				fl.filesBy.Sort(sdirs)
+				fl.filesBy.Sort(sfiles)
+				copy(fl.store[dir][1:], sdirs)
+				copy(fl.store[dir][len(sdirs)+1:], sfiles)
 			}
 		}
 	}
