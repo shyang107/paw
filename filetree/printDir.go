@@ -250,5 +250,6 @@ FIND:
 	default:
 		return errors.New("No this option of PrintDir")
 	}
+
 	return nil
 }

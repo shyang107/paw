@@ -3,6 +3,8 @@ package filetree
 import (
 	"path/filepath"
 
+	"github.com/shyang107/paw"
+
 	"github.com/thoas/go-funk"
 )
 
@@ -54,15 +56,21 @@ var (
 	FiltEmptyDirs Filter = func(fl *FileList) {
 		// paw.Info.Println("FiltEmptyDirs")
 		var emptyDirs []string
-		for i, dir := range fl.dirs {
+		// spew.Dump(fl.Dirs())
+		for _, dir := range fl.dirs {
 			hasEmpty := false
 			var name, pdir string
 			if len(fl.store[dir]) <= 1 {
 				emptyDirs = append(emptyDirs, dir)
 				hasEmpty = true
-				_, name = filepath.Split(dir)
-				pdir = fl.dirs[i-1]
-				// fmt.Println("empty:", dir, name, pdir, i)
+				tdirs := paw.Split(dir, PathSeparator)
+				name = tdirs[len(tdirs)-1]
+				pdir = filepath.Join(tdirs[:len(tdirs)-1]...)
+				if pdir == ".." {
+					pdir = "."
+				}
+				// pdir = fl.dirs[i-1]
+				// fmt.Println("empty> dir:", dir, "name:", name, "pdir:", pdir)
 			}
 			if hasEmpty {
 				jdx := indexOf(fl.store[pdir], func(f *File) bool {

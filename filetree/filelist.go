@@ -641,7 +641,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 		ndirs := 0
 		ppad := pad
 		// sntd := ""
-		if len(fm[dir]) > 1 {
+		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
 					istr := KindLSColorString("di", fmt.Sprintf("G%-[2]*[1]d", ntdirs, i1))
@@ -749,6 +749,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 		ntdirs, nsdirs, ntfiles = 1, 0, 0
 		fNDirs                  = f.NDirs()
 		fNFiles                 = f.NFiles()
+		width                   = 80
 	)
 	buf.Reset()
 
@@ -761,7 +762,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 		goto END
 	}
 
-	printBanner(w, pad, "=", 80)
+	printBanner(w, pad, "=", width)
 
 	if funk.IndexOfString(f.dirs, RootMark) != -1 {
 		fmt.Fprintln(w, chead)
@@ -771,7 +772,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 		nfiles := 0
 		ndirs := 0
 		sntd := ""
-		if len(fm[dir]) > 1 {
+		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
 					// sntd = KindEXAColorString("dir", fmt.Sprintf("D%d:", ntdirs))
@@ -790,8 +791,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 				ndirs++
 				nsdirs++
 				// sntf = file.LSColorString(fmt.Sprintf("D%d(%d):", ndirs, nsdirs))
-			}
-			if file.IsFile() || !file.IsDir() {
+			} else {
 				nfiles++
 				ntfiles++
 				sumsize += file.Size
@@ -821,18 +821,18 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 				switch {
 				case fNFiles == 0:
 					if nsdirs < fNDirs {
-						printBanner(w, pad, "-", 80)
+						printBanner(w, pad, "-", width)
 					}
 				default:
 					if nsdirs <= fNDirs && ntfiles < fNFiles {
-						printBanner(w, pad, "-", 80)
+						printBanner(w, pad, "-", width)
 					}
 				}
 			}
 		}
 	}
 
-	printBanner(w, pad, "=", 80)
+	printBanner(w, pad, "=", width)
 END:
 	// printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
