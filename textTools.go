@@ -8,6 +8,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/mattn/go-runewidth"
+
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/encoding/traditionalchinese"
 
@@ -599,39 +601,43 @@ func ReplaceAll(s, old, new string) string {
 // 	`maxlen`: maimium length of the abbreviation
 // 	`conSymbole`: tailing symbol of the abbreviation
 func GetAbbrString(str string, maxlen int, conSymbole string) string {
-	hc, ac := CountPlaceHolder(str)
-	lenStr := hc + ac
+	// hc, ac := CountPlaceHolder(str)
+	// lenStr := hc + ac
+	lenStr := runewidth.StringWidth(str)
 	if lenStr <= maxlen {
 		return str
 	}
 	if len(conSymbole) < 1 {
 		conSymbole = "..."
 	}
-	limit := maxlen - len(conSymbole)
-	c := 0
-	sb := strings.Builder{}
-	for _, ch := range str {
-		rl := utf8.RuneLen(ch)
-		if rl == 3 {
-			c += 2
-		} else {
-			c++
-		}
-		if c <= limit {
-			sb.WriteRune(ch)
-		} else {
-			break
-		}
-	}
-	hc, ac = CountPlaceHolder(sb.String())
-	c = hc + ac
-	if c < limit {
-		for i := 0; i < limit-c; i++ {
-			sb.WriteString(" ")
-		}
-	}
-	str = sb.String() + conSymbole
-	return str
+	return Truncate(str, maxlen, conSymbole)
+
+	// limit := maxlen - len(conSymbole)
+	// c := 0
+	// sb := strings.Builder{}
+	// for _, ch := range str {
+	// 	rl := runewidth.RuneWidth(ch) //utf8.RuneLen(ch)
+	// 	if rl == 3 {
+	// 		c += 2
+	// 	} else {
+	// 		c++
+	// 	}
+	// 	if c <= limit {
+	// 		sb.WriteRune(ch)
+	// 	} else {
+	// 		break
+	// 	}
+	// }
+	// // hc, ac = CountPlaceHolder(sb.String())
+	// // c = hc + ac
+	// c = runewidth.StringWidth(sb.String())
+	// if c < limit {
+	// 	for i := 0; i < limit-c; i++ {
+	// 		sb.WriteString(" ")
+	// 	}
+	// }
+	// str = sb.String() + conSymbole
+	// return str
 }
 
 // CountPlaceHolder return `nHan` and `nASCII`
@@ -665,14 +671,14 @@ func HasChineseChar(str string) bool {
 	return false
 }
 
-// NumberBanner return numbers' string with length `len`
+// NumberBanner return numbers' string with length `width`
 //
 // Example:
-// 	NumberBanner(11) return "12345678901"
-func NumberBanner(len int) string {
-	nl := []byte("1234567890")
+// 	NumberBanner(11) return "01234567890"
+func NumberBanner(width int) string {
+	nl := []byte("0123456789")
 	sb := strings.Builder{}
-	for i := 0; i < len; i++ {
+	for i := 0; i < width; i++ {
 		c := nl[i%10]
 		sb.Write([]byte{c})
 	}
@@ -824,4 +830,36 @@ func NewBuffer(buf []byte) *bytes.Buffer {
 func NewBufioReader(s string) *bufio.Reader {
 	// return bufio.NewReader(NewReader(s))
 	return bufio.NewReader(NewBuffer([]byte(s)))
+}
+
+// The following is adopted from github.com/mattn/go-runewidth
+
+// FillLeft return string filled in left by spaces in w cells
+func FillLeft(s string, w int) string {
+	return runewidth.FillLeft(s, w)
+}
+
+// FillRight return string filled in left by spaces in w cells
+func FillRight(s string, w int) string {
+	return runewidth.FillRight(s, w)
+}
+
+// RuneStringWidth will return width as you can see
+func RuneStringWidth(s string) int {
+	return runewidth.StringWidth(s)
+}
+
+// RuneWidth returns the number of cells in r. See http://www.unicode.org/reports/tr11/
+func RuneWidth(r rune) int {
+	return runewidth.RuneWidth(r)
+}
+
+// Truncate return string truncated with w cells
+func Truncate(s string, w int, tail string) string {
+	return runewidth.Truncate(s, w, tail)
+}
+
+// Wrap return string wrapped with w cells
+func Wrap(s string, w int) string {
+	return runewidth.Wrap(s, w)
 }

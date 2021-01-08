@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/mattn/go-runewidth"
 	"github.com/spf13/cast"
 )
 
@@ -220,16 +221,19 @@ func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align
 		v := fields[i]
 		wd := widths[i]
 		v = GetAbbrString(v, wd, "»")
-		nh, na := CountPlaceHolder(v)
+		// nh, na := CountPlaceHolder(v)
 		al := aligns[i]
 		s := ""
 		switch al {
 		case AlignLeft:
-			s = v + Repeat(space, wd-nh-na)
+			// s = v + Repeat(space, wd-nh-na)
+			s = runewidth.FillRight(v, wd)
 		case AlignRight:
-			s = Repeat(space, wd-nh-na) + v
+			// s = Repeat(space, wd-nh-na) + v
+			s = runewidth.FillLeft(v, wd)
 		case AlignCenter:
-			lv := nh + na
+			// lv := nh + na
+			lv := runewidth.StringWidth(v)
 			nr := (wd - lv) / 2
 			nl := wd - lv - nr
 			s = Repeat(space, nl) + v + Repeat(space, nr)
@@ -260,8 +264,12 @@ func (t *TableFormat) PrintSart() error {
 
 // PrintRow print row into `t.writer`
 func (t *TableFormat) PrintRow(rows ...interface{}) {
-	fmt.Fprintln(t.writer,
-		t.getRowString(cast.ToStringSlice(rows), t.LenFields, t.Aligns, t.Sep, t.Padding))
+	sRows := make([]string, len(rows))
+	for i, v := range rows {
+		sRows[i] = TrimSpace(cast.ToString(v))
+	}
+	fmt.Fprintln(t.writer, t.getRowString(sRows, t.LenFields, t.Aligns, t.Sep, t.Padding))
+	// fmt.Fprintln(t.writer, t.getRowString(cast.ToStringSlice(rows), t.LenFields, t.Aligns, t.Sep, t.Padding))
 }
 
 // PrintMiddleSepLine print middle sepperating line using `MiddleChar`

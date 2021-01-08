@@ -26,6 +26,7 @@ _testmain.go
 *.out
 
 ex
+strChain
 
 #GoLand
 .idea

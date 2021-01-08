@@ -528,14 +528,16 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 		for jj, file := range fm[dir] {
 			fsize := file.Size
 			sfsize := ByteSize(fsize)
-			mode := fmt.Sprintf("%v", file.Stat.Mode())
-			if len(file.XAttributes) > 0 {
-				mode += "@"
-			} else {
-				mode += " "
-			}
+			// mode := fmt.Sprintf("%v", file.Stat.Mode())
+			// if len(file.XAttributes) > 0 {
+			// 	mode += "@"
+			// } else {
+			// 	mode += " "
+			// }
+			mode := file.ColorPermission()
 			if jj == 0 && file.IsDir() {
-				idx := fmt.Sprintf("D%d", i)
+				// idx := fmt.Sprintf("D%d", i)
+				idx := "D" + cast.ToString(i)
 				sfsize = "-"
 				switch f.depth {
 				case 0:
@@ -551,20 +553,31 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 				}
 				continue
 			}
-			jdx := fmt.Sprintf("d%d", ndirs+1)
-			name := file.ColorBaseName()
-			if !file.IsDir() { // file, symlink, or ...
+			// jdx := fmt.Sprintf("d%d", ndirs+1)
+			jdx := "d" + cast.ToString(ndirs+1)
+			// name := file.ColorBaseName()
+			name := file.BaseName
+			if file.IsDir() {
+				ndirs++
+				tf.PrintRow(jdx, mode, "-", name)
+			} else {
 				sumsize += fsize
 				j++
 				nfiles++
 				tf.PrintRow(j, mode, sfsize, name)
-			} else { // dir
-				ndirs++
-				tf.PrintRow(jdx, mode, "-", name)
 			}
 			if isExtended {
-				for _, x := range file.XAttributes {
-					tf.PrintRow("", "", "", x)
+				nx := len(file.XAttributes)
+				// sp := paw.Repeat(" ", metalength+len(sntf))
+				if nx > 0 {
+					edge := EdgeTypeMid
+					for i, x := range file.XAttributes {
+						if i == nx-1 {
+							edge = EdgeTypeEnd
+						}
+						// tf.PrintRow("", "", "", "▶︎ "+x)
+						tf.PrintRow("", "", "", string(edge)+" "+x)
+					}
 				}
 			}
 

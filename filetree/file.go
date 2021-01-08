@@ -66,23 +66,18 @@ func NewFile(path string) (*File, error) {
 	}
 	dir := filepath.Dir(path)
 	basename := filepath.Base(path)
-	// dir, basename := filepath.Split(path)
 	ext := filepath.Ext(path)
 	file := strings.TrimSuffix(basename, ext)
-	var size = uint64(stat.Size())
+	size := uint64(stat.Size())
 	// if stat.IsDir() {
 	// 	size, _ = sizes(path)
 	// }
-	var list []string
-	if list, err = xattr.List(path); err != nil {
+
+	list, err := getXattr(path)
+	if err != nil {
 		return nil, err
 	}
-	if len(list) > 0 {
-		for i := 0; i < len(list); i++ {
-			xl, _ := xattr.Get(path, list[i])
-			list[i] = fmt.Sprintf("%s (len %d)", list[i], len(xl))
-		}
-	}
+
 	return &File{
 		Path:        path,
 		Dir:         dir,
@@ -93,6 +88,20 @@ func NewFile(path string) (*File, error) {
 		Size:        size,
 		XAttributes: list,
 	}, nil
+}
+
+func getXattr(path string) ([]string, error) {
+	list, err := xattr.List(path)
+	if err != nil {
+		return list, err
+	}
+	if len(list) > 0 {
+		for i := 0; i < len(list); i++ {
+			xl, _ := xattr.Get(path, list[i])
+			list[i] = fmt.Sprintf("%s (len %d)", list[i], len(xl))
+		}
+	}
+	return list, nil
 }
 
 const (
