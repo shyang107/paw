@@ -497,12 +497,13 @@ func (f *FileList) ToTableExtendViewString(pad string) string {
 func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 	var (
 		// w      = new(bytes.Buffer)
-		buf    = f.buf    //f.Buffer()
-		w      = f.writer //f.Writer()
-		nDirs  = f.NDirs()
-		nFiles = f.NFiles()
-		dirs   = f.dirs  //f.Dirs()
-		fm     = f.store //f.Map()
+		buf         = f.buf    //f.Buffer()
+		w           = f.writer //f.Writer()
+		nDirs       = f.NDirs()
+		nFiles      = f.NFiles()
+		dirs        = f.dirs  //f.Dirs()
+		fm          = f.store //f.Map()
+		widthOfName = 75
 	)
 	buf.Reset()
 
@@ -510,11 +511,13 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 
 	tf := &paw.TableFormat{
 		Fields:    []string{"No.", "Mode", "Size", "Files"},
-		LenFields: []int{5, 11, 6, 75},
+		LenFields: []int{5, 11, 6, widthOfName},
 		Aligns:    []paw.Align{paw.AlignRight, paw.AlignRight, paw.AlignRight, paw.AlignLeft},
 		Padding:   pad,
+		IsWrapped: true,
 	}
 	tf.Prepare(w)
+	// tf.SetWrapFields()
 
 	sdsize := ByteSize(f.totalSize)
 	head := fmt.Sprintf("Root directory: %v, size ≈ %v", f.root, sdsize)
@@ -545,11 +548,13 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 						tf.PrintRow(idx, mode, sfsize, file)
 					}
 				default:
+					name := ""
 					if paw.EqualFold(file.Dir, RootMark) {
-						tf.PrintRow(idx, mode, sfsize, file.ColorDirName(""))
+						name = file.ColorDirName("")
 					} else {
-						tf.PrintRow(idx, mode, sfsize, file.ColorDirName(f.root))
+						name = file.ColorDirName(f.root)
 					}
+					tf.PrintRow(idx, mode, sfsize, name)
 				}
 				continue
 			}
@@ -725,7 +730,6 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 	printBanner(w, pad, "=", width)
 END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
-
 	return buf.Bytes()
 }
 
@@ -938,11 +942,10 @@ func (f *FileList) ToClassifyViewString(pad string) string {
 // ToClassifyView will return the []byte of FileList to display type indicator by file names (like as `exa -F` or `exa --classify`)
 func (f *FileList) ToClassifyView(pad string) []byte {
 	var (
-		buf              = f.buf
-		w                = f.writer
-		dirs             = f.dirs
-		fm               = f.store
-		_, terminalWidth = getTerminalSize()
+		buf  = f.buf
+		w    = f.writer
+		dirs = f.dirs
+		fm   = f.store
 	)
 	buf.Reset()
 
@@ -957,10 +960,10 @@ func (f *FileList) ToClassifyView(pad string) []byte {
 
 		files := fm[dir][1:]
 		lens, sumlen := getleng(files)
-		if sumlen <= terminalWidth {
+		if sumlen <= sttyWidth {
 			classifyPrintFiles(w, files)
 		} else {
-			classifyGridPrintFiles(w, files, lens, sumlen, terminalWidth)
+			classifyGridPrintFiles(w, files, lens, sumlen, sttyWidth)
 		}
 
 		if f.depth == 0 {
@@ -1079,6 +1082,9 @@ func calNFields(lens []int, limit int) int {
 		if n < count {
 			count = n
 		}
+	}
+	if count == 0 {
+		count = 1
 	}
 	return count
 }

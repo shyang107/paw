@@ -18,9 +18,9 @@ type TextTools interface {
 	TrimFunc(f func(rune) bool) TextTools
 	TrimLeft(cutset string) TextTools
 	TrimLeftFunc(f func(rune) bool) TextTools
-	TrimPrefix(s, prefix string) TextTools
-	TrimRight(s, cutset string) TextTools
-	TrimRightFunc(s string, f func(rune) bool) TextTools
+	TrimPrefix(prefix string) TextTools
+	TrimRight(cutset string) TextTools
+	TrimRightFunc(f func(rune) bool) TextTools
 	TrimSpace() TextTools
 	TrimSuffix(suffix string) TextTools
 	TrimBOM() TextTools
@@ -268,21 +268,21 @@ func (t *TextBuilder) TrimLeftFunc(f func(rune) bool) TextTools {
 
 // TrimPrefix packs `TrimPrefix(s, prefix string)`
 // 	set `TextCollection.Text` to the result
-func (t *TextBuilder) TrimPrefix(s, prefix string) TextTools {
+func (t *TextBuilder) TrimPrefix(prefix string) TextTools {
 	t.Text = TrimPrefix(t.Text, prefix)
 	return t
 }
 
 // TrimRight packs `TrimRight(s, cutset string)`
 // 	set `TextCollection.Text` to the result
-func (t *TextBuilder) TrimRight(s, cutset string) TextTools {
+func (t *TextBuilder) TrimRight(cutset string) TextTools {
 	t.Text = TrimRight(t.Text, cutset)
 	return t
 }
 
 // TrimRightFunc packs `TrimRightFunc(s string, f func(rune) bool)`
 // 	set `TextCollection.Text` to the result
-func (t *TextBuilder) TrimRightFunc(s string, f func(rune) bool) TextTools {
+func (t *TextBuilder) TrimRightFunc(f func(rune) bool) TextTools {
 	t.Text = TrimRightFunc(t.Text, f)
 	return t
 }
@@ -311,7 +311,7 @@ func (t *TextBuilder) ToUpper() TextTools {
 // ToTitle packs `ToTitle(s string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) ToTitle() TextTools {
-	t.Text = ToUpper(t.Text)
+	t.Text = ToTitle(t.Text)
 	return t
 }
 

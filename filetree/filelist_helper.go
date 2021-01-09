@@ -27,21 +27,22 @@ import (
 type EdgeType string
 
 var (
-	EdgeTypeLink     EdgeType = "│"   //treeprint.EdgeTypeLink
-	EdgeTypeMid      EdgeType = "├──" //treeprint.EdgeTypeMid
-	EdgeTypeEnd      EdgeType = "└──" //treeprint.EdgeTypeEnd
-	IndentSize                = 3     //treeprint.IndentSize
-	SpaceIndentSize           = paw.Repeat(" ", IndentSize)
-	cdashp                    = NewEXAColor("-")
-	cxp                       = NewEXAColor("xattr")
-	chdp                      = NewEXAColor("hd")
-	cdirp                     = NewEXAColor("dir")
-	lsdip                     = NewLSColor("di")
-	currentuser, _            = user.Current()
-	urname                    = currentuser.Username
-	usergp, _                 = user.LookupGroupId(currentuser.Gid)
-	gpname                    = usergp.Name
-	curname, cgpname          = getColorizedUGName(urname, gpname)
+	EdgeTypeLink          EdgeType = "│"   //treeprint.EdgeTypeLink
+	EdgeTypeMid           EdgeType = "├──" //treeprint.EdgeTypeMid
+	EdgeTypeEnd           EdgeType = "└──" //treeprint.EdgeTypeEnd
+	IndentSize                     = 3     //treeprint.IndentSize
+	SpaceIndentSize                = paw.Repeat(" ", IndentSize)
+	cdashp                         = NewEXAColor("-")
+	cxp                            = NewEXAColor("xattr")
+	chdp                           = NewEXAColor("hd")
+	cdirp                          = NewEXAColor("dir")
+	lsdip                          = NewLSColor("di")
+	currentuser, _                 = user.Current()
+	urname                         = currentuser.Username
+	usergp, _                      = user.LookupGroupId(currentuser.Gid)
+	gpname                         = usergp.Name
+	curname, cgpname               = getColorizedUGName(urname, gpname)
+	sttyHeight, sttyWidth          = getTerminalSize()
 )
 
 func edgeWidth(edge EdgeType) int {

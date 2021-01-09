@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/mattn/go-runewidth"
 	"github.com/spf13/cast"
 )
@@ -39,6 +41,7 @@ type TableFormat struct {
 	isPrepare       bool
 	isPrepareBefore bool
 	isPrepareAfter  bool
+	IsWrapped       bool
 }
 
 // Align is id that indicate alignment of head-column
@@ -71,6 +74,7 @@ func NewTableFormat() *TableFormat {
 		isPrepare:       false,
 		isPrepareBefore: false,
 		isPrepareAfter:  false,
+		IsWrapped:       false,
 	}
 }
 
@@ -121,6 +125,11 @@ func (t *TableFormat) Prepare(w io.Writer) {
 	t.check()
 	t.writer = w
 	t.isPrepare = true
+}
+
+// SetWrapFields set true to TableFormat.IsWrapped
+func (t *TableFormat) SetWrapFields() {
+	t.IsWrapped = true
 }
 
 func (t *TableFormat) check() {
@@ -216,35 +225,90 @@ func (t *TableFormat) checkFields() {
 
 func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align, sep string, padding string) string {
 	sb.Reset()
-	lf := len(fields)
-	for i := 0; i < lf; i++ {
+	var (
+		str         string
+		lenOfFields = len(fields)
+	)
+	if t.IsWrapped {
+		goto WRAPFIELDS
+	}
+	for i := 0; i < lenOfFields; i++ {
 		v := fields[i]
 		wd := widths[i]
-		v = GetAbbrString(v, wd, "»")
+		// v = GetAbbrString(v, wd, "»")
+		v = Truncate(v, wd, "»")
+		// v = Wrap(v, wd)
 		// nh, na := CountPlaceHolder(v)
 		al := aligns[i]
-		s := ""
-		switch al {
-		case AlignLeft:
-			// s = v + Repeat(space, wd-nh-na)
-			s = runewidth.FillRight(v, wd)
-		case AlignRight:
-			// s = Repeat(space, wd-nh-na) + v
-			s = runewidth.FillLeft(v, wd)
-		case AlignCenter:
-			// lv := nh + na
-			lv := runewidth.StringWidth(v)
-			nr := (wd - lv) / 2
-			nl := wd - lv - nr
-			s = Repeat(space, nl) + v + Repeat(space, nr)
-		}
+		s := getAlignString(al, wd, v)
+		// s := ""
+		// switch al {
+		// case AlignLeft:
+		// 	// s = v + Repeat(space, wd-nh-na)
+		// 	s = runewidth.FillRight(v, wd)
+		// case AlignRight:
+		// 	// s = Repeat(space, wd-nh-na) + v
+		// 	s = runewidth.FillLeft(v, wd)
+		// case AlignCenter:
+		// 	// lv := nh + na
+		// 	lv := runewidth.StringWidth(v)
+		// 	nr := (wd - lv) / 2
+		// 	nl := wd - lv - nr
+		// 	s = Repeat(space, nl) + v + Repeat(space, nr)
+		// }
 		sb.WriteString(s + sep)
 	}
-	str := sb.String()
+	str = sb.String()
 	if !t.isAbbrSymbol {
 		t.isAbbrSymbol = Contains(str, abbrSymbol)
 	}
 	return padding + str
+WRAPFIELDS:
+	wfields := make([][]string, lenOfFields)
+	nlines := make([]int, lenOfFields)
+	idx := make([]int, lenOfFields)
+	for i, v := range fields {
+		wd := widths[i]
+		wfields[i] = Split(Wrap(v, wd), "\n")
+		nlines[i] = len(wfields[i])
+		idx[i] = 0
+	}
+	maxlines := funk.MaxInt(nlines).(int)
+	for i := 0; i < maxlines; i++ {
+		for j, vs := range wfields {
+			v := ""
+			if idx[j] < nlines[j] {
+				v = vs[idx[j]]
+			}
+			s := getAlignString(aligns[j], widths[j], v)
+			sb.WriteString(s + sep)
+			idx[j]++
+		}
+		if i < maxlines-1 {
+			sb.WriteByte('\n')
+		}
+	}
+	str = sb.String()
+	return PaddingString(str, padding)
+}
+
+func getAlignString(al Align, width int, value string) string {
+	var s string
+	switch al {
+	case AlignLeft:
+		s = runewidth.FillRight(value, width)
+	case AlignRight:
+		s = runewidth.FillLeft(value, width)
+	case AlignCenter:
+		// lv := nh + na
+		lv := runewidth.StringWidth(value)
+		nr := (width - lv) / 2
+		nl := width - lv - nr
+		s = Repeat(space, nl) + value + Repeat(space, nr)
+	default:
+		s = value
+	}
+	return s
 }
 
 // PrintSart print out head-section in `t.Writer`
