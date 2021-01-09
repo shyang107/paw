@@ -1,36 +1,72 @@
 package paw
 
-import (
-	"github.com/mattn/go-runewidth"
-)
-
-// StrChain chains some function about string
-type StrChain string
-
-func (s StrChain) String() string {
-	return string(s)
+// StrChain contains all tools which can be chained.
+type StrChain struct {
+	S string
+	// TBError error
 }
 
-// GetAbbrString get a abbreviation of StrChain
+// NewStrChain return a instance of `StrChain` and return `*StrChain`
+func (t *StrChain) NewStrChain(s string) *StrChain {
+	t = &StrChain{s}
+	return t
+}
+
+// String return `StrChain.sCollection.s`
+func (t *StrChain) String() string {
+	return t.S
+}
+
+// SetText set `StrChain.s` to `txt`
+func (t *StrChain) SetText(txt string) *StrChain {
+	t.S = txt
+	return t
+}
+
+// GetText return `StrChain.sCollection.s`
+func (t *StrChain) GetText() string {
+	return t.S
+}
+
+// Len will return the lenth of t.S (would be the sizes of []bytes)
+func (t *StrChain) Len() int {
+	return len(t.S)
+}
+
+// Bytes will convert the string t.S to []byte
+//
+// Example:
+// 	b := StrChain{"ABC€"}
+// 	fmt.Println(b.Bytes()) // [65 66 67 226 130 172]
+func (t *StrChain) Bytes() []byte {
+	return []byte(t.S)
+}
+
+// Runes will convert the string t.S to []rune
+//
+// Example:
+// 	r := StrChain{"ABC€"}
+// 	fmt.Println(r.Runes())        	// [65 66 67 8364]
+// 	fmt.Printf("%U\n", r.Rune()) 	// [U+0041 U+0042 U+0043 U+20AC]
+func (t *StrChain) Runes() []rune {
+	return []rune(t.S)
+}
+
+// GetAbbrString get a abbreviation of `StrChain.sCollection.s` and save to `StrChain.sCollection.s`
 //
 // 	`maxlen`: maimium length of the abbreviation
 // 	`conSymbole`: tailing symbol of the abbreviation
-func (s *StrChain) GetAbbrString(maxlen int, contSymbol string) *StrChain {
-	*s = StrChain(GetAbbrString(string(*s), maxlen, contSymbol))
-	return s
-}
-
-// RuneStringWidth will return width as you can see
-func (s *StrChain) RuneStringWidth() int {
-	return runewidth.StringWidth(string(*s))
+func (t *StrChain) GetAbbrString(maxlen int, contSymbol string) *StrChain {
+	t.S = GetAbbrString(t.S, maxlen, contSymbol)
+	return t
 }
 
 // CountPlaceHolder return `nHan` and `nASCII`
 //
 // 	`nHan`: number of occupied space in screen for han-character
 // 	`nASCII`: number of occupied space in screen for ASCII-character
-func (s *StrChain) CountPlaceHolder() (nHan int, nASCII int) {
-	return CountPlaceHolder(string(*s))
+func (t *StrChain) CountPlaceHolder() (nHan int, nASCII int) {
+	return CountPlaceHolder(t.S)
 }
 
 // HasChineseChar return true for that `str` include chinese character
@@ -38,312 +74,347 @@ func (s *StrChain) CountPlaceHolder() (nHan int, nASCII int) {
 // Example:
 // 	HasChineseChar("abc 中文") return true
 // 	HasChineseChar("abccefgh") return false
-func (s *StrChain) HasChineseChar() bool {
-	return HasChineseChar(string(*s))
+func (t *StrChain) HasChineseChar() bool {
+	return HasChineseChar(t.S)
 }
 
-// NumberBanner return numbers' string with length of `TextBuilder.TextCollection.Text`
+// NumberBanner return numbers' string with length of `StrChain.sCollection.s`
 //
 // Example:
-// 	TextBuilder.TextCollection.Text = "Text中文 Collection"
+// 	StrChain.sCollection.s = "Text中文 Collection"
 // 	nh, na := CountPlaceHolder（"Text中文 Collection"）
 // 	--> nh=4, na=15 --> length = nh + na = 19
 // 	NumberBanner() return "12345678901"
-func (s *StrChain) NumberBanner() *StrChain {
-	// h, a := s.CountPlaceHolder()
-	// *s = StrChain(NumberBanner(h + a))
-	*s = StrChain(NumberBanner(s.RuneStringWidth()))
-	return s
+func (t *StrChain) NumberBanner() *StrChain {
+	h, a := t.CountPlaceHolder()
+	t.S = NumberBanner(h + a)
+	return t
 }
 
 // Reverse packs `Reverse(s string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) Reverse() *StrChain {
-	*s = StrChain(Reverse(string(*s)))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) Reverse() *StrChain {
+	t.S = Reverse(t.S)
+	return t
 }
 
-// HasPrefix return `HasPrefix(string(*s), prefix)`
-func (s *StrChain) HasPrefix(prefix string) bool {
-	return HasPrefix(string(*s), prefix)
+// HasPrefix return `HasPrefix(t.S, prefix)`
+func (t *StrChain) HasPrefix(prefix string) bool {
+	return HasPrefix(t.S, prefix)
 }
 
-// HasSuffix return `HasSuffix(string(*s), Suffix)`
-func (s *StrChain) HasSuffix(suffix string) bool {
-	return HasSuffix(string(*s), suffix)
+// HasSuffix return `HasSuffix(t.S, Suffix)`
+func (t *StrChain) HasSuffix(suffix string) bool {
+	return HasSuffix(t.S, suffix)
 }
 
-// Contains return `Contains(string(*s), substr)`
-func (s *StrChain) Contains(substr string) bool {
-	return Contains(string(*s), substr)
+// Contains return `Contains(t.S, substr)`
+func (t *StrChain) Contains(substr string) bool {
+	return Contains(t.S, substr)
 }
 
-// ContainsAny return `ContainsAny(string(*s), chars)`
-func (s *StrChain) ContainsAny(chars string) bool {
-	return ContainsAny(string(*s), chars)
+// ContainsAny return `ContainsAny(t.S, chars)`
+func (t *StrChain) ContainsAny(chars string) bool {
+	return ContainsAny(t.S, chars)
 }
 
-// Fields return Fields(string(*s))
-func (s *StrChain) Fields() []string {
-	return Fields(string(*s))
+// Fields return Fields(t.S)
+func (t *StrChain) Fields() []string {
+	return Fields(t.S)
 }
 
-// FieldsFunc return FieldsFunc(string(*s), f)
-func (s *StrChain) FieldsFunc(f func(rune) bool) []string {
-	return FieldsFunc(string(*s), f)
+// FieldsFunc return FieldsFunc(t.S, f)
+func (t *StrChain) FieldsFunc(f func(rune) bool) []string {
+	return FieldsFunc(t.S, f)
 }
 
-// ContainsAny return ContainsRune(string(*s), r) bool
-func (s *StrChain) ContainsRune(r rune) bool {
-	return ContainsRune(string(*s), r)
+// ContainsAny return ContainsRune(t.S, r) bool
+func (t *StrChain) ContainsRune(r rune) bool {
+	return ContainsRune(t.S, r)
 }
 
-// EqualFold return EqualFold(string(*s),, t) bool
-func (s *StrChain) EqualFold(t string) bool {
-	return EqualFold(string(*s), t)
+// EqualFold return EqualFold(t.S,, t) bool
+func (t *StrChain) EqualFold(s string) bool {
+	return EqualFold(t.S, s)
 }
 
-// Index return Index(string(*s), substr) int
-func (s *StrChain) Index(substr string) int {
-	return Index(string(*s), substr)
+// Index return Index(t.S, substr) int
+func (t *StrChain) Index(substr string) int {
+	return Index(t.S, substr)
 }
 
-// IndexAny return IndexAny(string(*s), chars) int
-func (s *StrChain) IndexAny(chars string) int {
-	return IndexAny(string(*s), chars)
+// IndexAny return IndexAny(t.S, chars) int
+func (t *StrChain) IndexAny(chars string) int {
+	return IndexAny(t.S, chars)
 }
 
-// IndexByte return IndexByte(string(*s), c) int
-func (s *StrChain) IndexByte(c byte) int {
-	return IndexByte(string(*s), c)
+// IndexByte return IndexByte(t.S, c) int
+func (t *StrChain) IndexByte(c byte) int {
+	return IndexByte(t.S, c)
 }
 
-// IndexFunc return IndexFunc(string(*s), f) int
-func (s *StrChain) IndexFunc(f func(rune) bool) int {
-	return IndexFunc(string(*s), f)
+// IndexFunc return IndexFunc(t.S, f) int
+func (t *StrChain) IndexFunc(f func(rune) bool) int {
+	return IndexFunc(t.S, f)
 }
 
-// IndexRune return IndexRune(string(*s), r) int
-func (s *StrChain) IndexRune(r rune) int {
-	return IndexRune(string(*s), r)
+// IndexRune return IndexRune(t.S, r) int
+func (t *StrChain) IndexRune(r rune) int {
+	return IndexRune(t.S, r)
 }
 
-// LastIndex return LastIndex(string(*s), substr) int
-func (s *StrChain) LastIndex(substr string) int {
-	return LastIndex(string(*s), substr)
+// LastIndex return LastIndex(t.S, substr) int
+func (t *StrChain) LastIndex(substr string) int {
+	return LastIndex(t.S, substr)
 }
 
-// LastIndexAny return LastIndexAny(string(*s), chars) int
-func (s *StrChain) LastIndexAny(chars string) int {
-	return LastIndexAny(string(*s), chars)
+// LastIndexAny return LastIndexAny(t.S, chars) int
+func (t *StrChain) LastIndexAny(chars string) int {
+	return LastIndexAny(t.S, chars)
 }
 
-// LastIndexByte return LastIndexByte(string(*s), c) int
-func (s *StrChain) LastIndexByte(c byte) int {
-	return LastIndexByte(string(*s), c)
+// LastIndexByte return LastIndexByte(t.S, c) int
+func (t *StrChain) LastIndexByte(c byte) int {
+	return LastIndexByte(t.S, c)
 }
 
-// LastIndexFunc return LastIndexFunc(string(*s), f) int
-func (s *StrChain) LastIndexFunc(f func(rune) bool) int {
-	return LastIndexFunc(string(*s), f)
+// LastIndexFunc return LastIndexFunc(t.S, f) int
+func (t *StrChain) LastIndexFunc(f func(rune) bool) int {
+	return LastIndexFunc(t.S, f)
 }
 
-// Split return Split(string(*s), sep) []string
-func (s *StrChain) Split(sep string) []string {
-	return Split(string(*s), sep)
+// Split return Split(t.S, sep) []string
+func (t *StrChain) Split(sep string) []string {
+	return Split(t.S, sep)
 }
 
-// Split return Split(string(*s), sep) []string
-func (s *StrChain) SplitN(sep string, n int) []string {
-	return SplitN(string(*s), sep, n)
+// Split return Split(t.S, sep) []string
+func (t *StrChain) SplitN(sep string, n int) []string {
+	return SplitN(t.S, sep, n)
 }
 
-// Split return Split(string(*s), sep) []string
-func (s *StrChain) SplitAfter(sep string) []string {
-	return SplitAfter(string(*s), sep)
+// Split return Split(t.S, sep) []string
+func (t *StrChain) SplitAfter(sep string) []string {
+	return SplitAfter(t.S, sep)
 }
 
-// Split return Split(string(*s), sep) []string
-func (s *StrChain) SplitAfterN(sep string, n int) []string {
-	return SplitAfterN(string(*s), sep, n)
+// Split return Split(t.S, sep) []string
+func (t *StrChain) SplitAfterN(sep string, n int) []string {
+	return SplitAfterN(t.S, sep, n)
 }
 
 // Trim packs `Trim(s, cutset)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) Trim(cutset string) *StrChain {
-	*s = StrChain(Trim(string(*s), cutset))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) Trim(cutset string) *StrChain {
+	t.S = Trim(t.S, cutset)
+	return t
 }
 
 // TrimFunc packs `TrimFunc(s string, f func(rune) bool)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) TrimFunc(f func(rune) bool) *StrChain {
-	*s = StrChain(TrimFunc(string(*s), f))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) TrimFunc(f func(rune) bool) *StrChain {
+	t.S = TrimFunc(t.S, f)
+	return t
 }
 
 // TrimLeft packs `TrimLeft(s, cutset string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) TrimLeft(cutset string) *StrChain {
-	*s = StrChain(TrimLeft(string(*s), cutset))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) TrimLeft(cutset string) *StrChain {
+	t.S = TrimLeft(t.S, cutset)
+	return t
 }
 
 // TrimLeftFunc packs `TrimLeftFunc(s string, f func(rune) bool)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) TrimLeftFunc(f func(rune) bool) *StrChain {
-	*s = StrChain(TrimLeftFunc(string(*s), f))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) TrimLeftFunc(f func(rune) bool) *StrChain {
+	t.S = TrimLeftFunc(t.S, f)
+	return t
 }
 
 // TrimPrefix packs `TrimPrefix(s, prefix string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) TrimPrefix(prefix string) *StrChain {
-	*s = StrChain(TrimPrefix(string(*s), prefix))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) TrimPrefix(prefix string) *StrChain {
+	t.S = TrimPrefix(t.S, prefix)
+	return t
 }
 
 // TrimRight packs `TrimRight(s, cutset string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) TrimRight(cutset string) *StrChain {
-	*s = StrChain(TrimRight(string(*s), cutset))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) TrimRight(cutset string) *StrChain {
+	t.S = TrimRight(t.S, cutset)
+	return t
 }
 
 // TrimRightFunc packs `TrimRightFunc(s string, f func(rune) bool)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) TrimRightFunc(f func(rune) bool) *StrChain {
-	*s = StrChain(TrimRightFunc(string(*s), f))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) TrimRightFunc(f func(rune) bool) *StrChain {
+	t.S = TrimRightFunc(t.S, f)
+	return t
 }
 
 // TrimSpace packs `TrimSpace(s string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) TrimSpace() *StrChain {
-	*s = StrChain(TrimSpace(string(*s)))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) TrimSpace() *StrChain {
+	t.S = TrimSpace(t.S)
+	return t
 }
 
 // TrimSuffix packs `TrimSuffix(s, suffix string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) TrimSuffix(suffix string) *StrChain {
-	*s = StrChain(TrimSuffix(string(*s), suffix))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) TrimSuffix(suffix string) *StrChain {
+	t.S = TrimSuffix(t.S, suffix)
+	return t
 }
 
 // ToUpper packs `ToUpper(s string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) ToUpper() *StrChain {
-	*s = StrChain(ToUpper(string(*s)))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) ToUpper() *StrChain {
+	t.S = ToUpper(t.S)
+	return t
 }
 
 // ToTitle packs `ToTitle(s string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) ToTitle() *StrChain {
-	*s = StrChain(ToUpper(string(*s)))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) ToTitle() *StrChain {
+	t.S = ToTitle(t.S)
+	return t
 }
 
 // ToLower packs ` ToLower(s string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) ToLower() *StrChain {
-	*s = StrChain(ToLower(string(*s)))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) ToLower() *StrChain {
+	t.S = ToLower(t.S)
+	return t
 }
 
 // Title returns packs `Title(s string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) Title() *StrChain {
-	*s = StrChain(Title(string(*s)))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) Title() *StrChain {
+	t.S = Title(t.S)
+	return t
 }
 
 // Map packs `Map(mapping func(rune) rune, s string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) Map(mapping func(rune) rune) *StrChain {
-	*s = StrChain(Map(mapping, string(*s)))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) Map(mapping func(rune) rune) *StrChain {
+	t.S = Map(mapping, t.S)
+	return t
 }
 
 // Repeat packs `Repeat(s string, count int)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) Repeat(count int) *StrChain {
-	*s = StrChain(Repeat(string(*s), count))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) Repeat(count int) *StrChain {
+	t.S = Repeat(t.S, count)
+	return t
 }
 
 // Replace packs `Replace(s, old, new string, n int)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) Replace(old, new string, n int) *StrChain {
-	*s = StrChain(Replace(string(*s), old, new, n))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) Replace(old, new string, n int) *StrChain {
+	t.S = Replace(t.S, old, new, n)
+	return t
 }
 
 // ReplaceAll packs `ReplaceAll(s, old, new string)`
-// 	set `TextCollection.Text` to the result
-func (s *StrChain) ReplaceAll(old, new string) *StrChain {
-	*s = StrChain(ReplaceAll(string(*s), old, new))
-	return s
+// 	set `TextCollection.s` to the result
+func (t *StrChain) ReplaceAll(old, new string) *StrChain {
+	t.S = ReplaceAll(t.S, old, new)
+	return t
 }
 
 // GbkToUtf8String packs `GbkToUtf8String(s string)`
-func (s *StrChain) GbkToUtf8String() (*StrChain, error) {
-	t, e := GbkToUtf8String(string(*s))
+func (t *StrChain) GbkToUtf8String() (*StrChain, error) {
+	s, e := GbkToUtf8String(t.S)
 	if e != nil {
-		*s = StrChain("")
-		return s, e
+		t.S = ""
+		return t, e
 	}
-	*s = StrChain(t)
-	return s, nil
+	t.S = s
+	return t, nil
 }
 
 // Utf8ToGbkString packs `Utf8ToGbkString(s string)`
-func (s *StrChain) Utf8ToGbkString() (*StrChain, error) {
-	t, e := Utf8ToGbkString(string(*s))
+func (t *StrChain) Utf8ToGbkString() (*StrChain, error) {
+	s, e := Utf8ToGbkString(t.S)
 	if e != nil {
-		*s = StrChain("")
-		return s, e
+		t.S = ""
+		return t, e
 	}
-	*s = StrChain(t)
-	return s, nil
+	t.S = s
+	return t, nil
 }
 
 // Big5ToUtf8String packs `Big5ToUtf8String(s string)`
-func (s *StrChain) Big5ToUtf8String() (*StrChain, error) {
-	t, e := Big5ToUtf8String(string(*s))
+func (t *StrChain) Big5ToUtf8String() (*StrChain, error) {
+	s, e := Big5ToUtf8String(t.S)
 	if e != nil {
-		*s = StrChain("")
-		return s, e
+		t.S = ""
+		return t, e
 	}
-	*s = StrChain(t)
-	return s, nil
+	t.S = s
+	return t, nil
 }
 
 // Utf8ToBig5String packs `Utf8ToBig5String(s string)`
-func (s *StrChain) Utf8ToBig5String() (*StrChain, error) {
-	t, e := Utf8ToBig5String(string(*s))
+func (t *StrChain) Utf8ToBig5String() (*StrChain, error) {
+	s, e := Utf8ToBig5String(t.S)
 	if e != nil {
-		*s = StrChain("")
-		return s, e
+		t.S = ""
+		return t, e
 	}
-	*s = StrChain(t)
-	return s, nil
+	t.S = s
+	return t, nil
 }
 
 // IsEqualString packs `IsEqualString(a, b string, ignoreCase bool) bool`
-func (s *StrChain) IsEqualString(b string, ignoreCase bool) bool {
-	return IsEqualString(string(*s), b, ignoreCase)
+func (t *StrChain) IsEqualString(b string, ignoreCase bool) bool {
+	return IsEqualString(t.S, b, ignoreCase)
 }
 
 // TrimBOM packs `TrimBOM(line string) string`
-func (s *StrChain) TrimBOM() *StrChain {
-	*s = StrChain(TrimBOM(string(*s)))
-	return s
+func (t *StrChain) TrimBOM() *StrChain {
+	t.S = TrimBOM(t.S)
+	return t
 }
 
 // TrimFrontEndSpaceLine packs `TrimFrontEndSpaceLine(content string) string`
-func (s *StrChain) TrimFrontEndSpaceLine() *StrChain {
-	*s = StrChain(TrimFrontEndSpaceLine(string(*s)))
-	return s
+func (t *StrChain) TrimFrontEndSpaceLine() *StrChain {
+	t.S = TrimFrontEndSpaceLine(t.S)
+	return t
+}
+
+// The following is adopted from github.com/mattn/go-runewidth
+
+// FillLeft return string filled in left by spaces in w cells
+func (t *StrChain) FillLeft(w int) *StrChain {
+	t.S = FillLeft(t.S, w)
+	return t
+}
+
+// FillRight return string filled in left by spaces in w cells
+func (t *StrChain) FillRight(w int) *StrChain {
+	t.S = FillRight(t.S, w)
+	return t
+}
+
+// StringWidth will return width as you can see (the numbers of placeholders on terminal)
+func (t *StrChain) StringWidth() int {
+	return StringWidth(t.S)
+}
+
+// // RuneWidth returns the number of cells in r. See http://www.unicode.org/reports/tr11/
+// func (t *StrChain) RuneWidth(r rune) int {
+// 	return RuneWidth(r)
+// }
+
+// Truncate return string truncated with w cells
+func (t *StrChain) Truncate(w int, tail string) *StrChain {
+	t.S = Truncate(t.S, w, tail)
+	return t
+}
+
+// Wrap return string wrapped with w cells
+func (t *StrChain) Wrap(w int) *StrChain {
+	t.S = Wrap(t.S, w)
+	return t
 }

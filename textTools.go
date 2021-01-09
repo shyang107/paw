@@ -516,7 +516,7 @@ func ToUpper(s string) string {
 // 	LOUD NOISES
 // 	ХЛЕБ
 func ToTitle(s string) string {
-	return strings.ToUpper(s)
+	return strings.ToTitle(s)
 }
 
 // ToLower returns s with all Unicode letters mapped to their lower case.
@@ -844,8 +844,8 @@ func FillRight(s string, w int) string {
 	return runewidth.FillRight(s, w)
 }
 
-// RuneStringWidth will return width as you can see
-func RuneStringWidth(s string) int {
+// StringWidth will return width as you can see (the numbers of placeholders on terminal)
+func StringWidth(s string) int {
 	return runewidth.StringWidth(s)
 }
 
