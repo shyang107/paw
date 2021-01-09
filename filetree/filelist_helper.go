@@ -156,10 +156,10 @@ func isEnded(levelsEnded []int, level int) bool {
 
 // GetColorizedDirName will return a colorful string of {{ dir }}/{{ name }}
 func GetColorizedDirName(path string, root string) string {
-	return getDirName(path, root)
+	return getColorDirName(path, root)
 }
 
-func getDirName(path string, root string) string {
+func getColorDirName(path string, root string) string {
 	file, err := NewFile(path)
 	if err != nil {
 		dir, name := filepath.Split(path)
@@ -180,9 +180,33 @@ func getDirName(path string, root string) string {
 	}
 	link := checkAndGetColorLink(file)
 	if len(link) > 0 {
-		name += cpmap['l'].Sprint(" -> ") + link
+		name += cdashp.Sprint(" -> ") + link
 	}
 	return name
+}
+func getDirAndName(path string, root string) (dir, name string) {
+	file, err := NewFile(path)
+	if err != nil {
+		dir, name = filepath.Split(path)
+		if len(root) > 0 {
+			dir = paw.Replace(dir, root, "..", 1)
+		}
+		return dir, name
+	}
+	name = file.BaseName
+	if file.IsDir() {
+		dir, _ = filepath.Split(file.Path)
+		if len(root) > 0 {
+			// dir = strings.TrimPrefix(dir, root)
+			dir = paw.Replace(dir, root, "..", 1)
+		}
+	}
+	link := checkAndGetLink(file)
+	if len(link) > 0 {
+		// name += cdashp.Sprint(" -> ") + link
+		return dir + name, link
+	}
+	return dir, name
 }
 
 func getDirInfo(fl *FileList, file *File) string {

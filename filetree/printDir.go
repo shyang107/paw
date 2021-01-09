@@ -135,7 +135,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sor
 	if file.IsRegular() {
 		git, _ := GetShortStatus(file.Dir)
 		chead := getColorizedHead("", urname, gpname, git)
-		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getDirName(file.Dir, ""))
+		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getColorDirName(file.Dir, ""))
 		fmt.Fprintln(w, chead)
 		meta, _ := file.ColorMeta(git)
 		fmt.Fprintf(w, "%s%s%s\n", pad, meta, file.ColorBaseName())

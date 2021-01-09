@@ -280,7 +280,7 @@ func getName(file *File) string {
 	link := checkAndGetColorLink(file)
 	if len(link) > 0 {
 		// name += cpmap['l'].Sprint(" -> ") + link
-		name += " -> " + link
+		name += cdashp.Sprint(" -> ") + link
 	}
 	return name
 }
