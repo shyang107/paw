@@ -10,8 +10,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/thoas/go-funk"
 
 	"github.com/mattn/go-runewidth"
@@ -190,7 +188,7 @@ func (f *FileList) AddFile(file *File) {
 func findPreDir(dir string) string {
 	pdir, _ := filepath.Split(dir)
 	pdir = paw.TrimSuffix(pdir, PathSeparator)
-	fmt.Println(dir, pdir)
+	// fmt.Println(dir, pdir)
 	return pdir
 
 }
@@ -521,9 +519,9 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 
 	tf.PrintSart()
 	j := 0
+	ndirs, nfiles := 1, 0
 	for i, dir := range dirs {
 		sumsize := uint64(0)
-		ndirs, nfiles := 0, 0
 		for jj, file := range fm[dir] {
 			fsize := file.Size
 			sfsize := ByteSize(fsize)
@@ -536,7 +534,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 			mode := file.ColorPermission()
 			if jj == 0 && file.IsDir() {
 				// idx := fmt.Sprintf("D%d", i)
-				idx := "D" + cast.ToString(i)
+				idx := "G" + cast.ToString(i)
 				sfsize = "-"
 				switch f.depth {
 				case 0:
@@ -555,7 +553,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 				continue
 			}
 			// jdx := fmt.Sprintf("d%d", ndirs+1)
-			jdx := "d" + cast.ToString(ndirs+1)
+			jdx := "d" + cast.ToString(ndirs)
 			// name := file.ColorBaseName()
 			name := file.BaseName
 			if file.IsDir() {
@@ -623,21 +621,21 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 		w       = f.Writer()
 		dirs    = f.Dirs()
 		fm      = f.Map()
-		width   = 80
 		fNDirs  = f.NDirs()
 		fNFiles = f.NFiles()
 		// git     = f.GetGitStatus()
 		// chead                   = f.GetHead4Meta(pad, urname, gpname, git)
-		ntdirs  = 1
-		nsdirs  = 0
-		ntfiles = 0
-		i1      = len(cast.ToString(fNDirs))
-		j1      = max(i1, len(cast.ToString(fNFiles)))
-		j       = 0
-		sppad   = "    "
-		wperm   = 11
-		wsize   = 6
-		wdate   = 14
+		ntdirs      = 1
+		nsdirs      = 0
+		ntfiles     = 0
+		i1          = len(cast.ToString(fNDirs))
+		j1          = max(i1, len(cast.ToString(fNFiles)))
+		j           = 0
+		sppad       = "    "
+		wperm       = 11
+		wsize       = 6
+		wdate       = 14
+		bannerWidth = sttyWidth - 2
 	)
 	buf.Reset()
 
@@ -646,7 +644,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getColorDirName(f.root, ""), KindLSColorString("di", ctdsize))
 	fmt.Fprintln(w, head)
 
-	printBanner(w, pad, "=", width)
+	printBanner(w, pad, "=", bannerWidth)
 
 	if fNDirs == 0 && fNFiles == 0 {
 		goto END
@@ -751,23 +749,23 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 			if len(fm[dir]) > 1 {
 				printDirSummary(w, fpad, ndirs, nfiles, sumsize)
 				switch {
-				case fNFiles == 0:
-					if nsdirs < fNDirs {
-						printBanner(w, pad, "-", 80)
-					}
+				case nsdirs < fNDirs && fNFiles == 0:
+					printBanner(w, pad, "-", bannerWidth)
+				case nsdirs <= fNDirs && ntfiles < fNFiles:
+					printBanner(w, pad, "-", bannerWidth)
 				default:
-					if nsdirs <= fNDirs && ntfiles < fNFiles {
-						printBanner(w, pad, "-", 80)
+					if i < len(f.dirs)-1 {
+						printBanner(w, pad, "-", bannerWidth)
 					}
 				}
 			}
 		}
 	}
 
-	printBanner(w, pad, "=", width)
+	printBanner(w, pad, "=", bannerWidth)
 END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
-	spew.Dump(f.dirs)
+	// spew.Dump(f.dirs)
 	return buf.Bytes()
 }
 
@@ -804,7 +802,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 		ntdirs, nsdirs, ntfiles = 1, 0, 0
 		fNDirs                  = f.NDirs()
 		fNFiles                 = f.NFiles()
-		width                   = 80
+		bannerWidth             = sttyWidth - 2
 	)
 	buf.Reset()
 
@@ -817,12 +815,12 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 		goto END
 	}
 
-	printBanner(w, pad, "=", width)
+	printBanner(w, pad, "=", bannerWidth)
 
 	if funk.IndexOfString(f.dirs, RootMark) != -1 {
 		fmt.Fprintln(w, chead)
 	}
-	for _, dir := range dirs {
+	for i, dir := range dirs {
 		sumsize := uint64(0)
 		nfiles := 0
 		ndirs := 0
@@ -888,20 +886,20 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 			if len(fm[dir]) > 1 {
 				printDirSummary(w, pad, ndirs, nfiles, sumsize)
 				switch {
-				case fNFiles == 0:
-					if nsdirs < fNDirs {
-						printBanner(w, pad, "-", width)
-					}
+				case nsdirs < fNDirs && fNFiles == 0:
+					printBanner(w, pad, "-", bannerWidth)
+				case nsdirs <= fNDirs && ntfiles < fNFiles:
+					printBanner(w, pad, "-", bannerWidth)
 				default:
-					if nsdirs <= fNDirs && ntfiles < fNFiles {
-						printBanner(w, pad, "-", width)
+					if i < len(f.dirs)-1 {
+						printBanner(w, pad, "-", bannerWidth)
 					}
 				}
 			}
 		}
 	}
 
-	printBanner(w, pad, "=", width)
+	printBanner(w, pad, "=", bannerWidth)
 END:
 	// printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
@@ -981,6 +979,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) []byte {
 	}
 
 	// print end message
+	fmt.Fprintln(w)
 	printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
 
 	return buf.Bytes()
