@@ -10,8 +10,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/thoas/go-funk"
 
 	"github.com/mattn/go-runewidth"
@@ -190,7 +188,7 @@ func (f *FileList) AddFile(file *File) {
 func findPreDir(dir string) string {
 	pdir, _ := filepath.Split(dir)
 	pdir = paw.TrimSuffix(pdir, PathSeparator)
-	fmt.Println(dir, pdir)
+	// fmt.Println(dir, pdir)
 	return pdir
 
 }
@@ -521,9 +519,9 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 
 	tf.PrintSart()
 	j := 0
+	ndirs, nfiles := 1, 0
 	for i, dir := range dirs {
 		sumsize := uint64(0)
-		ndirs, nfiles := 0, 0
 		for jj, file := range fm[dir] {
 			fsize := file.Size
 			sfsize := ByteSize(fsize)
@@ -536,7 +534,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 			mode := file.ColorPermission()
 			if jj == 0 && file.IsDir() {
 				// idx := fmt.Sprintf("D%d", i)
-				idx := "D" + cast.ToString(i)
+				idx := "G" + cast.ToString(i)
 				sfsize = "-"
 				switch f.depth {
 				case 0:
@@ -555,9 +553,8 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 				continue
 			}
 			// jdx := fmt.Sprintf("d%d", ndirs+1)
-			jdx := "d" + cast.ToString(ndirs+1)
-			// name := file.ColorBaseName()
-			name := file.BaseName
+			jdx := "d" + cast.ToString(ndirs)
+			name := file.Name()
 			if file.IsDir() {
 				ndirs++
 				tf.PrintRow(jdx, mode, "-", name)
@@ -569,7 +566,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 			}
 			if isExtended {
 				nx := len(file.XAttributes)
-				// sp := paw.Repeat(" ", metalength+len(sntf))
+				// sp := paw.Spaces( metalength+len(sntf))
 				if nx > 0 {
 					edge := EdgeTypeMid
 					for i, x := range file.XAttributes {
@@ -623,21 +620,21 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 		w       = f.Writer()
 		dirs    = f.Dirs()
 		fm      = f.Map()
-		width   = 80
 		fNDirs  = f.NDirs()
 		fNFiles = f.NFiles()
 		// git     = f.GetGitStatus()
 		// chead                   = f.GetHead4Meta(pad, urname, gpname, git)
-		ntdirs  = 1
-		nsdirs  = 0
-		ntfiles = 0
-		i1      = len(cast.ToString(fNDirs))
-		j1      = max(i1, len(cast.ToString(fNFiles)))
-		j       = 0
-		sppad   = "    "
-		wperm   = 11
-		wsize   = 6
-		wdate   = 14
+		ntdirs      = 1
+		nsdirs      = 0
+		ntfiles     = 0
+		i1          = len(cast.ToString(fNDirs))
+		j1          = max(i1, len(cast.ToString(fNFiles)))
+		j           = 0
+		sppad       = "    "
+		wperm       = 11
+		wsize       = 6
+		wdate       = 14
+		bannerWidth = sttyWidth - 2
 	)
 	buf.Reset()
 
@@ -646,7 +643,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getColorDirName(f.root, ""), KindLSColorString("di", ctdsize))
 	fmt.Fprintln(w, head)
 
-	printBanner(w, pad, "=", width)
+	printBanner(w, pad, "=", bannerWidth)
 
 	if fNDirs == 0 && fNFiles == 0 {
 		goto END
@@ -671,14 +668,14 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 					wpi := wppad + wistr
 					wdir := len(dir)
 					wname := paw.StringWidth(name)
-					if wpi+2+wdir+wname > sttyWidth {
-						sp := paw.Repeat(" ", len(istr))
-						switch {
-						case wpi+wdir <= sttyWidth:
-							printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir))
-							printFileItem(w, ppad, sp, "", KindEXAColorString("di", name))
-						default:
-							end := sttyWidth - wpi - 4
+					if wpi+wdir+wname > sttyWidth-4 {
+						sp := paw.Spaces(len(istr))
+						end := sttyWidth - wpi - 4
+						if len(dir) < end {
+							nend := end - len(dir)
+							printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir)+KindEXAColorString("di", name[:nend]))
+							printFileItem(w, ppad, sp, "", KindEXAColorString("di", name[nend:]))
+						} else {
 							printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir[:end]))
 							printFileItem(w, ppad, sp, "", cdirp.Sprint(dir[end:])+KindEXAColorString("di", name))
 						}
@@ -718,23 +715,23 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 			ctime := file.ColorModifyTime()
 			wfpad := len(fpad)
 			wjstr := len(jstr)
-			name := file.BaseName
+			name := file.Name()
 			wname := paw.StringWidth(name)
 			wlead := wjstr + wperm + wsize + wdate + 3
 			if wfpad+wlead+wname <= sttyWidth {
-				cname := file.ColorBaseName()
+				cname := file.ColorName()
 				printFileItem(w, fpad, cjstr, cperm, cfsize, ctime, cname)
 			} else {
 				end := sttyWidth - wfpad - wlead - 2
 				printFileItem(w, fpad, cjstr, cperm, cfsize, ctime, file.LSColorString(name[:end]))
-				sp := paw.Repeat(" ", wlead)
+				sp := paw.Spaces(wlead)
 				printFileItem(w, fpad, sp, file.LSColorString(name[end:]))
 
 			}
 
 			if isExtended {
 				metalength := j1 + 11 + 6 + 14 + 5
-				sp := paw.Repeat(" ", metalength)
+				sp := paw.Spaces(metalength)
 				nx := len(file.XAttributes)
 				if nx > 0 {
 					edge := EdgeTypeMid
@@ -751,23 +748,23 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 			if len(fm[dir]) > 1 {
 				printDirSummary(w, fpad, ndirs, nfiles, sumsize)
 				switch {
-				case fNFiles == 0:
-					if nsdirs < fNDirs {
-						printBanner(w, pad, "-", 80)
-					}
+				case nsdirs < fNDirs && fNFiles == 0:
+					printBanner(w, pad, "-", bannerWidth)
+				case nsdirs <= fNDirs && ntfiles < fNFiles:
+					printBanner(w, pad, "-", bannerWidth)
 				default:
-					if nsdirs <= fNDirs && ntfiles < fNFiles {
-						printBanner(w, pad, "-", 80)
+					if i < len(f.dirs)-1 {
+						printBanner(w, pad, "-", bannerWidth)
 					}
 				}
 			}
 		}
 	}
 
-	printBanner(w, pad, "=", width)
+	printBanner(w, pad, "=", bannerWidth)
 END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
-	spew.Dump(f.dirs)
+	// spew.Dump(f.dirs)
 	return buf.Bytes()
 }
 
@@ -804,7 +801,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 		ntdirs, nsdirs, ntfiles = 1, 0, 0
 		fNDirs                  = f.NDirs()
 		fNFiles                 = f.NFiles()
-		width                   = 80
+		bannerWidth             = sttyWidth - 2
 	)
 	buf.Reset()
 
@@ -817,12 +814,12 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 		goto END
 	}
 
-	printBanner(w, pad, "=", width)
+	printBanner(w, pad, "=", bannerWidth)
 
 	if funk.IndexOfString(f.dirs, RootMark) != -1 {
 		fmt.Fprintln(w, chead)
 	}
-	for _, dir := range dirs {
+	for i, dir := range dirs {
 		sumsize := uint64(0)
 		nfiles := 0
 		ndirs := 0
@@ -858,11 +855,11 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 			nameWidth := sttyWidth - metalength
 			name := file.BaseName
 			if len(name) <= nameWidth {
-				fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, meta, file.ColorBaseName())
+				fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, meta, file.ColorName())
 			} else {
 				names := paw.Split(paw.Wrap(name, nameWidth), "\n")
 				fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, meta, file.LSColorString(names[0]))
-				sp := paw.Repeat(" ", metalength)
+				sp := paw.Spaces(metalength)
 				for k := 1; k < len(names); k++ {
 					fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, sp, file.LSColorString(names[k]))
 				}
@@ -871,7 +868,7 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 
 			if isExtended {
 				nx := len(file.XAttributes)
-				sp := paw.Repeat(" ", metalength+len(sntf))
+				sp := paw.Spaces(metalength + len(sntf))
 				if nx > 0 {
 					edge := EdgeTypeMid
 					for i := 0; i < nx; i++ {
@@ -888,20 +885,20 @@ func toListView(f *FileList, pad string, isExtended bool) []byte {
 			if len(fm[dir]) > 1 {
 				printDirSummary(w, pad, ndirs, nfiles, sumsize)
 				switch {
-				case fNFiles == 0:
-					if nsdirs < fNDirs {
-						printBanner(w, pad, "-", width)
-					}
+				case nsdirs < fNDirs && fNFiles == 0:
+					printBanner(w, pad, "-", bannerWidth)
+				case nsdirs <= fNDirs && ntfiles < fNFiles:
+					printBanner(w, pad, "-", bannerWidth)
 				default:
-					if nsdirs <= fNDirs && ntfiles < fNFiles {
-						printBanner(w, pad, "-", width)
+					if i < len(f.dirs)-1 {
+						printBanner(w, pad, "-", bannerWidth)
 					}
 				}
 			}
 		}
 	}
 
-	printBanner(w, pad, "=", width)
+	printBanner(w, pad, "=", bannerWidth)
 END:
 	// printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
@@ -981,6 +978,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) []byte {
 	}
 
 	// print end message
+	fmt.Fprintln(w)
 	printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
 
 	return buf.Bytes()
@@ -1028,6 +1026,9 @@ func (f *FileList) ToClassifyView(pad string) []byte {
 		}
 	}
 
+	if f.depth == 0 {
+		fmt.Fprintln(w)
+	}
 	printTotalSummary(w, "", f.NDirs(), f.NFiles(), f.totalSize)
 
 	b := padding(pad, buf.Bytes())
@@ -1068,13 +1069,13 @@ func cgGetFileString(file *File, width int) string {
 	tail := ""
 	cname := file.ColorBaseName()
 	if file.IsDir() {
-		tail = "/" + paw.Repeat(" ", ns-1)
+		tail = "/" + paw.Spaces(ns-1)
 	} else {
 		if file.IsLink() {
 			cname = file.LSColorString(file.BaseName)
-			tail = "@" + paw.Repeat(" ", ns-1)
+			tail = cdashp.Sprint("@") + paw.Spaces(ns-1)
 		} else {
-			tail = paw.Repeat(" ", ns)
+			tail = paw.Spaces(ns)
 		}
 	}
 	return cname + tail
@@ -1146,7 +1147,7 @@ func classifyPrintFiles(w io.Writer, files []*File) {
 	for _, file := range files {
 		cname := file.ColorBaseName()
 		if file.IsLink() {
-			cname = file.LSColorString(file.BaseName) + cxp.Sprint("@")
+			cname = file.LSColorString(file.BaseName) + cdashp.Sprint("@")
 		}
 		if file.IsDir() {
 			fmt.Fprintf(w, "%s/  ", cname)

@@ -27,34 +27,39 @@ import (
 type EdgeType string
 
 var (
-	EdgeTypeLink          EdgeType = "│"   //treeprint.EdgeTypeLink
-	EdgeTypeMid           EdgeType = "├──" //treeprint.EdgeTypeMid
-	EdgeTypeEnd           EdgeType = "└──" //treeprint.EdgeTypeEnd
-	IndentSize                     = 3     //treeprint.IndentSize
-	SpaceIndentSize                = paw.Repeat(" ", IndentSize)
-	cdashp                         = NewEXAColor("-")
-	cxp                            = NewEXAColor("xattr")
-	chdp                           = NewEXAColor("hd")
-	cdirp                          = NewEXAColor("dir")
-	lsdip                          = NewLSColor("di")
-	currentuser, _                 = user.Current()
-	urname                         = currentuser.Username
-	usergp, _                      = user.LookupGroupId(currentuser.Gid)
-	gpname                         = usergp.Name
-	curname, cgpname               = getColorizedUGName(urname, gpname)
-	sttyHeight, sttyWidth          = getTerminalSize()
+	EdgeTypeLink          EdgeType         = "│"   //treeprint.EdgeTypeLink
+	EdgeTypeMid           EdgeType         = "├──" //treeprint.EdgeTypeMid
+	EdgeTypeEnd           EdgeType         = "└──" //treeprint.EdgeTypeEnd
+	IndentSize                             = 3     //treeprint.IndentSize
+	SpaceIndentSize                        = paw.Spaces(IndentSize)
+	cdashp                                 = NewEXAColor("-")
+	cxp                                    = NewEXAColor("xattr")
+	chdp                                   = NewEXAColor("hd")
+	cdirp                                  = NewEXAColor("dir")
+	lsdip                                  = NewLSColor("di")
+	currentuser, _                         = user.Current()
+	urname                                 = currentuser.Username
+	usergp, _                              = user.LookupGroupId(currentuser.Gid)
+	gpname                                 = usergp.Name
+	curname, cgpname                       = getColorizedUGName(urname, gpname)
+	sttyHeight, sttyWidth                  = getTerminalSize()
+	edgeWidth             map[EdgeType]int = map[EdgeType]int{
+		EdgeTypeLink: 1,
+		EdgeTypeMid:  3,
+		EdgeTypeEnd:  3,
+	}
 )
 
-func edgeWidth(edge EdgeType) int {
-	switch edge {
-	case EdgeTypeLink:
-		return 1
-	default:
-		// case EdgeTypeMid:
-		// case EdgeTypeEnd:
-		return 3
-	}
-}
+// func edgeWidth(edge EdgeType) int {
+// 	switch edge {
+// 	case EdgeTypeLink:
+// 		return 1
+// 	default:
+// 		// case EdgeTypeMid:
+// 		// case EdgeTypeEnd:
+// 		return 3
+// 	}
+// }
 
 func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool) {
@@ -68,30 +73,47 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 		xlen += lenmeta
 	}
 	fmt.Fprintf(wr, "%v", meta)
-
+	axlen := xlen
+	aMeta := ""
 	for i := 0; i < level; i++ {
 		if isEnded(levelsEnded, i) {
-			fmt.Fprint(wr, paw.Repeat(" ", IndentSize+1))
+			fmt.Fprint(wr, paw.Spaces(IndentSize+1))
+			aMeta += paw.Spaces(IndentSize + 1)
 			xlen += (IndentSize + 1)
 			continue
 		}
 		cedge := cdashp.Sprint(EdgeTypeLink) //KindLSColorString("-", string(EdgeTypeLink))
-		// fmt.Fprintf(wr, "%v%s", cedge, paw.Repeat(" ", IndentSize))
+		// fmt.Fprintf(wr, "%v%s", cedge, paw.Spaces( IndentSize))
 		fmt.Fprintf(wr, "%v%s", cedge, SpaceIndentSize)
-		xlen += (edgeWidth(EdgeTypeLink) + IndentSize)
+		aMeta += fmt.Sprintf("%v%s", cedge, SpaceIndentSize)
+		xlen += (edgeWidth[EdgeTypeLink] + IndentSize)
 	}
-
-	cedge := cdashp.Sprint(edge) //KindLSColorString("-", string(edge))
-	name := file.ColorBaseName()
+	dinf := ""
 	if file.IsDir() && fl.depth == -1 {
-		dinf := fl.DirInfo(file)
-		name = dinf + " " + name
+		dinf = fl.DirInfo(file) + " "
+	}
+	name := file.BaseName
+	if xlen+len(name)+edgeWidth[edge]+1 >= sttyWidth {
+		end := sttyWidth - xlen - edgeWidth[edge] - 2
+		cedge := cdashp.Sprint(edge) //KindLSColorString("-", string(edge))
+		fmt.Fprintf(wr, "%v %v\n", cedge, file.LSColorString(name[:end]))
+		switch edge {
+		case EdgeTypeMid:
+			cedge = paw.Spaces(axlen) + aMeta + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
+		case EdgeTypeEnd:
+			// cedge = paw.Spaces( xlen+edgeWidth[edge]) + SpaceIndentSize
+			cedge = paw.Spaces(axlen) + aMeta + SpaceIndentSize
+		}
+		fmt.Fprintf(wr, "%v%v\n", cedge, file.LSColorString(name[end:]))
+	} else {
+		cedge := cdashp.Sprint(edge) //KindLSColorString("-", string(edge))
+		cname := dinf + file.ColorBaseName()
+		fmt.Fprintf(wr, "%v %v\n", cedge, cname)
 	}
 
-	fmt.Fprintf(wr, "%v %v\n", cedge, name)
-	xlen += edgeWidth(edge) + 1 //- IndentSize - level + 1
+	// xlen += edgeWidth[edge] + 1 //- IndentSize - level + 1
 	if isExtended {
-		sp := paw.Repeat(" ", xlen)
+		// sp := paw.Spaces( xlen+edgeWidth[edge]+1)
 		nx := len(file.XAttributes)
 		if nx > 0 {
 			// edge := EdgeTypeMid
@@ -101,7 +123,16 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 				// }
 				// fmt.Fprintf(wr, "%s%s%s %s\n", pad, sp, NewEXAColor("-").Sprint(edge), file.XAttributes[i])
 				// fmt.Fprintf(wr, "%s%s%s %s\n", pad, sp, NewEXAColor("-").Sprint("@"), file.XAttributes[i])
-				fmt.Fprintf(wr, "%s%s%s %s\n", pad, sp, cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
+				cedge := ""
+				switch edge {
+				case EdgeTypeMid:
+					// cedge = paw.Spaces( xlen) + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
+					cedge = paw.Spaces(axlen) + aMeta + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
+				case EdgeTypeEnd:
+					// cedge = paw.Spaces( xlen+edgeWidth[edge]) + SpaceIndentSize
+					cedge = paw.Spaces(axlen) + aMeta + paw.Spaces(IndentSize+1)
+				}
+				fmt.Fprintf(wr, "%s%s%s %s\n", pad, cedge, cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
 			}
 		}
 	}
@@ -164,7 +195,7 @@ func getColorDirName(path string, root string) string {
 	if err != nil {
 		dir, name := filepath.Split(path)
 		if len(root) > 0 {
-			dir = paw.Replace(dir, root, "..", 1)
+			dir = paw.Replace(dir, root, RootMark, 1)
 		}
 		name = cdirp.Sprint(dir) + lsdip.Sprint(name)
 		return name
@@ -174,13 +205,12 @@ func getColorDirName(path string, root string) string {
 		dir, _ := filepath.Split(file.Path)
 		if len(root) > 0 {
 			// dir = strings.TrimPrefix(dir, root)
-			dir = paw.Replace(dir, root, "..", 1)
+			dir = paw.Replace(dir, root, RootMark, 1)
 		}
 		name = cdirp.Sprint(dir) + name
 	}
-	link := checkAndGetColorLink(file)
-	if len(link) > 0 {
-		name += cdashp.Sprint(" -> ") + link
+	if file.IsLink() {
+		name += cdashp.Sprint(" -> ") + file.ColorLinkPath()
 	}
 	return name
 }
@@ -189,7 +219,7 @@ func getDirAndName(path string, root string) (dir, name string) {
 	if err != nil {
 		dir, name = filepath.Split(path)
 		if len(root) > 0 {
-			dir = paw.Replace(dir, root, "..", 1)
+			dir = paw.Replace(dir, root, RootMark, 1)
 		}
 		return dir, name
 	}
@@ -198,13 +228,11 @@ func getDirAndName(path string, root string) (dir, name string) {
 		dir, _ = filepath.Split(file.Path)
 		if len(root) > 0 {
 			// dir = strings.TrimPrefix(dir, root)
-			dir = paw.Replace(dir, root, "..", 1)
+			dir = paw.Replace(dir, root, RootMark, 1)
 		}
 	}
-	link := checkAndGetLink(file)
-	if len(link) > 0 {
-		// name += cdashp.Sprint(" -> ") + link
-		return dir + name, link
+	if file.IsLink() {
+		return dir + name, file.LinkPath()
 	}
 	return dir, name
 }
@@ -295,7 +323,7 @@ func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uin
 
 func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
 	// fmt.Fprintf(w, "%s\n%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
-	summary := fmt.Sprintf("%s\n%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
+	summary := fmt.Sprintf("%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize))
 	fmt.Fprintf(w, cdashp.Sprint(summary))
 }
 

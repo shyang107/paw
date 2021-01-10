@@ -135,15 +135,17 @@ func NewFileRelTo(path, root string) (*File, error) {
 	return f, nil
 }
 
-// func (f File) String() string {
-// 	// return f.Path
-// 	if NoColor {
-// 		return f.BaseName
-// 	}
+func (f File) String() string {
+	return f.Name()
+}
 
-// 	cvalue, _ := FileLSColorString(f.Path, f.BaseName)
-// 	return cvalue
-// }
+func (f File) Name() string {
+	return f.BaseNameToLink()
+}
+
+func (f File) ColorName() string {
+	return f.ColorBaseNameToLink()
+}
 
 // LSColorString will return a color string using LS_COLORS according to `f.Path` of file
 func (f *File) LSColorString(s string) string {
@@ -168,6 +170,39 @@ func (f *File) IsLink() bool {
 		return true
 	}
 	return false
+}
+
+// LinkPath report far-end path of a symbolic link.
+func (f *File) LinkPath() string {
+	if f.IsLink() {
+		alink, err := filepath.EvalSymlinks(f.Path)
+		if err != nil {
+			alink = alink + " ERR: " + err.Error()
+		}
+		return alink
+	}
+	return ""
+}
+
+// ColorLinkPath return colorized far-end path string of a symbolic link.
+func (f *File) ColorLinkPath() string {
+	return GetColorizedDirName(f.LinkPath(), "")
+}
+
+// BaseNameToLink return colorized name & symlink
+func (f *File) BaseNameToLink() string {
+	if f.IsLink() {
+		return f.BaseName + " -> " + f.LinkPath()
+	}
+	return f.BaseName
+}
+
+// ColorBaseNameToLink return colorized name & symlink
+func (f *File) ColorBaseNameToLink() string {
+	if f.IsLink() {
+		return f.ColorBaseName() + cdashp.Sprint(" -> ") + f.ColorLinkPath()
+	}
+	return f.ColorBaseName()
 }
 
 // IsFile reports whether File describes a file (not directory and symbolic link).
@@ -260,44 +295,44 @@ func (f *File) DirSlice() []string {
 
 // ColorBaseName will return a colorful string of BaseName using LS_COLORS like as exa
 func (f *File) ColorBaseName() string {
-	return getName(f)
+	return f.LSColorString(f.BaseName)
 }
 
-// func getLTName(file *File) string {
-func getName(file *File) string {
-	name := file.LSColorString(file.BaseName)
-	if file.IsDir() && file.Dir == RootMark {
-		dir, _ := filepath.Split(file.Path)
-		name = cdirp.Sprint(dir) + name
-	}
-	link := checkAndGetColorLink(file)
-	if len(link) > 0 {
-		// name += cpmap['l'].Sprint(" -> ") + link
-		name += cdashp.Sprint(" -> ") + link
-	}
-	return name
-}
+// // func getLTName(file *File) string {
+// func getName(file *File) string {
+// 	name := file.LSColorString(file.BaseName)
+// 	if file.IsDir() && file.Dir == RootMark {
+// 		dir, _ := filepath.Split(file.Path)
+// 		name = cdirp.Sprint(dir) + name
+// 	}
+// 	link := checkAndGetColorLink(file)
+// 	if len(link) > 0 {
+// 		// name += cpmap['l'].Sprint(" -> ") + link
+// 		name += cdashp.Sprint(" -> ") + link
+// 	}
+// 	return name
+// }
 
-func checkAndGetColorLink(file *File) (link string) {
-	mode := file.Stat.Mode()
-	if mode&os.ModeSymlink != 0 {
-		alink, err := filepath.EvalSymlinks(file.Path)
-		if err != nil {
-			link = alink + " ERR: " + err.Error()
-		} else {
-			// link, _ = FileLSColorString(alink, alink)
-			link = GetColorizedDirName(alink, "")
-		}
-	}
-	return link
-}
+// func checkAndGetColorLink(file *File) (link string) {
+// 	mode := file.Stat.Mode()
+// 	if mode&os.ModeSymlink != 0 {
+// 		alink, err := filepath.EvalSymlinks(file.Path)
+// 		if err != nil {
+// 			link = alink + " ERR: " + err.Error()
+// 		} else {
+// 			// link, _ = FileLSColorString(alink, alink)
+// 			link = GetColorizedDirName(alink, "")
+// 		}
+// 	}
+// 	return link
+// }
 
-func checkAndGetLink(file *File) (link string) {
-	SetNoColor()
-	link = checkAndGetColorLink(file)
-	DefaultNoColor()
-	return link
-}
+// func checkAndGetLink(file *File) (link string) {
+// 	SetNoColor()
+// 	link = checkAndGetColorLink(file)
+// 	DefaultNoColor()
+// 	return link
+// }
 
 // ColorPermission will return a colorful string of Stat.Mode() like as exa.
 // The length of placeholder in terminal is 10.

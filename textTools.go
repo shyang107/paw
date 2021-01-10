@@ -863,3 +863,8 @@ func Truncate(s string, w int, tail string) string {
 func Wrap(s string, w int) string {
 	return runewidth.Wrap(s, w)
 }
+
+// Spaces return a string with lenth w of spaces
+func Spaces(w int) string {
+	return Repeat(" ", w)
+}
