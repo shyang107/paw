@@ -106,7 +106,8 @@ func getXattr(path string) ([]string, error) {
 
 const (
 	// RootMark = "."
-	RootMark = "."
+	RootMark  = "."
+	UpDirMark = ".."
 )
 
 // NewFileRelTo will the pointer of instance of `File`, and is a constructor of `File`, but `File.Dir` is sub-directory of `root`
@@ -126,19 +127,11 @@ func NewFileRelTo(path, root string) (*File, error) {
 		return nil, err
 	}
 	if f.IsDir() {
-		if f.Path == root {
-			f.Dir = paw.Replace(f.Path, root, ".", 1)
-		} else {
-			f.Dir = paw.Replace(f.Path, root, "..", 1)
-		}
+		f.Dir = paw.Replace(f.Path, root, RootMark, 1)
 		return f, nil
 	}
 
-	if f.Dir == root {
-		f.Dir = paw.Replace(f.Dir, root, ".", 1)
-	} else {
-		f.Dir = paw.Replace(f.Dir, root, "..", 1)
-	}
+	f.Dir = paw.Replace(f.Dir, root, RootMark, 1)
 	return f, nil
 }
 

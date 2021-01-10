@@ -10,6 +10,8 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"github.com/thoas/go-funk"
 
 	"github.com/mattn/go-runewidth"
@@ -186,15 +188,9 @@ func (f *FileList) AddFile(file *File) {
 }
 
 func findPreDir(dir string) string {
-	ddirs := paw.Split(dir, PathSeparator)
-	if len(ddirs) == 1 {
-		ddirs = []string{RootMark}
-	}
-	if ddirs[0] == ".." && len(ddirs) == 2 {
-		ddirs[0] = RootMark
-	}
-	pdir := filepath.Join(ddirs[:len(ddirs)-1]...)
-	// fmt.Println(dir, ddirs, pdir)
+	pdir, _ := filepath.Split(dir)
+	pdir = paw.TrimSuffix(pdir, PathSeparator)
+	fmt.Println(dir, pdir)
 	return pdir
 
 }
@@ -665,7 +661,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
-					istr := fmt.Sprintf("G%-[2]*[1]d", ntdirs, i1)
+					istr := fmt.Sprintf("G%-[2]*[1]d", i, i1)
 					cistr := KindLSColorString("di", istr)
 					ppad += paw.Repeat(sppad, len(paw.Split(dir, PathSeparator))-1)
 					// dir, name := getDirAndName(dir, f.root)
@@ -771,6 +767,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 	printBanner(w, pad, "=", width)
 END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
+	spew.Dump(f.dirs)
 	return buf.Bytes()
 }
 
