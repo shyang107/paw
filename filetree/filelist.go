@@ -79,7 +79,7 @@ func (f *FileList) SetWriters(writers ...io.Writer) {
 	// f.ResetBuffer()
 	// f.writers = append(f.writers, writers...)
 	// f.writers = writers
-	writers = append(writers, f.stringBuilder)
+	// writers = append(writers, f.stringBuilder)
 	f.writer = io.MultiWriter(writers...)
 }
 
