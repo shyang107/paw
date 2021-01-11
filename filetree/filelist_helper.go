@@ -477,9 +477,9 @@ func getColorizedModTime(modTime time.Time) string {
 }
 
 func getColorizedHead(pad, username, groupname string, git GitStatus) string {
-	width := max(4, len(username))
+	width := paw.MaxInt(4, len(username))
 	huser := fmt.Sprintf("%[2]*[1]s", "User", width)
-	width = max(5, len(groupname))
+	width = paw.MaxInt(5, len(groupname))
 	hgroup := fmt.Sprintf("%[2]*[1]s", "Group", width)
 
 	ssize := fmt.Sprintf("%6s", "Size")
@@ -490,21 +490,6 @@ func getColorizedHead(pad, username, groupname string, git GitStatus) string {
 		head = fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Data Modified"), chdp.Sprint("Git"), chdp.Sprint("Name"))
 	}
 	return head
-}
-
-func max(i1, i2 int) int {
-	if i1 >= i2 {
-		return i1
-	}
-	return i2
-}
-
-func sum(a []int) int {
-	s := 0
-	for _, v := range a {
-		s += v
-	}
-	return s
 }
 
 func printBanner(w io.Writer, pad string, mark string, length int) {

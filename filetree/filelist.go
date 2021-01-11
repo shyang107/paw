@@ -629,7 +629,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		nsdirs      = 0
 		ntfiles     = 0
 		i1          = len(cast.ToString(fNDirs))
-		j1          = max(i1, len(cast.ToString(fNFiles)))
+		j1          = paw.MaxInt(i1, len(cast.ToString(fNFiles)))
 		j           = 0
 		sppad       = "    "
 		wperm       = 11
@@ -1104,10 +1104,10 @@ func calWidth(lens []int, nFields, limit int) (widths []int) {
 		}
 	}
 
-	sw := sum(widths)
+	sw := paw.SumInts(widths...)
 	if sw > limit {
 		end := 0
-		s := sum(widths)
+		s := paw.SumInts(widths...)
 		for i := len(widths) - 1; i > 0; i-- {
 			s -= widths[i]
 			if s < limit {

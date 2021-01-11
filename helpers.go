@@ -29,6 +29,55 @@ func GetDate() string {
 
 }
 
+// MaxInt will return maximum value of `i` and `j`
+func MaxInt(i, j int) int {
+	return MaxInts(i, j)
+}
+
+// MaxInts will return maximum value of `i` and `js...`
+func MaxInts(i int, js ...int) int {
+	if len(js) == 0 {
+		return i
+	}
+	m := i
+	for _, j := range js {
+		if m < j {
+			m = j
+		}
+	}
+
+	return m
+}
+
+// MinInt will return minimum value of `i` and `j`
+func MinInt(i, j int) int {
+	return MinInts(i, j)
+}
+
+// MinInts will return minimum value of `i` and `js...`
+func MinInts(i int, js ...int) int {
+	if len(js) == 0 {
+		return i
+	}
+	m := i
+	for _, j := range js {
+		if m > j {
+			m = j
+		}
+	}
+
+	return m
+}
+
+// SumInts will return summation of []int
+func SumInts(a ...int) int {
+	s := 0
+	for _, v := range a {
+		s += v
+	}
+	return s
+}
+
 // NewRand return a instance of
 func NewRand() *rand.Rand {
 	// return rand.New(rand.NewSource(time.Now().Unix()))
