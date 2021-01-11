@@ -109,56 +109,93 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sor
 		return err
 	}
 
-	if sortOpt == nil {
-		sortOpt = &PrintDirSortOption{
-			IsSort:  true,
-			SortWay: PDSortByName,
-		}
-	}
+	checkSortOpt(sortOpt)
 
-	if opt == nil {
-		opt = &PrintDirOption{
-			Depth:  0,
-			OutOpt: PListView,
-			// OutOpt: PListExtendView,
-			// OutOpt: PTreeView,
-			// OutOpt: PListTreeView,
-			// OutOpt: PLevelView,
-			// OutOpt: PTableView,
-			// OutOpt: PClassifyView,
-			Ignore: DefaultIgnoreFn,
-		}
-	}
-	file, err := NewFile(path)
+	cehckPrintDirOption(opt)
+
+	err = checkIsFile(w, path, pad)
 	if err != nil {
+		if err == errBreak {
+			return nil
+		}
 		return err
 	}
-	if file.IsRegular() || file.IsLink() {
-		git, _ := GetShortStatus(file.Dir)
-		chead := getColorizedHead("", urname, gpname, git)
-		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getColorDirName(file.Dir, ""))
-		fmt.Fprintln(w, chead)
-		meta, _ := file.ColorMeta(git)
-		fmt.Fprintf(w, "%s%s%s\n", pad, meta, file.ColorName())
-		return nil
-	}
 
-	if opt.Ignore == nil {
-		opt.Ignore = DefaultIgnoreFn
-	}
+	setIgnoreFn(opt)
 
 	pdview = opt.OutOpt
 
-	fl := NewFileList(root)
-	// fl.IsSort = false
-	fl.SetWriters(w)
-
-	fl.IsGrouped = isGrouped
-
-	fl.IsSort = sortOpt.IsSort
+	fl := setFileList(w, root, isGrouped, sortOpt)
 	if !fl.IsSort {
 		goto FIND
 	}
+
+	checkPrintDirSortOption(fl, opt, sortOpt)
+
+FIND:
+	fl.FindFiles(opt.Depth, opt.Ignore)
+
+	cehckPrintDirFiltOpt(fl, filtOpt)
+
+	err = switchFileListView(fl, opt.OutOpt, pad)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func switchFileListView(fl *FileList, outOpt PrintDirType, pad string) error {
+	switch outOpt {
+	case PListView:
+		fl.ToListView(pad)
+	case PListExtendView:
+		fl.ToListExtendView(pad)
+	case PTreeView:
+		fl.ToTreeView(pad)
+	case PTreeExtendView:
+		fl.ToTreeExtendView(pad)
+	case PListTreeView:
+		fl.ToListTreeView(pad)
+	case PListTreeExtendView:
+		fl.ToListTreeExtendView(pad)
+	case PLevelView:
+		fl.ToLevelView(pad, false)
+	case PLevelExtendView:
+		fl.ToLevelView(pad, true)
+	case PTableView:
+		fl.ToTableView(pad, false)
+	case PTableExtendView:
+		fl.ToTableView(pad, true)
+	case PClassifyView:
+		fl.ToClassifyView(pad)
+	default:
+		return errors.New("No this option of PrintDir")
+	}
+	return nil
+}
+
+func cehckPrintDirFiltOpt(fl *FileList, filtOpt *PrintDirFilterOption) {
+	if filtOpt != nil && filtOpt.IsFilt {
+		switch filtOpt.FiltWay {
+		case PDFiltNoEmptyDir: // no empty dir
+			flf := NewFileListFilter(fl, []Filter{FiltEmptyDirs})
+			flf.Filt()
+		case PDFiltJustDirs: // no files
+			flf := NewFileListFilter(fl, []Filter{FiltJustDirs})
+			flf.Filt()
+		case PDFiltJustFiles: // PDFiltJustFilesButNoEmptyDir // no dirs
+			flf := NewFileListFilter(fl, []Filter{FiltJustFiles})
+			flf.Filt()
+		case PDFiltJustDirsButNoEmpty: // no file and no empty dir
+			flf := NewFileListFilter(fl, []Filter{FiltEmptyDirs, FiltJustDirs})
+			flf.Filt()
+		}
+	}
+}
+
+func checkPrintDirSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PrintDirSortOption) {
+
 	if opt.OutOpt != PTreeView || opt.OutOpt != PListTreeView {
 		if sortOpt.IsSort {
 			switch sortOpt.SortWay {
@@ -205,52 +242,64 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sor
 			}
 		}
 	}
-FIND:
-	fl.FindFiles(opt.Depth, opt.Ignore)
+}
 
-	if filtOpt != nil && filtOpt.IsFilt {
-		switch filtOpt.FiltWay {
-		case PDFiltNoEmptyDir: // no empty dir
-			flf := NewFileListFilter(fl, []Filter{FiltEmptyDirs})
-			flf.Filt()
-		case PDFiltJustDirs: // no files
-			flf := NewFileListFilter(fl, []Filter{FiltJustDirs})
-			flf.Filt()
-		case PDFiltJustFiles: // PDFiltJustFilesButNoEmptyDir // no dirs
-			flf := NewFileListFilter(fl, []Filter{FiltJustFiles})
-			flf.Filt()
-		case PDFiltJustDirsButNoEmpty: // no file and no empty dir
-			flf := NewFileListFilter(fl, []Filter{FiltEmptyDirs, FiltJustDirs})
-			flf.Filt()
+func setFileList(w io.Writer, root string, isGrouped bool, sortOpt *PrintDirSortOption) *FileList {
+	fl := NewFileList(root)
+	// fl.IsSort = false
+	fl.SetWriters(w)
+	fl.IsGrouped = isGrouped
+	fl.IsSort = sortOpt.IsSort
+
+	return fl
+}
+
+func setIgnoreFn(opt *PrintDirOption) {
+	if opt.Ignore == nil {
+		opt.Ignore = DefaultIgnoreFn
+	}
+}
+
+func cehckPrintDirOption(opt *PrintDirOption) {
+	if opt == nil {
+		opt = &PrintDirOption{
+			Depth:  0,
+			OutOpt: PListView,
+			// OutOpt: PListExtendView,
+			// OutOpt: PTreeView,
+			// OutOpt: PListTreeView,
+			// OutOpt: PLevelView,
+			// OutOpt: PTableView,
+			// OutOpt: PClassifyView,
+			Ignore: DefaultIgnoreFn,
 		}
 	}
+}
 
-	switch opt.OutOpt {
-	case PListView:
-		fl.ToListView(pad)
-	case PListExtendView:
-		fl.ToListExtendView(pad)
-	case PTreeView:
-		fl.ToTreeView(pad)
-	case PTreeExtendView:
-		fl.ToTreeExtendView(pad)
-	case PListTreeView:
-		fl.ToListTreeView(pad)
-	case PListTreeExtendView:
-		fl.ToListTreeExtendView(pad)
-	case PLevelView:
-		fl.ToLevelView(pad, false)
-	case PLevelExtendView:
-		fl.ToLevelView(pad, true)
-	case PTableView:
-		fl.ToTableView(pad, false)
-	case PTableExtendView:
-		fl.ToTableView(pad, true)
-	case PClassifyView:
-		fl.ToClassifyView(pad)
-	default:
-		return errors.New("No this option of PrintDir")
+func checkSortOpt(sortOpt *PrintDirSortOption) {
+	if sortOpt == nil {
+		sortOpt = &PrintDirSortOption{
+			IsSort:  true,
+			SortWay: PDSortByName,
+		}
 	}
+}
 
+var errBreak = errors.New("return nil")
+
+func checkIsFile(w io.Writer, path string, pad string) error {
+	file, err := NewFile(path)
+	if err != nil {
+		return err
+	}
+	if file.IsRegular() || file.IsLink() {
+		git, _ := GetShortStatus(file.Dir)
+		chead := getColorizedHead("", urname, gpname, git)
+		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getColorDirName(file.Dir, ""))
+		fmt.Fprintln(w, chead)
+		meta, _ := file.ColorMeta(git)
+		fmt.Fprintf(w, "%s%s%s\n", pad, meta, file.ColorName())
+		return errBreak
+	}
 	return nil
 }
