@@ -85,21 +85,6 @@ var (
 // isPrepareAfter  bool
 )
 
-// PaddingString add pad-prefix in every line of string
-func PaddingString(s string, pad string) string {
-	if !Contains(s, "\n") {
-		return pad + s
-	}
-	ss := Split(s, "\n")
-	// sb := strings.Builder{}
-	sb := ""
-	for i := 0; i < len(ss)-1; i++ {
-		sb += pad + ss[i] + "\n"
-	}
-	sb += pad + ss[len(ss)-1]
-	return sb
-}
-
 // SetBeforeMessage set message to show before table
 func (t *TableFormat) SetBeforeMessage(msg string) {
 	t.beforeMsg = msg

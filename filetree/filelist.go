@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/thoas/go-funk"
@@ -26,14 +27,14 @@ type FileMap map[string][]*File
 
 // FileList stores the list information of File
 type FileList struct {
-	root      string   // root directory
-	store     FileMap  // all files in `root` directory
-	dirs      []string // keys of `store`
-	depth     int
-	totalSize uint64
-	gitstatus GitStatus
-	buf       *bytes.Buffer
-	writer    io.Writer
+	root          string   // root directory
+	store         FileMap  // all files in `root` directory
+	dirs          []string // keys of `store`
+	depth         int
+	totalSize     uint64
+	gitstatus     GitStatus
+	stringBuilder *strings.Builder
+	writer        io.Writer
 	// writers   []io.Writer
 	IsSort    bool // increasing order of Lower(path)
 	filesBy   FilesBy
@@ -48,16 +49,16 @@ func NewFileList(root string) *FileList {
 		return &FileList{}
 	}
 	fl := &FileList{
-		root:      root,
-		store:     make(map[string][]*File),
-		dirs:      []string{},
-		buf:       new(bytes.Buffer),
-		IsSort:    true,
-		filesBy:   nil,
-		dirsBy:    nil,
-		IsGrouped: false,
+		root:          root,
+		store:         make(map[string][]*File),
+		dirs:          []string{},
+		stringBuilder: new(strings.Builder),
+		IsSort:        true,
+		filesBy:       nil,
+		dirsBy:        nil,
+		IsGrouped:     false,
 	}
-	fl.SetWriters(fl.buf)
+	fl.SetWriters(fl.stringBuilder)
 	return fl
 }
 
@@ -67,7 +68,7 @@ func (f FileList) String() string {
 	oldwr := f.writer
 	f.writer = new(bytes.Buffer)
 	f.DisableColor()
-	str := f.ToLevelViewString("")
+	str := f.ToLevelView("", false)
 	f.EnableColor()
 	f.writer = oldwr
 	return str
@@ -90,19 +91,19 @@ func (f *FileList) SetWriters(writers ...io.Writer) {
 
 // ResetWriters will reset default writers... (Buffer of FileList) to writer of FileList
 func (f *FileList) ResetWriters() {
-	f.ResetBuffer()
+	f.ResetStringBuilder()
 	// f.writers = []io.Writer{}
-	f.SetWriters(f.buf)
+	f.SetWriters(f.stringBuilder)
 }
 
-// ResetBuffer will reset the buffer of FileList
-func (f *FileList) ResetBuffer() {
-	f.buf.Reset()
+// ResetStringBuilder will reset the buffer of FileList
+func (f *FileList) ResetStringBuilder() {
+	f.stringBuilder.Reset()
 }
 
-// Buffer will return the field buf of FileList
-func (f *FileList) Buffer() *bytes.Buffer {
-	return f.buf
+// StringBuilder will return the field buf of FileList
+func (f *FileList) StringBuilder() *strings.Builder {
+	return f.stringBuilder
 }
 
 // Writer will return the field writer of FileList
@@ -451,48 +452,48 @@ func sortParts(fl *FileList, from, to int, wg sync.WaitGroup) {
 	}
 }
 
-// ToTreeViewString will return the string of FileList in tree form
-func (f *FileList) ToTreeViewString(pad string) string {
-	return string(f.ToTreeView(pad))
+// ToTreeViewBytes will return the []byte of FileList in tree form
+func (f *FileList) ToTreeViewBytes(pad string) []byte {
+	return []byte(f.ToTreeView(pad))
 }
 
-// ToTreeExtendViewString will return the string of FileList in tree form
-func (f *FileList) ToTreeExtendViewString(pad string) string {
-	return string(f.ToTreeExtendView(pad))
+// ToTreeExtendViewBytes will return the string of FileList in tree form
+func (f *FileList) ToTreeExtendViewBytes(pad string) []byte {
+	return []byte(f.ToTreeExtendView(pad))
 }
 
-// ToTreeView will return the []byte of FileList in tree form
-func (f *FileList) ToTreeView(pad string) []byte {
+// ToTreeView will return the string of FileList in tree form
+func (f *FileList) ToTreeView(pad string) string {
 	pdview = PTreeView
 	return toListTreeView(f, pad, false)
 }
 
-// ToTreeExtendView will return the []byte of FileList icluding extend attribute in tree form
-func (f *FileList) ToTreeExtendView(pad string) []byte {
+// ToTreeExtendView will return the string of FileList icluding extend attribute in tree form
+func (f *FileList) ToTreeExtendView(pad string) string {
 	pdview = PTreeView
 	return toListTreeView(f, pad, true)
 }
 
-// ToTableViewString will return the string of FileList in table form
+// ToTableViewBytes will return the []byte of FileList in table form
 // 	`size` of directory shown in the string, is accumulated size of sub contents
-func (f *FileList) ToTableViewString(pad string) string {
-	return string(f.ToTableView(pad, false))
+func (f *FileList) ToTableViewBytes(pad string) []byte {
+	return []byte(f.ToTableView(pad, false))
 }
 
-// ToTableExtendViewString will return the string involving extend attribute of FileList in table form
+// ToTableExtendViewBytes will return the []byte involving extend attribute of FileList in table form
 // 	`size` of directory shown in the string, is accumulated size of sub contents
-func (f *FileList) ToTableExtendViewString(pad string) string {
-	return string(f.ToTableView(pad, true))
+func (f *FileList) ToTableExtendViewBytes(pad string) []byte {
+	return []byte(f.ToTableView(pad, true))
 }
 
-// ToTableView will return the []byte of FileList in table form
+// ToTableView will return the string of FileList in table form
 // 	`size` of directory shown in the returned value, is accumulated size of sub contents
 // 	If `isExtended` is true to involve extend attribute
-func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
+func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	var (
 		// w      = new(bytes.Buffer)
-		buf         = f.buf    //f.Buffer()
-		w           = f.writer //f.Writer()
+		buf         = f.StringBuilder() //f.Buffer()
+		w           = f.writer          //f.Writer()
 		nDirs       = f.NDirs()
 		nFiles      = f.NFiles()
 		dirs        = f.dirs  //f.Dirs()
@@ -595,28 +596,28 @@ func (f *FileList) ToTableView(pad string, isExtended bool) []byte {
 
 	f.EnableColor()
 
-	return buf.Bytes()
+	return buf.String()
 }
 
-// ToLevelViewString will return the string of FileList in table form
+// ToLevelViewBytes will return the []byte of FileList in table form
 // 	`size` of directory shown in the string, is accumulated size of sub contents
-func (f *FileList) ToLevelViewString(pad string) string {
-	return string(f.ToLevelView(pad, false))
+func (f *FileList) ToLevelViewBytes(pad string) []byte {
+	return []byte(f.ToLevelView(pad, false))
 }
 
 // ToLevelExtendViewString will return the string involving extend attribute of FileList in level form
 // 	`size` of directory shown in the string, is accumulated size of sub contents
-func (f *FileList) ToLevelExtendViewString(pad string) string {
-	return string(f.ToLevelView(pad, true))
+func (f *FileList) ToLevelExtendViewBytes(pad string) []byte {
+	return []byte(f.ToLevelView(pad, true))
 }
 
-// ToLevelView will return the []byte of FileList in level form
+// ToLevelView will return the string of FileList in level form
 // 	`size` of directory shown in the returned value, is accumulated size of sub contents
 // 	If `isExtended` is true to involve extend attribute
-func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
+func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	var (
 		// w     = new(bytes.Buffer)
-		buf     = f.Buffer()
+		buf     = f.StringBuilder()
 		w       = f.Writer()
 		dirs    = f.Dirs()
 		fm      = f.Map()
@@ -765,37 +766,37 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) []byte {
 END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
 	// spew.Dump(f.dirs)
-	return buf.Bytes()
+	return buf.String()
+}
+
+// ToListViewBytes will return the []byte of FileList in list form (like as `exa --header --long --time-style=iso --group --git`)
+func (f *FileList) ToListViewBytes(pad string) []byte {
+	return []byte(f.ToListView(pad))
 }
 
 // ToListView will return the string of FileList in list form (like as `exa --header --long --time-style=iso --group --git`)
-func (f *FileList) ToListViewString(pad string) string {
-	return string(f.ToListView(pad))
-}
-
-// ToListView will return the []byte of FileList in list form (like as `exa --header --long --time-style=iso --group --git`)
-func (f *FileList) ToListView(pad string) []byte {
+func (f *FileList) ToListView(pad string) string {
 	return toListView(f, pad, false)
 }
 
-// ToListExtendView will return the string of FileList in extend list form (like as `exa --header --long --time-style=iso --group --git -@`)
-func (f *FileList) ToListExtendViewString(pad string) string {
-	return string(f.ToListExtendView(pad))
+// ToListExtendViewBytes will return the []byte of FileList in extend list form (like as `exa --header --long --time-style=iso --group --git -@`)
+func (f *FileList) ToListExtendViewBytes(pad string) []byte {
+	return []byte(f.ToListExtendView(pad))
 }
 
-// ToListExtendView will return the []byte of FileList in extend list form (like as `exa --header --long --time-style=iso --group --git --@`)
-func (f *FileList) ToListExtendView(pad string) []byte {
+// ToListExtendView will return the string of FileList in extend list form (like as `exa --header --long --time-style=iso --group --git --@`)
+func (f *FileList) ToListExtendView(pad string) string {
 	return toListView(f, pad, true)
 }
 
 // toListView will return the []byte of FileList in list form (like as `exa --header --long --time-style=iso --group --git`)
-func toListView(f *FileList, pad string, isExtended bool) []byte {
+func toListView(f *FileList, pad string, isExtended bool) string {
 	var (
 		// w     = new(bytes.Buffer)
-		buf                     = f.buf
-		w                       = f.writer
-		dirs                    = f.dirs
-		fm                      = f.store
+		buf                     = f.stringBuilder
+		w                       = f.Writer()
+		dirs                    = f.Dirs()
+		fm                      = f.Map()
 		git                     = f.GetGitStatus()
 		chead                   = f.GetHead4Meta(pad, urname, gpname, git)
 		ntdirs, nsdirs, ntfiles = 1, 0, 0
@@ -904,35 +905,34 @@ END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
 
 	// spew.Dump(dirs)
-	return buf.Bytes()
+	return buf.String()
 }
 
-// ToListTreeViewString will return the string of `ToListViewTree(pad)` in list+tree form (like as `exa -T(--tree)`)
-func (f *FileList) ToListTreeViewString(pad string) string {
-	return string(f.ToListTreeView(pad))
+// ToListTreeViewBytes will return the []byte of `ToListViewTree(pad)` in list+tree form (like as `exa -T(--tree)`)
+func (f *FileList) ToListTreeViewBytes(pad string) []byte {
+	return []byte(f.ToListTreeView(pad))
 }
 
-// ToListTreeView will return the []byte of FileList in list+tree form (like as `exa -T(--tree)`)
-func (f *FileList) ToListTreeView(pad string) []byte {
+// ToListTreeView will return the string of FileList in list+tree form (like as `exa -T(--tree)`)
+func (f *FileList) ToListTreeView(pad string) string {
 	pdview = PListTreeView
 	return toListTreeView(f, pad, false)
 }
 
-// ToListTreeExtendViewString will return the string of `ToListViewTree(pad)` in list+tree form (like as `exa -T(--tree)`)
-func (f *FileList) ToListTreeExtendViewString(pad string) string {
-	return string(f.ToListTreeExtendView(pad))
+// ToListTreeExtendViewBytes will return the string of `ToListViewTree(pad)` in list+tree form (like as `exa -T(--tree)`)
+func (f *FileList) ToListTreeExtendViewBytes(pad string) []byte {
+	return []byte(f.ToListTreeExtendView(pad))
 }
 
-// ToListTreeExtendView will return the []byte of FileList in list+tree form (like as `exa -T(--tree)`)
-func (f *FileList) ToListTreeExtendView(pad string) []byte {
+// ToListTreeExtendView will return the string of FileList in list+tree form (like as `exa -T(--tree)`)
+func (f *FileList) ToListTreeExtendView(pad string) string {
 	pdview = PListTreeView
 	return toListTreeView(f, pad, true)
 }
 
-func toListTreeView(f *FileList, pad string, isExtended bool) []byte {
+func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	var (
-		buf = f.Buffer()
-		// w  = new(bytes.Buffer)
+		buf = f.StringBuilder()
 		w   = f.Writer()
 		fm  = f.store
 		git = f.GetGitStatus()
@@ -956,7 +956,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) []byte {
 		meta += f.DirInfo(file) + " "
 	}
 
-	name := fmt.Sprintf("%v (%v)", file.LSColorString("."), file.ColorBaseName())
+	name := fmt.Sprintf("%v (%v)", file.LSColorString("."), file.ColorDirName(""))
 	fmt.Fprintf(w, "%v%v\n", meta, name)
 
 	// print files in the root dir
@@ -981,7 +981,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) []byte {
 	fmt.Fprintln(w)
 	printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
 
-	return buf.Bytes()
+	return buf.String()
 }
 
 // ToClassifyView will return the string of FileList to display type indicator by file names (like as `exa -F` or `exa --classify`)
@@ -989,13 +989,13 @@ func (f *FileList) ToClassifyViewString(pad string) string {
 	return string(f.ToClassifyView(pad))
 }
 
-// ToClassifyView will return the []byte of FileList to display type indicator by file names (like as `exa -F` or `exa --classify`)
-func (f *FileList) ToClassifyView(pad string) []byte {
+// ToClassifyView will return the string of FileList to display type indicator by file names (like as `exa -F` or `exa --classify`)
+func (f *FileList) ToClassifyView(pad string) string {
 	var (
-		buf  = f.buf
-		w    = f.writer
-		dirs = f.dirs
-		fm   = f.store
+		buf  = f.StringBuilder()
+		w    = f.Writer()
+		dirs = f.Dirs()
+		fm   = f.Map()
 	)
 	buf.Reset()
 
@@ -1031,7 +1031,7 @@ func (f *FileList) ToClassifyView(pad string) []byte {
 	}
 	printTotalSummary(w, "", f.NDirs(), f.NFiles(), f.totalSize)
 
-	b := padding(pad, buf.Bytes())
+	b := paw.PaddingString(buf.String(), pad)
 
 	return b
 }

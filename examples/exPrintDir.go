@@ -12,15 +12,16 @@ func exPrintDir(root string) {
 	opt := &filetree.PrintDirOption{
 		Depth: 0,
 		// OutOpt: filetree.PListView,
-		OutOpt: filetree.PListExtendView,
+		// OutOpt: filetree.PListExtendView,
 		// OutOpt: filetree.PTreeView,
 		// OutOpt: filetree.PListTreeView,
-		// OutOpt: filetree.PLevelView,
+		OutOpt: filetree.PLevelView,
 		// OutOpt: filetree.PTableView,
 		// OutOpt: filetree.PClassifyView,
 		Ignore: filetree.DefaultIgnoreFn,
 	}
-	err := filetree.PrintDir(os.Stdout, root, false, opt, nil, "> ")
+
+	err := filetree.PrintDir(os.Stdout, root, false, opt, nil, nil, ">")
 	if err != nil {
 		paw.Logger.Error(err)
 	}

@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/mattn/go-runewidth"
 
@@ -48,6 +49,8 @@ var (
 		EdgeTypeMid:  3,
 		EdgeTypeEnd:  3,
 	}
+	dateLayout = "Jan 02, 2006"
+	timeLayout = "01-02-06 15:04"
 )
 
 // func edgeWidth(edge EdgeType) int {
@@ -64,6 +67,7 @@ var (
 func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool) {
 
+	sb := strings.Builder{}
 	xlen := runewidth.StringWidth(pad)
 
 	meta := pad
@@ -72,19 +76,19 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 		meta += tmeta
 		xlen += lenmeta
 	}
-	fmt.Fprintf(wr, "%v", meta)
+	fmt.Fprintf(&sb, "%v", meta)
 	axlen := xlen
 	aMeta := ""
 	for i := 0; i < level; i++ {
 		if isEnded(levelsEnded, i) {
-			fmt.Fprint(wr, paw.Spaces(IndentSize+1))
+			fmt.Fprintf(&sb, "%v", paw.Spaces(IndentSize+1))
 			aMeta += paw.Spaces(IndentSize + 1)
 			xlen += (IndentSize + 1)
 			continue
 		}
 		cedge := cdashp.Sprint(EdgeTypeLink) //KindLSColorString("-", string(EdgeTypeLink))
-		// fmt.Fprintf(wr, "%v%s", cedge, paw.Spaces( IndentSize))
-		fmt.Fprintf(wr, "%v%s", cedge, SpaceIndentSize)
+		// fmt.Fprintf(&sb, "%v%s", cedge, paw.Spaces( IndentSize))
+		fmt.Fprintf(&sb, "%v%s", cedge, SpaceIndentSize)
 		aMeta += fmt.Sprintf("%v%s", cedge, SpaceIndentSize)
 		xlen += (edgeWidth[EdgeTypeLink] + IndentSize)
 	}
@@ -96,7 +100,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	if xlen+len(name)+edgeWidth[edge]+1 >= sttyWidth {
 		end := sttyWidth - xlen - edgeWidth[edge] - 2
 		cedge := cdashp.Sprint(edge) //KindLSColorString("-", string(edge))
-		fmt.Fprintf(wr, "%v %v\n", cedge, file.LSColorString(name[:end]))
+		fmt.Fprintf(&sb, "%v %v\n", cedge, file.LSColorString(name[:end]))
 		switch edge {
 		case EdgeTypeMid:
 			cedge = paw.Spaces(axlen) + aMeta + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
@@ -104,11 +108,11 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 			// cedge = paw.Spaces( xlen+edgeWidth[edge]) + SpaceIndentSize
 			cedge = paw.Spaces(axlen) + aMeta + SpaceIndentSize
 		}
-		fmt.Fprintf(wr, "%v%v\n", cedge, file.LSColorString(name[end:]))
+		fmt.Fprintf(&sb, "%v%v\n", cedge, file.LSColorString(name[end:]))
 	} else {
 		cedge := cdashp.Sprint(edge) //KindLSColorString("-", string(edge))
 		cname := dinf + file.ColorBaseName()
-		fmt.Fprintf(wr, "%v %v\n", cedge, cname)
+		fmt.Fprintf(&sb, "%v %v\n", cedge, cname)
 	}
 
 	// xlen += edgeWidth[edge] + 1 //- IndentSize - level + 1
@@ -132,10 +136,11 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 					// cedge = paw.Spaces( xlen+edgeWidth[edge]) + SpaceIndentSize
 					cedge = paw.Spaces(axlen) + aMeta + paw.Spaces(IndentSize+1)
 				}
-				fmt.Fprintf(wr, "%s%s%s %s\n", pad, cedge, cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
+				fmt.Fprintf(&sb, "%s%s%s %s\n", pad, cedge, cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
 			}
 		}
 	}
+	fmt.Fprint(wr, sb.String())
 }
 
 func printLTDir(wr io.Writer, level int, levelsEnded []int,
@@ -278,18 +283,6 @@ func getNDirsFiles(files []*File) (ndirs, nfiles int) {
 		}
 	}
 	return ndirs - 1, nfiles
-}
-
-func padding(pad string, bytes []byte) []byte {
-	b := make([]byte, len(bytes))
-	b = append(b, pad...)
-	for _, v := range bytes {
-		b = append(b, v)
-		if v == '\n' {
-			b = append(b, pad...)
-		}
-	}
-	return b
 }
 
 func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
@@ -480,7 +473,7 @@ func GetColorizedTime(modTime time.Time) string {
 	return getColorizedModTime(modTime)
 }
 func getColorizedModTime(modTime time.Time) string {
-	return NewEXAColor("da").Sprint(modTime.Format("01-02-06 15:04"))
+	return NewEXAColor("da").Sprint(modTime.Format(timeLayout))
 }
 
 func getColorizedHead(pad, username, groupname string, git GitStatus) string {

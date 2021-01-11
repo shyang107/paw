@@ -29,7 +29,7 @@ func exGitstatus(path string) {
 
 	fl := filetree.NewFileList(path)
 	fl.FindFiles(0, nil)
-	fmt.Println(fl.ToListViewString(""))
+	fmt.Println(fl.ToListView(""))
 	dirs := fl.Dirs()
 	fm := fl.Map()
 	git := fl.GetGitStatus()

@@ -103,6 +103,7 @@ type PrintDirFilterOption struct {
 
 // PrintDir will find files using codintion `ignore` func
 func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sortOpt *PrintDirSortOption, filtOpt *PrintDirFilterOption, pad string) error {
+
 	root, err := filepath.Abs(path)
 	if err != nil {
 		return err

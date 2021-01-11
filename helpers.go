@@ -45,3 +45,31 @@ func Shuffle(slice []interface{}) {
 		slice = slice[:n-1]
 	}
 }
+
+// PaddingString add pad-prefix in every line of string
+func PaddingString(s string, pad string) string {
+	if !Contains(s, "\n") {
+		return pad + s
+	}
+	ss := Split(s, "\n")
+	// sb := strings.Builder{}
+	sb := ""
+	for i := 0; i < len(ss)-1; i++ {
+		sb += pad + ss[i] + "\n"
+	}
+	sb += pad + ss[len(ss)-1]
+	return sb
+}
+
+// PaddingBytes add pad-prefix in every line('\n') of []byte
+func PaddingBytes(bytes []byte, pad string) []byte {
+	b := make([]byte, len(bytes))
+	b = append(b, pad...)
+	for _, v := range bytes {
+		b = append(b, v)
+		if v == '\n' {
+			b = append(b, pad...)
+		}
+	}
+	return b
+}

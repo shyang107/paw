@@ -40,7 +40,7 @@ func readDirs(root string) {
 	// fmt.Println(fl.ToTableViewString("# "))
 	// fmt.Println(fl.ToLevelViewString("# "))
 	// fmt.Println(fl.ToListViewString("# "))
-	fmt.Println(fl.ToListTreeViewString("# "))
+	fmt.Println(fl.ToListTreeView("# "))
 	// fl.SetWriters(os.Stdout)
 	// fl.ToListTreeViewString("# ")
 	// fmt.Println("out:\n", out)
