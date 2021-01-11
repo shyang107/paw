@@ -109,7 +109,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sor
 		return err
 	}
 
-	checkSortOpt(sortOpt)
+	sortOpt = checkSortOpt(sortOpt)
 
 	cehckPrintDirOption(opt)
 
@@ -276,13 +276,14 @@ func cehckPrintDirOption(opt *PrintDirOption) {
 	}
 }
 
-func checkSortOpt(sortOpt *PrintDirSortOption) {
+func checkSortOpt(sortOpt *PrintDirSortOption) *PrintDirSortOption {
 	if sortOpt == nil {
-		sortOpt = &PrintDirSortOption{
+		return &PrintDirSortOption{
 			IsSort:  true,
 			SortWay: PDSortByName,
 		}
 	}
+	return sortOpt
 }
 
 var errBreak = errors.New("return nil")

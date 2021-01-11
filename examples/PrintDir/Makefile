@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := buildandrun
-BIN_FILE=strChain
+BIN_FILE=pd
 buildandrun:
 	@go build -o "${BIN_FILE}"
 	./"${BIN_FILE}"

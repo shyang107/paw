@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/filetree"
@@ -9,6 +12,7 @@ import (
 
 func main() {
 	root := os.Args[1]
+	fmt.Printf("%q\n", root)
 	opt := &filetree.PrintDirOption{
 		Depth: 0,
 		// OutOpt: filetree.PListView,
@@ -20,10 +24,11 @@ func main() {
 		// OutOpt: filetree.PClassifyView,
 		Ignore: filetree.DefaultIgnoreFn,
 	}
-	sb :=
-	w := io.MultiWriter(os.Stdout, )
-	err := filetree.PrintDir(os.Stdout, root, false, opt, nil, nil, ">")
+	sb := &strings.Builder{}
+	w := io.MultiWriter(os.Stdout, sb)
+	err := filetree.PrintDir(w, root, false, opt, nil, nil, "> ")
 	if err != nil {
 		paw.Logger.Error(err)
 	}
+	fmt.Println(sb)
 }
