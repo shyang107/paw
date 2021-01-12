@@ -102,11 +102,11 @@ type PrintDirFilterOption struct {
 }
 
 // PrintDir will find files using codintion `ignore` func
-func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sortOpt *PrintDirSortOption, filtOpt *PrintDirFilterOption, pad string) error {
+func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sortOpt *PrintDirSortOption, filtOpt *PrintDirFilterOption, pad string) (error, *FileList) {
 
 	root, err := filepath.Abs(path)
 	if err != nil {
-		return err
+		return err, nil
 	}
 
 	sortOpt = checkSortOpt(sortOpt)
@@ -116,9 +116,9 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sor
 	err = checkIsFile(w, path, pad)
 	if err != nil {
 		if err == errBreak {
-			return nil
+			return nil, nil
 		}
-		return err
+		return err, nil
 	}
 
 	setIgnoreFn(opt)
@@ -139,10 +139,10 @@ FIND:
 
 	err = switchFileListView(fl, opt.OutOpt, pad)
 	if err != nil {
-		return err
+		return err, nil
 	}
 
-	return nil
+	return nil, fl
 }
 
 func switchFileListView(fl *FileList, outOpt PrintDirType, pad string) error {
@@ -247,7 +247,10 @@ func checkPrintDirSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PrintDi
 func setFileList(w io.Writer, root string, isGrouped bool, sortOpt *PrintDirSortOption) *FileList {
 	fl := NewFileList(root)
 	// fl.IsSort = false
-	fl.SetWriters(w)
+	fl.ResetWriters()
+	if w != nil {
+		fl.SetWriters(w)
+	}
 	fl.IsGrouped = isGrouped
 	fl.IsSort = sortOpt.IsSort
 

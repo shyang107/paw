@@ -64,12 +64,13 @@ func NewFileList(root string) *FileList {
 // String ...
 // 	`size` of directory shown in the string, is accumulated size of sub contents
 func (f FileList) String() string {
-	oldwr := f.writer
-	f.SetWriters(new(strings.Builder))
+	// fmt.Printf("%#v\n", f.writer)
+	// oldwr := f.writer
+	// f.SetWriters(new(strings.Builder))
 	f.DisableColor()
 	str := f.ToLevelView("", false)
 	f.EnableColor()
-	f.SetWriters(oldwr)
+	// f.SetWriters(oldwr)
 	return str
 }
 
@@ -78,6 +79,16 @@ func (f *FileList) SetWriters(writers ...io.Writer) {
 	// f.ResetBuffer()
 	// f.writers = append(f.writers, writers...)
 	// f.writers = writers
+	// if len(writers) == 0 || writers == nil {
+	// 	paw.Info.Println("len(writers) == 0 || writers == nil")
+	// 	f.ResetWriters()
+	// 	return
+	// }
+	// if len(writers) == 1 && writers[0] == nil {
+	// 	paw.Info.Println("len(writers) == 1 && writers[0] == nil")
+	// 	f.ResetWriters()
+	// 	return
+	// }
 	// writers = append(writers, f.stringBuilder)
 	f.writer = io.MultiWriter(writers...)
 }
@@ -101,13 +112,22 @@ func (f *FileList) ResetStringBuilder() {
 	f.stringBuilder.Reset()
 }
 
-// StringBuilder will return the field buf of FileList
+// StringBuilder will return the *strings.Builder buffer of FileList
 func (f *FileList) StringBuilder() *strings.Builder {
 	return f.stringBuilder
 }
 
+// Dump will dump buffer of FileList to a string
+func (f *FileList) Dump() string {
+	return f.stringBuilder.String()
+}
+
 // Writer will return the field writer of FileList
 func (f *FileList) Writer() io.Writer {
+	if f.writer == nil {
+		f.ResetStringBuilder()
+		f.SetWriters(f.stringBuilder)
+	}
 	return f.writer
 }
 

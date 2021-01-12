@@ -315,7 +315,7 @@ func GetTerminalSize() (height, width int) {
 	out, err := cmd.Output()
 	if err != nil {
 		// log.Fatal(err)
-		Error.Println("run stty, err: ", err)
+		// Error.Println("run stty, err: ", err)
 		return 38, 100
 	}
 	size := Split(TrimSuffix(string(out), "\n"), " ")
