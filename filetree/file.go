@@ -298,42 +298,6 @@ func (f *File) ColorBaseName() string {
 	return f.LSColorString(f.BaseName)
 }
 
-// // func getLTName(file *File) string {
-// func getName(file *File) string {
-// 	name := file.LSColorString(file.BaseName)
-// 	if file.IsDir() && file.Dir == RootMark {
-// 		dir, _ := filepath.Split(file.Path)
-// 		name = cdirp.Sprint(dir) + name
-// 	}
-// 	link := checkAndGetColorLink(file)
-// 	if len(link) > 0 {
-// 		// name += cpmap['l'].Sprint(" -> ") + link
-// 		name += cdashp.Sprint(" -> ") + link
-// 	}
-// 	return name
-// }
-
-// func checkAndGetColorLink(file *File) (link string) {
-// 	mode := file.Stat.Mode()
-// 	if mode&os.ModeSymlink != 0 {
-// 		alink, err := filepath.EvalSymlinks(file.Path)
-// 		if err != nil {
-// 			link = alink + " ERR: " + err.Error()
-// 		} else {
-// 			// link, _ = FileLSColorString(alink, alink)
-// 			link = GetColorizedDirName(alink, "")
-// 		}
-// 	}
-// 	return link
-// }
-
-// func checkAndGetLink(file *File) (link string) {
-// 	SetNoColor()
-// 	link = checkAndGetColorLink(file)
-// 	DefaultNoColor()
-// 	return link
-// }
-
 // ColorPermission will return a colorful string of Stat.Mode() like as exa.
 // The length of placeholder in terminal is 10.
 func (f *File) ColorPermission() string {

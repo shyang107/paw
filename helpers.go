@@ -2,10 +2,13 @@ package paw
 
 import (
 	"math/rand"
+	"os"
+	"os/exec"
 	"reflect"
 	"runtime"
 	"time"
 
+	"github.com/spf13/cast"
 	"github.com/uniplaces/carbon"
 	// log "github.com/sirupsen/logrus"
 )
@@ -121,4 +124,20 @@ func PaddingBytes(bytes []byte, pad string) []byte {
 		}
 	}
 	return b
+}
+
+// GetTerminalSize get size of console using `stty size`
+func GetTerminalSize() (height, width int) {
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	out, err := cmd.Output()
+	if err != nil {
+		// log.Fatal(err)
+		Error.Println("run stty, err: ", err)
+		return 38, 100
+	}
+	size := Split(TrimSuffix(string(out), "\n"), " ")
+	height = cast.ToInt(size[0])
+	width = cast.ToInt(size[1])
+	return height, width
 }

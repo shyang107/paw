@@ -2,7 +2,7 @@ package paw
 
 // StrChain contains all tools which can be chained.
 type StrChain struct {
-	S string
+	v string
 	// TBError error
 }
 
@@ -14,42 +14,42 @@ func (t *StrChain) NewStrChain(s string) *StrChain {
 
 // String return `StrChain.sCollection.s`
 func (t *StrChain) String() string {
-	return t.S
+	return t.v
 }
 
 // SetText set `StrChain.s` to `txt`
 func (t *StrChain) SetText(txt string) *StrChain {
-	t.S = txt
+	t.v = txt
 	return t
 }
 
 // GetText return `StrChain.sCollection.s`
 func (t *StrChain) GetText() string {
-	return t.S
+	return t.v
 }
 
-// Len will return the lenth of t.S (would be the sizes of []bytes)
+// Len will return the lenth of t.v (would be the sizes of []bytes)
 func (t *StrChain) Len() int {
-	return len(t.S)
+	return len(t.v)
 }
 
-// Bytes will convert the string t.S to []byte
+// Bytes will convert the string t.v to []byte
 //
 // Example:
 // 	b := StrChain{"ABC€"}
 // 	fmt.Println(b.Bytes()) // [65 66 67 226 130 172]
 func (t *StrChain) Bytes() []byte {
-	return []byte(t.S)
+	return []byte(t.v)
 }
 
-// Runes will convert the string t.S to []rune
+// Runes will convert the string t.v to []rune
 //
 // Example:
 // 	r := StrChain{"ABC€"}
 // 	fmt.Println(r.Runes())        	// [65 66 67 8364]
 // 	fmt.Printf("%U\n", r.Rune()) 	// [U+0041 U+0042 U+0043 U+20AC]
 func (t *StrChain) Runes() []rune {
-	return []rune(t.S)
+	return []rune(t.v)
 }
 
 // GetAbbrString get a abbreviation of `StrChain.sCollection.s` and save to `StrChain.sCollection.s`
@@ -57,7 +57,7 @@ func (t *StrChain) Runes() []rune {
 // 	`maxlen`: maimium length of the abbreviation
 // 	`conSymbole`: tailing symbol of the abbreviation
 func (t *StrChain) GetAbbrString(maxlen int, contSymbol string) *StrChain {
-	t.S = GetAbbrString(t.S, maxlen, contSymbol)
+	t.v = GetAbbrString(t.v, maxlen, contSymbol)
 	return t
 }
 
@@ -66,7 +66,7 @@ func (t *StrChain) GetAbbrString(maxlen int, contSymbol string) *StrChain {
 // 	`nHan`: number of occupied space in screen for han-character
 // 	`nASCII`: number of occupied space in screen for ASCII-character
 func (t *StrChain) CountPlaceHolder() (nHan int, nASCII int) {
-	return CountPlaceHolder(t.S)
+	return CountPlaceHolder(t.v)
 }
 
 // HasChineseChar return true for that `str` include chinese character
@@ -75,7 +75,7 @@ func (t *StrChain) CountPlaceHolder() (nHan int, nASCII int) {
 // 	HasChineseChar("abc 中文") return true
 // 	HasChineseChar("abccefgh") return false
 func (t *StrChain) HasChineseChar() bool {
-	return HasChineseChar(t.S)
+	return HasChineseChar(t.v)
 }
 
 // NumberBanner return numbers' string with length of `StrChain.sCollection.s`
@@ -87,299 +87,306 @@ func (t *StrChain) HasChineseChar() bool {
 // 	NumberBanner() return "12345678901"
 func (t *StrChain) NumberBanner() *StrChain {
 	h, a := t.CountPlaceHolder()
-	t.S = NumberBanner(h + a)
+	t.v = NumberBanner(h + a)
 	return t
 }
 
-// Reverse packs `Reverse(s string)`
-// 	set `TextCollection.s` to the result
+// Reverse packs `Reverse(s string)` based on `rune`
+// 	set `StrChain.S` to the result
 func (t *StrChain) Reverse() *StrChain {
-	t.S = Reverse(t.S)
+	t.v = Reverse(t.v)
 	return t
 }
 
-// HasPrefix return `HasPrefix(t.S, prefix)`
+// ReverseByte packs `ReverseByte(s string)` based on `byte`
+// 	set `StrChain.S` to the result
+func (t *StrChain) ReverseByte() *StrChain {
+	t.v = ReverseByte(t.v)
+	return t
+}
+
+// HasPrefix return `HasPrefix(t.v, prefix)`
 func (t *StrChain) HasPrefix(prefix string) bool {
-	return HasPrefix(t.S, prefix)
+	return HasPrefix(t.v, prefix)
 }
 
-// HasSuffix return `HasSuffix(t.S, Suffix)`
+// HasSuffix return `HasSuffix(t.v, Suffix)`
 func (t *StrChain) HasSuffix(suffix string) bool {
-	return HasSuffix(t.S, suffix)
+	return HasSuffix(t.v, suffix)
 }
 
-// Contains return `Contains(t.S, substr)`
+// Contains return `Contains(t.v, substr)`
 func (t *StrChain) Contains(substr string) bool {
-	return Contains(t.S, substr)
+	return Contains(t.v, substr)
 }
 
-// ContainsAny return `ContainsAny(t.S, chars)`
+// ContainsAny return `ContainsAny(t.v, chars)`
 func (t *StrChain) ContainsAny(chars string) bool {
-	return ContainsAny(t.S, chars)
+	return ContainsAny(t.v, chars)
 }
 
-// Fields return Fields(t.S)
+// Fields return Fields(t.v)
 func (t *StrChain) Fields() []string {
-	return Fields(t.S)
+	return Fields(t.v)
 }
 
-// FieldsFunc return FieldsFunc(t.S, f)
+// FieldsFunc return FieldsFunc(t.v, f)
 func (t *StrChain) FieldsFunc(f func(rune) bool) []string {
-	return FieldsFunc(t.S, f)
+	return FieldsFunc(t.v, f)
 }
 
-// ContainsAny return ContainsRune(t.S, r) bool
+// ContainsAny return ContainsRune(t.v, r) bool
 func (t *StrChain) ContainsRune(r rune) bool {
-	return ContainsRune(t.S, r)
+	return ContainsRune(t.v, r)
 }
 
-// EqualFold return EqualFold(t.S,, t) bool
+// EqualFold return EqualFold(t.v,, t) bool
 func (t *StrChain) EqualFold(s string) bool {
-	return EqualFold(t.S, s)
+	return EqualFold(t.v, s)
 }
 
-// Index return Index(t.S, substr) int
+// Index return Index(t.v, substr) int
 func (t *StrChain) Index(substr string) int {
-	return Index(t.S, substr)
+	return Index(t.v, substr)
 }
 
-// IndexAny return IndexAny(t.S, chars) int
+// IndexAny return IndexAny(t.v, chars) int
 func (t *StrChain) IndexAny(chars string) int {
-	return IndexAny(t.S, chars)
+	return IndexAny(t.v, chars)
 }
 
-// IndexByte return IndexByte(t.S, c) int
+// IndexByte return IndexByte(t.v, c) int
 func (t *StrChain) IndexByte(c byte) int {
-	return IndexByte(t.S, c)
+	return IndexByte(t.v, c)
 }
 
-// IndexFunc return IndexFunc(t.S, f) int
+// IndexFunc return IndexFunc(t.v, f) int
 func (t *StrChain) IndexFunc(f func(rune) bool) int {
-	return IndexFunc(t.S, f)
+	return IndexFunc(t.v, f)
 }
 
-// IndexRune return IndexRune(t.S, r) int
+// IndexRune return IndexRune(t.v, r) int
 func (t *StrChain) IndexRune(r rune) int {
-	return IndexRune(t.S, r)
+	return IndexRune(t.v, r)
 }
 
-// LastIndex return LastIndex(t.S, substr) int
+// LastIndex return LastIndex(t.v, substr) int
 func (t *StrChain) LastIndex(substr string) int {
-	return LastIndex(t.S, substr)
+	return LastIndex(t.v, substr)
 }
 
-// LastIndexAny return LastIndexAny(t.S, chars) int
+// LastIndexAny return LastIndexAny(t.v, chars) int
 func (t *StrChain) LastIndexAny(chars string) int {
-	return LastIndexAny(t.S, chars)
+	return LastIndexAny(t.v, chars)
 }
 
-// LastIndexByte return LastIndexByte(t.S, c) int
+// LastIndexByte return LastIndexByte(t.v, c) int
 func (t *StrChain) LastIndexByte(c byte) int {
-	return LastIndexByte(t.S, c)
+	return LastIndexByte(t.v, c)
 }
 
-// LastIndexFunc return LastIndexFunc(t.S, f) int
+// LastIndexFunc return LastIndexFunc(t.v, f) int
 func (t *StrChain) LastIndexFunc(f func(rune) bool) int {
-	return LastIndexFunc(t.S, f)
+	return LastIndexFunc(t.v, f)
 }
 
-// Split return Split(t.S, sep) []string
+// Split return Split(t.v, sep) []string
 func (t *StrChain) Split(sep string) []string {
-	return Split(t.S, sep)
+	return Split(t.v, sep)
 }
 
-// Split return Split(t.S, sep) []string
+// Split return Split(t.v, sep) []string
 func (t *StrChain) SplitN(sep string, n int) []string {
-	return SplitN(t.S, sep, n)
+	return SplitN(t.v, sep, n)
 }
 
-// Split return Split(t.S, sep) []string
+// Split return Split(t.v, sep) []string
 func (t *StrChain) SplitAfter(sep string) []string {
-	return SplitAfter(t.S, sep)
+	return SplitAfter(t.v, sep)
 }
 
-// Split return Split(t.S, sep) []string
+// Split return Split(t.v, sep) []string
 func (t *StrChain) SplitAfterN(sep string, n int) []string {
-	return SplitAfterN(t.S, sep, n)
+	return SplitAfterN(t.v, sep, n)
 }
 
 // Trim packs `Trim(s, cutset)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) Trim(cutset string) *StrChain {
-	t.S = Trim(t.S, cutset)
+	t.v = Trim(t.v, cutset)
 	return t
 }
 
 // TrimFunc packs `TrimFunc(s string, f func(rune) bool)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) TrimFunc(f func(rune) bool) *StrChain {
-	t.S = TrimFunc(t.S, f)
+	t.v = TrimFunc(t.v, f)
 	return t
 }
 
 // TrimLeft packs `TrimLeft(s, cutset string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) TrimLeft(cutset string) *StrChain {
-	t.S = TrimLeft(t.S, cutset)
+	t.v = TrimLeft(t.v, cutset)
 	return t
 }
 
 // TrimLeftFunc packs `TrimLeftFunc(s string, f func(rune) bool)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) TrimLeftFunc(f func(rune) bool) *StrChain {
-	t.S = TrimLeftFunc(t.S, f)
+	t.v = TrimLeftFunc(t.v, f)
 	return t
 }
 
 // TrimPrefix packs `TrimPrefix(s, prefix string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) TrimPrefix(prefix string) *StrChain {
-	t.S = TrimPrefix(t.S, prefix)
+	t.v = TrimPrefix(t.v, prefix)
 	return t
 }
 
 // TrimRight packs `TrimRight(s, cutset string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) TrimRight(cutset string) *StrChain {
-	t.S = TrimRight(t.S, cutset)
+	t.v = TrimRight(t.v, cutset)
 	return t
 }
 
 // TrimRightFunc packs `TrimRightFunc(s string, f func(rune) bool)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) TrimRightFunc(f func(rune) bool) *StrChain {
-	t.S = TrimRightFunc(t.S, f)
+	t.v = TrimRightFunc(t.v, f)
 	return t
 }
 
 // TrimSpace packs `TrimSpace(s string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) TrimSpace() *StrChain {
-	t.S = TrimSpace(t.S)
+	t.v = TrimSpace(t.v)
 	return t
 }
 
 // TrimSuffix packs `TrimSuffix(s, suffix string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) TrimSuffix(suffix string) *StrChain {
-	t.S = TrimSuffix(t.S, suffix)
+	t.v = TrimSuffix(t.v, suffix)
 	return t
 }
 
 // ToUpper packs `ToUpper(s string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) ToUpper() *StrChain {
-	t.S = ToUpper(t.S)
+	t.v = ToUpper(t.v)
 	return t
 }
 
 // ToTitle packs `ToTitle(s string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) ToTitle() *StrChain {
-	t.S = ToTitle(t.S)
+	t.v = ToTitle(t.v)
 	return t
 }
 
 // ToLower packs ` ToLower(s string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) ToLower() *StrChain {
-	t.S = ToLower(t.S)
+	t.v = ToLower(t.v)
 	return t
 }
 
 // Title returns packs `Title(s string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) Title() *StrChain {
-	t.S = Title(t.S)
+	t.v = Title(t.v)
 	return t
 }
 
 // Map packs `Map(mapping func(rune) rune, s string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) Map(mapping func(rune) rune) *StrChain {
-	t.S = Map(mapping, t.S)
+	t.v = Map(mapping, t.v)
 	return t
 }
 
 // Repeat packs `Repeat(s string, count int)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) Repeat(count int) *StrChain {
-	t.S = Repeat(t.S, count)
+	t.v = Repeat(t.v, count)
 	return t
 }
 
 // Replace packs `Replace(s, old, new string, n int)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) Replace(old, new string, n int) *StrChain {
-	t.S = Replace(t.S, old, new, n)
+	t.v = Replace(t.v, old, new, n)
 	return t
 }
 
 // ReplaceAll packs `ReplaceAll(s, old, new string)`
-// 	set `TextCollection.s` to the result
+// 	set `StrChain.S` to the result
 func (t *StrChain) ReplaceAll(old, new string) *StrChain {
-	t.S = ReplaceAll(t.S, old, new)
+	t.v = ReplaceAll(t.v, old, new)
 	return t
 }
 
 // GbkToUtf8String packs `GbkToUtf8String(s string)`
 func (t *StrChain) GbkToUtf8String() (*StrChain, error) {
-	s, e := GbkToUtf8String(t.S)
+	s, e := GbkToUtf8String(t.v)
 	if e != nil {
-		t.S = ""
+		t.v = ""
 		return t, e
 	}
-	t.S = s
+	t.v = s
 	return t, nil
 }
 
 // Utf8ToGbkString packs `Utf8ToGbkString(s string)`
 func (t *StrChain) Utf8ToGbkString() (*StrChain, error) {
-	s, e := Utf8ToGbkString(t.S)
+	s, e := Utf8ToGbkString(t.v)
 	if e != nil {
-		t.S = ""
+		t.v = ""
 		return t, e
 	}
-	t.S = s
+	t.v = s
 	return t, nil
 }
 
 // Big5ToUtf8String packs `Big5ToUtf8String(s string)`
 func (t *StrChain) Big5ToUtf8String() (*StrChain, error) {
-	s, e := Big5ToUtf8String(t.S)
+	s, e := Big5ToUtf8String(t.v)
 	if e != nil {
-		t.S = ""
+		t.v = ""
 		return t, e
 	}
-	t.S = s
+	t.v = s
 	return t, nil
 }
 
 // Utf8ToBig5String packs `Utf8ToBig5String(s string)`
 func (t *StrChain) Utf8ToBig5String() (*StrChain, error) {
-	s, e := Utf8ToBig5String(t.S)
+	s, e := Utf8ToBig5String(t.v)
 	if e != nil {
-		t.S = ""
+		t.v = ""
 		return t, e
 	}
-	t.S = s
+	t.v = s
 	return t, nil
 }
 
 // IsEqualString packs `IsEqualString(a, b string, ignoreCase bool) bool`
 func (t *StrChain) IsEqualString(b string, ignoreCase bool) bool {
-	return IsEqualString(t.S, b, ignoreCase)
+	return IsEqualString(t.v, b, ignoreCase)
 }
 
 // TrimBOM packs `TrimBOM(line string) string`
 func (t *StrChain) TrimBOM() *StrChain {
-	t.S = TrimBOM(t.S)
+	t.v = TrimBOM(t.v)
 	return t
 }
 
 // TrimFrontEndSpaceLine packs `TrimFrontEndSpaceLine(content string) string`
 func (t *StrChain) TrimFrontEndSpaceLine() *StrChain {
-	t.S = TrimFrontEndSpaceLine(t.S)
+	t.v = TrimFrontEndSpaceLine(t.v)
 	return t
 }
 
@@ -387,19 +394,19 @@ func (t *StrChain) TrimFrontEndSpaceLine() *StrChain {
 
 // FillLeft return string filled in left by spaces in w cells
 func (t *StrChain) FillLeft(w int) *StrChain {
-	t.S = FillLeft(t.S, w)
+	t.v = FillLeft(t.v, w)
 	return t
 }
 
 // FillRight return string filled in left by spaces in w cells
 func (t *StrChain) FillRight(w int) *StrChain {
-	t.S = FillRight(t.S, w)
+	t.v = FillRight(t.v, w)
 	return t
 }
 
 // StringWidth will return width as you can see (the numbers of placeholders on terminal)
 func (t *StrChain) StringWidth() int {
-	return StringWidth(t.S)
+	return StringWidth(t.v)
 }
 
 // // RuneWidth returns the number of cells in r. See http://www.unicode.org/reports/tr11/
@@ -409,12 +416,12 @@ func (t *StrChain) StringWidth() int {
 
 // Truncate return string truncated with w cells
 func (t *StrChain) Truncate(w int, tail string) *StrChain {
-	t.S = Truncate(t.S, w, tail)
+	t.v = Truncate(t.v, w, tail)
 	return t
 }
 
 // Wrap return string wrapped with w cells
 func (t *StrChain) Wrap(w int) *StrChain {
-	t.S = Wrap(t.S, w)
+	t.v = Wrap(t.v, w)
 	return t
 }

@@ -685,9 +685,18 @@ func NumberBanner(width int) string {
 	return sb.String()
 }
 
-// Reverse reverse the string `s`
+// Reverse reverse the string `s` based on `rune`
 func Reverse(s string) string {
 	sl := []rune(s)
+	for i, j := 0, len(sl)-1; i < j; i, j = i+1, j-1 {
+		sl[i], sl[j] = sl[j], sl[i]
+	}
+	return string(sl)
+}
+
+// ReverseByte reverse the string `s` based on `byte`
+func ReverseByte(s string) string {
+	sl := []byte(s)
 	for i, j := 0, len(sl)-1; i < j; i, j = i+1, j-1 {
 		sl[i], sl[j] = sl[j], sl[i]
 	}
