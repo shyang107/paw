@@ -1,7 +1,6 @@
 package filetree
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -66,11 +65,11 @@ func NewFileList(root string) *FileList {
 // 	`size` of directory shown in the string, is accumulated size of sub contents
 func (f FileList) String() string {
 	oldwr := f.writer
-	f.writer = new(bytes.Buffer)
+	f.SetWriters(new(strings.Builder))
 	f.DisableColor()
 	str := f.ToLevelView("", false)
 	f.EnableColor()
-	f.writer = oldwr
+	f.SetWriters(oldwr)
 	return str
 }
 
@@ -139,7 +138,7 @@ func (f *FileList) NFiles() int {
 	nf := 0
 	for _, dir := range dirs {
 		for _, file := range fm[dir][1:] {
-			if file.IsFile() || !file.IsDir() {
+			if !file.IsDir() {
 				nf++
 			}
 		}
@@ -175,7 +174,7 @@ func (f *FileList) AddFile(file *File) {
 	if _, ok := f.store[file.Dir]; !ok {
 		f.store[file.Dir] = []*File{}
 		f.dirs = append(f.dirs, file.Dir)
-		f.totalSize += file.Size
+		// f.totalSize += file.Size
 	}
 	f.store[file.Dir] = append(f.store[file.Dir], file)
 	f.totalSize += file.Size
@@ -190,9 +189,7 @@ func (f *FileList) AddFile(file *File) {
 func findPreDir(dir string) string {
 	pdir, _ := filepath.Split(dir)
 	pdir = paw.TrimSuffix(pdir, PathSeparator)
-	// fmt.Println(dir, pdir)
 	return pdir
-
 }
 
 func (f *FileList) DisableColor() {
@@ -252,26 +249,26 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	}
 	f.gitstatus, _ = GetShortStatus(f.root)
 	f.depth = depth
-	root := f.root
 	switch depth {
 	case 0: //{root directory}/*
 		// scratchBuffer := make([]byte, godirwalk.MinimumScratchBufferSize)
-		files, err := godirwalk.ReadDirnames(root, nil)
+		files, err := godirwalk.ReadDirnames(f.root, nil)
 		if err != nil {
-			return errors.New(root + ": " + err.Error())
+			return errors.New(f.root + ": " + err.Error())
 		}
 		if f.IsSort {
 			sort.Sort(ByLowerString(files))
 		}
 
-		file, err := NewFileRelTo(root, root)
+		file, err := NewFileRelTo(f.root, f.root)
 		if err != nil {
 			return err
 		}
 		f.AddFile(file)
 
 		for _, name := range files {
-			file, err := NewFileRelTo(root+PathSeparator+name, root)
+			path := filepath.Join(f.root, name)
+			file, err := NewFileRelTo(path, f.root)
 			if err != nil {
 				return err
 			}
@@ -282,9 +279,9 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			f.AddFile(file)
 		}
 	default: //walk through all directories of {root directory}
-		err := godirwalk.Walk(root, &godirwalk.Options{
+		err := godirwalk.Walk(f.root, &godirwalk.Options{
 			Callback: func(path string, de *godirwalk.Dirent) error {
-				file, err := NewFileRelTo(path, root)
+				file, err := NewFileRelTo(path, f.root)
 				if err != nil {
 					return err
 				}
@@ -311,7 +308,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			Unsorted: true, // set true for faster yet non-deterministic enumeration (see godoc)
 		})
 		if err != nil {
-			return errors.New(root + ": " + err.Error())
+			return errors.New(f.root + ": " + err.Error())
 		}
 	}
 	if f.IsSort {
