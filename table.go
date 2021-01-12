@@ -5,9 +5,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/thoas/go-funk"
-
-	"github.com/mattn/go-runewidth"
 	"github.com/spf13/cast"
 )
 
@@ -230,13 +227,13 @@ func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align
 		// switch al {
 		// case AlignLeft:
 		// 	// s = v + Repeat(space, wd-nh-na)
-		// 	s = runewidth.FillRight(v, wd)
+		// 	s = FillRight(v, wd)
 		// case AlignRight:
 		// 	// s = Repeat(space, wd-nh-na) + v
-		// 	s = runewidth.FillLeft(v, wd)
+		// 	s = FillLeft(v, wd)
 		// case AlignCenter:
 		// 	// lv := nh + na
-		// 	lv := runewidth.StringWidth(v)
+		// 	lv := StringWidth(v)
 		// 	nr := (wd - lv) / 2
 		// 	nl := wd - lv - nr
 		// 	s = Repeat(space, nl) + v + Repeat(space, nr)
@@ -258,7 +255,7 @@ WRAPFIELDS:
 		nlines[i] = len(wfields[i])
 		idx[i] = 0
 	}
-	maxlines := funk.MaxInt(nlines).(int)
+	maxlines := Max(nlines).(int)
 	for i := 0; i < maxlines; i++ {
 		for j, vs := range wfields {
 			v := ""
@@ -281,12 +278,12 @@ func getAlignString(al Align, width int, value string) string {
 	var s string
 	switch al {
 	case AlignLeft:
-		s = runewidth.FillRight(value, width)
+		s = FillRight(value, width)
 	case AlignRight:
-		s = runewidth.FillLeft(value, width)
+		s = FillLeft(value, width)
 	case AlignCenter:
 		// lv := nh + na
-		lv := runewidth.StringWidth(value)
+		lv := StringWidth(value)
 		nr := (width - lv) / 2
 		nl := width - lv - nr
 		s = Repeat(space, nl) + value + Repeat(space, nr)

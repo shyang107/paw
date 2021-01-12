@@ -13,9 +13,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/karrick/godirwalk"
 	"github.com/shyang107/paw"
-
 	// "github.com/shyang107/paw/treeprint"
-	"github.com/xlab/treeprint"
 )
 
 //
@@ -158,24 +156,24 @@ func getNDirsFiles(files []*File) (ndirs, nfiles int) {
 	return ndirs - 1, nfiles
 }
 
-func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
-	dd := paw.Split(dir, PathSeparator)
-	nd := len(dd)
-	var pre treeprint.Tree
-	// fmt.Println(dir, nd)
-	if nd == 2 { // ./xx
-		pre = tree
-	} else { //./xx/...
-		pre = tree
-		for i := 2; i < nd; i++ {
-			predir := paw.Join(dd[:i], PathSeparator)
-			// fmt.Println("\t", i, predir)
-			f := fm[predir][0] // import dir
-			pre = pre.FindByValue(f)
-		}
-	}
-	return pre
-}
+// func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
+// 	dd := paw.Split(dir, PathSeparator)
+// 	nd := len(dd)
+// 	var pre treeprint.Tree
+// 	// fmt.Println(dir, nd)
+// 	if nd == 2 { // ./xx
+// 		pre = tree
+// 	} else { //./xx/...
+// 		pre = tree
+// 		for i := 2; i < nd; i++ {
+// 			predir := paw.Join(dd[:i], PathSeparator)
+// 			// fmt.Println("\t", i, predir)
+// 			f := fm[predir][0] // import dir
+// 			pre = pre.FindByValue(f)
+// 		}
+// 	}
+// 	return pre
+// }
 
 //
 // Tolist
@@ -341,10 +339,10 @@ func getColorizedModTime(modTime time.Time) string {
 }
 
 func getColorizedHead(pad, username, groupname string, git GitStatus) string {
-	width := paw.MaxInt(4, len(username))
-	huser := fmt.Sprintf("%[2]*[1]s", "User", width)
-	width = paw.MaxInt(5, len(groupname))
-	hgroup := fmt.Sprintf("%[2]*[1]s", "Group", width)
+	width := paw.MaxInts(4, len(username))
+	huser := fmt.Sprintf("%[1]*[2]s", width, "User")
+	width = paw.MaxInts(5, len(groupname))
+	hgroup := fmt.Sprintf("%[1]*[2]s", width, "Group")
 
 	ssize := fmt.Sprintf("%6s", "Size")
 	head := ""

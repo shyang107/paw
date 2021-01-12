@@ -32,18 +32,39 @@ func GetDate() string {
 
 }
 
+// Max return the maximum value of `x`, the type of x is one of []int, []float32, []float64, []string.
+// If x is empty, and type is one of []int, []float32 and []float64, will return 0.
+// If x is empty, and type is one of []string, will return "".
+func Max(x interface{}) interface{} {
+	var r interface{}
+	switch reflect.TypeOf(x) {
+	case reflect.TypeOf([]int{}):
+		return MaxInts(x.([]int)...)
+	case reflect.TypeOf([]float32{}):
+		return MaxFloat32s(x.([]float32)...)
+	case reflect.TypeOf([]float64{}):
+		return MaxFloat64s(x.([]float64)...)
+	case reflect.TypeOf([]string{}):
+		return MaxStrings(x.([]string)...)
+	default:
+		return nil
+	}
+	return r
+}
+
 // MaxInt will return maximum value of `i` and `j`
 func MaxInt(i, j int) int {
 	return MaxInts(i, j)
 }
 
-// MaxInts will return maximum value of `i` and `js...`
-func MaxInts(i int, js ...int) int {
-	if len(js) == 0 {
-		return i
+// MaxInts will return maximum value of `x...`.
+// If x is empty, and return 0.
+func MaxInts(x ...int) int {
+	if len(x) == 0 {
+		return 0
 	}
-	m := i
-	for _, j := range js {
+	var m int = x[0]
+	for _, j := range x {
 		if m < j {
 			m = j
 		}
@@ -52,18 +73,87 @@ func MaxInts(i int, js ...int) int {
 	return m
 }
 
+// MaxFloat32s will return maximum value of `x...`.
+// If x is empty, and return 0.
+func MaxFloat32s(x ...float32) float32 {
+	if len(x) == 0 {
+		return 0
+	}
+	var m float32 = x[0]
+	for _, j := range x {
+		if m < j {
+			m = j
+		}
+	}
+
+	return m
+}
+
+// MaxFloat64s will return maximum value of `x...`.
+// If x is empty, and return 0.
+func MaxFloat64s(x ...float64) float64 {
+	if len(x) == 0 {
+		return 0
+	}
+	var m float64 = x[0]
+	for _, j := range x {
+		if m < j {
+			m = j
+		}
+	}
+
+	return m
+}
+
+// MaxStrings will return maximum value of `x...`.
+// Compares iterms using code point.
+func MaxStrings(x ...string) string {
+	if len(x) == 0 {
+		return ""
+	}
+	var m string = x[0]
+	for _, v := range x {
+		if m < v {
+			m = v
+		}
+	}
+
+	return m
+}
+
+// Min return the minimum value of `x`, the type of x is one of []int, []float32, []float64, []string.
+// If x is empty, and type is one of []int, []float32 and []float64, will return 0.
+// If x is empty, and type is one of []string, will return "".
+func Min(x interface{}) interface{} {
+	var r interface{}
+	switch reflect.TypeOf(x) {
+	case reflect.TypeOf([]int{}):
+		return MinInts(x.([]int)...)
+	case reflect.TypeOf([]float32{}):
+		return MinFloat32s(x.([]float32)...)
+	case reflect.TypeOf([]float64{}):
+		return MinFloat64s(x.([]float64)...)
+	case reflect.TypeOf([]string{}):
+		return MinStrings(x.([]string)...)
+	default:
+		return nil
+	}
+	return r
+}
+
 // MinInt will return minimum value of `i` and `j`
 func MinInt(i, j int) int {
 	return MinInts(i, j)
 }
 
-// MinInts will return minimum value of `i` and `js...`
-func MinInts(i int, js ...int) int {
-	if len(js) == 0 {
-		return i
+// MinInts will return minimum value of `x...`.
+// If x is empty, and return 0.
+func MinInts(x ...int) int {
+	if len(x) == 0 {
+		return 0
 	}
-	m := i
-	for _, j := range js {
+	var m int = x[0]
+	for _, j := range x {
 		if m > j {
 			m = j
 		}
@@ -72,13 +162,105 @@ func MinInts(i int, js ...int) int {
 	return m
 }
 
+// MinFloat32s will return minimum value of `x...`.
+// If x is empty, and return 0.
+func MinFloat32s(x ...float32) float32 {
+	if len(x) == 0 {
+		return 0
+	}
+	var m float32 = x[0]
+	for _, j := range x {
+		if m > j {
+			m = j
+		}
+	}
+
+	return m
+}
+
+// MinFloat64s will return minimum value of `x...`.
+// If x is empty, and return 0.
+func MinFloat64s(x ...float64) float64 {
+	if len(x) == 0 {
+		return 0
+	}
+	var m float64 = x[0]
+	for _, j := range x {
+		if m > j {
+			m = j
+		}
+	}
+
+	return m
+}
+
+// MinStrings will return minimum value of `x...`.
+// Compares iterms using code point
+// If x is empty, and return "".
+func MinStrings(x ...string) string {
+	if len(x) == 0 {
+		return ""
+	}
+	var m string = x[0]
+	for _, v := range x {
+		if m > v {
+			m = v
+		}
+	}
+
+	return m
+}
+
+// Sum will return summation of []int, []float32, []flot64, []string.
+// If the type of `x` is not one of []int, []float32, []flot64 and []string, then return `nil`
+// If `x` is []string, will return concatenation using `strings.Join(a,"")`.
+func Sum(x interface{}) interface{} {
+	var r interface{}
+	switch reflect.TypeOf(x) {
+	case reflect.TypeOf([]int{}):
+		return SumInts(x.([]int)...)
+	case reflect.TypeOf([]float32{}):
+		return SumFloat32s(x.([]float32)...)
+	case reflect.TypeOf([]float64{}):
+		return SumFloat64s(x.([]float64)...)
+	case reflect.TypeOf([]string{}):
+		return SumStrings(x.([]string)...)
+	default:
+		return nil
+	}
+	return r
+}
+
 // SumInts will return summation of []int
 func SumInts(a ...int) int {
-	s := 0
+	var s int = 0
 	for _, v := range a {
 		s += v
 	}
 	return s
+}
+
+// SumFloat32s will return summation of []float32
+func SumFloat32s(a ...float32) float32 {
+	var s float32 = 0
+	for _, v := range a {
+		s += v
+	}
+	return s
+}
+
+// SumFloat64s will return summation of []float64
+func SumFloat64s(a ...float64) float64 {
+	var s float64 = 0
+	for _, v := range a {
+		s += v
+	}
+	return s
+}
+
+// SumStrings will return concatenation of []string using strings.Join(a, "")
+func SumStrings(a ...string) string {
+	return Join(a, "")
 }
 
 // NewRand return a instance of

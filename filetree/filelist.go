@@ -627,7 +627,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		nsdirs      = 0
 		ntfiles     = 0
 		i1          = len(cast.ToString(fNDirs))
-		j1          = paw.MaxInt(i1, len(cast.ToString(fNFiles)))
+		j1          = paw.MaxInts(i1, len(cast.ToString(fNFiles)))
 		j           = 0
 		sppad       = "    "
 		wperm       = 11

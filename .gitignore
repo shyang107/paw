@@ -32,5 +32,6 @@ pd
 #GoLand
 .idea
 
+test/
 afero/sftpfs/file1
 afero/sftpfs/test/
