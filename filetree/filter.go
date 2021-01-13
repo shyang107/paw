@@ -4,8 +4,6 @@ import (
 	"path/filepath"
 
 	"github.com/shyang107/paw"
-
-	"github.com/thoas/go-funk"
 )
 
 // Filter is the type of filter function that define the filtering of its arguments
@@ -87,7 +85,7 @@ var (
 		}
 		for _, v := range emptyDirs {
 			delete(fl.store, v)
-			idx := funk.IndexOfString(fl.dirs, v)
+			idx := paw.IndexOfString(fl.dirs, v)
 			if idx != -1 {
 				fl.dirs = removeString(fl.dirs, idx)
 			}
@@ -128,7 +126,7 @@ var (
 				if !file.IsDir() {
 					// nf++
 					files = append(files, file)
-					if funk.IndexOfString(dirs, dir) == -1 {
+					if paw.IndexOfString(dirs, dir) == -1 {
 						// nd++
 						dirs = append(dirs, file.Dir)
 					}

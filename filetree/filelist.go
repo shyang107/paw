@@ -10,12 +10,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/thoas/go-funk"
-
 	"github.com/mattn/go-runewidth"
 
 	"github.com/karrick/godirwalk"
-	"github.com/spf13/cast"
+	"github.com/shyang107/paw/cast"
 
 	"github.com/shyang107/paw"
 	// "github.com/shyang107/paw/treeprint"
@@ -845,7 +843,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 
 	printBanner(w, pad, "=", bannerWidth)
 
-	if funk.IndexOfString(f.dirs, RootMark) != -1 {
+	if paw.IndexOfString(f.dirs, RootMark) != -1 {
 		fmt.Fprintln(w, chead)
 	}
 	for i, dir := range dirs {

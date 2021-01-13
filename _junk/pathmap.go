@@ -11,13 +11,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
 	"github.com/shyang107/paw"
-	"github.com/spf13/cast"
-	"github.com/thoas/go-funk"
+	"github.com/shyang107/paw/cast"
 	"github.com/xlab/treeprint"
 )
 
@@ -529,7 +526,7 @@ func getEdge(id, jf int, ds *FileSummary, dirs []string, folder map[string][]str
 		// buf = append(buf, strings.Repeat(sp, IndentSize)...)
 
 		dir := filepath.Join(ds.RelDir, ds.Name)
-		ipre := funk.IndexOfString(dm[ds.RelDir], ds.Name)
+		ipre := paw.IndexOfString(dm[ds.RelDir], ds.Name)
 		fmt.Printf("%d %s %s %s\n", id, ds.RelDir, ds.Name, dir)
 		fmt.Printf("  %d pre: %v\n", ipre, dm[ds.RelDir])
 
@@ -578,7 +575,7 @@ func getSubdirsList(root string, dirs []string) []string {
 				continue
 			}
 			ss = ss[1:]
-			if !funk.ContainsString(sdir, ss[0]) {
+			if !paw.ContainsString(sdir, ss[0]) {
 				sdir = append(sdir, ss[0])
 			}
 		}
@@ -672,7 +669,7 @@ func printFileSummary(fullpath, root string) {
 }
 
 func getDirsLevelsEnded(dirs []string) (dirsLE map[string][]int) {
-	spew.Dump(dirs)
+	// spew.Dump(dirs)
 	sep := string(os.PathSeparator)
 	dirsLE = make(map[string][]int)
 	for _, dir := range dirs {

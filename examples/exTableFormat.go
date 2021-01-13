@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/shyang107/paw"
-	"github.com/thoas/go-funk"
 )
 
 func exTableFormat() {
@@ -29,7 +28,7 @@ func exTableFormat() {
 	for i := 0; i < nr; i++ {
 		row[0] = strconv.Itoa(i + 1)
 		for j := 1; j < len(t.Fields); j++ {
-			row[j] = funk.RandomString(funk.RandomInt(3, 15), []rune("abcdefg中文huaijklmnopq1230456790"))
+			row[j] = paw.RandomString(paw.RandomInt(3, 15), []rune("abcdefg中文huaijklmnopq1230456790"))
 		}
 		t.PrintRow(row...)
 	}
