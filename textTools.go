@@ -603,11 +603,11 @@ func ReplaceAll(s, old, new string) string {
 func GetAbbrString(str string, maxlen int, conSymbole string) string {
 	// hc, ac := CountPlaceHolder(str)
 	// lenStr := hc + ac
-	lenStr := runewidth.StringWidth(str)
+	lenStr := StringWidth(str)
 	if lenStr <= maxlen {
 		return str
 	}
-	if len(conSymbole) < 1 {
+	if StringWidth(conSymbole) < 1 {
 		conSymbole = "..."
 	}
 	return Truncate(str, maxlen, conSymbole)
@@ -687,11 +687,12 @@ func NumberBanner(width int) string {
 
 // Reverse reverse the string `s` based on `rune`
 func Reverse(s string) string {
-	sl := []rune(s)
-	for i, j := 0, len(sl)-1; i < j; i, j = i+1, j-1 {
-		sl[i], sl[j] = sl[j], sl[i]
-	}
-	return string(sl)
+	// sl := []rune(s)
+	// for i, j := 0, len(sl)-1; i < j; i, j = i+1, j-1 {
+	// 	sl[i], sl[j] = sl[j], sl[i]
+	// }
+	// return string(sl)
+	return ReverseString(s)
 }
 
 // ReverseByte reverse the string `s` based on `byte`

@@ -172,8 +172,8 @@ func (f *FileList) NSubDirsAndFiles(dir string) (ndirs, nfiles int) {
 	return getNDirsFiles(f.store[dir])
 }
 
-// DirInfo will return the colorful string of sub-dir ( file.IsDir is true)
-func (f *FileList) DirInfo(file *File) (cdinf string, ndinf int) {
+// DirInfo will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.
+func (f *FileList) DirInfo(file *File) (cdinf string, wdinf int) {
 	return getDirInfo(f, file)
 }
 
@@ -641,19 +641,24 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		fNFiles = f.NFiles()
 		// git     = f.GetGitStatus()
 		// chead                   = f.GetHead4Meta(pad, urname, gpname, git)
-		ntdirs      = 1
-		nsdirs      = 0
-		ntfiles     = 0
-		i1          = len(cast.ToString(fNDirs))
-		j1          = paw.MaxInts(i1, len(cast.ToString(fNFiles)))
-		j           = 0
-		sppad       = "    "
-		wperm       = 11
-		wsize       = 6
-		wdate       = 14
+		ntdirs  = 1
+		nsdirs  = 0
+		ntfiles = 0
+		i1      = len(cast.ToString(fNDirs))
+		j1      = paw.MaxInts(i1, len(cast.ToString(fNFiles)))
+		wNo     = paw.MaxInt(j1+1, 2)
+		j       = 0
+		sppad   = paw.Spaces(4)
+		// wperm       = 11
+		// wsize       = 6
+		// wdate       = 14
 		bannerWidth = sttyWidth - 2
 	)
 	buf.Reset()
+	chead, wmeta := levelHead(wNo)
+	wmeta -= 4
+	spmeta := paw.Spaces(wmeta - 1)
+	spx := paw.Spaces(wmeta)
 
 	ctdsize := ByteSize(f.totalSize)
 
@@ -675,8 +680,8 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
-					istr := fmt.Sprintf("G%-[2]*[1]d", i, i1)
-					cistr := KindLSColorString("di", istr)
+					istr := fmt.Sprintf("G%-[1]*[2]d", i1, i)
+					cistr := cdip.Sprint(istr)
 					ppad += paw.Repeat(sppad, len(paw.Split(dir, PathSeparator))-1)
 					// dir, name := getDirAndName(dir, f.root)
 					dir, name := filepath.Split(dir)
@@ -690,15 +695,15 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 						end := sttyWidth - wpi - 4
 						if len(dir) < end {
 							nend := end - len(dir)
-							printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir)+KindEXAColorString("di", name[:nend]))
-							printFileItem(w, ppad, sp, "", KindEXAColorString("di", name[nend:]))
+							printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir)+cdip.Sprint(name[:nend]))
+							printFileItem(w, ppad, sp, "", cdip.Sprint(name[nend:]))
 						} else {
 							printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir[:end]))
-							printFileItem(w, ppad, sp, "", cdirp.Sprint(dir[end:])+KindEXAColorString("di", name))
+							printFileItem(w, ppad, sp, "", cdirp.Sprint(dir[end:])+cdip.Sprint(name))
 						}
 					} else {
 						// cname := GetColorizedDirName(dir, f.root)
-						cname := cdirp.Sprint(dir) + lsdip.Sprint(name)
+						cname := cdirp.Sprint(dir) + cdip.Sprint(name)
 						printFileItem(w, ppad, cistr, "", cname)
 					}
 					if len(fm[dir]) > 1 {
@@ -711,54 +716,46 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		if i > 1 {
 			fpad += sppad
 		}
+		if len(fm[dir]) > 1 {
+			fmt.Fprintf(w, "%s%s\n", fpad, chead)
+		}
 		for _, file := range fm[dir][1:] {
 			jstr := ""
 			cjstr := ""
 			if file.IsDir() {
 				ndirs++
 				nsdirs++
-				jstr = fmt.Sprintf("D%-[2]*[1]d", nsdirs, j1)
-			}
-			if file.IsFile() || !file.IsDir() {
+				jstr = fmt.Sprintf("D%-[1]*[2]d", j1, nsdirs)
+				cjstr = cdip.Sprint(jstr)
+			} else {
 				nfiles++
 				ntfiles++
 				sumsize += file.Size
 				j++
-				jstr = fmt.Sprintf("F%-[2]*[1]d", ntfiles, j1)
+				jstr = fmt.Sprintf("F%-[1]*[2]d", j1, ntfiles)
+				cjstr = cfip.Sprint(jstr)
 			}
-			cjstr = file.LSColorString(jstr)
+			// cjstr = file.LSColorString(jstr)
 			cperm := file.ColorPermission()
 			cfsize := file.ColorSize()
 			ctime := file.ColorModifyTime()
 			wfpad := len(fpad)
-			wjstr := len(jstr)
+			// wjstr := len(jstr)
 			name := file.Name()
 			wname := paw.StringWidth(name)
-			wlead := wjstr + wperm + wsize + wdate + 3
-			if wfpad+wlead+wname <= sttyWidth {
+			// wlead := wjstr + wperm + wsize + wdate + 3
+			if wfpad+wmeta+wname <= sttyWidth {
 				cname := file.ColorName()
 				printFileItem(w, fpad, cjstr, cperm, cfsize, ctime, cname)
 			} else {
-				end := sttyWidth - wfpad - wlead - 3
+				end := sttyWidth - wfpad - wmeta - 2
 				printFileItem(w, fpad, cjstr, cperm, cfsize, ctime, file.LSColorString(name[:end]))
-				sp := paw.Spaces(wlead)
-				printFileItem(w, fpad, sp, file.LSColorString(name[end:]))
+				printFileItem(w, fpad, spmeta, file.LSColorString(name[end:]))
 
 			}
 
 			if isExtended {
-				metalength := j1 + 11 + 6 + 14 + 5
-				sp := paw.Spaces(metalength)
-				nx := len(file.XAttributes)
-				if nx > 0 {
-					edge := EdgeTypeMid
-					for i := 0; i < nx; i++ {
-						if i == nx-1 {
-							edge = EdgeTypeEnd
-						}
-						fmt.Fprintf(w, "%s%s%s %s\n", fpad, sp, cdashp.Sprint(edge), cxp.Sprint(file.XAttributes[i]))
-					}
-				}
+				fmt.Fprint(w, xattrEdgeString(file, fpad+spx))
 			}
 		}
 		if f.depth != 0 {
@@ -783,6 +780,33 @@ END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
 	// spew.Dump(f.dirs)
 	return buf.String()
+}
+
+func xattrEdgeString(file *File, pad string) string {
+	nx := len(file.XAttributes)
+	sb := new(strings.Builder)
+	if nx > 0 {
+		edge := EdgeTypeMid
+		for i := 0; i < nx; i++ {
+			if i == nx-1 {
+				edge = EdgeTypeEnd
+			}
+			sb.WriteString(pad)
+			sb.WriteString(cdashp.Sprint(edge) + " ")
+			sb.WriteString(cxp.Sprint(file.XAttributes[i]))
+			sb.WriteByte('\n')
+		}
+	}
+	return sb.String()
+}
+
+func levelHead(wNo int) (string, int) {
+	sno := fmt.Sprintf("%[1]*[2]s", wNo, "No")
+	ssize := fmt.Sprintf("%6s", "Size")
+	stime := fmt.Sprintf("%14s", "Data Modified")
+	head := fmt.Sprintf("%s %s %s %s %s", sno, "Permissions", ssize, stime, "Name")
+	chead := fmt.Sprintf("%s %s %s %s %s", sno, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(stime), chdp.Sprint("Name"))
+	return chead, paw.StringWidth(head)
 }
 
 func printFileItem(w io.Writer, pad string, parameters ...string) {
@@ -843,9 +867,9 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 
 	printBanner(w, pad, "=", bannerWidth)
 
-	if paw.IndexOfString(f.dirs, RootMark) != -1 {
-		fmt.Fprintln(w, chead)
-	}
+	// if paw.IndexOfString(f.dirs, RootMark) != -1 {
+	// 	fmt.Fprintln(w, chead)
+	// }
 	for i, dir := range dirs {
 		sumsize := uint64(0)
 		nfiles := 0
@@ -856,16 +880,15 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 				if f.depth != 0 {
 					// sntd = KindEXAColorString("dir", fmt.Sprintf("D%d:", ntdirs))
 					dir, name := filepath.Split(dir)
-					cname := cdirp.Sprint(dir) + lsdip.Sprint(name)
+					cname := cdirp.Sprint(dir) + cdip.Sprint(name)
 					fmt.Fprintf(w, "%s%s%v\n", pad, sntd, cname)
-					if len(fm[dir]) > 1 {
-						ntdirs++
-						fmt.Fprintln(w, chead)
-					}
 				}
 			}
 		}
-		// fmt.Fprintln(w, chead)
+		if len(fm[dir]) > 1 {
+			ntdirs++
+			fmt.Fprintln(w, chead)
+		}
 		for _, file := range fm[dir][1:] {
 			sntf := ""
 			if file.IsDir() {
@@ -890,21 +913,11 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 				for k := 1; k < len(names); k++ {
 					fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, sp, file.LSColorString(names[k]))
 				}
-
 			}
 
 			if isExtended {
-				nx := len(file.XAttributes)
 				sp := paw.Spaces(metalength + len(sntf))
-				if nx > 0 {
-					edge := EdgeTypeMid
-					for i := 0; i < nx; i++ {
-						if i == nx-1 {
-							edge = EdgeTypeEnd
-						}
-						fmt.Fprintf(w, "%s%s%s %s\n", pad, sp, cdashp.Sprint(edge), cxp.Sprint(file.XAttributes[i]))
-					}
-				}
+				fmt.Fprint(w, xattrEdgeString(file, sp))
 			}
 		}
 
@@ -1014,79 +1027,93 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool) {
 
-	sb := strings.Builder{}
-	xlen := runewidth.StringWidth(pad)
+	sb := new(strings.Builder)
+	wmeta := runewidth.StringWidth(pad)
 
 	meta := pad
 	if pdview == PListTreeView {
 		tmeta, lenmeta := file.ColorMeta(git)
 		meta += tmeta
-		xlen += lenmeta
+		wmeta += lenmeta
 	}
-	fmt.Fprintf(&sb, "%v", meta)
-	axlen := xlen
+	fmt.Fprintf(sb, "%v", meta)
+
+	// awmeta := wmeta
 	aMeta := ""
+	padMeta := paw.Spaces(wmeta)
 	for i := 0; i < level; i++ {
 		if isEnded(levelsEnded, i) {
-			fmt.Fprintf(&sb, "%v", paw.Spaces(IndentSize+1))
+			fmt.Fprintf(sb, "%v", paw.Spaces(IndentSize+1))
 			aMeta += paw.Spaces(IndentSize + 1)
-			xlen += (IndentSize + 1)
+			wmeta += (IndentSize + 1)
 			continue
 		}
-		cedge := cdashp.Sprint(EdgeTypeLink) //KindLSColorString("-", string(EdgeTypeLink))
-		// fmt.Fprintf(&sb, "%v%s", cedge, paw.Spaces( IndentSize))
-		fmt.Fprintf(&sb, "%v%s", cedge, SpaceIndentSize)
+		cedge := cdashp.Sprint(EdgeTypeLink)
+		fmt.Fprintf(sb, "%v%s", cedge, SpaceIndentSize)
 		aMeta += fmt.Sprintf("%v%s", cedge, SpaceIndentSize)
-		xlen += (edgeWidth[EdgeTypeLink] + IndentSize)
+		wmeta += (edgeWidth[EdgeTypeLink] + IndentSize)
 	}
+	padMeta += aMeta
+
+	fmt.Fprint(sb, wrapFileString(fl, file, edge, wmeta, padMeta))
+
+	if isExtended {
+		fmt.Fprint(sb, xattrLTString(file, pad, edge, padMeta))
+	}
+	fmt.Fprint(wr, sb.String())
+}
+
+func wrapFileString(fl *FileList, file *File, edge EdgeType, wmeta int, padMeta string) string {
+	sb := new(strings.Builder)
 	cdinf, ndinf := "", 0
 	if file.IsDir() && fl.depth == -1 {
 		cdinf, ndinf = fl.DirInfo(file)
 		cdinf += " "
-		xlen += ndinf
+		wmeta += ndinf
 	}
+
 	name := file.BaseName
-	if xlen+len(name)+edgeWidth[edge]+1 >= sttyWidth {
-		end := sttyWidth - xlen - edgeWidth[edge] - 3
+	wname := paw.StringWidth(name)
+	if wmeta+wname+edgeWidth[edge]+1 >= sttyWidth {
+		end := sttyWidth - wmeta - edgeWidth[edge] - 3
 		if ndinf != 0 {
 			ndinf++
 			end--
 		}
 		cedge := cdashp.Sprint(edge)
-		fmt.Fprintf(&sb, "%v %v\n", cedge, cdinf+file.LSColorString(name[:end]))
+		fmt.Fprintf(sb, "%v %v\n", cedge, cdinf+file.LSColorString(name[:end]))
 		switch edge {
 		case EdgeTypeMid:
-			cedge = paw.Spaces(axlen) + aMeta + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
+			cedge = padMeta + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
 		case EdgeTypeEnd:
-			// cedge = paw.Spaces( xlen+edgeWidth[edge]) + SpaceIndentSize
-			cedge = paw.Spaces(axlen) + aMeta + SpaceIndentSize
+			cedge = padMeta + SpaceIndentSize
 		}
-		fmt.Fprintf(&sb, "%v%v\n", cedge, paw.Spaces(ndinf)+file.LSColorString(name[end:]))
+		fmt.Fprintf(sb, "%v%v\n", cedge, paw.Spaces(ndinf)+file.LSColorString(name[end:]))
 	} else {
 		cedge := cdashp.Sprint(edge)
 		cname := cdinf + file.ColorBaseName()
-		fmt.Fprintf(&sb, "%v %v\n", cedge, cname)
+		fmt.Fprintf(sb, "%v %v\n", cedge, cname)
 	}
+	return sb.String()
+}
 
-	// xlen += edgeWidth[edge] + 1 //- IndentSize - level + 1
-	if isExtended {
-		// sp := paw.Spaces( xlen+edgeWidth[edge]+1)
-		nx := len(file.XAttributes)
-		if nx > 0 {
-			// edge := EdgeTypeMid
-			for i := 0; i < nx; i++ {
-				cedge := ""
-				switch edge {
-				case EdgeTypeMid:
-					cedge = paw.Spaces(axlen) + aMeta + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
-				case EdgeTypeEnd:
-					cedge = paw.Spaces(axlen) + aMeta + paw.Spaces(IndentSize+1)
-				}
-				fmt.Fprintf(&sb, "%s%s%s %s\n", pad, cedge, cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
+func xattrLTString(file *File, pad string, edge EdgeType, padx string) string {
+	nx := len(file.XAttributes)
+	sb := new(strings.Builder)
+	if nx > 0 {
+		// edge := EdgeTypeMid
+		for i := 0; i < nx; i++ {
+			cedge := ""
+			switch edge {
+			case EdgeTypeMid:
+				cedge = padx + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
+			case EdgeTypeEnd:
+				cedge = padx + paw.Spaces(IndentSize+1)
 			}
+			fmt.Fprintf(sb, "%s%s%s %s\n", pad, cedge, cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
 		}
 	}
-	fmt.Fprint(wr, sb.String())
+	return sb.String()
 }
 
 func printLTDir(wr io.Writer, level int, levelsEnded []int,

@@ -343,16 +343,16 @@ func getMeta(pad string, file *File, git GitStatus) (string, int) {
 	width := 0
 	buf := new(bytes.Buffer)
 	cperm := file.ColorPermission()
-	width += len(fmt.Sprintf("%v", file.Stat.Mode())) + 2
+	width += paw.StringWidth(fmt.Sprintf("%v", file.Stat.Mode())) + 2
 	cmodTime := file.ColorModifyTime()
-	// width += len(fmt.Sprint(file.ModifiedTime().Format("01-02-06 15:04"))) + 1
-	width += len(fmt.Sprint(file.ModifiedTime().Format(timeLayout))) + 1
+	// width += paw.StringWidth(fmt.Sprint(file.ModifiedTime().Format("01-02-06 15:04"))) + 1
+	width += paw.StringWidth(fmt.Sprint(file.ModifiedTime().Format(timeLayout))) + 1
 	cfsize := file.ColorSize()
 	if file.IsDir() {
 		cfsize = cdashp.Sprint(fmt.Sprintf("%6s", "-"))
 	}
 	width += 7
-	width += len(urname) + len(gpname) + 1
+	width += paw.StringWidth(urname) + paw.StringWidth(gpname) + 1
 	if git.NoGit {
 		printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime)
 	} else {

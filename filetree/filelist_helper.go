@@ -42,6 +42,8 @@ var (
 	chdp                  = NewEXAColor("hd")
 	cdirp                 = NewEXAColor("dir")
 	lsdip                 = NewLSColor("di")
+	cdip                  = NewEXAColor("di")
+	cfip                  = NewEXAColor("fi")
 	currentuser, _        = user.Current()
 	urname                = currentuser.Username
 	usergp, _             = user.LookupGroupId(currentuser.Gid)
@@ -112,7 +114,7 @@ func getDirAndName(path string, root string) (dir, name string) {
 	return dir, name
 }
 
-func getDirInfo(fl *FileList, file *File) (cdinf string, ndinf int) {
+func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
 	nd, nf := 0, 0
 	if file.IsDir() {
 		files := fl.Map()[file.Dir]
@@ -126,9 +128,9 @@ func getDirInfo(fl *FileList, file *File) (cdinf string, ndinf int) {
 	}
 	di := fmt.Sprintf("%v dirs", nd-1)
 	fi := fmt.Sprintf("%v files", nf)
-	ndinf = len(di) + len(fi) + 4
+	wdinf = len(di) + len(fi) + 4
 	cdinf = fmt.Sprintf("[%s, %s]", cdirp.Sprint(di), cdirp.Sprint(fi))
-	return cdinf, ndinf
+	return cdinf, wdinf
 	// return "[" + cl.Sprint(di+", "+fi) + "]"
 }
 
@@ -339,9 +341,9 @@ func getColorizedModTime(modTime time.Time) string {
 }
 
 func getColorizedHead(pad, username, groupname string, git GitStatus) string {
-	width := paw.MaxInts(4, len(username))
+	width := paw.MaxInts(4, paw.StringWidth(username))
 	huser := fmt.Sprintf("%[1]*[2]s", width, "User")
-	width = paw.MaxInts(5, len(groupname))
+	width = paw.MaxInts(5, paw.StringWidth(groupname))
 	hgroup := fmt.Sprintf("%[1]*[2]s", width, "Group")
 
 	ssize := fmt.Sprintf("%6s", "Size")
@@ -355,8 +357,8 @@ func getColorizedHead(pad, username, groupname string, git GitStatus) string {
 }
 
 func printBanner(w io.Writer, pad string, mark string, length int) {
-	banner := fmt.Sprintf("%s%s\n", pad, paw.Repeat(mark, length))
-	fmt.Fprintf(w, cdashp.Sprint(banner))
+	banner := fmt.Sprintf("%s%s", pad, paw.Repeat(mark, length))
+	fmt.Fprintln(w, cdashp.Sprint(banner))
 }
 
 // func below here, invoked from godirwalk/examples/sizes
