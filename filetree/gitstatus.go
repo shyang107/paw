@@ -75,9 +75,9 @@ func ToXY(st string) XY {
 	return XY{rune(st[0]), rune(st[1])}
 }
 
-//GetShortStatus read the git status of the repository located at path
+//GetShortGitStatus read the git status of the repository located at path
 // 	if err != nil : no git
-func GetShortStatus(path string) (GitStatus, error) {
+func GetShortGitStatus(path string) (GitStatus, error) {
 	out, err := execOutput(fmt.Sprintf("git -C %s status -s -b --porcelain", path))
 	if err != nil {
 		// paw.Logger.Errorf("unable to read git repository status : %s", err.Error())

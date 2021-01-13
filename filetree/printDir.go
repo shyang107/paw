@@ -297,7 +297,7 @@ func checkIsFile(w io.Writer, path string, pad string) error {
 		return err
 	}
 	if file.IsRegular() || file.IsLink() {
-		git, _ := GetShortStatus(file.Dir)
+		git, _ := GetShortGitStatus(file.Dir)
 		chead := getColorizedHead("", urname, gpname, git)
 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getColorDirName(file.Dir, ""))
 		fmt.Fprintln(w, chead)

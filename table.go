@@ -106,7 +106,7 @@ func (t *TableFormat) SetAfterMessage(msg string) {
 func (t *TableFormat) Prepare(w io.Writer) {
 	t.check()
 	t.writer = w
-	t.isPrepare = true
+	t.isPrepare = false
 }
 
 // SetWrapFields set true to TableFormat.IsWrapped

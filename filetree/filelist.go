@@ -197,17 +197,12 @@ func (f *FileList) AddFile(file *File) {
 	f.store[file.Dir] = append(f.store[file.Dir], file)
 	f.totalSize += file.Size
 	if file.IsDir() {
-		pdir := findPreDir(file.Dir)
+		dd := paw.Split(file.Dir, PathSeparator)
+		pdir := paw.Join(dd[:len(dd)-1], PathSeparator)
 		if !paw.EqualFold(pdir, file.Dir) {
 			f.store[pdir] = append(f.store[pdir], file)
 		}
 	}
-}
-
-func findPreDir(dir string) string {
-	pdir, _ := filepath.Split(dir)
-	pdir = paw.TrimSuffix(pdir, PathSeparator)
-	return pdir
 }
 
 func (f *FileList) DisableColor() {
@@ -265,7 +260,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	if ignore == nil {
 		ignore = DefaultIgnoreFn
 	}
-	f.gitstatus, _ = GetShortStatus(f.root)
+	f.gitstatus, _ = GetShortGitStatus(f.root)
 	f.depth = depth
 	switch depth {
 	case 0: //{root directory}/*
@@ -442,32 +437,6 @@ func (f *FileList) SortBy(dirsBy DirsBy, filesBy FilesBy) {
 	// }
 }
 
-func sortParts(fl *FileList, from, to int, wg sync.WaitGroup) {
-	defer wg.Done()
-	for j := from; j < to; j++ {
-		dir := fl.dirs[j]
-		if len(fl.store[dir]) > 1 {
-			if !fl.IsGrouped {
-				fl.filesBy.Sort(fl.store[dir][1:])
-			} else {
-				sfiles := []*File{}
-				sdirs := []*File{}
-				for _, v := range fl.store[dir][1:] {
-					if v.IsDir() {
-						sdirs = append(sdirs, v)
-					} else {
-						sfiles = append(sfiles, v)
-					}
-				}
-				fl.filesBy.Sort(sdirs)
-				fl.filesBy.Sort(sfiles)
-				copy(fl.store[dir][1:], sdirs)
-				copy(fl.store[dir][len(sdirs)+1:], sfiles)
-			}
-		}
-	}
-}
-
 // ToTreeViewBytes will return the []byte of FileList in tree form
 func (f *FileList) ToTreeViewBytes(pad string) []byte {
 	return []byte(f.ToTreeView(pad))
@@ -542,12 +511,6 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		for jj, file := range fm[dir] {
 			fsize := file.Size
 			sfsize := ByteSize(fsize)
-			// mode := fmt.Sprintf("%v", file.Stat.Mode())
-			// if len(file.XAttributes) > 0 {
-			// 	mode += "@"
-			// } else {
-			// 	mode += " "
-			// }
 			mode := file.ColorPermission()
 			if jj == 0 && file.IsDir() {
 				// idx := fmt.Sprintf("D%d", i)
@@ -801,11 +764,11 @@ func xattrEdgeString(file *File, pad string) string {
 }
 
 func levelHead(wNo int) (string, int) {
-	sno := fmt.Sprintf("%[1]*[2]s", wNo, "No")
+	sno := fmt.Sprintf("%-[1]*[2]s", wNo, "No")
 	ssize := fmt.Sprintf("%6s", "Size")
 	stime := fmt.Sprintf("%14s", "Data Modified")
 	head := fmt.Sprintf("%s %s %s %s %s", sno, "Permissions", ssize, stime, "Name")
-	chead := fmt.Sprintf("%s %s %s %s %s", sno, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(stime), chdp.Sprint("Name"))
+	chead := fmt.Sprintf("%s %s %s %s %s", chdp.Sprint(sno), chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(stime), chdp.Sprint("Name"))
 	return chead, paw.StringWidth(head)
 }
 
