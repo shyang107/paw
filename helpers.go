@@ -312,10 +312,10 @@ func GetTerminalSize() (height, width int) {
 	return height, width
 }
 
-// IndexOfString gets the index at which the first occurrence of a string value is found in array or return -1
+// IndexOf gets the index at which the first occurrence of an value is found in array or return -1.
 // if the value cannot be found
-func IndexOfString(a []string, x string) int {
-	return indexOf(len(a), func(i int) bool { return a[i] == x })
+func IndexOf(n int, f func(int) bool) int {
+	return indexOf(n, f)
 }
 
 func indexOf(n int, f func(int) bool) int {
@@ -367,6 +367,18 @@ func IndexOfUInt64(a []uint64, x uint64) int {
 // if the value cannot be found
 func IndexOfFloat64(a []float64, x float64) int {
 	return indexOf(len(a), func(i int) bool { return a[i] == x })
+}
+
+// IndexOfString gets the index at which the first occurrence of a string value is found in array or return -1
+// if the value cannot be found
+func IndexOfString(a []string, x string) int {
+	return indexOf(len(a), func(i int) bool { return a[i] == x })
+}
+
+// LastIndexOf gets the index at which the first occurrence of an value is found in array or return -1.
+// if the value cannot be found
+func LastIndexOf(n int, f func(int) bool) int {
+	return lastIndexOf(n, f)
 }
 
 func lastIndexOf(n int, f func(int) bool) int {
