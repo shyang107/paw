@@ -306,7 +306,7 @@ func GetTerminalSize() (height, width int) {
 		// Error.Println("run stty, err: ", err)
 		return 38, 100
 	}
-	size := Split(TrimSuffix(string(out), "\n"), " ")
+	size := Split(TrimSpace(string(out)), " ")
 	height = cast.ToInt(size[0])
 	width = cast.ToInt(size[1])
 	return height, width
