@@ -166,10 +166,7 @@ func (f *File) IsRegular() bool {
 // IsLink() report whether File describes a symbolic link.
 func (f *File) IsLink() bool {
 	mode := f.Stat.Mode()
-	if mode&os.ModeSymlink != 0 {
-		return true
-	}
-	return false
+	return mode&os.ModeSymlink != 0
 }
 
 // LinkPath report far-end path of a symbolic link.
