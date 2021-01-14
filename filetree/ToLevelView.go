@@ -49,9 +49,10 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		bannerWidth = sttyWidth - 2
 	)
 	buf.Reset()
+
 	chead, wmeta := levelHead(wNo)
 	wmeta -= 4
-	spmeta := paw.Spaces(wmeta - 1)
+	// spmeta := paw.Spaces(wmeta - 1)
 	spx := paw.Spaces(wmeta)
 
 	ctdsize := ByteSize(f.totalSize)
@@ -74,35 +75,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
-					istr := fmt.Sprintf("G%-[1]*[2]d", i1, i)
-					cistr := cdip.Sprint(istr)
-					level := len(paw.Split(dir, PathSeparator)) - 1
-					ppad += paw.Repeat(sppad, level)
-					slevel := fmt.Sprintf("L%d: ", level)
-					cistr = slevel + cistr
-					// dir, name := getDirAndName(dir, f.root)
-					dir, name := filepath.Split(dir)
-					wppad := len(ppad)
-					wistr := len(istr)
-					wpi := wppad + wistr
-					wdir := len(dir)
-					wname := paw.StringWidth(name)
-					if wpi+wdir+wname > sttyWidth-4 {
-						sp := paw.Spaces(len(istr))
-						end := sttyWidth - wpi - 4
-						if len(dir) < end {
-							nend := end - len(dir)
-							printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir)+cdip.Sprint(name[:nend]))
-							printFileItem(w, ppad, sp, "", cdip.Sprint(name[nend:]))
-						} else {
-							printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir[:end]))
-							printFileItem(w, ppad, sp, "", cdirp.Sprint(dir[end:])+cdip.Sprint(name))
-						}
-					} else {
-						// cname := GetColorizedDirName(dir, f.root)
-						cname := cdirp.Sprint(dir) + cdip.Sprint(name)
-						printFileItem(w, ppad, cistr, "", cname)
-					}
+					ppad = printLevelWrappedDir(w, dir, ppad, i1, i)
 					if len(fm[dir]) > 1 {
 						ntdirs++
 					}
@@ -117,39 +90,18 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 			fmt.Fprintf(w, "%s%s\n", fpad, chead)
 		}
 		for _, file := range fm[dir][1:] {
-			jstr := ""
 			cjstr := ""
 			if file.IsDir() {
-				ndirs++
-				nsdirs++
-				jstr = fmt.Sprintf("D%-[1]*[2]d", j1, nsdirs)
+				ndirs, nsdirs = ndirs+1, nsdirs+1
+				jstr := fmt.Sprintf("D%-[1]*[2]d", j1, nsdirs)
 				cjstr = cdip.Sprint(jstr)
 			} else {
-				nfiles++
-				ntfiles++
+				nfiles, ntfiles, j = nfiles+1, ntfiles+1, j+1
 				sumsize += file.Size
-				j++
-				jstr = fmt.Sprintf("F%-[1]*[2]d", j1, ntfiles)
+				jstr := fmt.Sprintf("F%-[1]*[2]d", j1, ntfiles)
 				cjstr = cfip.Sprint(jstr)
 			}
-			// cjstr = file.LSColorString(jstr)
-			cperm := file.ColorPermission()
-			cfsize := file.ColorSize()
-			ctime := file.ColorModifyTime()
-			wfpad := len(fpad)
-			// wjstr := len(jstr)
-			name := file.Name()
-			wname := paw.StringWidth(name)
-			// wlead := wjstr + wperm + wsize + wdate + 3
-			if wfpad+wmeta+wname <= sttyWidth {
-				cname := file.ColorName()
-				printFileItem(w, fpad, cjstr, cperm, cfsize, ctime, cname)
-			} else {
-				end := sttyWidth - wfpad - wmeta - 2
-				printFileItem(w, fpad, cjstr, cperm, cfsize, ctime, file.LSColorString(name[:end]))
-				printFileItem(w, fpad, spmeta, file.LSColorString(name[end:]))
-
-			}
+			printLevelWrappedFile(w, file, fpad, cjstr, wmeta)
 
 			if isExtended {
 				fmt.Fprint(w, xattrEdgeString(file, fpad+spx))
@@ -173,10 +125,61 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	}
 
 	printBanner(w, pad, "=", bannerWidth)
+
 END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
 	// spew.Dump(f.dirs)
 	return buf.String()
+}
+
+func printLevelWrappedFile(w io.Writer, file *File, pad, cjstr string, wmeta int) {
+	spmeta := paw.Spaces(wmeta - 1)
+	cperm := file.ColorPermission()
+	cfsize := file.ColorSize()
+	ctime := file.ColorModifyTime()
+	wpad := len(pad)
+	name := file.Name()
+	wname := paw.StringWidth(name)
+	if wpad+wmeta+wname <= sttyWidth {
+		cname := file.ColorName()
+		printFileItem(w, pad, cjstr, cperm, cfsize, ctime, cname)
+	} else {
+		end := sttyWidth - wpad - wmeta - 2
+		printFileItem(w, pad, cjstr, cperm, cfsize, ctime, file.LSColorString(name[:end]))
+		printFileItem(w, pad, spmeta, file.LSColorString(name[end:]))
+	}
+}
+
+func printLevelWrappedDir(w io.Writer, dir, ppad string, i1, i int) string {
+	istr := fmt.Sprintf("G%-[1]*[2]d", i1, i)
+	cistr := cdip.Sprint(istr)
+	level := len(paw.Split(dir, PathSeparator)) - 1
+	ppad += paw.Spaces(4 * level)
+	slevel := fmt.Sprintf("L%d: ", level)
+	cistr = slevel + cistr
+	dir, name := filepath.Split(dir)
+	wppad := len(ppad)
+	wistr := len(slevel) + len(istr)
+	wpi := wppad + wistr
+	wdir := len(dir)
+	wname := paw.StringWidth(name)
+	if wpi+wdir+wname > sttyWidth-4 {
+		sp := paw.Spaces(wistr + 1)
+		end := sttyWidth - wpi - 4
+		if len(dir) < end {
+			nend := end - len(dir)
+			printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir)+cdip.Sprint(name[:nend]))
+			printFileItem(w, ppad, sp, "", cdip.Sprint(name[nend:]))
+		} else {
+			printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir[:end]))
+			printFileItem(w, ppad, sp, "", cdirp.Sprint(dir[end:])+cdip.Sprint(name))
+		}
+	} else {
+		// cname := GetColorizedDirName(dir, f.root)
+		cname := cdirp.Sprint(dir) + cdip.Sprint(name)
+		printFileItem(w, ppad, cistr, "", cname)
+	}
+	return ppad
 }
 
 func xattrEdgeString(file *File, pad string) string {
