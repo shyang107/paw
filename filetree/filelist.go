@@ -1185,16 +1185,25 @@ func cgGetFileString(file *File, width int) string {
 	ns := width - runewidth.StringWidth(file.BaseName)
 	tail := ""
 	cname := file.ColorBaseName()
-	if file.IsDir() {
-		tail = "/" + paw.Spaces(ns-1)
-	} else {
-		if file.IsLink() {
-			cname = file.LSColorString(file.BaseName)
-			tail = cdashp.Sprint("@") + paw.Spaces(ns-1)
-		} else {
-			tail = paw.Spaces(ns)
+	if file.IsDir() || file.IsLink() || len(file.XAttributes) > 0 {
+		ws := 0
+		if file.IsDir() {
+			tail += "/"
+			ws++
 		}
+		if file.IsLink() {
+			tail += cdashp.Sprint(">")
+			ws++
+		}
+		if len(file.XAttributes) > 0 {
+			tail += cdashp.Sprint("@")
+			ws++
+		}
+		tail += paw.Spaces(ns - ws)
+	} else {
+		tail = paw.Spaces(ns)
 	}
+
 	return cname + tail
 }
 
@@ -1263,25 +1272,32 @@ func classifyPrintFiles(w io.Writer, files []*File) {
 
 	for _, file := range files {
 		cname := file.ColorBaseName()
-		if file.IsLink() {
-			cname = file.LSColorString(file.BaseName) + cdashp.Sprint("@")
-		}
 		if file.IsDir() {
-			fmt.Fprintf(w, "%s/  ", cname)
-		} else {
-			fmt.Fprintf(w, "%s  ", cname)
+			cname += "/"
 		}
+		if file.IsLink() {
+			cname += cdashp.Sprint(">")
+		}
+		if len(file.XAttributes) > 0 {
+			cname += cdashp.Sprint("@")
+		}
+		fmt.Fprintf(w, "%s  ", cname)
 	}
 	fmt.Fprintln(w)
 }
 
+// getleng will return []int of StringWidth of File.BaseName and summation fo the slice
 func getleng(files []*File) (leng []int, sum int) {
 	sum = 0
 	for _, file := range files {
 		lenstr := runewidth.StringWidth(file.BaseName) + 2
-		// h, a := paw.CountPlaceHolder(file.BaseName)
-		// lenstr := h + a + 2
 		if file.IsDir() {
+			lenstr++
+		}
+		if file.IsLink() {
+			lenstr++
+		}
+		if len(file.XAttributes) > 0 {
 			lenstr++
 		}
 		leng = append(leng, lenstr)
