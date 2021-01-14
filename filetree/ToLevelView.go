@@ -76,7 +76,10 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 				if f.depth != 0 {
 					istr := fmt.Sprintf("G%-[1]*[2]d", i1, i)
 					cistr := cdip.Sprint(istr)
-					ppad += paw.Repeat(sppad, len(paw.Split(dir, PathSeparator))-1)
+					level := len(paw.Split(dir, PathSeparator)) - 1
+					ppad += paw.Repeat(sppad, level)
+					slevel := fmt.Sprintf("L%d: ", level)
+					cistr = slevel + cistr
 					// dir, name := getDirAndName(dir, f.root)
 					dir, name := filepath.Split(dir)
 					wppad := len(ppad)
