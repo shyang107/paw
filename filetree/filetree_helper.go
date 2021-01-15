@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"time"
 
@@ -355,4 +356,14 @@ func (s *sizesStack) LeaveDirectory() (i int64) {
 
 func (s *sizesStack) Accumulate(i int64) {
 	s.sizes[s.top] += i
+}
+
+func printListln(w io.Writer, items ...string) {
+	sb := new(strings.Builder)
+	sb.Grow(len(items))
+	for i := 0; i < len(items)-1; i++ {
+		sb.WriteString(fmt.Sprintf("%v ", items[i]))
+	}
+	sb.WriteString(fmt.Sprintf("%v\n", items[len(items)-1]))
+	fmt.Fprintf(w, "%v", sb.String())
 }

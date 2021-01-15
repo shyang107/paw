@@ -46,7 +46,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		// wperm       = 11
 		// wsize       = 6
 		// wdate       = 14
-		bannerWidth = sttyWidth - 2
+		bannerWidth = sttyWidth - 2 - len(pad)
 	)
 	buf.Reset()
 
@@ -58,9 +58,10 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	ctdsize := ByteSize(f.totalSize)
 
 	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getColorDirName(f.root, ""), KindLSColorString("di", ctdsize))
-	fmt.Fprintln(w, head)
-
-	printBanner(w, pad, "=", bannerWidth)
+	// fmt.Fprintln(w, head)
+	printListln(w, pad+head)
+	printListln(w, pad+paw.Repeat("=", bannerWidth))
+	// printBanner(w, pad, "=", bannerWidth)
 
 	if fNDirs == 0 && fNFiles == 0 {
 		goto END
@@ -87,7 +88,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 			fpad += sppad
 		}
 		if len(fm[dir]) > 1 {
-			fmt.Fprintf(w, "%s%s\n", fpad, chead)
+			printListln(w, fpad+chead)
 		}
 		for _, file := range fm[dir][1:] {
 			cjstr := ""
@@ -112,19 +113,19 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 				printDirSummary(w, fpad, ndirs, nfiles, sumsize)
 				switch {
 				case nsdirs < fNDirs && fNFiles == 0:
-					printBanner(w, pad, "-", bannerWidth)
+					printListln(w, pad+paw.Repeat("-", bannerWidth))
 				case nsdirs <= fNDirs && ntfiles < fNFiles:
-					printBanner(w, pad, "-", bannerWidth)
+					printListln(w, pad+paw.Repeat("-", bannerWidth))
 				default:
 					if i < len(f.dirs)-1 {
-						printBanner(w, pad, "-", bannerWidth)
+						printListln(w, pad+paw.Repeat("-", bannerWidth))
 					}
 				}
 			}
 		}
 	}
 
-	printBanner(w, pad, "=", bannerWidth)
+	printListln(w, pad+paw.Repeat("=", bannerWidth))
 
 END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
@@ -137,16 +138,16 @@ func printLevelWrappedFile(w io.Writer, file *File, pad, cjstr string, wmeta int
 	cperm := file.ColorPermission()
 	cfsize := file.ColorSize()
 	ctime := file.ColorModifyTime()
-	wpad := len(pad)
+	wpad := paw.StringWidth(pad)
 	name := file.Name()
 	wname := paw.StringWidth(name)
 	if wpad+wmeta+wname <= sttyWidth {
 		cname := file.ColorName()
-		printFileItem(w, pad, cjstr, cperm, cfsize, ctime, cname)
+		printListln(w, pad+cjstr, cperm, cfsize, ctime, cname)
 	} else {
 		end := sttyWidth - wpad - wmeta - 2
-		printFileItem(w, pad, cjstr, cperm, cfsize, ctime, file.LSColorString(name[:end]))
-		printFileItem(w, pad, spmeta, file.LSColorString(name[end:]))
+		printListln(w, pad+cjstr, cperm, cfsize, ctime, file.LSColorString(name[:end]))
+		printListln(w, pad+spmeta, file.LSColorString(name[end:]))
 	}
 }
 
@@ -158,7 +159,7 @@ func printLevelWrappedDir(w io.Writer, file *File, ppad string, i1, i int) strin
 	slevel := fmt.Sprintf("L%d: ", level)
 	cistr = slevel + cistr
 	dir, name := filepath.Split(file.Dir)
-	wppad := len(ppad)
+	wppad := paw.StringWidth(ppad)
 	wistr := len(slevel) + len(istr)
 	wpi := wppad + wistr
 	wdir := len(dir)
@@ -168,16 +169,16 @@ func printLevelWrappedDir(w io.Writer, file *File, ppad string, i1, i int) strin
 		end := sttyWidth - wpi - 4
 		if len(dir) < end {
 			nend := end - len(dir)
-			printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir)+cdip.Sprint(name[:nend]))
-			printFileItem(w, ppad, sp, "", cdip.Sprint(name[nend:]))
+			printListln(w, ppad+cistr, "", cdirp.Sprint(dir)+cdip.Sprint(name[:nend]))
+			printListln(w, ppad+sp, "", cdip.Sprint(name[nend:]))
 		} else {
-			printFileItem(w, ppad, cistr, "", cdirp.Sprint(dir[:end]))
-			printFileItem(w, ppad, sp, "", cdirp.Sprint(dir[end:])+cdip.Sprint(name))
+			printListln(w, ppad+cistr, "", cdirp.Sprint(dir[:end]))
+			printListln(w, ppad+sp, "", cdirp.Sprint(dir[end:])+cdip.Sprint(name))
 		}
 	} else {
 		// cname := GetColorizedDirName(dir, f.root)
 		cname := cdirp.Sprint(dir) + cdip.Sprint(name)
-		printFileItem(w, ppad, cistr, "", cname)
+		printListln(w, ppad, cistr, "", cname)
 	}
 	return ppad
 }
@@ -207,14 +208,4 @@ func levelHead(wNo int) (string, int) {
 	head := fmt.Sprintf("%s %s %s %s %s", sno, "Permissions", ssize, stime, "Name")
 	chead := fmt.Sprintf("%s %s %s %s %s", chdp.Sprint(sno), chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(stime), chdp.Sprint("Name"))
 	return chead, paw.StringWidth(head)
-}
-
-func printFileItem(w io.Writer, pad string, parameters ...string) {
-	str := ""
-	for _, p := range parameters {
-		str += fmt.Sprintf("%v ", p)
-	}
-	str += "\n"
-	fmt.Fprintf(w, "%v%v", pad, str)
-	// fmt.Fprintf(w, "%s%s %s %s %s %s %s %s\n", pad, cperm, cfsize, curname, cgpname, cmodTime, cgit, name)
 }

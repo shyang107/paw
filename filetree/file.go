@@ -1,9 +1,7 @@
 package filetree
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -387,13 +385,13 @@ func (f *File) ColorDirName(root string) string {
 
 // ColorMeta will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File) and its' length.
 func (f *File) ColorMeta(git GitStatus) (string, int) {
-	meta, length := getMeta("", f, git)
+	meta, length := getMeta(f, git)
 	return meta, length
 }
 
-func getMeta(pad string, file *File, git GitStatus) (string, int) {
+func getMeta(file *File, git GitStatus) (string, int) {
 	width := 0
-	buf := new(bytes.Buffer)
+	sb := new(strings.Builder)
 	cperm := file.ColorPermission()
 	width += paw.StringWidth(fmt.Sprintf("%v", file.Stat.Mode())) + 2
 	cmodTime := file.ColorModifyTime()
@@ -406,20 +404,11 @@ func getMeta(pad string, file *File, git GitStatus) (string, int) {
 	width += 7
 	width += paw.StringWidth(urname) + paw.StringWidth(gpname) + 1
 	if git.NoGit {
-		printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime)
+		printListln(sb, cperm, cfsize, curname, cgpname, cmodTime)
 	} else {
 		cgit := file.ColorGitStatus(git)
 		width += 4
-		printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime, cgit)
+		printListln(sb, cperm, cfsize, curname, cgpname, cmodTime, cgit)
 	}
-	return string(buf.Bytes()), width + 1
-}
-
-func printLTList(w io.Writer, pad string, items ...string) {
-	sb := new(strings.Builder)
-	sb.Grow(len(items))
-	for _, item := range items {
-		sb.WriteString(fmt.Sprintf("%v ", item))
-	}
-	fmt.Fprintf(w, "%v%v", pad, sb.String())
+	return paw.TrimRight(sb.String(), "\n"), width
 }

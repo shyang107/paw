@@ -49,7 +49,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	switch pdview {
 	case PListTreeView:
 		chead := f.GetHead4Meta(pad, urname, gpname, git)
-		fmt.Fprintf(w, "%v\n", chead)
+		printListln(w, chead)
 		tmeta, _ := file.ColorMeta(f.GetGitStatus())
 		meta += tmeta
 	case PTreeView:
@@ -58,7 +58,8 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	}
 
 	name := fmt.Sprintf("%v (%v)", file.LSColorString("."), file.ColorDirName(""))
-	fmt.Fprintf(w, "%v%v\n", meta, name)
+	// fmt.Fprintf(w, "%v%v\n", meta, name)
+	printListln(w, meta, name)
 
 	// print files in the root dir
 	level := 0
@@ -89,15 +90,14 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool) {
 
 	sb := new(strings.Builder)
-	wmeta := paw.StringWidth(pad)
-
 	meta := pad
+	wmeta := paw.StringWidth(meta)
 	if pdview == PListTreeView {
 		tmeta, lenmeta := file.ColorMeta(git)
 		meta += tmeta
 		wmeta += lenmeta
 	}
-	fmt.Fprintf(sb, "%v", meta)
+	fmt.Fprintf(sb, "%v ", meta)
 
 	// awmeta := wmeta
 	aMeta := ""
@@ -142,18 +142,19 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, wmeta int, padMeta 
 			end--
 		}
 		cedge := cdashp.Sprint(edge)
-		fmt.Fprintf(sb, "%v %v\n", cedge, cdinf+file.LSColorString(name[:end]))
+		printListln(sb, cedge, cdinf+file.LSColorString(name[:end]))
 		switch edge {
 		case EdgeTypeMid:
 			cedge = padMeta + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
 		case EdgeTypeEnd:
 			cedge = padMeta + SpaceIndentSize
 		}
-		fmt.Fprintf(sb, "%v%v\n", cedge, paw.Spaces(ndinf)+file.LSColorString(name[end:]))
+		printListln(sb, "", cedge+paw.Spaces(ndinf)+file.LSColorString(name[end:]))
 	} else {
 		cedge := cdashp.Sprint(edge)
 		cname := cdinf + file.ColorBaseName()
-		fmt.Fprintf(sb, "%v %v\n", cedge, cname)
+		// fmt.Fprintf(sb, "%v %v\n", cedge, cname)
+		printListln(sb, cedge, cname)
 	}
 	return sb.String()
 }
@@ -171,7 +172,8 @@ func xattrLTString(file *File, pad string, edge EdgeType, padx string) string {
 			case EdgeTypeEnd:
 				cedge = padx + paw.Spaces(IndentSize+1)
 			}
-			fmt.Fprintf(sb, "%s%s%s %s\n", pad, cedge, cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
+			// fmt.Fprintf(sb, "%s%s%s %s\n", pad, cedge, cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
+			printListln(sb, "", pad+cedge+cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
 		}
 	}
 	return sb.String()
