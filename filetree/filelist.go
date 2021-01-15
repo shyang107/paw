@@ -165,7 +165,14 @@ func (f *FileList) NSubDirsAndFiles(dir string) (ndirs, nfiles int) {
 	if _, ok := f.store[dir]; !ok {
 		return ndirs, nfiles
 	}
-	return getNDirsFiles(f.store[dir])
+	for _, file := range f.store[dir] {
+		if file.IsDir() {
+			ndirs++
+		} else {
+			nfiles++
+		}
+	}
+	return ndirs, nfiles
 }
 
 // DirInfo will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.

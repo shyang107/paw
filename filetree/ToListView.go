@@ -46,7 +46,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 
 	ctdsize := ByteSize(f.totalSize)
 
-	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getColorDirName(f.root, ""), KindLSColorString("di", ctdsize))
+	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getColorDirName(f.root, ""), cdip.Sprint(ctdsize))
 	fmt.Fprintln(w, head)
 
 	if fNDirs == 0 && fNFiles == 0 {
@@ -95,12 +95,14 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 			if len(name) <= nameWidth {
 				fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, meta, file.ColorName())
 			} else {
-				names := paw.Split(paw.Wrap(name, nameWidth), "\n")
-				fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, meta, file.LSColorString(names[0]))
-				sp := paw.Spaces(metalength)
-				for k := 1; k < len(names); k++ {
-					fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, sp, file.LSColorString(names[k]))
-				}
+				fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, meta, file.LSColorString(file.BaseName[:nameWidth]))
+				fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, paw.Spaces(metalength), file.LSColorString(file.BaseName[nameWidth:]))
+				// names := paw.Split(paw.Wrap(name, nameWidth), "\n")
+				// fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, meta, file.LSColorString(names[0]))
+				// sp := paw.Spaces(metalength)
+				// for k := 1; k < len(names); k++ {
+				// 	fmt.Fprintf(w, "%s%s%s%s\n", pad, sntf, sp, file.LSColorString(names[k]))
+				// }
 			}
 
 			if isExtended {

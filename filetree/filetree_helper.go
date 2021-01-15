@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"strings"
 
 	"time"
 
@@ -48,7 +47,8 @@ var (
 	urname                = currentuser.Username
 	usergp, _             = user.LookupGroupId(currentuser.Gid)
 	gpname                = usergp.Name
-	curname, cgpname      = getColorizedUGName(urname, gpname)
+	curname               = NewEXAColor("uu").Sprint(urname)
+	cgpname               = NewEXAColor("gu").Sprint(gpname)
 	sttyHeight, sttyWidth = paw.GetTerminalSize()
 )
 
@@ -104,7 +104,6 @@ func getDirAndName(path string, root string) (dir, name string) {
 	if file.IsDir() {
 		dir, _ = filepath.Split(file.Path)
 		if len(root) > 0 {
-			// dir = strings.TrimPrefix(dir, root)
 			dir = paw.Replace(dir, root, RootMark, 1)
 		}
 	}
@@ -131,51 +130,7 @@ func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
 	wdinf = len(di) + len(fi) + 4
 	cdinf = fmt.Sprintf("[%s, %s]", cdirp.Sprint(di), cdirp.Sprint(fi))
 	return cdinf, wdinf
-	// return "[" + cl.Sprint(di+", "+fi) + "]"
 }
-
-func printLTList(w io.Writer, pad string, parameters ...string) {
-	sb := new(strings.Builder)
-	sb.Grow(len(parameters))
-	for _, p := range parameters {
-		sb.WriteString(fmt.Sprintf("%v ", p))
-	}
-	fmt.Fprintf(w, "%v%v", pad, sb.String())
-}
-
-//
-// ToTree
-//
-
-func getNDirsFiles(files []*File) (ndirs, nfiles int) {
-	for _, file := range files {
-		if file.IsDir() {
-			ndirs++
-		} else {
-			nfiles++
-		}
-	}
-	return ndirs - 1, nfiles
-}
-
-// func preTree(dir string, fm FileMap, tree treeprint.Tree) treeprint.Tree {
-// 	dd := paw.Split(dir, PathSeparator)
-// 	nd := len(dd)
-// 	var pre treeprint.Tree
-// 	// fmt.Println(dir, nd)
-// 	if nd == 2 { // ./xx
-// 		pre = tree
-// 	} else { //./xx/...
-// 		pre = tree
-// 		for i := 2; i < nd; i++ {
-// 			predir := paw.Join(dd[:i], PathSeparator)
-// 			// fmt.Println("\t", i, predir)
-// 			f := fm[predir][0] // import dir
-// 			pre = pre.FindByValue(f)
-// 		}
-// 	}
-// 	return pre
-// }
 
 //
 // Tolist
@@ -212,11 +167,9 @@ func getColorizedGitStatus(git GitStatus, file *File) string {
 	x, y := '-', '-'
 
 	xy, ok := git.FilesStatus[file.Path]
-
 	if ok {
 		x, y = xy.Split()
-		x = ckxy[x]
-		y = ckxy[y]
+		x, y = ckxy[x], ckxy[y]
 	}
 
 	if file.IsDir() {
@@ -224,8 +177,7 @@ func getColorizedGitStatus(git GitStatus, file *File) string {
 		for k, v := range git.FilesStatus {
 			if paw.HasPrefix(k, file.Path) {
 				vx, vy := v.Split()
-				cx := ckxy[vx]
-				cy := ckxy[vy]
+				cx, cy := ckxy[vx], ckxy[vy]
 				if cx != '-' && x != 'N' {
 					x = cx
 				}
@@ -249,9 +201,6 @@ func getColorizedGitStatus(git GitStatus, file *File) string {
 // GetColorizePermission will return a colorful string of mode
 // The length of placeholder in terminal is 10.
 func GetColorizePermission(mode os.FileMode) string {
-	return getColorizePermission(mode)
-}
-func getColorizePermission(mode os.FileMode) string {
 	sperm := fmt.Sprintf("%v", mode)
 	c := ""
 	// fmt.Println(len(s))
@@ -308,11 +257,7 @@ var cpmap = map[rune]*color.Color{
 
 // GetColorizedSize will return a humman-readable and colorful string of size.
 // The length of placeholder in terminal is 6.
-func GetColorizedSize(size uint64) string {
-	return getColorizedSize(size)
-}
-
-func getColorizedSize(size uint64) (csize string) {
+func GetColorizedSize(size uint64) (csize string) {
 	ss := ByteSize(size)
 	nss := len(ss)
 	sn := fmt.Sprintf("%5s", ss[:nss-1])
@@ -323,20 +268,9 @@ func getColorizedSize(size uint64) (csize string) {
 	return csize
 }
 
-func getColorizedUGName(urname, gpname string) (curname, cgpname string) {
-	cu := NewEXAColor("uu")
-	cg := NewEXAColor("gu")
-	curname = cu.Sprint(urname)
-	cgpname = cg.Sprint(gpname)
-	return curname, cgpname
-}
-
 // GetColorizedTime will return a colorful string of time.
 // The length of placeholder in terminal is 14.
 func GetColorizedTime(modTime time.Time) string {
-	return getColorizedModTime(modTime)
-}
-func getColorizedModTime(modTime time.Time) string {
 	return NewEXAColor("da").Sprint(modTime.Format(timeLayout))
 }
 

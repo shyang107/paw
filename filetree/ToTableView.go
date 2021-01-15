@@ -91,7 +91,6 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			}
 			if isExtended {
 				nx := len(file.XAttributes)
-				// sp := paw.Spaces( metalength+len(sntf))
 				if nx > 0 {
 					edge := EdgeTypeMid
 					for i, x := range file.XAttributes {

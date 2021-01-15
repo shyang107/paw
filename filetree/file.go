@@ -3,6 +3,7 @@ package filetree
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -158,15 +159,14 @@ func (f *File) IsDir() bool {
 	return f.Stat.IsDir()
 }
 
-// IsRegular reports whether `f` describes a regular file. That is, it tests that no mode type bits are set.
-func (f *File) IsRegular() bool {
-	return f.Stat.Mode().IsRegular()
-}
+// // IsRegularFile reports whether `f` describes a regular file. That is, it tests that no mode type bits are set.
+// func (f *File) IsRegularFile() bool {
+// 	return f.Stat.Mode().IsRegular()
+// }
 
 // IsLink() report whether File describes a symbolic link.
 func (f *File) IsLink() bool {
-	mode := f.Stat.Mode()
-	return mode&os.ModeSymlink != 0
+	return nodeTypeFromFileInfo(f.Stat) == kindSymlink
 }
 
 // LinkPath report far-end path of a symbolic link.
@@ -208,28 +208,82 @@ func (f *File) IsFile() bool {
 	// 	return true
 	// }
 	// return false
-	return nodeTypeFromFileInfo(f.Stat) == "file"
+	return nodeTypeFromFileInfo(f.Stat) == kindFile //"file"
 }
 
-func nodeTypeFromFileInfo(fi os.FileInfo) string {
+// IsChardev() report whether File describes a chardev.
+func (f *File) IsChardev() bool {
+	return nodeTypeFromFileInfo(f.Stat) == kindChardev
+}
+
+// IsDev() report whether File describes a dev.
+func (f *File) IsDev() bool {
+	return nodeTypeFromFileInfo(f.Stat) == kindDev
+}
+
+// IsNamedPipe() report whether File describes a named pipe.
+func (f *File) IsNamedPipe() bool {
+	return nodeTypeFromFileInfo(f.Stat) == kindFIFO
+}
+
+// IsSocket() report whether File describes a socket.
+func (f *File) IsSocket() bool {
+	return nodeTypeFromFileInfo(f.Stat) == kindSocket
+}
+
+type kindType int
+
+const (
+	kindFile kindType = iota
+	kindDir
+	kindSymlink
+	kindChardev
+	kindDev
+	kindFIFO
+	kindSocket
+	kindNotIdentify
+)
+
+func nodeTypeFromFileInfo(fi os.FileInfo) kindType {
 	switch fi.Mode() & (os.ModeType | os.ModeCharDevice) {
 	case 0:
-		return "file"
+		return kindFile //"file"
 	case os.ModeDir:
-		return "dir"
+		return kindDir //"dir"
 	case os.ModeSymlink:
-		return "symlink"
+		return kindSymlink // "symlink"
 	case os.ModeDevice | os.ModeCharDevice:
-		return "chardev"
+		return kindChardev //"chardev"
 	case os.ModeDevice:
-		return "dev"
+		return kindDev //"dev"
 	case os.ModeNamedPipe:
-		return "fifo"
+		return kindFIFO //"fifo"
 	case os.ModeSocket:
-		return "socket"
+		return kindSocket //"socket"
 	}
 
-	return ""
+	return kindNotIdentify
+}
+
+func (f *File) TypeString() string {
+	switch nodeTypeFromFileInfo(f.Stat) {
+	case kindFile:
+		return "file"
+	case kindDir:
+		return "dir"
+	case kindSymlink:
+		return "symlink"
+	case kindChardev:
+		return "chardev"
+	case kindDev:
+		return "dev"
+	case kindFIFO:
+		return "fifo"
+	case kindSocket:
+		return "socket"
+	default: //kindNotIdentify
+		return "not identify"
+	}
 }
 
 // linux int64
@@ -275,6 +329,13 @@ func timespecToTime(ts syscall.Timespec) time.Time {
 	return time.Unix(int64(ts.Sec), int64(ts.Nsec))
 }
 
+// ColorModifyTime will return a colorful string of Stat.ModTime() like as exa.
+// The length of placeholder in terminal is 14.
+func (f *File) ColorModifyTime() string {
+	return NewEXAColor("da").Sprint(f.ModifiedTime().Format(timeLayout))
+	// return GetColorizedTime(f.ModifiedTime())
+}
+
 // // Size will return size of `File`
 // func (f *File) Size() uint64 {
 // 	return uint64(f.Stat.Size())
@@ -298,19 +359,13 @@ func (f *File) ColorBaseName() string {
 // ColorPermission will return a colorful string of Stat.Mode() like as exa.
 // The length of placeholder in terminal is 10.
 func (f *File) ColorPermission() string {
-	permission := getColorizePermission(f.Stat.Mode())
+	permission := GetColorizePermission(f.Stat.Mode())
 	if len(f.XAttributes) > 0 {
 		permission += cdashp.Sprint("@")
 	} else {
 		permission += " "
 	}
 	return permission
-}
-
-// ColorModifyTime will return a colorful string of Stat.ModTime() like as exa.
-// The length of placeholder in terminal is 14.
-func (f *File) ColorModifyTime() string {
-	return GetColorizedTime(f.Stat.ModTime())
 }
 
 // ColorGitStatus will return a colorful string of git status like as exa.
@@ -358,4 +413,13 @@ func getMeta(pad string, file *File, git GitStatus) (string, int) {
 		printLTList(buf, pad, cperm, cfsize, curname, cgpname, cmodTime, cgit)
 	}
 	return string(buf.Bytes()), width + 1
+}
+
+func printLTList(w io.Writer, pad string, items ...string) {
+	sb := new(strings.Builder)
+	sb.Grow(len(items))
+	for _, item := range items {
+		sb.WriteString(fmt.Sprintf("%v ", item))
+	}
+	fmt.Fprintf(w, "%v%v", pad, sb.String())
 }

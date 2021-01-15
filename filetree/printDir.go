@@ -113,7 +113,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sor
 
 	cehckPrintDirOption(opt)
 
-	err = checkIsFile(w, path, pad)
+	err = checkAndPrintFile(w, path, pad)
 	if err != nil {
 		if err == errBreak {
 			return nil, nil
@@ -291,12 +291,12 @@ func checkSortOpt(sortOpt *PrintDirSortOption) *PrintDirSortOption {
 
 var errBreak = errors.New("return nil")
 
-func checkIsFile(w io.Writer, path string, pad string) error {
+func checkAndPrintFile(w io.Writer, path string, pad string) error {
 	file, err := NewFile(path)
 	if err != nil {
 		return err
 	}
-	if file.IsRegular() || file.IsLink() {
+	if file.IsFile() || file.IsLink() {
 		git, _ := GetShortGitStatus(file.Dir)
 		chead := getColorizedHead("", urname, gpname, git)
 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getColorDirName(file.Dir, ""))

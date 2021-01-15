@@ -110,8 +110,8 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 			continue
 		}
 		cedge := cdashp.Sprint(EdgeTypeLink)
-		fmt.Fprintf(sb, "%v%s", cedge, SpaceIndentSize)
-		aMeta += fmt.Sprintf("%v%s", cedge, SpaceIndentSize)
+		fmt.Fprintf(sb, "%s%s", cedge, SpaceIndentSize)
+		aMeta += fmt.Sprintf("%s%s", cedge, SpaceIndentSize)
 		wmeta += (edgeWidth[EdgeTypeLink] + IndentSize)
 	}
 	padMeta += aMeta

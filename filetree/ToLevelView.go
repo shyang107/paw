@@ -75,7 +75,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
-					ppad = printLevelWrappedDir(w, dir, ppad, i1, i)
+					ppad = printLevelWrappedDir(w, fm[dir][0], ppad, i1, i)
 					if len(fm[dir]) > 1 {
 						ntdirs++
 					}
@@ -150,14 +150,14 @@ func printLevelWrappedFile(w io.Writer, file *File, pad, cjstr string, wmeta int
 	}
 }
 
-func printLevelWrappedDir(w io.Writer, dir, ppad string, i1, i int) string {
+func printLevelWrappedDir(w io.Writer, file *File, ppad string, i1, i int) string {
 	istr := fmt.Sprintf("G%-[1]*[2]d", i1, i)
 	cistr := cdip.Sprint(istr)
-	level := len(paw.Split(dir, PathSeparator)) - 1
+	level := len(file.DirSlice()) - 1 //len(paw.Split(dir, PathSeparator)) - 1
 	ppad += paw.Spaces(4 * level)
 	slevel := fmt.Sprintf("L%d: ", level)
 	cistr = slevel + cistr
-	dir, name := filepath.Split(dir)
+	dir, name := filepath.Split(file.Dir)
 	wppad := len(ppad)
 	wistr := len(slevel) + len(istr)
 	wpi := wppad + wistr
