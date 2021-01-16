@@ -382,6 +382,17 @@ func (f *File) INode() uint64 {
 	return inode
 }
 
+// Blocks will return number of file system blocks of File
+func (f *File) Blocks() uint64 {
+	blocks := uint64(0)
+	if sys := f.Stat.Sys(); sys != nil {
+		if stat, ok := sys.(*syscall.Stat_t); ok {
+			blocks = uint64(stat.Blocks)
+		}
+	}
+	return blocks
+}
+
 // // Size will return size of `File`
 // func (f *File) Size() uint64 {
 // 	return uint64(f.Stat.Size())
@@ -438,29 +449,93 @@ func (f *File) ColorMeta(git GitStatus) (string, int) {
 }
 
 func getMeta(file *File, git GitStatus) (string, int) {
-	width := 0
 	sb := new(strings.Builder)
-	cperm := file.ColorPermission()
-	width += paw.StringWidth(fmt.Sprintf("%v", file.Stat.Mode())) + 2
-
-	cfsize := file.ColorSize()
-	if file.IsDir() {
-		cfsize = cdashp.Sprint(fmt.Sprintf("%6s", "-"))
+	csb := new(strings.Builder)
+	for _, k := range fieldKeys {
+		field, cfield := "", ""
+		switch k {
+		case PFieldINode: //"inode",
+			field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], file.INode())
+			cfield = cinp.Sprint(field)
+		case PFieldPermissions: //"Permissions",
+			field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], file.INode())
+			cfield = file.ColorPermission()
+		case PFieldLinks: //"Links",
+			field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], file.NLinks())
+			cfield = clkp.Sprint(field)
+		case PFieldSize: //"Size",
+			if file.IsDir() {
+				field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], "-")
+				cfield = cdashp.Sprint(field)
+			} else {
+				field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], ByteSize(file.Size))
+				cfield = file.ColorSize()
+			}
+		case PFieldBlocks: //"User",
+			if file.IsDir() {
+				field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], "-")
+				cfield = cdashp.Sprint(field)
+			} else {
+				field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], file.Blocks())
+				cfield = cbkp.Sprint(field)
+			}
+		case PFieldUser: //"User",
+			field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], urname)
+			cfield = cuup.Sprint(field)
+		case PFieldGroup: //"Group",
+			field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], gpname)
+			cfield = cgup.Sprint(field)
+		case PFieldModified: //"Date Modified",
+			field = fmt.Sprintf("%-[1]*[2]v", fieldWidthsMap[k], DateString(file.ModifiedTime()))
+			cfield = cdap.Sprint(field)
+		case PFieldCreated: //"Date Created",
+			field = fmt.Sprintf("%-[1]*[2]v", fieldWidthsMap[k], DateString(file.CreatedTime()))
+			cfield = cdap.Sprint(field)
+		case PFieldAccessed: //"Date Accessed",
+			field = fmt.Sprintf("%-[1]*[2]v", fieldWidthsMap[k], DateString(file.AccessedTime()))
+			cfield = cdap.Sprint(field)
+		case PFieldGit: //"Gid",
+			if git.NoGit {
+				continue
+			} else {
+				field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], file.Stat.Mode())
+				cfield = file.ColorGitStatus(git)
+			}
+			// case PFieldName: //"Name",
+		}
+		// field := fmt.Sprintf("%[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
+		fmt.Fprintf(sb, "%s ", field)
+		fmt.Fprintf(csb, "%s ", cfield)
 	}
-	width += 7
-	width += paw.StringWidth(urname) + paw.StringWidth(gpname) + 1
+	head := sb.String()
+	head = head[:len(head)-1]
+	width := paw.StringWidth(head)
+	chead := csb.String()
+	chead = chead[:len(chead)-1]
+	return chead, width
+	// width := 0
+	// sb := new(strings.Builder)
+	// cperm := file.ColorPermission()
+	// width += paw.StringWidth(fmt.Sprintf("%v", file.Stat.Mode())) + 2
 
-	// cTime := file.ColorModifyTime()
-	// width += paw.StringWidth(DateString(file.ModifiedTime())) + 1
-	cTime, wd := getColorizedDates(file)
-	width += wd + 1
+	// cfsize := file.ColorSize()
+	// if file.IsDir() {
+	// 	cfsize = cdashp.Sprint(fmt.Sprintf("%6s", "-"))
+	// }
+	// width += 7
+	// width += paw.StringWidth(urname) + paw.StringWidth(gpname) + 1
 
-	if git.NoGit {
-		printListln(sb, cperm, cfsize, curname, cgpname, cTime)
-	} else {
-		cgit := file.ColorGitStatus(git)
-		width += 4
-		printListln(sb, cperm, cfsize, curname, cgpname, cTime, cgit)
-	}
-	return paw.TrimRight(sb.String(), "\n"), width
+	// // cTime := file.ColorModifyTime()
+	// // width += paw.StringWidth(DateString(file.ModifiedTime())) + 1
+	// cTime, wd := getColorizedDates(file)
+	// width += wd + 1
+
+	// if git.NoGit {
+	// 	printListln(sb, cperm, cfsize, curname, cgpname, cTime)
+	// } else {
+	// 	cgit := file.ColorGitStatus(git)
+	// 	width += 4
+	// 	printListln(sb, cperm, cfsize, curname, cgpname, cTime, cgit)
+	// }
+	// return paw.TrimRight(sb.String(), "\n"), width
 }

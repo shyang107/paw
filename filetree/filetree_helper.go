@@ -47,12 +47,18 @@ var (
 	lsdip                 = NewLSColor("di")
 	cdip                  = NewEXAColor("di")
 	cfip                  = NewEXAColor("fi")
+	cuup                  = NewEXAColor("uu")
+	cgup                  = NewEXAColor("gu")
+	cinp                  = NewEXAColor("in")
+	clkp                  = NewEXAColor("lk")
+	cbkp                  = NewEXAColor("bk")
+	cdap                  = NewEXAColor("da")
 	currentuser, _        = user.Current()
 	urname                = currentuser.Username
 	usergp, _             = user.LookupGroupId(currentuser.Gid)
 	gpname                = usergp.Name
-	curname               = NewEXAColor("uu").Sprint(urname)
-	cgpname               = NewEXAColor("gu").Sprint(gpname)
+	curname               = cuup.Sprint(urname)
+	cgpname               = cgup.Sprint(gpname)
 	sttyHeight, sttyWidth = paw.GetTerminalSize()
 )
 
@@ -293,7 +299,7 @@ func getColorizedDates(file *File) (cdate string, wd int) {
 		default:
 			continue
 		}
-		fwd := paw.StringWidth(fieldsMap[k])
+		fwd := fieldWidthsMap[k]
 		fwdd := len(DateString(date))
 		sp := paw.Spaces(fwd - fwdd + 1)
 		dates = append(dates, cdate+sp)
@@ -330,11 +336,10 @@ func getColorizedHead(pad, username, groupname string, git GitStatus) (chead str
 				continue
 			}
 			// case PFieldName: //"Name",
-		default:
-			field := fmt.Sprintf("%[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
-			fmt.Fprintf(sb, "%s ", field)
-			fmt.Fprintf(csb, "%s ", chdp.Sprint(field))
 		}
+		field := fmt.Sprintf("%[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
+		fmt.Fprintf(sb, "%s ", field)
+		fmt.Fprintf(csb, "%s ", chdp.Sprint(field))
 	}
 	head := sb.String()
 	head = head[:len(head)-1]
@@ -455,5 +460,5 @@ func DateString(date time.Time) (sdate string) {
 // GetColorizedTime will return a colorful string of time.
 // The length of placeholder in terminal is 14.
 func GetColorizedTime(date time.Time) string {
-	return NewEXAColor("da").Sprint(DateString(date))
+	return cdap.Sprint(DateString(date))
 }

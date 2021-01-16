@@ -48,9 +48,9 @@ var (
 		"tx": []color.Attribute{38, 5, 156, 1}, // others +x bit
 		"sn": []color.Attribute{38, 5, 156, 1}, // size number
 		"sb": []color.Attribute{38, 5, 156},    // size unit
-		"uu": []color.Attribute{38, 5, 230, 1}, // user is you + 1 -> bold
+		"uu": []color.Attribute{38, 5, 229, 1}, // user is you + 1 -> bold
 		"un": []color.Attribute{38, 5, 214},    // user is not you
-		"gu": []color.Attribute{38, 5, 230, 1}, // group with you in it
+		"gu": []color.Attribute{38, 5, 229, 1}, // group with you in it
 		"gn": []color.Attribute{38, 5, 214},    // group without you
 		"da": []color.Attribute{38, 5, 153},    // timestamp + 8 -> concealed
 		// "hd": []color.Attribute{4, 38, 5, 15}, // head
@@ -65,6 +65,10 @@ var (
 		"gt":    []color.Attribute{38, 5, 135},       // git type change
 		"dir":   []color.Attribute{38, 5, 189},       //addition 'dir'
 		"xattr": []color.Attribute{38, 5, 249, 4, 8}, //addition 'xattr'+ 4-> underline
+		"in":    []color.Attribute{38, 5, 213},       // inode
+		"lk":    []color.Attribute{38, 5, 209, 1},    // links
+		"bk":    []color.Attribute{38, 5, 189},       // blocks
+
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file

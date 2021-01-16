@@ -89,10 +89,10 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 			// name := file.BaseName
 			name := file.BaseNameToLink()
 			if paw.StringWidth(name) <= wdname {
-				printListln(w, meta, file.ColorName())
+				printListln(w, meta+file.ColorName())
 			} else {
 				if !file.IsLink() {
-					printListln(w, meta, file.LSColorString(name[:wdname]))
+					printListln(w, meta+file.LSColorString(name[:wdname]))
 					printListln(w, paw.Spaces(wdmeta), file.LSColorString(name[wdname:]))
 				} else {
 					bname := file.BaseName
@@ -101,12 +101,12 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 					cname := file.LSColorString(bname)
 					carrow := cdashp.Sprint(" -> ")
 					wd += 4
-					printListln(w, meta, cname+carrow)
+					printListln(w, meta+cname+carrow)
 					link := file.LinkPath()
 					// wdlink := paw.StringWidth(link)
 					// dir, name := getDirAndName(link, "")
 					if paw.StringWidth(link) <= wdname {
-						printListln(w, paw.Spaces(wdmeta), cdirp.Sprint(link))
+						printListln(w, paw.Spaces(wdmeta)+cdirp.Sprint(link))
 					} else {
 						printListln(w, paw.Spaces(wdmeta), cdirp.Sprint(link[:wdname]))
 						printListln(w, paw.Spaces(wdmeta), cdirp.Sprint(link[wdname:]))

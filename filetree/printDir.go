@@ -80,6 +80,8 @@ const (
 	PFieldLinks
 	// PFieldSize uses size field
 	PFieldSize
+	// PFieldBlocks uses blocks field
+	PFieldBlocks
 	// PFieldUser uses user field
 	PFieldUser
 	// PFieldGroup uses group field
@@ -308,6 +310,7 @@ var (
 		PFieldPermissions: "Permissions",
 		PFieldLinks:       "Links",
 		PFieldSize:        "Size",
+		PFieldBlocks:      "Blocks",
 		PFieldUser:        "User",
 		PFieldGroup:       "Group",
 		PFieldModified:    "Date Modified",
@@ -321,6 +324,7 @@ var (
 		PFieldPermissions: paw.MaxInt(11, len(fieldsMap[PFieldPermissions])),
 		PFieldLinks:       paw.MaxInt(2, len(fieldsMap[PFieldLinks])),
 		PFieldSize:        paw.MaxInt(6, len(fieldsMap[PFieldSize])),
+		PFieldBlocks:      paw.MaxInt(6, len(fieldsMap[PFieldBlocks])),
 		PFieldUser:        paw.MaxInt(paw.StringWidth(urname), len(fieldsMap[PFieldUser])),
 		PFieldGroup:       paw.MaxInt(paw.StringWidth(gpname), len(fieldsMap[PFieldGroup])),
 		PFieldModified:    paw.MaxInt(11, len(fieldsMap[PFieldModified])),
@@ -344,6 +348,11 @@ func checkFieldFlag(opt *PrintDirOption) {
 	}
 
 	fieldKeys = append(fieldKeys, PFieldSize)
+
+	if opt.FieldFlag&PFieldBlocks != 0 {
+		fieldKeys = append(fieldKeys, PFieldBlocks)
+	}
+
 	fieldKeys = append(fieldKeys, PFieldUser)
 	fieldKeys = append(fieldKeys, PFieldGroup)
 
@@ -356,11 +365,11 @@ func checkFieldFlag(opt *PrintDirOption) {
 	if opt.FieldFlag&PFieldAccessed != 0 {
 		fieldKeys = append(fieldKeys, PFieldAccessed)
 	}
-	// if opt.FieldFlag&PFieldGit != 0 {
-	// 	fieldKeys = append(fieldKeys, PFieldGit)
-	// }
 
-	fieldKeys = append(fieldKeys, PFieldGit)
+	if opt.FieldFlag&PFieldGit != 0 {
+		fieldKeys = append(fieldKeys, PFieldGit)
+	}
+	// fieldKeys = append(fieldKeys, PFieldGit)
 	fieldKeys = append(fieldKeys, PFieldName)
 
 	for _, k := range fieldKeys {
