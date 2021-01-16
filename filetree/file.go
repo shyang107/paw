@@ -304,16 +304,16 @@ func (f *File) TypeString() string {
 // tNanSeconds := wFileSys.CreationTime.Nanoseconds()  /// 返回的是纳秒
 // tSec := tNanSeconds/1e9
 
-// AccessTime reports the last access time of File.
-func (f *File) AccessTime() time.Time {
+// AccessedTime reports the last access time of File.
+func (f *File) AccessedTime() time.Time {
 	statT := f.Stat.Sys().(*syscall.Stat_t)
 	return timespecToTime(statT.Atimespec)
 }
 
-// CreateTime reports the create time of file.
-func (f *File) CreateTime() time.Time {
+// CreatedTime reports the create time of file.
+func (f *File) CreatedTime() time.Time {
 	statT := f.Stat.Sys().(*syscall.Stat_t)
-	return timespecToTime(statT.Ctimespec)
+	return timespecToTime(statT.Birthtimespec)
 }
 
 // ModifiedTime reports the modify time of file.
@@ -330,8 +330,34 @@ func timespecToTime(ts syscall.Timespec) time.Time {
 // ColorModifyTime will return a colorful string of Stat.ModTime() like as exa.
 // The length of placeholder in terminal is 14.
 func (f *File) ColorModifyTime() string {
-	return NewEXAColor("da").Sprint(f.ModifiedTime().Format(timeLayout))
-	// return GetColorizedTime(f.ModifiedTime())
+	date := f.ModifiedTime()
+	// sfield := fieldsMap[PFieldModified]
+	// wd := paw.StringWidth(sfield)
+	// wdd := len(DateString(date))
+	// sp := paw.Spaces(wd - wdd)
+	return GetColorizedTime(date) //+ sp
+}
+
+// ColorAccessTime will return a colorful string of File.AccessTime() like as exa.
+// The length of placeholder in terminal is 14.
+func (f *File) ColorAccessedTime() string {
+	date := f.AccessedTime()
+	// sfield := fieldsMap[PFieldAccessed]
+	// wd := paw.StringWidth(sfield)
+	// wdd := len(DateString(date))
+	// sp := paw.Spaces(wd - wdd)
+	return GetColorizedTime(date) //+ sp
+}
+
+// ColorCreatedTime will return a colorful string of File.CreateTime() like as exa.
+// The length of placeholder in terminal is 14.
+func (f *File) ColorCreatedTime() string {
+	date := f.CreatedTime()
+	// sfield := fieldsMap[PFieldCreated]
+	// wd := paw.StringWidth(sfield)
+	// wdd := len(DateString(date))
+	// sp := paw.Spaces(wd - wdd)
+	return GetColorizedTime(date) //+ sp
 }
 
 // // Size will return size of `File`
@@ -394,21 +420,25 @@ func getMeta(file *File, git GitStatus) (string, int) {
 	sb := new(strings.Builder)
 	cperm := file.ColorPermission()
 	width += paw.StringWidth(fmt.Sprintf("%v", file.Stat.Mode())) + 2
-	cmodTime := file.ColorModifyTime()
-	// width += paw.StringWidth(fmt.Sprint(file.ModifiedTime().Format("01-02-06 15:04"))) + 1
-	width += paw.StringWidth(fmt.Sprint(file.ModifiedTime().Format(timeLayout))) + 1
+
 	cfsize := file.ColorSize()
 	if file.IsDir() {
 		cfsize = cdashp.Sprint(fmt.Sprintf("%6s", "-"))
 	}
 	width += 7
 	width += paw.StringWidth(urname) + paw.StringWidth(gpname) + 1
+
+	// cTime := file.ColorModifyTime()
+	// width += paw.StringWidth(DateString(file.ModifiedTime())) + 1
+	cTime, wd := getColorizedDates(file)
+	width += wd + 1
+
 	if git.NoGit {
-		printListln(sb, cperm, cfsize, curname, cgpname, cmodTime)
+		printListln(sb, cperm, cfsize, curname, cgpname, cTime)
 	} else {
 		cgit := file.ColorGitStatus(git)
 		width += 4
-		printListln(sb, cperm, cfsize, curname, cgpname, cmodTime, cgit)
+		printListln(sb, cperm, cfsize, curname, cgpname, cTime, cgit)
 	}
 	return paw.TrimRight(sb.String(), "\n"), width
 }

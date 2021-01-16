@@ -99,7 +99,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 
 			if isExtended {
 				sp := paw.Spaces(metalength + len(sntf) + 1)
-				fmt.Fprint(w, xattrEdgeString(file, sp))
+				fmt.Fprint(w, xattrEdgeString(file, sp, metalength))
 			}
 		}
 

@@ -335,7 +335,6 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 
 var (
 	DefaultFilesBy FilesBy = func(fi *File, fj *File) bool {
-
 		if fi.IsDir() && fj.IsFile() {
 			return true
 		} else if fi.IsFile() && fj.IsDir() {

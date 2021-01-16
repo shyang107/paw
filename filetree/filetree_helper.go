@@ -22,12 +22,13 @@ import (
 type EdgeType string
 
 const (
-	EdgeTypeLink EdgeType = "│"   //treeprint.EdgeTypeLink
-	EdgeTypeMid  EdgeType = "├──" //treeprint.EdgeTypeMid
-	EdgeTypeEnd  EdgeType = "└──" //treeprint.EdgeTypeEnd
-	IndentSize            = 3     //treeprint.IndentSize
-	dateLayout            = "Jan 02, 2006"
-	timeLayout            = "01-02-06 15:04"
+	EdgeTypeLink     EdgeType = "│"   //treeprint.EdgeTypeLink
+	EdgeTypeMid      EdgeType = "├──" //treeprint.EdgeTypeMid
+	EdgeTypeEnd      EdgeType = "└──" //treeprint.EdgeTypeEnd
+	IndentSize                = 3     //treeprint.IndentSize
+	dateLayout                = "Jan 02, 2006"
+	timeThisLayout            = "01-02 15:04"
+	timeBeforeLayout          = "2006-01-02"
 )
 
 var (
@@ -36,6 +37,8 @@ var (
 		EdgeTypeMid:  3,
 		EdgeTypeEnd:  3,
 	}
+	now                   = time.Now()
+	thisYear              = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local)
 	SpaceIndentSize       = paw.Spaces(IndentSize)
 	cdashp                = NewEXAColor("-")
 	cxp                   = NewEXAColor("xattr")
@@ -269,10 +272,36 @@ func GetColorizedSize(size uint64) (csize string) {
 	return csize
 }
 
-// GetColorizedTime will return a colorful string of time.
-// The length of placeholder in terminal is 14.
-func GetColorizedTime(modTime time.Time) string {
-	return NewEXAColor("da").Sprint(modTime.Format(timeLayout))
+func getColorizedDates(file *File) (cdate string, wd int) {
+	dates := make([]string, len(fieldKeys))
+	for _, k := range fieldKeys {
+		cdate := ""
+		var date time.Time
+		switch k {
+		case PFieldModified:
+			cdate = file.ColorModifyTime()
+			date = file.ModifiedTime()
+			// sv = DateString(date)
+		case PFieldAccessed:
+			cdate = file.ColorAccessedTime()
+			date = file.AccessedTime()
+			// sv = DateString(date)
+		case PFieldCreated:
+			cdate = file.ColorCreatedTime()
+			date = file.CreatedTime()
+			// sv = DateString(date)
+		}
+		fwd := paw.StringWidth(fieldsMap[k])
+		fwdd := len(DateString(date))
+		sp := paw.Spaces(fwd - fwdd + 1)
+		dates = append(dates, cdate+sp)
+		// wd += paw.StringWidth(sv)
+		wd += fwd + 1
+	}
+	cdate = paw.Join(dates, "")
+	cdate = cdate[:len(cdate)-1]
+	wd--
+	return cdate, wd
 }
 
 func getColorizedHead(pad, username, groupname string, git GitStatus) string {
@@ -282,11 +311,21 @@ func getColorizedHead(pad, username, groupname string, git GitStatus) string {
 	hgroup := fmt.Sprintf("%[1]*[2]s", width, "Group")
 
 	ssize := fmt.Sprintf("%6s", "Size")
+
+	dates := make([]string, len(fieldKeys))
+	for _, v := range fields {
+		dates = append(dates, chdp.Sprint(v)+" ")
+	}
+	cdate := paw.Join(dates, "")
+	cdate = paw.TrimSpace(cdate)
+
 	head := ""
 	if git.NoGit {
-		head = fmt.Sprintf("%s%s %s %s %s %14s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Data Modified"), chdp.Sprint("Name"))
+		// head = fmt.Sprintf("%s%s %s %s %s %14s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Date Modified"), chdp.Sprint("Name"))
+		head = fmt.Sprintf("%s%s %s %s %s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), cdate, chdp.Sprint("Name"))
 	} else {
-		head = fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Data Modified"), chdp.Sprint("Git"), chdp.Sprint("Name"))
+		// head = fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Date Modified"), chdp.Sprint("Git"), chdp.Sprint("Name"))
+		head = fmt.Sprintf("%s%s %s %s %s %s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), cdate, chdp.Sprint("Git"), chdp.Sprint("Name"))
 	}
 	return head
 }
@@ -366,4 +405,18 @@ func printListln(w io.Writer, items ...string) {
 	}
 	sb.WriteString(fmt.Sprintf("%v\n", items[len(items)-1]))
 	fmt.Fprintf(w, "%v", sb.String())
+}
+
+func DateString(date time.Time) (sdate string) {
+	sdate = date.Format(timeThisLayout)
+	if date.Before(thisYear) {
+		sdate = date.Format(timeBeforeLayout)
+	}
+	return sdate
+}
+
+// GetColorizedTime will return a colorful string of time.
+// The length of placeholder in terminal is 14.
+func GetColorizedTime(date time.Time) string {
+	return NewEXAColor("da").Sprint(DateString(date))
 }

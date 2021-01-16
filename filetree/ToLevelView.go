@@ -51,7 +51,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	buf.Reset()
 
 	chead, wmeta := levelHead(wNo)
-	wmeta -= 4
+	// wmeta -= 2 //len(fields)
 	// spmeta := paw.Spaces(wmeta - 1)
 	spx := paw.Spaces(wmeta)
 
@@ -105,7 +105,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 			printLevelWrappedFile(w, file, fpad, cjstr, wmeta)
 
 			if isExtended {
-				fmt.Fprint(w, xattrEdgeString(file, fpad+spx))
+				fmt.Fprint(w, xattrEdgeString(file, fpad+spx, wmeta+len(fpad)))
 			}
 		}
 		if f.depth != 0 {
@@ -134,10 +134,11 @@ END:
 }
 
 func printLevelWrappedFile(w io.Writer, file *File, pad, cjstr string, wmeta int) {
-	spmeta := paw.Spaces(wmeta - 1)
+	spmeta := paw.Spaces(wmeta)
 	cperm := file.ColorPermission()
 	cfsize := file.ColorSize()
-	ctime := file.ColorModifyTime()
+	// ctime := file.ColorModifyTime()
+	ctime, _ := getColorizedDates(file)
 	wpad := paw.StringWidth(pad)
 	name := file.Name()
 	wname := paw.StringWidth(name)
@@ -145,18 +146,18 @@ func printLevelWrappedFile(w io.Writer, file *File, pad, cjstr string, wmeta int
 		cname := file.ColorName()
 		printListln(w, pad+cjstr, cperm, cfsize, ctime, cname)
 	} else {
-		end := sttyWidth - wpad - wmeta - 2
+		end := sttyWidth - wpad - wmeta - 3
 		printListln(w, pad+cjstr, cperm, cfsize, ctime, file.LSColorString(name[:end]))
 		printListln(w, pad+spmeta, file.LSColorString(name[end:]))
 	}
 }
 
 func printLevelWrappedDir(w io.Writer, file *File, ppad string, i1, i int) string {
-	istr := fmt.Sprintf("G%-[1]*[2]d", i1, i)
-	cistr := cdip.Sprint(istr)
 	level := len(file.DirSlice()) - 1 //len(paw.Split(dir, PathSeparator)) - 1
 	ppad += paw.Spaces(4 * level)
 	slevel := fmt.Sprintf("L%d: ", level)
+	istr := fmt.Sprintf("G%-[1]*[2]d", i1, i)
+	cistr := cdip.Sprint(istr)
 	cistr = slevel + cistr
 	dir, name := filepath.Split(file.Dir)
 	wppad := paw.StringWidth(ppad)
@@ -178,24 +179,45 @@ func printLevelWrappedDir(w io.Writer, file *File, ppad string, i1, i int) strin
 	} else {
 		// cname := GetColorizedDirName(dir, f.root)
 		cname := cdirp.Sprint(dir) + cdip.Sprint(name)
-		printListln(w, ppad, cistr, "", cname)
+		printListln(w, ppad+cistr, "", cname)
 	}
 	return ppad
 }
 
-func xattrEdgeString(file *File, pad string) string {
+func xattrEdgeString(file *File, pad string, wmeta int) string {
 	nx := len(file.XAttributes)
 	sb := new(strings.Builder)
 	if nx > 0 {
 		edge := EdgeTypeMid
 		for i := 0; i < nx; i++ {
+			wdm := wmeta
+			xattr := file.XAttributes[i]
 			if i == nx-1 {
 				edge = EdgeTypeEnd
 			}
-			sb.WriteString(pad)
-			sb.WriteString(cdashp.Sprint(edge) + " ")
-			sb.WriteString(cxp.Sprint(file.XAttributes[i]))
-			sb.WriteByte('\n')
+			padx := fmt.Sprintf("%s %s ", pad, cdashp.Sprint(edge))
+			wdm += edgeWidth[edge] + 2
+			wdx := len(xattr)
+			if wdm+wdx <= sttyWidth-2 {
+				printListln(sb, padx+cxp.Sprint(xattr))
+			} else {
+				wde := sttyWidth - 2 - wdm
+				printListln(sb, padx+cxp.Sprint(xattr[:wde]))
+				switch edge {
+				case EdgeTypeMid:
+					padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(EdgeTypeLink)+SpaceIndentSize)
+				case EdgeTypeEnd:
+					padx = fmt.Sprintf("%s %s ", pad, paw.Spaces(edgeWidth[edge]))
+				}
+				if len(xattr[wde:]) <= wde {
+					printListln(sb, padx+cxp.Sprint(xattr[wde:]))
+				} else {
+					xattrs := paw.Split(paw.Wrap(xattr[wde:], wde), "\n")
+					for _, v := range xattrs {
+						printListln(sb, padx+cxp.Sprint(v))
+					}
+				}
+			}
 		}
 	}
 	return sb.String()
@@ -204,8 +226,18 @@ func xattrEdgeString(file *File, pad string) string {
 func levelHead(wNo int) (string, int) {
 	sno := fmt.Sprintf("%-[1]*[2]s", wNo, "No")
 	ssize := fmt.Sprintf("%6s", "Size")
-	stime := fmt.Sprintf("%14s", "Data Modified")
-	head := fmt.Sprintf("%s %s %s %s %s", sno, "Permissions", ssize, stime, "Name")
-	chead := fmt.Sprintf("%s %s %s %s %s", chdp.Sprint(sno), chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(stime), chdp.Sprint("Name"))
-	return chead, paw.StringWidth(head)
+
+	// stime := fmt.Sprintf("%14s", "Date Modified")
+	cdate := ""
+	sdate := ""
+	for _, v := range fields {
+		cdate += chdp.Sprint(v) + " "
+		sdate += v + " "
+	}
+	cdate = cdate[:len(cdate)-1]
+	sdate = cdate[:len(sdate)-1]
+
+	head := fmt.Sprintf("%s %s %s %s %s", sno, "Permissions", ssize, sdate, "Name")
+	chead := fmt.Sprintf("%s %s %s %s %s", chdp.Sprint(sno), chdp.Sprint("Permissions"), chdp.Sprint(ssize), cdate, chdp.Sprint("Name"))
+	return chead, paw.StringWidth(head) + len(fields) - 5
 }

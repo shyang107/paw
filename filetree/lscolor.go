@@ -52,7 +52,7 @@ var (
 		"un": []color.Attribute{38, 5, 214},    // user is not you
 		"gu": []color.Attribute{38, 5, 230, 1}, // group with you in it
 		"gn": []color.Attribute{38, 5, 214},    // group without you
-		"da": []color.Attribute{38, 5, 117, 8}, // timestamp + 8 -> concealed
+		"da": []color.Attribute{38, 5, 153},    // timestamp + 8 -> concealed
 		// "hd": []color.Attribute{4, 38, 5, 15}, // head
 		"hd":    []color.Attribute{38, 5, 251, 4},    // head + 4-> underline
 		"-":     []color.Attribute{38, 5, 8},         // Concealed

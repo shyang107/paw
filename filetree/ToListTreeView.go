@@ -119,7 +119,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	fmt.Fprint(sb, wrapFileString(fl, file, edge, wmeta, padMeta))
 
 	if isExtended {
-		fmt.Fprint(sb, xattrLTString(file, pad, edge, padMeta))
+		fmt.Fprint(sb, xattrLTString(file, pad, edge, padMeta, wmeta))
 	}
 	fmt.Fprint(wr, sb.String())
 }
@@ -149,31 +149,48 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, wmeta int, padMeta 
 		case EdgeTypeEnd:
 			cedge = padMeta + SpaceIndentSize
 		}
-		printListln(sb, "", cedge+paw.Spaces(ndinf)+file.LSColorString(name[end:]))
+		if len(name[end:]) <= end {
+			printListln(sb, "", cedge+paw.Spaces(ndinf)+file.LSColorString(name[end:]))
+		} else {
+			names := paw.Split(paw.Wrap(name[end:], end), "\n")
+			for _, v := range names {
+				printListln(sb, "", cedge+paw.Spaces(ndinf)+file.LSColorString(v))
+			}
+		}
 	} else {
 		cedge := cdashp.Sprint(edge)
 		cname := cdinf + file.ColorBaseName()
-		// fmt.Fprintf(sb, "%v %v\n", cedge, cname)
 		printListln(sb, cedge, cname)
 	}
 	return sb.String()
 }
 
-func xattrLTString(file *File, pad string, edge EdgeType, padx string) string {
+func xattrLTString(file *File, pad string, edge EdgeType, padx string, wmeta int) string {
 	nx := len(file.XAttributes)
 	sb := new(strings.Builder)
 	if nx > 0 {
 		// edge := EdgeTypeMid
 		for i := 0; i < nx; i++ {
+			xattr := file.XAttributes[i]
 			cedge := ""
 			switch edge {
 			case EdgeTypeMid:
 				cedge = padx + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
+				wmeta += edgeWidth[EdgeTypeLink] + IndentSize
 			case EdgeTypeEnd:
 				cedge = padx + paw.Spaces(IndentSize+1)
+				wmeta += IndentSize + 1
 			}
 			// fmt.Fprintf(sb, "%s%s%s %s\n", pad, cedge, cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
-			printListln(sb, "", pad+cedge+cdashp.Sprint("@"), cxp.Sprint(file.XAttributes[i]))
+			// wd += 2
+			wdx := paw.StringWidth(xattr)
+			if wmeta+wdx <= sttyWidth {
+				printListln(sb, "", pad+cedge+cdashp.Sprint("@"), cxp.Sprint(xattr))
+			} else {
+				wde := sttyWidth - wmeta
+				printListln(sb, "", pad+cedge+cdashp.Sprint("@"), cxp.Sprint(xattr[:wde]))
+				printListln(sb, "", pad+cedge+" ", cxp.Sprint(xattr[wde:]))
+			}
 		}
 	}
 	return sb.String()

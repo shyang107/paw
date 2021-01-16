@@ -19,24 +19,32 @@ import (
 // OutOpt: the view-option of PrintDir
 // Call
 type PrintDirOption struct {
-	Depth  int
-	OutOpt PrintDirType
-	Ignore IgnoreFunc
+	Depth     int
+	OutOpt    PDViewFlag
+	FieldFlag PDFieldFlag
+	SortOpt   *PDSortOption
+	FiltOpt   *PDFilterOption
+	Ignore    IgnoreFunc
 }
 
 func NewPrintDirOption() *PrintDirOption {
 	return &PrintDirOption{
-		Depth:  0,
-		OutOpt: PListView,
+		Depth:     0,
+		OutOpt:    PListView,
+		FieldFlag: PFieldModified,
+		// SortOpt:
+		// FiltOpt:,
 		Ignore: DefaultIgnoreFn,
 	}
 }
 
-type PrintDirType int
+var pdOpt *PrintDirOption
+
+type PDViewFlag int
 
 const (
 	// PListView is the option of list view using in PrintDir
-	PListView PrintDirType = 1 << iota // 1 << 0 which is 00000001
+	PListView PDViewFlag = 1 << iota // 1 << 0 which is 00000001
 	// PListExtendView is the option of list view icluding extend attributes using in PrintDir
 	PListExtendView
 	// PTreeView is the option of tree view using in PrintDir
@@ -59,13 +67,24 @@ const (
 	PListTreeExtendView = PListView | PTreeExtendView
 )
 
-var pdview PrintDirType
+var pdview PDViewFlag
 
-// PrintDirSortOption defines sorting way view of PrintDir
+type PDFieldFlag int
+
+const (
+	// PFieldModified use date modified field
+	PFieldModified PDFieldFlag = 1 << iota
+	// PFieldAccessed use date accessed field
+	PFieldAccessed
+	// PFieldCreated use date created field
+	PFieldCreated
+)
+
+// PDSortOption defines sorting way view of PrintDir
 //
 // Defaut:
 //  increasing sort by lower name of path
-type PrintDirSortOption struct {
+type PDSortOption struct {
 	IsSort  bool
 	SortWay PDSortFlag
 }
@@ -96,22 +115,25 @@ const (
 	PDFiltJustFilesButNoEmptyDir = PDFiltJustFiles
 )
 
-type PrintDirFilterOption struct {
+type PDFilterOption struct {
 	IsFilt  bool
 	FiltWay PDFiltFlag
 }
 
 // PrintDir will find files using codintion `ignore` func
-func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sortOpt *PrintDirSortOption, filtOpt *PrintDirFilterOption, pad string) (error, *FileList) {
+func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad string) (error, *FileList) {
 
 	root, err := filepath.Abs(path)
 	if err != nil {
 		return err, nil
 	}
 
-	sortOpt = checkSortOpt(sortOpt)
+	pdOpt = opt
+	checkPrintDirOption(pdOpt)
 
-	cehckPrintDirOption(opt)
+	checkFieldFlag(pdOpt)
+
+	sortOpt := checkSortOpt(pdOpt.SortOpt)
 
 	err = checkAndPrintFile(w, path, pad)
 	if err != nil {
@@ -121,23 +143,23 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, sor
 		return err, nil
 	}
 
-	setIgnoreFn(opt)
+	setIgnoreFn(pdOpt)
 
-	pdview = opt.OutOpt
+	pdview = pdOpt.OutOpt
 
 	fl := setFileList(w, root, isGrouped, sortOpt)
 	if !fl.IsSort {
 		goto FIND
 	}
 
-	checkPrintDirSortOption(fl, opt, sortOpt)
+	checkPDSortOption(fl, pdOpt, sortOpt)
 
 FIND:
-	fl.FindFiles(opt.Depth, opt.Ignore)
+	fl.FindFiles(pdOpt.Depth, pdOpt.Ignore)
 
-	cehckPrintDirFiltOpt(fl, filtOpt)
+	cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
 
-	err = switchFileListView(fl, opt.OutOpt, pad)
+	err = switchFileListView(fl, pdOpt.OutOpt, pad)
 	if err != nil {
 		return err, nil
 	}
@@ -145,7 +167,7 @@ FIND:
 	return nil, fl
 }
 
-func switchFileListView(fl *FileList, outOpt PrintDirType, pad string) error {
+func switchFileListView(fl *FileList, outOpt PDViewFlag, pad string) error {
 	switch outOpt {
 	case PListView:
 		fl.ToListView(pad)
@@ -175,7 +197,7 @@ func switchFileListView(fl *FileList, outOpt PrintDirType, pad string) error {
 	return nil
 }
 
-func cehckPrintDirFiltOpt(fl *FileList, filtOpt *PrintDirFilterOption) {
+func cehckAndFiltPrintDirFiltOpt(fl *FileList, filtOpt *PDFilterOption) {
 	if filtOpt != nil && filtOpt.IsFilt {
 		switch filtOpt.FiltWay {
 		case PDFiltNoEmptyDir: // no empty dir
@@ -194,7 +216,7 @@ func cehckPrintDirFiltOpt(fl *FileList, filtOpt *PrintDirFilterOption) {
 	}
 }
 
-func checkPrintDirSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PrintDirSortOption) {
+func checkPDSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PDSortOption) {
 
 	if opt.OutOpt != PTreeView || opt.OutOpt != PListTreeView {
 		if sortOpt.IsSort {
@@ -244,7 +266,7 @@ func checkPrintDirSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PrintDi
 	}
 }
 
-func setFileList(w io.Writer, root string, isGrouped bool, sortOpt *PrintDirSortOption) *FileList {
+func setFileList(w io.Writer, root string, isGrouped bool, sortOpt *PDSortOption) *FileList {
 	fl := NewFileList(root)
 	// fl.IsSort = false
 	fl.ResetWriters()
@@ -263,25 +285,52 @@ func setIgnoreFn(opt *PrintDirOption) {
 	}
 }
 
-func cehckPrintDirOption(opt *PrintDirOption) {
-	if opt == nil {
-		opt = &PrintDirOption{
-			Depth:  0,
-			OutOpt: PListView,
-			// OutOpt: PListExtendView,
-			// OutOpt: PTreeView,
-			// OutOpt: PListTreeView,
-			// OutOpt: PLevelView,
-			// OutOpt: PTableView,
-			// OutOpt: PClassifyView,
-			Ignore: DefaultIgnoreFn,
-		}
+var (
+	fields    = []string{}
+	fieldsMap = map[PDFieldFlag]string{
+		PFieldModified: "Date Modified",
+		PFieldCreated:  "Date Created",
+		PFieldAccessed: "Date Accessed",
+	}
+	fieldKeys = []PDFieldFlag{}
+)
+
+func checkFieldFlag(opt *PrintDirOption) {
+	if opt.FieldFlag&PFieldModified != 0 {
+		fieldKeys = append(fieldKeys, PFieldModified)
+	}
+	if opt.FieldFlag&PFieldCreated != 0 {
+		fieldKeys = append(fieldKeys, PFieldCreated)
+	}
+	if opt.FieldFlag&PFieldAccessed != 0 {
+		fieldKeys = append(fieldKeys, PFieldAccessed)
+	}
+	for _, k := range fieldKeys {
+		fields = append(fields, fieldsMap[k])
 	}
 }
 
-func checkSortOpt(sortOpt *PrintDirSortOption) *PrintDirSortOption {
+func checkPrintDirOption(opt *PrintDirOption) {
+	if opt == nil {
+		opt = NewPrintDirOption()
+		// opt = &PrintDirOption{
+		// 	Depth:  0,
+		// 	OutOpt: PListView,
+		// 	// OutOpt: PListExtendView,
+		// 	// OutOpt: PTreeView,
+		// 	// OutOpt: PListTreeView,
+		// 	// OutOpt: PLevelView,
+		// 	// OutOpt: PTableView,
+		// 	// OutOpt: PClassifyView,
+		// 	FieldFlag: PFieldModified,
+		// 	Ignore:    DefaultIgnoreFn,
+		// }
+	}
+}
+
+func checkSortOpt(sortOpt *PDSortOption) *PDSortOption {
 	if sortOpt == nil {
-		return &PrintDirSortOption{
+		return &PDSortOption{
 			IsSort:  true,
 			SortWay: PDSortByName,
 		}
