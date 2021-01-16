@@ -72,12 +72,28 @@ var pdview PDViewFlag
 type PDFieldFlag int
 
 const (
-	// PFieldModified use date modified field
-	PFieldModified PDFieldFlag = 1 << iota
-	// PFieldAccessed use date accessed field
+	// PFieldINode uses inode field
+	PFieldINode PDFieldFlag = 1 << iota
+	// PFieldPermissions uses permission field
+	PFieldPermissions
+	// PFieldLinks uses hard link field
+	PFieldLinks
+	// PFieldSize uses size field
+	PFieldSize
+	// PFieldUser uses user field
+	PFieldUser
+	// PFieldGroup uses group field
+	PFieldGroup
+	// PFieldModified uses date modified field
+	PFieldModified
+	// PFieldAccessed uses date accessed field
 	PFieldAccessed
-	// PFieldCreated use date created field
+	// PFieldCreated uses date created field
 	PFieldCreated
+	// PFieldGit uses git field
+	PFieldGit
+	// PFieldName uses name field
+	PFieldName
 )
 
 // PDSortOption defines sorting way view of PrintDir
@@ -288,14 +304,49 @@ func setIgnoreFn(opt *PrintDirOption) {
 var (
 	fields    = []string{}
 	fieldsMap = map[PDFieldFlag]string{
-		PFieldModified: "Date Modified",
-		PFieldCreated:  "Date Created",
-		PFieldAccessed: "Date Accessed",
+		PFieldINode:       "inode",
+		PFieldPermissions: "Permissions",
+		PFieldLinks:       "Links",
+		PFieldSize:        "Size",
+		PFieldUser:        "User",
+		PFieldGroup:       "Group",
+		PFieldModified:    "Date Modified",
+		PFieldCreated:     "Date Created",
+		PFieldAccessed:    "Date Accessed",
+		PFieldGit:         "Git",
+		PFieldName:        "Name",
+	}
+	fieldWidthsMap = map[PDFieldFlag]int{
+		PFieldINode:       paw.MaxInt(8, len(fieldsMap[PFieldINode])),
+		PFieldPermissions: paw.MaxInt(11, len(fieldsMap[PFieldPermissions])),
+		PFieldLinks:       paw.MaxInt(2, len(fieldsMap[PFieldLinks])),
+		PFieldSize:        paw.MaxInt(6, len(fieldsMap[PFieldSize])),
+		PFieldUser:        paw.MaxInt(paw.StringWidth(urname), len(fieldsMap[PFieldUser])),
+		PFieldGroup:       paw.MaxInt(paw.StringWidth(gpname), len(fieldsMap[PFieldGroup])),
+		PFieldModified:    paw.MaxInt(11, len(fieldsMap[PFieldModified])),
+		PFieldCreated:     paw.MaxInt(11, len(fieldsMap[PFieldCreated])),
+		PFieldAccessed:    paw.MaxInt(11, len(fieldsMap[PFieldAccessed])),
+		PFieldGit:         paw.MaxInt(2, len(fieldsMap[PFieldGit])),
+		PFieldName:        paw.MaxInt(4, len(fieldsMap[PFieldName])),
 	}
 	fieldKeys = []PDFieldFlag{}
 )
 
 func checkFieldFlag(opt *PrintDirOption) {
+	if opt.FieldFlag&PFieldINode != 0 {
+		fieldKeys = append(fieldKeys, PFieldINode)
+	}
+
+	fieldKeys = append(fieldKeys, PFieldPermissions)
+
+	if opt.FieldFlag&PFieldLinks != 0 {
+		fieldKeys = append(fieldKeys, PFieldLinks)
+	}
+
+	fieldKeys = append(fieldKeys, PFieldSize)
+	fieldKeys = append(fieldKeys, PFieldUser)
+	fieldKeys = append(fieldKeys, PFieldGroup)
+
 	if opt.FieldFlag&PFieldModified != 0 {
 		fieldKeys = append(fieldKeys, PFieldModified)
 	}
@@ -305,6 +356,13 @@ func checkFieldFlag(opt *PrintDirOption) {
 	if opt.FieldFlag&PFieldAccessed != 0 {
 		fieldKeys = append(fieldKeys, PFieldAccessed)
 	}
+	// if opt.FieldFlag&PFieldGit != 0 {
+	// 	fieldKeys = append(fieldKeys, PFieldGit)
+	// }
+
+	fieldKeys = append(fieldKeys, PFieldGit)
+	fieldKeys = append(fieldKeys, PFieldName)
+
 	for _, k := range fieldKeys {
 		fields = append(fields, fieldsMap[k])
 	}
@@ -347,7 +405,7 @@ func checkAndPrintFile(w io.Writer, path string, pad string) error {
 	}
 	if file.IsFile() || file.IsLink() {
 		git, _ := GetShortGitStatus(file.Dir)
-		chead := getColorizedHead("", urname, gpname, git)
+		chead, _ := getColorizedHead("", urname, gpname, git)
 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getColorDirName(file.Dir, ""))
 		fmt.Fprintln(w, chead)
 		meta, _ := file.ColorMeta(git)

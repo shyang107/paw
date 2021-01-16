@@ -186,7 +186,7 @@ func (f *FileList) GetGitStatus() GitStatus {
 }
 
 // GetHead4Meta will return a colorful string of head line for meta information of File
-func (f *FileList) GetHead4Meta(pad, username, groupname string, git GitStatus) string {
+func (f *FileList) GetHead4Meta(pad, username, groupname string, git GitStatus) (chead string, width int) {
 	return getColorizedHead(pad, username, groupname, git)
 }
 

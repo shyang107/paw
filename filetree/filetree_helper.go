@@ -290,6 +290,8 @@ func getColorizedDates(file *File) (cdate string, wd int) {
 			cdate = file.ColorCreatedTime()
 			date = file.CreatedTime()
 			// sv = DateString(date)
+		default:
+			continue
 		}
 		fwd := paw.StringWidth(fieldsMap[k])
 		fwdd := len(DateString(date))
@@ -304,30 +306,65 @@ func getColorizedDates(file *File) (cdate string, wd int) {
 	return cdate, wd
 }
 
-func getColorizedHead(pad, username, groupname string, git GitStatus) string {
-	width := paw.MaxInts(4, paw.StringWidth(username))
-	huser := fmt.Sprintf("%[1]*[2]s", width, "User")
-	width = paw.MaxInts(5, paw.StringWidth(groupname))
-	hgroup := fmt.Sprintf("%[1]*[2]s", width, "Group")
-
-	ssize := fmt.Sprintf("%6s", "Size")
-
-	dates := make([]string, len(fieldKeys))
-	for _, v := range fields {
-		dates = append(dates, chdp.Sprint(v)+" ")
+func getColorizedHead(pad, username, groupname string, git GitStatus) (chead string, width int) {
+	sb := new(strings.Builder)
+	csb := new(strings.Builder)
+	sb.WriteString(pad)
+	csb.WriteString(pad)
+	for i, k := range fieldKeys {
+		switch k {
+		// case PFieldINode: //"inode",
+		// 	// field = fmt.Sprintf("%-[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
+		// case PFieldPermissions: //"Permissions",
+		// case PFieldLinks: //"Links",
+		// case PFieldSize: //"Size",
+		// case PFieldUser: //"User",
+		// case PFieldGroup: //"Group",
+		// case PFieldModified: //"Date Modified",
+		// case PFieldCreated: //"Date Created",
+		// case PFieldAccessed: //"Date Accessed",
+		case PFieldGit: //"Gid",
+			if git.NoGit {
+				fieldKeys = append(fieldKeys[:i], fieldKeys[i+1:]...)
+				fields = append(fields[:i], fields[i+1:]...)
+				continue
+			}
+			// case PFieldName: //"Name",
+		default:
+			field := fmt.Sprintf("%[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
+			fmt.Fprintf(sb, "%s ", field)
+			fmt.Fprintf(csb, "%s ", chdp.Sprint(field))
+		}
 	}
-	cdate := paw.Join(dates, "")
-	cdate = paw.TrimSpace(cdate)
+	head := sb.String()
+	head = head[:len(head)-1]
+	width = paw.StringWidth(head)
+	chead = csb.String()
+	chead = chead[:len(chead)-1]
+	return chead, width
+	// width := paw.MaxInts(4, paw.StringWidth(username))
+	// huser := fmt.Sprintf("%[1]*[2]s", width, "User")
+	// width = paw.MaxInts(5, paw.StringWidth(groupname))
+	// hgroup := fmt.Sprintf("%[1]*[2]s", width, "Group")
 
-	head := ""
-	if git.NoGit {
-		// head = fmt.Sprintf("%s%s %s %s %s %14s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Date Modified"), chdp.Sprint("Name"))
-		head = fmt.Sprintf("%s%s %s %s %s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), cdate, chdp.Sprint("Name"))
-	} else {
-		// head = fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Date Modified"), chdp.Sprint("Git"), chdp.Sprint("Name"))
-		head = fmt.Sprintf("%s%s %s %s %s %s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), cdate, chdp.Sprint("Git"), chdp.Sprint("Name"))
-	}
-	return head
+	// ssize := fmt.Sprintf("%6s", "Size")
+
+	// dates := make([]string, len(fieldKeys))
+	// for _, v := range fields {
+	// 	dates = append(dates, chdp.Sprint(v)+" ")
+	// }
+	// cdate := paw.Join(dates, "")
+	// cdate = paw.TrimSpace(cdate)
+
+	// head := ""
+	// if git.NoGit {
+	// 	// head = fmt.Sprintf("%s%s %s %s %s %14s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Date Modified"), chdp.Sprint("Name"))
+	// 	head = fmt.Sprintf("%s%s %s %s %s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), cdate, chdp.Sprint("Name"))
+	// } else {
+	// 	// head = fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Date Modified"), chdp.Sprint("Git"), chdp.Sprint("Name"))
+	// 	head = fmt.Sprintf("%s%s %s %s %s %s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), cdate, chdp.Sprint("Git"), chdp.Sprint("Name"))
+	// }
+	// return head
 }
 
 func printBanner(w io.Writer, pad string, mark string, length int) {

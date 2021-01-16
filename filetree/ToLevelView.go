@@ -223,21 +223,48 @@ func xattrEdgeString(file *File, pad string, wmeta int) string {
 	return sb.String()
 }
 
-func levelHead(wNo int) (string, int) {
+func levelHead(wNo int) (chead string, width int) {
+	sb := new(strings.Builder)
+	csb := new(strings.Builder)
 	sno := fmt.Sprintf("%-[1]*[2]s", wNo, "No")
-	ssize := fmt.Sprintf("%6s", "Size")
-
-	// stime := fmt.Sprintf("%14s", "Date Modified")
-	cdate := ""
-	sdate := ""
-	for _, v := range fields {
-		cdate += chdp.Sprint(v) + " "
-		sdate += v + " "
+	fmt.Fprintf(sb, "%s ", sno)
+	fmt.Fprintf(csb, "%s ", chdp.Sprint(sno))
+	for _, k := range fieldKeys {
+		// field := ""
+		switch k {
+		case PFieldINode, PFieldLinks, PFieldUser, PFieldGroup, PFieldGit:
+			continue
+			// case PFieldPermissions: //"Permissions",
+			// case PFieldSize: //"Size",
+			// case PFieldModified: //"Date Modified",
+			// case PFieldCreated: //"Date Created",
+			// case PFieldAccessed: //"Date Accessed",
+			// case PFieldName: //"Name",
+		default:
+			field := fmt.Sprintf("%[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
+			fmt.Fprintf(sb, "%s ", field)
+			fmt.Fprintf(csb, "%s ", chdp.Sprint(field))
+		}
 	}
-	cdate = cdate[:len(cdate)-1]
-	sdate = cdate[:len(sdate)-1]
+	head := sb.String()
+	head = head[:len(head)-1]
+	width = paw.StringWidth(head) - fieldWidthsMap[PFieldName] - 1
+	chead = csb.String()
+	chead = chead[:len(chead)-1]
+	return chead, width
 
-	head := fmt.Sprintf("%s %s %s %s %s", sno, "Permissions", ssize, sdate, "Name")
-	chead := fmt.Sprintf("%s %s %s %s %s", chdp.Sprint(sno), chdp.Sprint("Permissions"), chdp.Sprint(ssize), cdate, chdp.Sprint("Name"))
-	return chead, paw.StringWidth(head) + len(fields) - 5
+	// ssize := fmt.Sprintf("%6s", "Size")
+
+	// cdate := ""
+	// sdate := ""
+	// for _, v := range fields {
+	// 	cdate += chdp.Sprint(v) + " "
+	// 	sdate += v + " "
+	// }
+	// cdate = cdate[:len(cdate)-1]
+	// sdate = cdate[:len(sdate)-1]
+
+	// head := fmt.Sprintf("%s %s %s %s %s", sno, "Permissions", ssize, sdate, "Name")
+	// chead := fmt.Sprintf("%s %s %s %s %s", chdp.Sprint(sno), chdp.Sprint("Permissions"), chdp.Sprint(ssize), cdate, chdp.Sprint("Name"))
+	// return chead, paw.StringWidth(head) + len(fields) - 5
 }

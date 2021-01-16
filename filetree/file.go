@@ -360,6 +360,28 @@ func (f *File) ColorCreatedTime() string {
 	return GetColorizedTime(date) //+ sp
 }
 
+// NLinks will return the number of hard links of File
+func (f *File) NLinks() uint64 {
+	nlink := uint64(0)
+	if sys := f.Stat.Sys(); sys != nil {
+		if stat, ok := sys.(*syscall.Stat_t); ok {
+			nlink = uint64(stat.Nlink)
+		}
+	}
+	return nlink
+}
+
+// INode will return the inode number of File
+func (f *File) INode() uint64 {
+	inode := uint64(0)
+	if sys := f.Stat.Sys(); sys != nil {
+		if stat, ok := sys.(*syscall.Stat_t); ok {
+			inode = uint64(stat.Ino)
+		}
+	}
+	return inode
+}
+
 // // Size will return size of `File`
 // func (f *File) Size() uint64 {
 // 	return uint64(f.Stat.Size())
