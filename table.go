@@ -82,6 +82,11 @@ var (
 // isPrepareAfter  bool
 )
 
+// NFields will return number of TableFormat.Fields
+func (t *TableFormat) NFields() int {
+	return len(t.Fields)
+}
+
 // SetBeforeMessage set message to show before table
 func (t *TableFormat) SetBeforeMessage(msg string) {
 	t.beforeMsg = msg
