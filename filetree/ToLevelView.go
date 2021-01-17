@@ -33,8 +33,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		fm      = f.Map()
 		fNDirs  = f.NDirs()
 		fNFiles = f.NFiles()
-		// git     = f.GetGitStatus()
-		// chead                   = f.GetHead4Meta(pad, urname, gpname, git)
+		git     = f.GetGitStatus()
 		ntdirs  = 1
 		nsdirs  = 0
 		ntfiles = 0
@@ -42,7 +41,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		j1      = paw.MaxInts(i1, len(fmt.Sprint(fNFiles)))
 		wNo     = paw.MaxInt(j1+1, 2)
 		j       = 0
-		sppad   = paw.Spaces(4)
+		// nopad   = paw.Spaces(4)
 		// wperm       = 11
 		// wsize       = 6
 		// wdate       = 14
@@ -50,8 +49,8 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	)
 	buf.Reset()
 
-	chead, wmeta := levelHead(wNo)
-	// wmeta -= 2 //len(fields)
+	chead, wmeta := levelHead(f, wNo)
+	wmeta -= 4 // remove `No. `
 	// spmeta := paw.Spaces(wmeta - 1)
 	spx := paw.Spaces(wmeta)
 
@@ -84,9 +83,9 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 			}
 		}
 		fpad := ppad
-		if i > 1 {
-			fpad += sppad
-		}
+		// if i > 1 {
+		// 	fpad += sppad
+		// }
 		if len(fm[dir]) > 1 {
 			printListln(w, fpad+chead)
 		}
@@ -102,7 +101,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 				jstr := fmt.Sprintf("F%-[1]*[2]d", j1, ntfiles)
 				cjstr = cfip.Sprint(jstr)
 			}
-			printLevelWrappedFile(w, file, fpad, cjstr, wmeta)
+			printLevelWrappedFile(w, file, fpad, cjstr, git, wmeta)
 
 			if isExtended {
 				fmt.Fprint(w, xattrEdgeString(file, fpad+spx, wmeta+len(fpad)))
@@ -133,22 +132,26 @@ END:
 	return buf.String()
 }
 
-func printLevelWrappedFile(w io.Writer, file *File, pad, cjstr string, wmeta int) {
+func printLevelWrappedFile(w io.Writer, file *File, pad, cjstr string, git GitStatus, wmeta int) {
+	meta, wd := file.ColorMeta(git)
 	spmeta := paw.Spaces(wmeta)
-	cperm := file.ColorPermission()
-	cfsize := file.ColorSize()
-	// ctime := file.ColorModifyTime()
-	ctime, _ := getColorizedDates(file)
 	wpad := paw.StringWidth(pad)
-	name := file.Name()
+	name := paw.TrimSpace(file.Name())
 	wname := paw.StringWidth(name)
 	if wpad+wmeta+wname <= sttyWidth {
 		cname := file.ColorName()
-		printListln(w, pad+cjstr, cperm, cfsize, ctime, cname)
+		printListln(w, pad+cjstr, meta+cname)
 	} else {
-		end := sttyWidth - wpad - wmeta - 3
-		printListln(w, pad+cjstr, cperm, cfsize, ctime, file.LSColorString(name[:end]))
-		printListln(w, pad+spmeta, file.LSColorString(name[end:]))
+		end := sttyWidth - wpad - wd + 1
+		printListln(w, pad+cjstr, meta+file.LSColorString(name[:end]))
+		if paw.StringWidth(name[end:]) <= end {
+			printListln(w, pad+spmeta, file.LSColorString(name[end:]))
+		} else {
+			names := paw.Split(paw.Wrap(name[end:], end), "\n")
+			for _, v := range names {
+				printListln(w, pad+spmeta, file.LSColorString(v))
+			}
+		}
 	}
 }
 
@@ -223,34 +226,38 @@ func xattrEdgeString(file *File, pad string, wmeta int) string {
 	return sb.String()
 }
 
-func levelHead(wNo int) (chead string, width int) {
+func levelHead(f *FileList, wNo int) (chead string, width int) {
 	sb := new(strings.Builder)
 	csb := new(strings.Builder)
 	sno := fmt.Sprintf("%-[1]*[2]s", wNo, "No")
 	fmt.Fprintf(sb, "%s ", sno)
 	fmt.Fprintf(csb, "%s ", chdp.Sprint(sno))
-	for _, k := range fieldKeys {
-		// field := ""
-		switch k {
-		case PFieldINode, PFieldLinks, PFieldUser, PFieldGroup, PFieldGit:
-			continue
-			// case PFieldPermissions: //"Permissions",
-			// case PFieldSize: //"Size",
-			// case PFieldModified: //"Date Modified",
-			// case PFieldCreated: //"Date Created",
-			// case PFieldAccessed: //"Date Accessed",
-			// case PFieldName: //"Name",
-		default:
-			field := fmt.Sprintf("%[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
-			fmt.Fprintf(sb, "%s ", field)
-			fmt.Fprintf(csb, "%s ", chdp.Sprint(field))
-		}
-	}
-	head := sb.String()
-	head = head[:len(head)-1]
-	width = paw.StringWidth(head) - fieldWidthsMap[PFieldName] - 1
+	chead, width = f.GetHead4Meta("", urname, gpname, f.GetGitStatus())
+	fmt.Fprintf(csb, "%s ", chead)
+	width += paw.StringWidth(sno)
 	chead = csb.String()
-	chead = chead[:len(chead)-1]
+	// for _, k := range fieldKeys {
+	// 	// field := ""
+	// 	switch k {
+	// 	case PFieldINode, PFieldLinks, PFieldUser, PFieldGroup, PFieldGit:
+	// 		continue
+	// 		// case PFieldPermissions: //"Permissions",
+	// 		// case PFieldSize: //"Size",
+	// 		// case PFieldModified: //"Date Modified",
+	// 		// case PFieldCreated: //"Date Created",
+	// 		// case PFieldAccessed: //"Date Accessed",
+	// 		// case PFieldName: //"Name",
+	// 	default:
+	// 		field := fmt.Sprintf("%[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
+	// 		fmt.Fprintf(sb, "%s ", field)
+	// 		fmt.Fprintf(csb, "%s ", chdp.Sprint(field))
+	// 	}
+	// }
+	// head := sb.String()
+	// head = head[:len(head)-1]
+	// width = paw.StringWidth(head) - fieldWidthsMap[PFieldName] - 1
+	// chead = csb.String()
+	// chead = chead[:len(chead)-1]
 	return chead, width
 
 	// ssize := fmt.Sprintf("%6s", "Size")
