@@ -208,6 +208,43 @@ func getColorizedGitStatus(git GitStatus, file *File) string {
 	return " " + cpmap[x].Sprint(sx) + cpmap[y].Sprint(sy)
 }
 
+// getGitStatus will return a  string of shrot status of git.
+// The length of placeholder in terminal is 3.
+func getGitStatus(git GitStatus, file *File) string {
+	x, y := '-', '-'
+
+	xy, ok := git.FilesStatus[file.Path]
+	if ok {
+		x, y = xy.Split()
+		x, y = ckxy[x], ckxy[y]
+	}
+
+	if file.IsDir() {
+		// gits := getGitSlice(git, file)
+		for k, v := range git.FilesStatus {
+			if paw.HasPrefix(k, file.Path) {
+				vx, vy := v.Split()
+				cx, cy := ckxy[vx], ckxy[vy]
+				if cx != '-' && x != 'N' {
+					x = cx
+				}
+				if cy != '-' && y != 'N' {
+					y = cy
+				}
+			}
+		}
+	}
+
+	var sx, sy string
+	if x == 'N' && y == 'N' {
+		sx, sy = "-", "N"
+	} else {
+		sx, sy = string(x), string(y)
+	}
+
+	return " " + sx + sy
+}
+
 // GetColorizePermission will return a colorful string of mode
 // The length of placeholder in terminal is 10.
 func GetColorizePermission(mode os.FileMode) string {
@@ -279,8 +316,8 @@ func GetColorizedSize(size uint64) (csize string) {
 }
 
 func getColorizedDates(file *File) (cdate string, wd int) {
-	dates := make([]string, len(fieldKeys))
-	for _, k := range fieldKeys {
+	dates := make([]string, len(pfieldKeys))
+	for _, k := range pfieldKeys {
 		cdate := ""
 		var date time.Time
 		switch k {
@@ -299,7 +336,7 @@ func getColorizedDates(file *File) (cdate string, wd int) {
 		default:
 			continue
 		}
-		fwd := fieldWidthsMap[k]
+		fwd := pfieldWidthsMap[k]
 		fwdd := len(DateString(date))
 		sp := paw.Spaces(fwd - fwdd + 1)
 		dates = append(dates, cdate+sp)
@@ -317,10 +354,10 @@ func getColorizedHead(pad, username, groupname string, git GitStatus) (chead str
 	csb := new(strings.Builder)
 	sb.WriteString(pad)
 	csb.WriteString(pad)
-	for i, k := range fieldKeys {
+	for i, k := range pfieldKeys {
 		switch k {
 		// case PFieldINode: //"inode",
-		// 	// field = fmt.Sprintf("%-[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
+		// 	// field = fmt.Sprintf("%-[1]*[2]s", pfieldWidthsMap[k], fieldsMap[k])
 		// case PFieldPermissions: //"Permissions",
 		// case PFieldLinks: //"Links",
 		// case PFieldSize: //"Size",
@@ -331,13 +368,13 @@ func getColorizedHead(pad, username, groupname string, git GitStatus) (chead str
 		// case PFieldAccessed: //"Date Accessed",
 		case PFieldGit: //"Gid",
 			if git.NoGit {
-				fieldKeys = append(fieldKeys[:i], fieldKeys[i+1:]...)
-				fields = append(fields[:i], fields[i+1:]...)
+				pfieldKeys = append(pfieldKeys[:i], pfieldKeys[i+1:]...)
+				pfields = append(pfields[:i], pfields[i+1:]...)
 				continue
 			}
 			// case PFieldName: //"Name",
 		}
-		field := fmt.Sprintf("%[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
+		field := fmt.Sprintf("%[1]*[2]s", pfieldWidthsMap[k], pfieldsMap[k])
 		fmt.Fprintf(sb, "%s ", field)
 		fmt.Fprintf(csb, "%s ", chdp.Sprint(field))
 	}
