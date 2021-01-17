@@ -414,11 +414,23 @@ func (f *File) ColorBaseName() string {
 }
 
 // ColorPermission will return a colorful string of Stat.Mode() like as exa.
-// The length of placeholder in terminal is 10.
+// The length of placeholder in terminal is 11.
 func (f *File) ColorPermission() string {
 	permission := GetColorizePermission(f.Stat.Mode())
 	if len(f.XAttributes) > 0 {
 		permission += cdashp.Sprint("@")
+	} else {
+		permission += " "
+	}
+	return permission
+}
+
+// Permission will return a string of Stat.Mode() like as exa.
+// The length of placeholder in terminal is 11.
+func (f *File) Permission() string {
+	permission := fmt.Sprint(f.Stat.Mode())
+	if len(f.XAttributes) > 0 {
+		permission += "@"
 	} else {
 		permission += " "
 	}
@@ -451,59 +463,59 @@ func (f *File) ColorMeta(git GitStatus) (string, int) {
 func getMeta(file *File, git GitStatus) (string, int) {
 	sb := new(strings.Builder)
 	csb := new(strings.Builder)
-	for _, k := range fieldKeys {
+	for _, k := range pfieldKeys {
 		field, cfield := "", ""
 		switch k {
 		case PFieldINode: //"inode",
-			field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], file.INode())
+			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.INode())
 			cfield = cinp.Sprint(field)
 		case PFieldPermissions: //"Permissions",
-			field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], file.INode())
+			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.INode())
 			cfield = file.ColorPermission()
 		case PFieldLinks: //"Links",
-			field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], file.NLinks())
+			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.NLinks())
 			cfield = clkp.Sprint(field)
 		case PFieldSize: //"Size",
 			if file.IsDir() {
-				field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], "-")
+				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], "-")
 				cfield = cdashp.Sprint(field)
 			} else {
-				field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], ByteSize(file.Size))
+				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], ByteSize(file.Size))
 				cfield = file.ColorSize()
 			}
 		case PFieldBlocks: //"User",
 			if file.IsDir() {
-				field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], "-")
+				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], "-")
 				cfield = cdashp.Sprint(field)
 			} else {
-				field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], file.Blocks())
+				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.Blocks())
 				cfield = cbkp.Sprint(field)
 			}
 		case PFieldUser: //"User",
-			field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], urname)
+			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], urname)
 			cfield = cuup.Sprint(field)
 		case PFieldGroup: //"Group",
-			field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], gpname)
+			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], gpname)
 			cfield = cgup.Sprint(field)
 		case PFieldModified: //"Date Modified",
-			field = fmt.Sprintf("%-[1]*[2]v", fieldWidthsMap[k], DateString(file.ModifiedTime()))
+			field = fmt.Sprintf("%-[1]*[2]v", pfieldWidthsMap[k], DateString(file.ModifiedTime()))
 			cfield = cdap.Sprint(field)
 		case PFieldCreated: //"Date Created",
-			field = fmt.Sprintf("%-[1]*[2]v", fieldWidthsMap[k], DateString(file.CreatedTime()))
+			field = fmt.Sprintf("%-[1]*[2]v", pfieldWidthsMap[k], DateString(file.CreatedTime()))
 			cfield = cdap.Sprint(field)
 		case PFieldAccessed: //"Date Accessed",
-			field = fmt.Sprintf("%-[1]*[2]v", fieldWidthsMap[k], DateString(file.AccessedTime()))
+			field = fmt.Sprintf("%-[1]*[2]v", pfieldWidthsMap[k], DateString(file.AccessedTime()))
 			cfield = cdap.Sprint(field)
 		case PFieldGit: //"Gid",
 			if git.NoGit {
 				continue
 			} else {
-				field = fmt.Sprintf("%[1]*[2]v", fieldWidthsMap[k], file.Stat.Mode())
+				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.Stat.Mode())
 				cfield = file.ColorGitStatus(git)
 			}
 			// case PFieldName: //"Name",
 		}
-		// field := fmt.Sprintf("%[1]*[2]s", fieldWidthsMap[k], fieldsMap[k])
+		// field := fmt.Sprintf("%[1]*[2]s", pfieldWidthsMap[k], fieldsMap[k])
 		fmt.Fprintf(sb, "%s ", field)
 		fmt.Fprintf(csb, "%s ", cfield)
 	}
