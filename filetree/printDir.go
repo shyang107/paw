@@ -304,8 +304,8 @@ func setIgnoreFn(opt *PrintDirOption) {
 }
 
 var (
-	fields    = []string{}
-	fieldsMap = map[PDFieldFlag]string{
+	pfields    = []string{}
+	pfieldsMap = map[PDFieldFlag]string{
 		PFieldINode:       "inode",
 		PFieldPermissions: "Permissions",
 		PFieldLinks:       "Links",
@@ -319,61 +319,63 @@ var (
 		PFieldGit:         "Git",
 		PFieldName:        "Name",
 	}
-	fieldWidthsMap = map[PDFieldFlag]int{
-		PFieldINode:       paw.MaxInt(8, len(fieldsMap[PFieldINode])),
-		PFieldPermissions: paw.MaxInt(11, len(fieldsMap[PFieldPermissions])),
-		PFieldLinks:       paw.MaxInt(2, len(fieldsMap[PFieldLinks])),
-		PFieldSize:        paw.MaxInt(6, len(fieldsMap[PFieldSize])),
-		PFieldBlocks:      paw.MaxInt(6, len(fieldsMap[PFieldBlocks])),
-		PFieldUser:        paw.MaxInt(paw.StringWidth(urname), len(fieldsMap[PFieldUser])),
-		PFieldGroup:       paw.MaxInt(paw.StringWidth(gpname), len(fieldsMap[PFieldGroup])),
-		PFieldModified:    paw.MaxInt(11, len(fieldsMap[PFieldModified])),
-		PFieldCreated:     paw.MaxInt(11, len(fieldsMap[PFieldCreated])),
-		PFieldAccessed:    paw.MaxInt(11, len(fieldsMap[PFieldAccessed])),
-		PFieldGit:         paw.MaxInt(2, len(fieldsMap[PFieldGit])),
-		PFieldName:        paw.MaxInt(4, len(fieldsMap[PFieldName])),
+	pfieldWidths    = []int{}
+	pfieldWidthsMap = map[PDFieldFlag]int{
+		PFieldINode:       paw.MaxInt(8, len(pfieldsMap[PFieldINode])),
+		PFieldPermissions: paw.MaxInt(11, len(pfieldsMap[PFieldPermissions])),
+		PFieldLinks:       paw.MaxInt(2, len(pfieldsMap[PFieldLinks])),
+		PFieldSize:        paw.MaxInt(6, len(pfieldsMap[PFieldSize])),
+		PFieldBlocks:      paw.MaxInt(6, len(pfieldsMap[PFieldBlocks])),
+		PFieldUser:        paw.MaxInt(paw.StringWidth(urname), len(pfieldsMap[PFieldUser])),
+		PFieldGroup:       paw.MaxInt(paw.StringWidth(gpname), len(pfieldsMap[PFieldGroup])),
+		PFieldModified:    paw.MaxInt(11, len(pfieldsMap[PFieldModified])),
+		PFieldCreated:     paw.MaxInt(11, len(pfieldsMap[PFieldCreated])),
+		PFieldAccessed:    paw.MaxInt(11, len(pfieldsMap[PFieldAccessed])),
+		PFieldGit:         paw.MaxInt(2, len(pfieldsMap[PFieldGit])),
+		PFieldName:        paw.MaxInt(4, len(pfieldsMap[PFieldName])),
 	}
-	fieldKeys = []PDFieldFlag{}
+	pfieldKeys = []PDFieldFlag{}
 )
 
 func checkFieldFlag(opt *PrintDirOption) {
 	if opt.FieldFlag&PFieldINode != 0 {
-		fieldKeys = append(fieldKeys, PFieldINode)
+		pfieldKeys = append(pfieldKeys, PFieldINode)
 	}
 
-	fieldKeys = append(fieldKeys, PFieldPermissions)
+	pfieldKeys = append(pfieldKeys, PFieldPermissions)
 
 	if opt.FieldFlag&PFieldLinks != 0 {
-		fieldKeys = append(fieldKeys, PFieldLinks)
+		pfieldKeys = append(pfieldKeys, PFieldLinks)
 	}
 
-	fieldKeys = append(fieldKeys, PFieldSize)
+	pfieldKeys = append(pfieldKeys, PFieldSize)
 
 	if opt.FieldFlag&PFieldBlocks != 0 {
-		fieldKeys = append(fieldKeys, PFieldBlocks)
+		pfieldKeys = append(pfieldKeys, PFieldBlocks)
 	}
 
-	fieldKeys = append(fieldKeys, PFieldUser)
-	fieldKeys = append(fieldKeys, PFieldGroup)
+	pfieldKeys = append(pfieldKeys, PFieldUser)
+	pfieldKeys = append(pfieldKeys, PFieldGroup)
 
 	if opt.FieldFlag&PFieldModified != 0 {
-		fieldKeys = append(fieldKeys, PFieldModified)
+		pfieldKeys = append(pfieldKeys, PFieldModified)
 	}
 	if opt.FieldFlag&PFieldCreated != 0 {
-		fieldKeys = append(fieldKeys, PFieldCreated)
+		pfieldKeys = append(pfieldKeys, PFieldCreated)
 	}
 	if opt.FieldFlag&PFieldAccessed != 0 {
-		fieldKeys = append(fieldKeys, PFieldAccessed)
+		pfieldKeys = append(pfieldKeys, PFieldAccessed)
 	}
 
 	if opt.FieldFlag&PFieldGit != 0 {
-		fieldKeys = append(fieldKeys, PFieldGit)
+		pfieldKeys = append(pfieldKeys, PFieldGit)
 	}
-	// fieldKeys = append(fieldKeys, PFieldGit)
-	fieldKeys = append(fieldKeys, PFieldName)
+	// pfieldKeys = append(pfieldKeys, PFieldGit)
+	pfieldKeys = append(pfieldKeys, PFieldName)
 
-	for _, k := range fieldKeys {
-		fields = append(fields, fieldsMap[k])
+	for _, k := range pfieldKeys {
+		pfields = append(pfields, pfieldsMap[k])
+		pfieldWidths = append(pfieldWidths, pfieldWidthsMap[k])
 	}
 }
 
