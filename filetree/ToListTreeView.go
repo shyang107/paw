@@ -38,7 +38,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 		git          = f.GetGitStatus()
 		chead, wmeta = f.GetHead4Meta(pad, urname, gpname, git)
 	)
-	wmeta -= fieldWidthsMap[PFieldName]
+	wmeta -= pfieldWidthsMap[PFieldName]
 
 	buf.Reset()
 

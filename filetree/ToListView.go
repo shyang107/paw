@@ -37,7 +37,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		fm                      = f.Map()
 		git                     = f.GetGitStatus()
 		chead, wdhead           = f.GetHead4Meta(pad, urname, gpname, git)
-		wdmeta                  = wdhead - fieldWidthsMap[PFieldName] - 1 + paw.StringWidth(pad)
+		wdmeta                  = wdhead - pfieldWidthsMap[PFieldName] - 1 + paw.StringWidth(pad)
 		ntdirs, nsdirs, ntfiles = 1, 0, 0
 		fNDirs                  = f.NDirs()
 		fNFiles                 = f.NFiles()
