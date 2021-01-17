@@ -69,35 +69,6 @@ const (
 
 var pdview PDViewFlag
 
-type PDFieldFlag int
-
-const (
-	// PFieldINode uses inode field
-	PFieldINode PDFieldFlag = 1 << iota
-	// PFieldPermissions uses permission field
-	PFieldPermissions
-	// PFieldLinks uses hard link field
-	PFieldLinks
-	// PFieldSize uses size field
-	PFieldSize
-	// PFieldBlocks uses blocks field
-	PFieldBlocks
-	// PFieldUser uses user field
-	PFieldUser
-	// PFieldGroup uses group field
-	PFieldGroup
-	// PFieldModified uses date modified field
-	PFieldModified
-	// PFieldAccessed uses date accessed field
-	PFieldAccessed
-	// PFieldCreated uses date created field
-	PFieldCreated
-	// PFieldGit uses git field
-	PFieldGit
-	// PFieldName uses name field
-	PFieldName
-)
-
 // PDSortOption defines sorting way view of PrintDir
 //
 // Defaut:
@@ -302,40 +273,6 @@ func setIgnoreFn(opt *PrintDirOption) {
 		opt.Ignore = DefaultIgnoreFn
 	}
 }
-
-var (
-	pfields    = []string{}
-	pfieldsMap = map[PDFieldFlag]string{
-		PFieldINode:       "inode",
-		PFieldPermissions: "Permissions",
-		PFieldLinks:       "Links",
-		PFieldSize:        "Size",
-		PFieldBlocks:      "Blocks",
-		PFieldUser:        "User",
-		PFieldGroup:       "Group",
-		PFieldModified:    "Date Modified",
-		PFieldCreated:     "Date Created",
-		PFieldAccessed:    "Date Accessed",
-		PFieldGit:         "Git",
-		PFieldName:        "Name",
-	}
-	pfieldWidths    = []int{}
-	pfieldWidthsMap = map[PDFieldFlag]int{
-		PFieldINode:       paw.MaxInt(8, len(pfieldsMap[PFieldINode])),
-		PFieldPermissions: paw.MaxInt(11, len(pfieldsMap[PFieldPermissions])),
-		PFieldLinks:       paw.MaxInt(2, len(pfieldsMap[PFieldLinks])),
-		PFieldSize:        paw.MaxInt(6, len(pfieldsMap[PFieldSize])),
-		PFieldBlocks:      paw.MaxInt(6, len(pfieldsMap[PFieldBlocks])),
-		PFieldUser:        paw.MaxInt(paw.StringWidth(urname), len(pfieldsMap[PFieldUser])),
-		PFieldGroup:       paw.MaxInt(paw.StringWidth(gpname), len(pfieldsMap[PFieldGroup])),
-		PFieldModified:    paw.MaxInt(11, len(pfieldsMap[PFieldModified])),
-		PFieldCreated:     paw.MaxInt(11, len(pfieldsMap[PFieldCreated])),
-		PFieldAccessed:    paw.MaxInt(11, len(pfieldsMap[PFieldAccessed])),
-		PFieldGit:         paw.MaxInt(2, len(pfieldsMap[PFieldGit])),
-		PFieldName:        paw.MaxInt(4, len(pfieldsMap[PFieldName])),
-	}
-	pfieldKeys = []PDFieldFlag{}
-)
 
 func checkFieldFlag(opt *PrintDirOption) {
 	if opt.FieldFlag&PFieldINode != 0 {

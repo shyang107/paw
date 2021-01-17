@@ -36,8 +36,9 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		dirs                    = f.Dirs()
 		fm                      = f.Map()
 		git                     = f.GetGitStatus()
-		chead, wdhead           = f.GetHead4Meta(pad, urname, gpname, git)
-		wdmeta                  = wdhead - pfieldWidthsMap[PFieldName] - 1 + paw.StringWidth(pad)
+		fields                  = NewFieldSliceFrom(pfieldKeys, git)
+		chead                   = fields.ColorHeadsString()
+		wdmeta                  = fields.MetaHeadsStringWidth() + paw.StringWidth(pad)
 		ntdirs, nsdirs, ntfiles = 1, 0, 0
 		fNDirs                  = f.NDirs()
 		fNFiles                 = f.NFiles()
@@ -83,8 +84,10 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 				ntfiles++
 				sumsize += file.Size
 			}
-			meta, _ := file.ColorMeta(git)
-			meta = pad + meta
+			// meta, _ := file.ColorMeta(git)
+			fields.SetValues(file, git)
+			meta := pad
+			meta += fields.ColorMetaValuesString()
 			wdname := sttyWidth - wdmeta - 3
 			// name := file.BaseName
 			name := file.BaseNameToLink()
@@ -92,8 +95,11 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 				printListln(w, meta+file.ColorName())
 			} else {
 				if !file.IsLink() {
-					printListln(w, meta+file.LSColorString(name[:wdname]))
-					printListln(w, paw.Spaces(wdmeta), file.LSColorString(name[wdname:]))
+					names := paw.Split(paw.Wrap(name, wdname), "\n")
+					printListln(w, meta+file.LSColorString(names[0]))
+					for i := 1; i < len(names); i++ {
+						printListln(w, paw.Spaces(wdmeta), file.LSColorString(names[i]))
+					}
 				} else {
 					bname := file.BaseName
 					wdb := paw.StringWidth(bname)
@@ -108,8 +114,12 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 					if paw.StringWidth(link) <= wdname {
 						printListln(w, paw.Spaces(wdmeta)+cdirp.Sprint(link))
 					} else {
-						printListln(w, paw.Spaces(wdmeta), cdirp.Sprint(link[:wdname]))
-						printListln(w, paw.Spaces(wdmeta), cdirp.Sprint(link[wdname:]))
+						links := paw.Split(paw.Wrap(link, wdname), "\n")
+						spl := paw.Spaces(wdmeta)
+						printListln(w, spl, cdirp.Sprint(links[0]))
+						for i := 1; i < len(links); i++ {
+							printListln(w, spl, cdirp.Sprint(links[i]))
+						}
 					}
 				}
 			}

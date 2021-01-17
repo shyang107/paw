@@ -366,7 +366,7 @@ func getColorizedHead(pad, username, groupname string, git GitStatus) (chead str
 		// case PFieldModified: //"Date Modified",
 		// case PFieldCreated: //"Date Created",
 		// case PFieldAccessed: //"Date Accessed",
-		case PFieldGit: //"Gid",
+		case PFieldGit: //"Git",
 			if git.NoGit {
 				pfieldKeys = append(pfieldKeys[:i], pfieldKeys[i+1:]...)
 				pfields = append(pfields[:i], pfields[i+1:]...)
@@ -479,11 +479,14 @@ func (s *sizesStack) Accumulate(i int64) {
 func printListln(w io.Writer, items ...string) {
 	sb := new(strings.Builder)
 	sb.Grow(len(items))
-	for i := 0; i < len(items)-1; i++ {
-		sb.WriteString(fmt.Sprintf("%v ", items[i]))
+	for i := 0; i < len(items); i++ {
+		if i < len(items)-1 {
+			fmt.Fprintf(sb, "%v ", items[i])
+		} else {
+			fmt.Fprintf(sb, "%v", items[i])
+		}
 	}
-	sb.WriteString(fmt.Sprintf("%v\n", items[len(items)-1]))
-	fmt.Fprintf(w, "%v", sb.String())
+	fmt.Fprintln(w, sb.String())
 }
 
 func DateString(date time.Time) (sdate string) {
