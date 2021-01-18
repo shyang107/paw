@@ -822,7 +822,14 @@ func TrimFrontEndSpaceLine(content string) string {
 	return strings.Join(lines, "\n")
 }
 
-type StringBuilder strings.Builder
+// type StringBuilder strings.Builder
+
+// NewStringBuilder will return `*strings.Builder`
+//
+// A Builder is used to efficiently build a string using Write methods. It minimizes memory copying. The zero value is ready to use. Do not copy a non-zero Builder.
+func NewStringBuilder() *strings.Builder {
+	return new(strings.Builder)
+}
 
 // NewStringReader returns a new Reader reading from s. It is similar to bytes.NewBufferString but more efficient and read-only.
 func NewStringReader(s string) *strings.Reader {
