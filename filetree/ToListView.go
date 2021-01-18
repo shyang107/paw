@@ -3,6 +3,7 @@ package filetree
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -36,19 +37,19 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		dirs                    = f.Dirs()
 		fm                      = f.Map()
 		git                     = f.GetGitStatus()
-		fields                  = NewFieldSliceFrom(pfieldKeys, git)
-		chead                   = fields.ColorHeadsString()
-		wdmeta                  = fields.MetaHeadsStringWidth() + paw.StringWidth(pad)
+		fds                     = NewFieldSliceFrom(pfieldKeys, git)
+		chead                   = fds.ColorHeadsString()
+		wdmeta                  = fds.MetaHeadsStringWidth() + paw.StringWidth(pad)
 		ntdirs, nsdirs, ntfiles = 1, 0, 0
 		fNDirs                  = f.NDirs()
 		fNFiles                 = f.NFiles()
 		bannerWidth             = sttyWidth - 2 - len(pad)
+		ctdsize                 = ByteSize(f.totalSize)
+		head                    = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getColorDirName(f.root, ""), cdip.Sprint(ctdsize))
 	)
+
 	buf.Reset()
 
-	ctdsize := ByteSize(f.totalSize)
-
-	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getColorDirName(f.root, ""), cdip.Sprint(ctdsize))
 	printListln(w, pad+head)
 
 	if fNDirs == 0 && fNFiles == 0 {
@@ -58,24 +59,24 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 	printListln(w, pad+paw.Repeat("=", bannerWidth))
 
 	for i, dir := range dirs {
-		sumsize := uint64(0)
-		nfiles := 0
-		ndirs := 0
+		var (
+			sumsize = uint64(0)
+			nfiles  = 0
+			ndirs   = 0
+		)
 		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
-					dir, name := filepath.Split(dir)
-					cname := cdirp.Sprint(dir) + cdip.Sprint(name)
-					printListln(w, pad+cname)
+					fmt.Fprint(w, wrapDir(dir, pad, bannerWidth))
 				}
 			}
 		}
 		if len(fm[dir]) > 1 {
 			ntdirs++
+			chead, wdmeta = modifyHead(fds, fm[dir], pad)
 			printListln(w, pad+chead)
 		}
 		for _, file := range fm[dir][1:] {
-			sntf := ""
 			if file.IsDir() {
 				ndirs++
 				nsdirs++
@@ -85,47 +86,11 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 				sumsize += file.Size
 			}
 			// meta, _ := file.ColorMeta(git)
-			fields.SetValues(file, git)
-			meta := pad
-			meta += fields.ColorMetaValuesString()
-			wdname := sttyWidth - wdmeta - 3
-			// name := file.BaseName
-			name := file.BaseNameToLink()
-			if paw.StringWidth(name) <= wdname {
-				printListln(w, meta+file.ColorName())
-			} else {
-				if !file.IsLink() {
-					names := paw.Split(paw.Wrap(name, wdname), "\n")
-					printListln(w, meta+file.LSColorString(names[0]))
-					for i := 1; i < len(names); i++ {
-						printListln(w, paw.Spaces(wdmeta), file.LSColorString(names[i]))
-					}
-				} else {
-					bname := file.BaseName
-					wdb := paw.StringWidth(bname)
-					wd := wdb
-					cname := file.LSColorString(bname)
-					carrow := cdashp.Sprint(" -> ")
-					wd += 4
-					printListln(w, meta+cname+carrow)
-					link := file.LinkPath()
-					// wdlink := paw.StringWidth(link)
-					// dir, name := getDirAndName(link, "")
-					if paw.StringWidth(link) <= wdname {
-						printListln(w, paw.Spaces(wdmeta)+cdirp.Sprint(link))
-					} else {
-						links := paw.Split(paw.Wrap(link, wdname), "\n")
-						spl := paw.Spaces(wdmeta)
-						printListln(w, spl, cdirp.Sprint(links[0]))
-						for i := 1; i < len(links); i++ {
-							printListln(w, spl, cdirp.Sprint(links[i]))
-						}
-					}
-				}
-			}
+			fds.SetValues(file, git)
+			fmt.Fprint(w, wrapFileName(file, fds, pad, sttyWidth-2))
 
-			if isExtended {
-				sp := paw.Spaces(wdmeta + len(sntf))
+			if isExtended && len(file.XAttributes) > 0 {
+				sp := paw.Spaces(wdmeta)
 				fmt.Fprint(w, xattrEdgeString(file, sp, wdmeta))
 			}
 		}
@@ -155,4 +120,37 @@ END:
 
 	// spew.Dump(dirs)
 	return buf.String()
+}
+
+func wrapDir(dirName, pad string, wdlimit int) string {
+	var (
+		w         = new(strings.Builder)
+		dir, name = filepath.Split(dirName)
+		wdir      = paw.StringWidth(dir)
+		wname     = paw.StringWidth(name)
+	)
+	if wdir+wname <= wdlimit {
+		var cname = cdirp.Sprint(dir) + cdip.Sprint(name)
+		printListln(w, pad+cname)
+	} else {
+		if wdir <= wdlimit {
+			printListln(w, pad+cdirp.Sprint(dir))
+		} else {
+			var dirs = paw.Split(paw.Wrap(dir, wdlimit), "\n")
+			printListln(w, pad+cdirp.Sprint(dirs[0]))
+			for i := 1; i < len(dirs); i++ {
+				printListln(w, pad+cdirp.Sprint(dirs[i]))
+			}
+		}
+		if wname <= wdlimit {
+			printListln(w, pad+cdip.Sprint(name))
+		} else {
+			var names = paw.Split(paw.Wrap(name, wdlimit), "\n")
+			printListln(w, pad+cdip.Sprint(names[0]))
+			for i := 1; i < len(names); i++ {
+				printListln(w, pad+cdip.Sprint(names[i]))
+			}
+		}
+	}
+	return w.String()
 }

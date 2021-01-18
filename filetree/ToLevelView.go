@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -46,15 +45,24 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		// wsize       = 6
 		// wdate       = 14
 		bannerWidth = sttyWidth - 2 - len(pad)
+		fds         = NewFieldSliceFrom(pfieldKeys, git)
+		chead       = fds.ColorHeadsString()
+		wdmeta      = fds.MetaHeadsStringWidth()
+		spmeta      = paw.Spaces(wdmeta)
+		// spx     = paw.Spaces(wdmeta)
+		ctdsize = ByteSize(f.totalSize)
 	)
 	buf.Reset()
 
-	chead, wmeta := levelHead(f, wNo)
-	wmeta -= 4 // remove `No. `
-	// spmeta := paw.Spaces(wmeta - 1)
-	spx := paw.Spaces(wmeta)
+	fdNo := &Field{
+		Key:    PFieldNone,
+		Name:   "No",
+		Width:  wNo,
+		Align:  paw.AlignLeft,
+		headcp: chdp,
+	}
 
-	ctdsize := ByteSize(f.totalSize)
+	fds.Insert(0, fdNo)
 
 	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getColorDirName(f.root, ""), KindLSColorString("di", ctdsize))
 	// fmt.Fprintln(w, head)
@@ -70,7 +78,8 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		sumsize := uint64(0)
 		nfiles := 0
 		ndirs := 0
-		ppad := pad
+		// level := len(fm[dir][0].DirSlice()) - 1
+		ppad := pad //+ paw.Spaces(4*level)
 		// sntd := ""
 		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
@@ -82,34 +91,36 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 				}
 			}
 		}
-		fpad := ppad
-		// if i > 1 {
-		// 	fpad += sppad
-		// }
+
 		if len(fm[dir]) > 1 {
-			printListln(w, fpad+chead)
+			chead, wdmeta = modifyHead(fds, fm[dir], ppad)
+			printListln(w, ppad+chead)
 		}
 		for _, file := range fm[dir][1:] {
-			cjstr := ""
+			jstr, cjstr := "", ""
 			if file.IsDir() {
 				ndirs, nsdirs = ndirs+1, nsdirs+1
-				jstr := fmt.Sprintf("D%-[1]*[2]d", j1, nsdirs)
+				jstr = fmt.Sprintf("D%-[1]*[2]d", j1, nsdirs)
 				cjstr = cdip.Sprint(jstr)
 			} else {
 				nfiles, ntfiles, j = nfiles+1, ntfiles+1, j+1
 				sumsize += file.Size
-				jstr := fmt.Sprintf("F%-[1]*[2]d", j1, ntfiles)
+				jstr = fmt.Sprintf("F%-[1]*[2]d", j1, ntfiles)
 				cjstr = cfip.Sprint(jstr)
 			}
-			printLevelWrappedFile(w, file, fpad, cjstr, git, wmeta)
+			fdNo.SetValue(jstr)
+			fdNo.SetColorfulValue(cjstr)
+			fds.SetValues(file, git)
+			fmt.Fprint(w, wrapFileName(file, fds, ppad, sttyWidth))
 
-			if isExtended {
-				fmt.Fprint(w, xattrEdgeString(file, fpad+spx, wmeta+len(fpad)))
+			if isExtended && len(file.XAttributes) > 0 {
+				spmeta = paw.Spaces(wdmeta)
+				fmt.Fprint(w, xattrEdgeString(file, ppad+spmeta, wdmeta+len(ppad)))
 			}
 		}
 		if f.depth != 0 {
 			if len(fm[dir]) > 1 {
-				printDirSummary(w, fpad, ndirs, nfiles, sumsize)
+				printDirSummary(w, ppad, ndirs, nfiles, sumsize)
 				switch {
 				case nsdirs < fNDirs && fNFiles == 0:
 					printListln(w, pad+paw.Repeat("-", bannerWidth))
@@ -132,110 +143,47 @@ END:
 	return buf.String()
 }
 
-func printLevelWrappedFile(w io.Writer, file *File, pad, cjstr string, git GitStatus, wmeta int) {
-	meta, wd := file.ColorMeta(git)
-	spmeta := paw.Spaces(wmeta)
-	wpad := paw.StringWidth(pad)
-	name := paw.TrimSpace(file.Name())
-	wname := paw.StringWidth(name)
-	if wpad+wmeta+wname <= sttyWidth {
-		cname := file.ColorName()
-		printListln(w, pad+cjstr, meta+cname)
-	} else {
-		end := sttyWidth - wpad - wd + 1
-		printListln(w, pad+cjstr, meta+file.LSColorString(name[:end]))
-		if paw.StringWidth(name[end:]) <= end {
-			printListln(w, pad+spmeta, file.LSColorString(name[end:]))
+func printLevelWrappedDir(w io.Writer, file *File, pad string, i1, i int) string {
+	var (
+		level     = len(file.DirSlice()) - 1 //len(paw.Split(dir, PathSeparator)) - 1
+		ppad      = pad + paw.Spaces(4*level)
+		wppad     = paw.StringWidth(ppad)
+		slevel    = fmt.Sprintf("L%d: ", level)
+		istr      = fmt.Sprintf("G%-[1]*[2]d", i1, i)
+		cistr     = slevel + cdip.Sprint(istr)
+		wistr     = paw.StringWidth(slevel) + paw.StringWidth(istr)
+		wpi       = wppad + wistr
+		dir, name = filepath.Split(file.Dir)
+		wdir      = paw.StringWidth(dir)
+		wname     = paw.StringWidth(name)
+	)
+
+	if wpi+wdir+wname > sttyWidth-4 {
+		var (
+			sp  = paw.Spaces(wistr + 1)
+			end = sttyWidth - wpi - 4
+		)
+		if wdir <= end {
+			printListln(w, ppad+cistr, "", cdirp.Sprint(dir))
 		} else {
-			names := paw.Split(paw.Wrap(name[end:], end), "\n")
-			for _, v := range names {
-				printListln(w, pad+spmeta, file.LSColorString(v))
+			var dirs = paw.Split(paw.Wrap(dir, end), "\n")
+			printListln(w, ppad+cistr, "", cdirp.Sprint(dirs[0]))
+			for i := 1; i < len(dirs); i++ {
+				printListln(w, ppad+sp, cdirp.Sprint(dirs[i]))
 			}
 		}
-	}
-}
-
-func printLevelWrappedDir(w io.Writer, file *File, ppad string, i1, i int) string {
-	level := len(file.DirSlice()) - 1 //len(paw.Split(dir, PathSeparator)) - 1
-	ppad += paw.Spaces(4 * level)
-	slevel := fmt.Sprintf("L%d: ", level)
-	istr := fmt.Sprintf("G%-[1]*[2]d", i1, i)
-	cistr := cdip.Sprint(istr)
-	cistr = slevel + cistr
-	dir, name := filepath.Split(file.Dir)
-	wppad := paw.StringWidth(ppad)
-	wistr := len(slevel) + len(istr)
-	wpi := wppad + wistr
-	wdir := len(dir)
-	wname := paw.StringWidth(name)
-	if wpi+wdir+wname > sttyWidth-4 {
-		sp := paw.Spaces(wistr + 1)
-		end := sttyWidth - wpi - 4
-		if len(dir) < end {
-			nend := end - len(dir)
-			printListln(w, ppad+cistr, "", cdirp.Sprint(dir)+cdip.Sprint(name[:nend]))
-			printListln(w, ppad+sp, "", cdip.Sprint(name[nend:]))
+		if wname <= end {
+			printListln(w, ppad+sp, cdip.Sprint(name))
 		} else {
-			printListln(w, ppad+cistr, "", cdirp.Sprint(dir[:end]))
-			printListln(w, ppad+sp, "", cdirp.Sprint(dir[end:])+cdip.Sprint(name))
+			var names = paw.Split(paw.Wrap(name, end), "\n")
+			printListln(w, ppad+sp, cdip.Sprint(names[0]))
+			for i := 1; i < len(names); i++ {
+				printListln(w, ppad+sp, cdip.Sprint(names[i]))
+			}
 		}
 	} else {
-		// cname := GetColorizedDirName(dir, f.root)
-		cname := cdirp.Sprint(dir) + cdip.Sprint(name)
+		var cname = cdirp.Sprint(dir) + cdip.Sprint(name)
 		printListln(w, ppad+cistr, "", cname)
 	}
 	return ppad
-}
-
-func xattrEdgeString(file *File, pad string, wmeta int) string {
-	nx := len(file.XAttributes)
-	sb := new(strings.Builder)
-	if nx > 0 {
-		edge := EdgeTypeMid
-		for i := 0; i < nx; i++ {
-			wdm := wmeta
-			xattr := file.XAttributes[i]
-			if i == nx-1 {
-				edge = EdgeTypeEnd
-			}
-			padx := fmt.Sprintf("%s %s ", pad, cdashp.Sprint(edge))
-			wdm += edgeWidth[edge] + 2
-			wdx := len(xattr)
-			if wdm+wdx <= sttyWidth-2 {
-				printListln(sb, padx+cxp.Sprint(xattr))
-			} else {
-				wde := sttyWidth - 2 - wdm
-				printListln(sb, padx+cxp.Sprint(xattr[:wde]))
-				switch edge {
-				case EdgeTypeMid:
-					padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(EdgeTypeLink)+SpaceIndentSize)
-				case EdgeTypeEnd:
-					padx = fmt.Sprintf("%s %s ", pad, paw.Spaces(edgeWidth[edge]))
-				}
-				if len(xattr[wde:]) <= wde {
-					printListln(sb, padx+cxp.Sprint(xattr[wde:]))
-				} else {
-					xattrs := paw.Split(paw.Wrap(xattr[wde:], wde), "\n")
-					for _, v := range xattrs {
-						printListln(sb, padx+cxp.Sprint(v))
-					}
-				}
-			}
-		}
-	}
-	return sb.String()
-}
-
-func levelHead(f *FileList, wNo int) (chead string, width int) {
-	sb := new(strings.Builder)
-	csb := new(strings.Builder)
-	sno := fmt.Sprintf("%-[1]*[2]s", wNo, "No")
-	fmt.Fprintf(sb, "%s ", sno)
-	fmt.Fprintf(csb, "%s ", chdp.Sprint(sno))
-	chead, width = f.GetHead4Meta("", urname, gpname, f.GetGitStatus())
-	fmt.Fprintf(csb, "%s ", chead)
-	width += paw.StringWidth(sno)
-	chead = csb.String()
-
-	return chead, width
 }

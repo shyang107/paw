@@ -1,7 +1,6 @@
 package filetree
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/shyang107/paw"
@@ -41,19 +40,46 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			Padding:   pad,
 			IsWrapped: true,
 		}
-		field1 = "  No."
-		nfds   = len(pfields) + 1
+
+		nfds = len(pfields) + 1
+		fds  = NewFieldSliceFrom(pfieldKeys, git)
+		wNo  = len(fmt.Sprint(f.NFiles())) + 1
+		fdNo = &Field{
+			Key:   PFieldNone,
+			Name:  "No",
+			Width: wNo,
+			Align: paw.AlignRight,
+			// headcp: chdp,
+		}
 	)
 	buf.Reset()
+	// f.DisableColor()
 
-	f.DisableColor()
+	fds.Insert(0, fdNo)
 
-	tf, err := newTable(pad, sttywd, field1, git)
-	if err != nil {
-		tf = deftf
+	tf := &paw.TableFormat{
+		Fields:    fds.Heads(),
+		LenFields: fds.HeadWidths(),
+		Aligns:    fds.HeadAligns(),
+		Padding:   pad,
+		IsWrapped: true,
 	}
-	nfds = tf.NFields()
 
+	wdmeta := fds.MetaValuesStringWidth()
+	if wdmeta > sttywd-10 {
+		tf = deftf
+	} else {
+		fds.Get(PFieldName).Width = sttywd - wdmeta
+	}
+	modifySizeWidth(fds, f)
+
+	// spmeta := pad + paw.Spaces(wdmeta)
+
+	tf.LenFields = fds.HeadWidths()
+
+	fdName := fds.Get(PFieldName)
+
+	nfds = tf.NFields()
 	tf.Prepare(w)
 	// tf.SetWrapFields()
 
@@ -65,28 +91,40 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	j := 0
 	ndirs, nfiles := 0, 0
 	for i, dir := range dirs {
-		sumsize := uint64(0)
 		idx := fmt.Sprintf("G%d", i)
+		fdNo.SetValue(idx)
 		if len(fm[dir]) < 2 {
 			continue
 		}
+		nsubdir, nsubfiles, sumsize := 0, 0, uint64(0)
 		for jj, file := range fm[dir] {
 			jdx := ""
 			if file.IsDir() {
-				if !paw.EqualFold(file.Dir, RootMark) {
+				if jj != 0 && !paw.EqualFold(file.Dir, RootMark) {
 					ndirs++
+					nsubdir++
 				}
 				jdx = fmt.Sprintf("d%d", ndirs)
 			} else {
 				sumsize += file.Size
 				j++
 				nfiles++
+				nsubfiles++
 				jdx = fmt.Sprintf("%d", nfiles)
 			}
-			values := getRowValues(f, jj, len(fm[dir]), idx, jdx, file, git, nfds)
-			// spew.Dump(values)
+
+			fds.SetValues(file, git)
+
+			if jj > 0 {
+				fdNo.SetValue(jdx)
+			} else { //jj==0
+				fdName.SetValue(file.Dir)
+			}
+
+			values := fds.Values()
 			tf.PrintRow(values...)
-			if isExtended {
+
+			if isExtended && len(file.XAttributes) > 0 {
 				values := make([]interface{}, nfds)
 				nx := len(file.XAttributes)
 				if nx > 0 {
@@ -95,165 +133,45 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 						if i == nx-1 {
 							edge = EdgeTypeEnd
 						}
-						values[nfds-1] = string(edge) + " " + x
-						// values[nfds-1] = string(edge) + "▶︎ " + x
-						tf.PrintRow(values...)
+						wde := edgeWidth[edge] + 1
+						wdx := sttywd - wdmeta - wde - 3
+						wx := paw.StringWidth(x)
+						if wx <= wdx {
+							values[nfds-1] = string(edge) + " " + x
+							tf.PrintRow(values...)
+						} else {
+							xs := paw.Split(paw.Wrap(x, wdx), "\n")
+							values[nfds-1] = string(edge) + " " + xs[0]
+							tf.PrintRow(values...)
+							padx := ""
+							switch edge {
+							case EdgeTypeMid:
+								padx = fmt.Sprintf("%s%s", EdgeTypeLink, SpaceIndentSize)
+							case EdgeTypeEnd:
+								padx = fmt.Sprintf("%s ", paw.Spaces(edgeWidth[edge]))
+							}
+							for i := 1; i < len(xs); i++ {
+								values[nfds-1] = padx + xs[i]
+								tf.PrintRow(values...)
+							}
+
+						}
 					}
 				}
 			}
 		}
 		if f.depth != 0 {
-			// printDirSummary(buf, pad, ndirs, nfiles, sumsize)
-			// tf.PrintRow("", "", "", fmt.Sprintf("%v directories, %v files, size: %v.", ndirs, nfiles, ByteSize(sumsize)))
-			fmt.Fprintln(w, fmt.Sprintf("%s%v directories, %v files, size: %v.", pad+paw.Spaces(paw.StringWidth(field1)+1), ndirs, nfiles, ByteSize(sumsize)))
-			if i != len(dirs)-1 {
+			fmt.Fprintln(w, fmt.Sprintf("%s%v directories, %v files, size: %v.", pad+paw.Spaces(fdNo.Width+1), nsubdir, nsubfiles, ByteSize(sumsize)))
+			if i < len(dirs)-1 && ndirs < nDirs {
 				tf.PrintMiddleSepLine()
 			}
 		}
 	}
 
-	tf.SetAfterMessage(fmt.Sprintf("\nAccumulated %v directories, %v files, total %v.", nDirs, nFiles, ByteSize(f.totalSize)))
+	tf.SetAfterMessage(fmt.Sprintf("Accumulated %v directories, %v files, total %v.", nDirs, nFiles, ByteSize(f.totalSize)))
 	tf.PrintEnd()
 
-	f.EnableColor()
+	// f.EnableColor()
 
 	return buf.String()
-}
-func getRowValues(fl *FileList, j, nfiles int, idx, jdx string, file *File, git GitStatus, nfds int) (values []interface{}) {
-	sfsize := "-"
-	if j == 0 && file.IsDir() {
-		values = append(values, idx)
-		for k := 0; k < len(pfields); k++ {
-			key := pfieldKeys[k]
-			switch key {
-			case PFieldGit:
-				if git.NoGit {
-					continue
-				} else {
-					values = append(values, getFileValue(file, key, git))
-				}
-			case PFieldSize:
-				if fl.depth == 0 && nfiles > 1 && !paw.EqualFold(file.Dir, RootMark) {
-					if key&PFieldSize != 0 {
-						values = append(values, sfsize)
-					}
-				} else {
-					values = append(values, getFileValue(file, key, git))
-				}
-			case PFieldName:
-				dir, name := "", ""
-				if paw.EqualFold(file.Dir, RootMark) {
-					dir, name = getDirAndName(file.Path, "")
-				} else {
-					dir, name = getDirAndName(file.Path, fl.root)
-				}
-				if file.IsLink() {
-					values = append(values, dir+" -> "+name)
-				} else {
-					values = append(values, dir+name)
-				}
-			default:
-				values = append(values, getFileValue(file, key, git))
-			}
-		}
-		return values
-	}
-
-	values = append(values, jdx)
-	for k := 0; k < len(pfields); k++ {
-		key := pfieldKeys[k]
-		switch key {
-		case PFieldGit:
-			if git.NoGit {
-				continue
-			} else {
-				values = append(values, getFileValue(file, key, git))
-			}
-		case PFieldSize:
-			if file.IsDir() {
-				values = append(values, sfsize)
-			} else {
-				values = append(values, getFileValue(file, key, git))
-			}
-		default:
-			values = append(values, getFileValue(file, key, git))
-		}
-	}
-	return values
-}
-
-func getFileValue(file *File, key PDFieldFlag, git GitStatus) (value interface{}) {
-	switch key {
-	case PFieldINode: //"inode",
-		value = file.INode()
-	case PFieldPermissions: //"Permissions",
-		value = file.Permission()
-	case PFieldLinks: //"Links",
-		value = file.NLinks()
-	case PFieldSize: //"Size",
-		value = ByteSize(file.Size)
-	case PFieldBlocks: //"Blocks",
-		value = file.NLinks()
-	case PFieldUser: //"User",
-		value = urname
-	case PFieldGroup: //"Group",
-		value = gpname
-	case PFieldModified: //"Date Modified",
-		value = DateString(file.ModifiedTime())
-	case PFieldCreated: //"Date Created",
-		value = DateString(file.CreatedTime())
-	case PFieldAccessed: //"Date Accessed",
-		value = DateString(file.AccessedTime())
-	case PFieldGit: //"Git",
-		value = getGitStatus(git, file)
-	case PFieldName: //"Name",
-		value = file.Name()
-	}
-	return value
-}
-
-func newTable(pad string, sttywd int, field1 string, git GitStatus) (*paw.TableFormat, error) {
-	var (
-		nfds = len(pfields) + 1
-	)
-	var fds []string
-	var lenfds []int
-	var aligns []paw.Align
-	fds = append(fds, field1)
-	lenfds = append(lenfds, len(field1))
-	aligns = append(aligns, paw.AlignRight)
-	for _, k := range pfieldKeys {
-		switch k {
-		case PFieldPermissions, PFieldUser, PFieldGroup, PFieldModified, PFieldCreated, PFieldAccessed, PFieldName:
-			fds = append(fds, pfieldsMap[k])
-			lenfds = append(lenfds, pfieldWidthsMap[k])
-			aligns = append(aligns, paw.AlignLeft)
-		case PFieldGit:
-			if git.NoGit {
-				continue
-			} else {
-				fds = append(fds, pfieldsMap[k])
-				lenfds = append(lenfds, pfieldWidthsMap[k])
-				aligns = append(aligns, paw.AlignRight)
-			}
-		default:
-			fds = append(fds, pfieldsMap[k])
-			lenfds = append(lenfds, pfieldWidthsMap[k])
-			aligns = append(aligns, paw.AlignRight)
-		}
-	}
-	nfds = len(lenfds)
-	lenfds[nfds-1] = sttywd - paw.SumInts(lenfds[:nfds-1]...) - nfds + 1
-
-	if paw.SumInts(lenfds...) > sttywd {
-		return nil, errors.New("too many fields")
-	}
-	tf := &paw.TableFormat{
-		Fields:    fds,
-		LenFields: lenfds,
-		Aligns:    aligns,
-		Padding:   pad,
-		IsWrapped: true,
-	}
-	return tf, nil
 }

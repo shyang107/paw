@@ -1,6 +1,7 @@
 package filetree
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -476,7 +477,7 @@ func (s *sizesStack) Accumulate(i int64) {
 	s.sizes[s.top] += i
 }
 
-func printListln(w io.Writer, items ...string) {
+func printListln(w io.Writer, items ...interface{}) {
 	sb := new(strings.Builder)
 	sb.Grow(len(items))
 	for i := 0; i < len(items); i++ {
@@ -487,6 +488,9 @@ func printListln(w io.Writer, items ...string) {
 		}
 	}
 	fmt.Fprintln(w, sb.String())
+}
+
+func printFileName(w io.Writer, pad string, fds *FieldSlice, fdNo *Field, file *File) {
 }
 
 func DateString(date time.Time) (sdate string) {
@@ -501,4 +505,152 @@ func DateString(date time.Time) (sdate string) {
 // The length of placeholder in terminal is 14.
 func GetColorizedTime(date time.Time) string {
 	return cdap.Sprint(DateString(date))
+}
+
+func wrapFileName(file *File, fds *FieldSlice, pad string, wdstty int) string {
+	var (
+		sb     = new(strings.Builder)
+		wpad   = paw.StringWidth(pad)
+		meta   = fds.ColorMetaValuesString()
+		wmeta  = fds.MetaValuesStringWidth()
+		spmeta = paw.Spaces(wmeta)
+		name   = file.BaseNameToLink()
+		wname  = paw.StringWidth(name)
+		limit  = wdstty - wpad - wmeta - 2
+	)
+	if wname <= limit {
+		printListln(sb, pad+meta+file.ColorName())
+	} else { // wrap file name
+		if err := checkStringRange(name, limit, "Name"); err != nil {
+			paw.Error.Fatal(err, " (may be too many fields)")
+		}
+		if !file.IsLink() {
+			names := paw.Split(paw.Wrap(name, limit), "\n")
+			printListln(sb, pad+meta+file.LSColorString(names[0]))
+			for i := 1; i < len(names); i++ {
+				printListln(sb, pad+spmeta+file.LSColorString(names[i]))
+			}
+		} else {
+			cname := file.LSColorString(file.BaseName)
+			wbname := paw.StringWidth(file.BaseName)
+			carrow := cdashp.Sprint(" -> ")
+			wbname += 4
+			printListln(sb, pad+meta+cname+carrow)
+			link := file.LinkPath()
+			if paw.StringWidth(link) <= limit {
+				printListln(sb, pad+spmeta+cdirp.Sprint(link))
+			} else {
+				links := paw.Split(paw.Wrap(link, limit), "\n")
+				printListln(sb, pad+spmeta+cdirp.Sprint(links[0]))
+				for i := 1; i < len(links); i++ {
+					printListln(sb, pad+spmeta+cdirp.Sprint(links[i]))
+				}
+			}
+		}
+	}
+
+	return sb.String()
+}
+
+func xattrEdgeString(file *File, pad string, wmeta int) string {
+	var (
+		nx = len(file.XAttributes)
+		sb = new(strings.Builder)
+	)
+	if nx > 0 {
+		var edge = EdgeTypeMid
+		for i := 0; i < nx; i++ {
+			var wdm = wmeta
+			xattr := file.XAttributes[i]
+			if i == nx-1 {
+				edge = EdgeTypeEnd
+			}
+			var padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(edge))
+			wdm += edgeWidth[edge] + 2
+			var wdx = len(xattr)
+			if wdm+wdx <= sttyWidth-2 {
+				printListln(sb, padx+cxp.Sprint(xattr))
+			} else {
+				var wde = sttyWidth - 2 - wdm
+				if err := checkStringRange(xattr, wde, "xattr"); err != nil {
+					paw.Error.Fatal(err, " (may be too many fields)")
+				}
+				printListln(sb, padx+cxp.Sprint(xattr[:wde]))
+				switch edge {
+				case EdgeTypeMid:
+					padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(EdgeTypeLink)+SpaceIndentSize)
+				case EdgeTypeEnd:
+					padx = fmt.Sprintf("%s %s ", pad, paw.Spaces(edgeWidth[edge]))
+				}
+				if err := checkStringRange(xattr, wde, "xattr"); err != nil {
+					paw.Error.Fatal(err, "may be too many fields")
+				}
+				if len(xattr[wde:]) <= wde {
+					printListln(sb, padx+cxp.Sprint(xattr[wde:]))
+				} else {
+					xattrs := paw.Split(paw.Wrap(xattr[wde:], wde), "\n")
+					for _, v := range xattrs {
+						printListln(sb, padx+cxp.Sprint(v))
+					}
+				}
+			}
+		}
+	}
+	return sb.String()
+}
+
+func checkStringRange(s string, idx int, name string) error {
+	var ns = len(s)
+	if idx < 0 || idx > ns-1 {
+		return errors.New(fmt.Sprintf("slice (%s) bounds out of range,len(slice) = %d, index: %d", name, ns, idx))
+	}
+	return nil
+}
+
+func getMaxFileSizeWidth(files []*File) int {
+	var (
+		wdsize = 0
+	)
+	for _, f := range files {
+		var size = ByteSize(f.Size)
+		if wdsize < len(size) {
+			wdsize = len(size)
+		}
+	}
+	return wdsize
+}
+
+func modifyHead(fds *FieldSlice, files []*File, pad string) (chead string, wdmeta int) {
+	wdsize := getMaxFileSizeWidth(files)
+	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
+	chead = fds.ColorHeadsString()
+	wdmeta = fds.MetaHeadsStringWidth() + paw.StringWidth(pad)
+	return chead, wdmeta
+}
+
+func modifyTreeHead(fds *FieldSlice, fl *FileList, pad string) (chead string, wdmeta int) {
+	wdsize := 0
+	for _, dir := range fl.Dirs() {
+		files := fl.Map()[dir][1:]
+		wd := getMaxFileSizeWidth(files)
+		if wdsize < wd {
+			wdsize = wd
+		}
+	}
+	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
+	chead = fds.ColorHeadsString()
+	wdmeta = fds.MetaHeadsStringWidth() + paw.StringWidth(pad)
+	return chead, wdmeta
+}
+
+func modifySizeWidth(fds *FieldSlice, fl *FileList) {
+	wdsize := 0
+	for _, dir := range fl.Dirs() {
+		files := fl.Map()[dir][1:]
+		wd := getMaxFileSizeWidth(files)
+		if wdsize < wd {
+			wdsize = wd
+		}
+	}
+	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
 }

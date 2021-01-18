@@ -61,7 +61,7 @@ var (
 		PFieldINode:       paw.MaxInt(8, len(pfieldsMap[PFieldINode])),
 		PFieldPermissions: paw.MaxInt(11, len(pfieldsMap[PFieldPermissions])),
 		PFieldLinks:       paw.MaxInt(2, len(pfieldsMap[PFieldLinks])),
-		PFieldSize:        paw.MaxInt(6, len(pfieldsMap[PFieldSize])),
+		PFieldSize:        paw.MaxInt(4, len(pfieldsMap[PFieldSize])),
 		PFieldBlocks:      paw.MaxInt(6, len(pfieldsMap[PFieldBlocks])),
 		PFieldUser:        paw.MaxInt(paw.StringWidth(urname), len(pfieldsMap[PFieldUser])),
 		PFieldGroup:       paw.MaxInt(paw.StringWidth(gpname), len(pfieldsMap[PFieldGroup])),
@@ -135,7 +135,7 @@ type Field struct {
 	Width   int
 	Value   interface{}
 	valueC  interface{}
-	align   paw.Align
+	Align   paw.Align
 	valuecp *color.Color
 	headcp  *color.Color
 }
@@ -148,7 +148,7 @@ func NewField(flag PDFieldFlag) *Field {
 		Value:   nil,
 		valueC:  nil,
 		valuecp: pfieldCPMap[flag],
-		align:   pfieldAlignMap[flag],
+		Align:   pfieldAlignMap[flag],
 		headcp:  chdp,
 	}
 }
@@ -167,7 +167,7 @@ func (f *Field) SetValueColor(c *color.Color) {
 
 func (f *Field) ValueString() string {
 	s := ""
-	switch f.align {
+	switch f.Align {
 	case paw.AlignLeft:
 		s = fmt.Sprintf("%-[1]*[2]v", f.Width, f.Value)
 	default:
@@ -175,6 +175,7 @@ func (f *Field) ValueString() string {
 	}
 	return s
 }
+
 func (f *Field) ColorValueString() string {
 	s := f.ValueString()
 	if f.valuecp != nil {
@@ -188,7 +189,7 @@ func (f *Field) ColorValueString() string {
 
 func (f *Field) HeadString() string {
 	s := ""
-	switch f.align {
+	switch f.Align {
 	case paw.AlignLeft:
 		s = fmt.Sprintf("%-[1]*[2]v", f.Width, f.Name)
 	default:
@@ -224,13 +225,30 @@ func NewFieldSliceFrom(keys []PDFieldFlag, git GitStatus) (fds *FieldSlice) {
 	return f
 }
 
+func fdColorizedSize(size uint64, width int) (csize string) {
+	ss := ByteSize(size)
+	nss := len(ss)
+	sn := fmt.Sprintf("%[1]*[2]s", width-1, ss[:nss-1])
+	su := paw.ToLower(ss[nss-1:])
+	cn := NewEXAColor("sn")
+	cu := NewEXAColor("sb")
+	csize = cn.Sprint(sn) + cu.Sprint(su)
+	return csize
+}
+
 func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 	for _, fd := range f.fds {
 		switch fd.Key {
 		case PFieldINode: //"inode",
 			fd.SetValue(file.INode())
 		case PFieldPermissions: //"Permissions",
-			fd.SetValue(file.Stat.Mode())
+			perm := fmt.Sprintf("%v", file.Stat.Mode())
+			if len(file.XAttributes) > 0 {
+				perm += "@"
+			} else {
+				perm += " "
+			}
+			fd.SetValue(perm)
 			fd.SetColorfulValue(file.ColorPermission())
 		case PFieldLinks: //"Links",
 			fd.SetValue(file.NLinks())
@@ -239,8 +257,9 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				fd.SetValue("-")
 				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
 			} else {
+				csize := fdColorizedSize(file.Size, fd.Width)
 				fd.SetValue(ByteSize(file.Size))
-				fd.SetColorfulValue(file.ColorSize())
+				fd.SetColorfulValue(csize)
 			}
 		case PFieldBlocks: //"User",
 			if file.IsDir() {
@@ -298,17 +317,36 @@ func (f *FieldSlice) Insert(startIndex int, fds ...*Field) {
 	if len(fds) == 0 {
 		return
 	}
+
+	tmp := make([]*Field, f.Count()+len(fds))
 	if startIndex < 0 || startIndex > len(f.fds)-1 { // append to tail
-		f.fds = append(f.fds, fds...)
+		copy(tmp[:f.Count()], f.fds)
+		copy(tmp[f.Count():], fds)
+		f.fds = make([]*Field, f.Count()+len(fds))
+		copy(f.fds, tmp)
 		return
 	}
 	if startIndex == 0 {
-		f.fds = append(fds, f.fds...)
+		copy(tmp[:len(fds)], fds)
+		copy(tmp[len(fds):], f.fds)
+		f.fds = make([]*Field, f.Count()+len(fds))
+		copy(f.fds, tmp)
 		return
 	}
-	tmp := f.fds[:startIndex]
-	f.fds = append(tmp, fds...)
-	f.fds = append(f.fds, tmp...)
+	copy(tmp[:startIndex], f.fds[:startIndex])
+	copy(tmp[startIndex:startIndex+len(fds)], fds)
+	copy(tmp[startIndex+len(fds):], f.fds[startIndex:])
+	f.fds = make([]*Field, f.Count()+len(fds))
+	copy(f.fds, tmp)
+}
+
+func (f *FieldSlice) Get(key PDFieldFlag) *Field {
+	for _, fd := range f.fds {
+		if fd.Key&key != 0 {
+			return fd
+		}
+	}
+	return nil
 }
 
 func (f *FieldSlice) Heads() []string {
@@ -319,6 +357,25 @@ func (f *FieldSlice) Heads() []string {
 	}
 	return hds
 }
+
+func (f *FieldSlice) HeadWidths() []int {
+	hds := make([]int, f.Count())
+	for i := 0; i < f.Count(); i++ {
+		fd := f.fds[i]
+		hds[i] = fd.Width
+	}
+	return hds
+}
+
+func (f *FieldSlice) HeadAligns() []paw.Align {
+	hds := make([]paw.Align, f.Count())
+	for i := 0; i < f.Count(); i++ {
+		fd := f.fds[i]
+		hds[i] = fd.Align
+	}
+	return hds
+}
+
 func (f *FieldSlice) HeadsString() string {
 	sb := new(strings.Builder)
 	for i := 0; i < f.Count(); i++ {
@@ -369,7 +426,16 @@ func (f *FieldSlice) ColorHeadsString() string {
 	return w.String()
 }
 
-func (f *FieldSlice) Values() []string {
+func (f *FieldSlice) Values() []interface{} {
+	vals := make([]interface{}, f.Count())
+	for i := 0; i < f.Count(); i++ {
+		fd := f.fds[i]
+		vals[i] = fd.Value
+	}
+	return vals
+}
+
+func (f *FieldSlice) ValuesString() []string {
 	vals := make([]string, f.Count())
 	for i := 0; i < f.Count(); i++ {
 		fd := f.fds[i]
