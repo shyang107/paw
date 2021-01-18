@@ -3,7 +3,6 @@ package filetree
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -124,7 +123,7 @@ END:
 
 func wrapDir(dirName, pad string, wdlimit int) string {
 	var (
-		w         = new(strings.Builder)
+		w         = paw.NewStringBuilder()
 		dir, name = filepath.Split(dirName)
 		wdir      = paw.StringWidth(dir)
 		wname     = paw.StringWidth(name)

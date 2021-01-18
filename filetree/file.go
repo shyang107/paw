@@ -461,8 +461,8 @@ func (f *File) ColorMeta(git GitStatus) (string, int) {
 }
 
 func getMeta(file *File, git GitStatus) (string, int) {
-	sb := new(strings.Builder)
-	csb := new(strings.Builder)
+	sb := paw.NewStringBuilder()
+	csb := paw.NewStringBuilder()
 	for _, k := range pfieldKeys {
 		field, cfield := "", ""
 		switch k {
@@ -526,7 +526,7 @@ func getMeta(file *File, git GitStatus) (string, int) {
 	chead = chead[:len(chead)-1]
 	return chead, width
 	// width := 0
-	// sb := new(strings.Builder)
+	// sb := paw.NewStringBuilder()
 	// cperm := file.ColorPermission()
 	// width += paw.StringWidth(fmt.Sprintf("%v", file.Stat.Mode())) + 2
 

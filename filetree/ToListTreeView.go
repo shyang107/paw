@@ -3,7 +3,6 @@ package filetree
 import (
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -99,7 +98,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	edge EdgeType, fl *FileList, file *File, fds *FieldSlice, git GitStatus, pad string, isExtended bool, wmeta int) {
 
 	fds.SetValues(file, git)
-	sb := new(strings.Builder)
+	sb := paw.NewStringBuilder()
 	meta := pad
 	padMeta := ""
 	if pdview == PListTreeView {
@@ -141,7 +140,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 // func printLTFile(wr io.Writer, level int, levelsEnded []int,
 // 	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool, wmeta int) {
 
-// 	sb := new(strings.Builder)
+// 	sb := paw.NewStringBuilder()
 // 	meta := pad
 // 	if pdview == PListTreeView {
 // 		tmeta, _ := file.ColorMeta(git)
@@ -175,7 +174,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 // }
 
 func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wmeta int) string {
-	sb := new(strings.Builder)
+	sb := paw.NewStringBuilder()
 	cdinf, ndinf := "", 0
 	if file.IsDir() && fl.depth == -1 {
 		cdinf, ndinf = fl.DirInfo(file)
@@ -218,7 +217,7 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 
 func xattrLTString(file *File, pad string, edge EdgeType, padx string, wmeta int) string {
 	nx := len(file.XAttributes)
-	sb := new(strings.Builder)
+	sb := paw.NewStringBuilder()
 	if nx > 0 {
 		// edge := EdgeTypeMid
 		for i := 0; i < nx; i++ {

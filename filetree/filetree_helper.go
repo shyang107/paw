@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"strings"
 
 	"time"
 
@@ -351,8 +350,8 @@ func getColorizedDates(file *File) (cdate string, wd int) {
 }
 
 func getColorizedHead(pad, username, groupname string, git GitStatus) (chead string, width int) {
-	sb := new(strings.Builder)
-	csb := new(strings.Builder)
+	sb := paw.NewStringBuilder()
+	csb := paw.NewStringBuilder()
 	sb.WriteString(pad)
 	csb.WriteString(pad)
 	for i, k := range pfieldKeys {
@@ -478,7 +477,7 @@ func (s *sizesStack) Accumulate(i int64) {
 }
 
 func printListln(w io.Writer, items ...interface{}) {
-	sb := new(strings.Builder)
+	sb := paw.NewStringBuilder()
 	sb.Grow(len(items))
 	for i := 0; i < len(items); i++ {
 		if i < len(items)-1 {
@@ -509,7 +508,7 @@ func GetColorizedTime(date time.Time) string {
 
 func wrapFileName(file *File, fds *FieldSlice, pad string, wdstty int) string {
 	var (
-		sb     = new(strings.Builder)
+		sb     = paw.NewStringBuilder()
 		wpad   = paw.StringWidth(pad)
 		meta   = fds.ColorMetaValuesString()
 		wmeta  = fds.MetaValuesStringWidth()
@@ -590,7 +589,7 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdstty int) string {
 func xattrEdgeString(file *File, pad string, wmeta int) string {
 	var (
 		nx = len(file.XAttributes)
-		sb = new(strings.Builder)
+		sb = paw.NewStringBuilder()
 	)
 	if nx > 0 {
 		var edge = EdgeTypeMid

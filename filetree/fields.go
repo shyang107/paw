@@ -2,7 +2,6 @@ package filetree
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
@@ -377,7 +376,7 @@ func (f *FieldSlice) HeadAligns() []paw.Align {
 }
 
 func (f *FieldSlice) HeadsString() string {
-	sb := new(strings.Builder)
+	sb := paw.NewStringBuilder()
 	for i := 0; i < f.Count(); i++ {
 		fd := f.fds[i]
 		if i < f.Count()-1 {
@@ -415,7 +414,7 @@ func (f *FieldSlice) ColorHeads() []string {
 }
 
 func (f *FieldSlice) ColorHeadsString() string {
-	w := new(strings.Builder)
+	w := paw.NewStringBuilder()
 	for i, h := range f.ColorHeads() {
 		if i < f.Count() {
 			fmt.Fprintf(w, "%s ", h)
@@ -468,7 +467,7 @@ func (f *FieldSlice) MetaValues() []string {
 }
 
 func (f *FieldSlice) MetaValuesString() string {
-	sb := new(strings.Builder)
+	sb := paw.NewStringBuilder()
 	for i, h := range f.MetaValues() {
 		if i < f.Count()-1 {
 			fmt.Fprintf(sb, "%s ", h)
@@ -499,7 +498,7 @@ func (f *FieldSlice) ColorMetaValues() []string {
 }
 
 func (f *FieldSlice) ColorMetaValuesString() string {
-	sb := new(strings.Builder)
+	sb := paw.NewStringBuilder()
 	for i, h := range f.ColorMetaValues() {
 		if i < f.Count() {
 			fmt.Fprintf(sb, "%s ", h)

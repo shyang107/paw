@@ -45,7 +45,7 @@ func NewFileList(root string) *FileList {
 		root:          root,
 		store:         make(map[string][]*File),
 		dirs:          []string{},
-		stringBuilder: new(strings.Builder),
+		stringBuilder: paw.NewStringBuilder(),
 		IsSort:        true,
 		filesBy:       nil,
 		dirsBy:        nil,
@@ -60,7 +60,7 @@ func NewFileList(root string) *FileList {
 func (f FileList) String() string {
 	// fmt.Printf("%#v\n", f.writer)
 	// oldwr := f.writer
-	// f.SetWriters(new(strings.Builder))
+	// f.SetWriters(paw.NewStringBuilder())
 	f.DisableColor()
 	str := f.ToLevelView("", false)
 	f.EnableColor()
