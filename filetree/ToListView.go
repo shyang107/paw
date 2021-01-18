@@ -90,7 +90,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 
 			if isExtended && len(file.XAttributes) > 0 {
 				sp := paw.Spaces(wdmeta)
-				fmt.Fprint(w, xattrEdgeString(file, sp, wdmeta))
+				fmt.Fprint(w, xattrEdgeString(file, sp, wdmeta, bannerWidth))
 			}
 		}
 

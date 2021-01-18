@@ -506,7 +506,7 @@ func GetColorizedTime(date time.Time) string {
 	return cdap.Sprint(DateString(date))
 }
 
-func wrapFileName(file *File, fds *FieldSlice, pad string, wdstty int) string {
+func wrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) string {
 	var (
 		sb     = paw.NewStringBuilder()
 		wpad   = paw.StringWidth(pad)
@@ -515,39 +515,40 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdstty int) string {
 		spmeta = paw.Spaces(wmeta)
 		name   = file.BaseNameToLink()
 		wname  = paw.StringWidth(name)
+		wdstty = wdsttylimit - 1
 		limit  = wdstty - wpad - wmeta
 	)
 	if wname <= limit {
-		printListln(sb, pad+meta+file.ColorName())
+		printListln(sb, pad+meta, file.ColorName())
 	} else { // wrap file name
 		if err := checkStringRange(name, limit, "Name"); err != nil {
 			paw.Error.Fatal(err, " (may be too many fields)")
 		}
 		if !file.IsLink() {
 			names := paw.WrapToSlice(name, limit)
-			printListln(sb, pad+meta+file.LSColorString(names[0]))
+			printListln(sb, pad+meta, file.LSColorString(names[0]))
 			for i := 1; i < len(names); i++ {
-				printListln(sb, pad+spmeta+file.LSColorString(names[i]))
+				printListln(sb, pad+spmeta, file.LSColorString(names[i]))
 			}
 		} else {
 			cname := file.LSColorString(file.BaseName)
 			wbname := paw.StringWidth(file.BaseName)
 			carrow := cdashp.Sprint(" -> ")
 			wbname += 4
-			printListln(sb, pad+meta+cname+carrow)
+			printListln(sb, pad+meta, cname+carrow)
 			dir, name := filepath.Split(file.LinkPath())
 			wd, wn := paw.StringWidth(dir), paw.StringWidth(name)
 
 			if wd+wn <= limit {
-				printListln(sb, pad+spmeta+cdirp.Sprint(dir)+cdip.Sprint(name))
+				printListln(sb, pad+spmeta, cdirp.Sprint(dir)+cdip.Sprint(name))
 			} else {
 				if wd <= limit {
 					clink := cdirp.Sprint(dir) + cdip.Sprint(name[:limit-wd])
-					printListln(sb, pad+spmeta+clink)
+					printListln(sb, pad+spmeta, clink)
 					names := paw.WrapToSlice(name[limit-wd:], limit)
 					for _, v := range names {
 						clink = cdip.Sprint(v)
-						printListln(sb, pad+spmeta+clink)
+						printListln(sb, pad+spmeta, clink)
 					}
 				} else { // wd > limit
 					dirs := paw.WrapToSlice(dir, limit)
@@ -555,26 +556,26 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdstty int) string {
 					var clink string
 					for i := 0; i < nd-1; i++ {
 						clink = cdirp.Sprint(dirs[i])
-						printListln(sb, pad+spmeta+clink)
+						printListln(sb, pad+spmeta, clink)
 					}
 					clink = cdirp.Sprint(dirs[nd-1])
 					wdLast := paw.StringWidth(dirs[nd-1])
 					if wn <= limit-wdLast {
 						clink += cdip.Sprint(name)
-						printListln(sb, pad+spmeta+clink)
+						printListln(sb, pad+spmeta, clink)
 					} else { // wn > wd-limit
 						clink += cdip.Sprint(name[:limit-wdLast])
-						printListln(sb, pad+spmeta+clink)
+						printListln(sb, pad+spmeta, clink)
 						rname := name[limit-wdLast:]
 						wr := paw.StringWidth(rname)
 						if wr <= limit {
 							clink = cdip.Sprint(rname)
-							printListln(sb, pad+spmeta+clink)
+							printListln(sb, pad+spmeta, clink)
 						} else { // wr > limit
 							names := paw.WrapToSlice(rname, limit)
 							for _, v := range names {
 								clink = cdip.Sprint(v)
-								printListln(sb, pad+spmeta+clink)
+								printListln(sb, pad+spmeta, clink)
 							}
 						}
 					}
@@ -586,7 +587,7 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdstty int) string {
 	return sb.String()
 }
 
-func xattrEdgeString(file *File, pad string, wmeta int) string {
+func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string {
 	var (
 		nx = len(file.XAttributes)
 		sb = paw.NewStringBuilder()
@@ -602,10 +603,10 @@ func xattrEdgeString(file *File, pad string, wmeta int) string {
 			var padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(edge))
 			wdm += edgeWidth[edge] + 2
 			var wdx = len(xattr)
-			if wdm+wdx <= sttyWidth-2 {
+			if wdm+wdx <= wdsttylimit {
 				printListln(sb, padx+cxp.Sprint(xattr))
 			} else {
-				var wde = sttyWidth - 2 - wdm
+				var wde = wdsttylimit - wdm
 				if err := checkStringRange(xattr, wde, "xattr"); err != nil {
 					paw.Error.Fatal(err, " (may be too many fields)")
 				}

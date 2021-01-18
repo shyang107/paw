@@ -111,11 +111,11 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 			fdNo.SetValue(jstr)
 			fdNo.SetColorfulValue(cjstr)
 			fds.SetValues(file, git)
-			fmt.Fprint(w, wrapFileName(file, fds, ppad, sttyWidth))
+			fmt.Fprint(w, wrapFileName(file, fds, ppad, bannerWidth))
 
 			if isExtended && len(file.XAttributes) > 0 {
 				spmeta = paw.Spaces(wdmeta)
-				fmt.Fprint(w, xattrEdgeString(file, ppad+spmeta, wdmeta+len(ppad)))
+				fmt.Fprint(w, xattrEdgeString(file, ppad+spmeta, wdmeta+len(ppad), bannerWidth))
 			}
 		}
 		if f.depth != 0 {
