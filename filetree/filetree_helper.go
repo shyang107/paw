@@ -516,7 +516,7 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdstty int) string {
 		spmeta = paw.Spaces(wmeta)
 		name   = file.BaseNameToLink()
 		wname  = paw.StringWidth(name)
-		limit  = wdstty - wpad - wmeta - 2
+		limit  = wdstty - wpad - wmeta
 	)
 	if wname <= limit {
 		printListln(sb, pad+meta+file.ColorName())
@@ -525,7 +525,7 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdstty int) string {
 			paw.Error.Fatal(err, " (may be too many fields)")
 		}
 		if !file.IsLink() {
-			names := paw.Split(paw.Wrap(name, limit), "\n")
+			names := paw.WrapToSlice(name, limit)
 			printListln(sb, pad+meta+file.LSColorString(names[0]))
 			for i := 1; i < len(names); i++ {
 				printListln(sb, pad+spmeta+file.LSColorString(names[i]))
@@ -536,14 +536,49 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdstty int) string {
 			carrow := cdashp.Sprint(" -> ")
 			wbname += 4
 			printListln(sb, pad+meta+cname+carrow)
-			link := file.LinkPath()
-			if paw.StringWidth(link) <= limit {
-				printListln(sb, pad+spmeta+cdirp.Sprint(link))
+			dir, name := filepath.Split(file.LinkPath())
+			wd, wn := paw.StringWidth(dir), paw.StringWidth(name)
+
+			if wd+wn <= limit {
+				printListln(sb, pad+spmeta+cdirp.Sprint(dir)+cdip.Sprint(name))
 			} else {
-				links := paw.Split(paw.Wrap(link, limit), "\n")
-				printListln(sb, pad+spmeta+cdirp.Sprint(links[0]))
-				for i := 1; i < len(links); i++ {
-					printListln(sb, pad+spmeta+cdirp.Sprint(links[i]))
+				if wd <= limit {
+					clink := cdirp.Sprint(dir) + cdip.Sprint(name[:limit-wd])
+					printListln(sb, pad+spmeta+clink)
+					names := paw.WrapToSlice(name[limit-wd:], limit)
+					for _, v := range names {
+						clink = cdip.Sprint(v)
+						printListln(sb, pad+spmeta+clink)
+					}
+				} else { // wd > limit
+					dirs := paw.WrapToSlice(dir, limit)
+					nd := len(dirs)
+					var clink string
+					for i := 0; i < nd-1; i++ {
+						clink = cdirp.Sprint(dirs[i])
+						printListln(sb, pad+spmeta+clink)
+					}
+					clink = cdirp.Sprint(dirs[nd-1])
+					wdLast := paw.StringWidth(dirs[nd-1])
+					if wn <= limit-wdLast {
+						clink += cdip.Sprint(name)
+						printListln(sb, pad+spmeta+clink)
+					} else { // wn > wd-limit
+						clink += cdip.Sprint(name[:limit-wdLast])
+						printListln(sb, pad+spmeta+clink)
+						rname := name[limit-wdLast:]
+						wr := paw.StringWidth(rname)
+						if wr <= limit {
+							clink = cdip.Sprint(rname)
+							printListln(sb, pad+spmeta+clink)
+						} else { // wr > limit
+							names := paw.WrapToSlice(rname, limit)
+							for _, v := range names {
+								clink = cdip.Sprint(v)
+								printListln(sb, pad+spmeta+clink)
+							}
+						}
+					}
 				}
 			}
 		}

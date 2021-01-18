@@ -87,7 +87,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 			}
 			// meta, _ := file.ColorMeta(git)
 			fds.SetValues(file, git)
-			fmt.Fprint(w, wrapFileName(file, fds, pad, sttyWidth-2))
+			fmt.Fprint(w, wrapFileName(file, fds, pad, bannerWidth))
 
 			if isExtended && len(file.XAttributes) > 0 {
 				sp := paw.Spaces(wdmeta)
@@ -128,15 +128,16 @@ func wrapDir(dirName, pad string, wdlimit int) string {
 		dir, name = filepath.Split(dirName)
 		wdir      = paw.StringWidth(dir)
 		wname     = paw.StringWidth(name)
+		wlen      = wdir + wname
 	)
-	if wdir+wname <= wdlimit {
+	if wlen <= wdlimit {
 		var cname = cdirp.Sprint(dir) + cdip.Sprint(name)
 		printListln(w, pad+cname)
 	} else {
 		if wdir <= wdlimit {
 			printListln(w, pad+cdirp.Sprint(dir))
 		} else {
-			var dirs = paw.Split(paw.Wrap(dir, wdlimit), "\n")
+			var dirs = paw.WrapToSlice(dir, wdlimit)
 			printListln(w, pad+cdirp.Sprint(dirs[0]))
 			for i := 1; i < len(dirs); i++ {
 				printListln(w, pad+cdirp.Sprint(dirs[i]))
@@ -145,7 +146,7 @@ func wrapDir(dirName, pad string, wdlimit int) string {
 		if wname <= wdlimit {
 			printListln(w, pad+cdip.Sprint(name))
 		} else {
-			var names = paw.Split(paw.Wrap(name, wdlimit), "\n")
+			var names = paw.WrapToSlice(name, wdlimit)
 			printListln(w, pad+cdip.Sprint(names[0]))
 			for i := 1; i < len(names); i++ {
 				printListln(w, pad+cdip.Sprint(names[i]))

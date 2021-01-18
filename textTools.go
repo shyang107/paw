@@ -874,6 +874,14 @@ func Wrap(s string, w int) string {
 	return runewidth.Wrap(s, w)
 }
 
+// WrapToSlice return string slice wrapped with w cells
+func WrapToSlice(s string, w int) []string {
+	if StringWidth(s) <= w {
+		return []string{s}
+	}
+	return Split(Wrap(s, w), "\n")
+}
+
 // Spaces return a string with lenth w of spaces
 func Spaces(w int) string {
 	return Repeat(" ", w)
