@@ -518,16 +518,16 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) stri
 		name   = file.BaseNameToLink()
 		wname  = paw.StringWidth(name)
 		wdstty = wdsttylimit - 1
-		limit  = wdstty - wpad - wmeta
+		width  = wdstty - wpad - wmeta
 	)
-	if wname <= limit {
+	if wname <= width {
 		printListln(sb, pad+meta, file.ColorName())
 	} else { // wrap file name
-		if err := checkStringRange(name, limit, "Name"); err != nil {
+		if err := checkStringRange(name, width, "Name"); err != nil {
 			paw.Error.Fatal(err, " (may be too many fields)")
 		}
 		if !file.IsLink() {
-			names := paw.WrapToSlice(name, limit)
+			names := paw.WrapToSlice(name, width)
 			printListln(sb, pad+meta, file.LSColorString(names[0]))
 			for i := 1; i < len(names); i++ {
 				printListln(sb, pad+spmeta, file.LSColorString(names[i]))
@@ -541,19 +541,19 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) stri
 			dir, name := filepath.Split(file.LinkPath())
 			wd, wn := paw.StringWidth(dir), paw.StringWidth(name)
 
-			if wd+wn <= limit {
+			if wd+wn <= width {
 				printListln(sb, pad+spmeta, cdirp.Sprint(dir)+cdip.Sprint(name))
 			} else {
-				if wd <= limit {
-					clink := cdirp.Sprint(dir) + cdip.Sprint(name[:limit-wd])
+				if wd <= width {
+					clink := cdirp.Sprint(dir) + cdip.Sprint(name[:width-wd])
 					printListln(sb, pad+spmeta, clink)
-					names := paw.WrapToSlice(name[limit-wd:], limit)
+					names := paw.WrapToSlice(name[width-wd:], width)
 					for _, v := range names {
 						clink = cdip.Sprint(v)
 						printListln(sb, pad+spmeta, clink)
 					}
-				} else { // wd > limit
-					dirs := paw.WrapToSlice(dir, limit)
+				} else { // wd > width
+					dirs := paw.WrapToSlice(dir, width)
 					nd := len(dirs)
 					var clink string
 					for i := 0; i < nd-1; i++ {
@@ -562,19 +562,19 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) stri
 					}
 					clink = cdirp.Sprint(dirs[nd-1])
 					wdLast := paw.StringWidth(dirs[nd-1])
-					if wn <= limit-wdLast {
+					if wn <= width-wdLast {
 						clink += cdip.Sprint(name)
 						printListln(sb, pad+spmeta, clink)
-					} else { // wn > wd-limit
-						clink += cdip.Sprint(name[:limit-wdLast])
+					} else { // wn > wd-width
+						clink += cdip.Sprint(name[:width-wdLast])
 						printListln(sb, pad+spmeta, clink)
-						rname := name[limit-wdLast:]
+						rname := name[width-wdLast:]
 						wr := paw.StringWidth(rname)
-						if wr <= limit {
+						if wr <= width {
 							clink = cdip.Sprint(rname)
 							printListln(sb, pad+spmeta, clink)
-						} else { // wr > limit
-							names := paw.WrapToSlice(rname, limit)
+						} else { // wr > width
+							names := paw.WrapToSlice(rname, width)
 							for _, v := range names {
 								clink = cdip.Sprint(v)
 								printListln(sb, pad+spmeta, clink)
@@ -591,44 +591,47 @@ func wrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) stri
 
 func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string {
 	var (
-		nx = len(file.XAttributes)
-		sb = paw.NewStringBuilder()
+		nx   = len(file.XAttributes)
+		sb   = paw.NewStringBuilder()
+		edge = EdgeTypeMid
 	)
-	if nx > 0 {
-		var edge = EdgeTypeMid
-		for i := 0; i < nx; i++ {
-			var wdm = wmeta
-			xattr := file.XAttributes[i]
-			if i == nx-1 {
-				edge = EdgeTypeEnd
+
+	for i := 0; i < nx; i++ {
+		var (
+			xattr = file.XAttributes[i]
+			wdx   = paw.StringWidth(xattr)
+			wdm   = wmeta
+		)
+		if i == nx-1 {
+			edge = EdgeTypeEnd
+		}
+		var padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(edge))
+		wdm += edgeWidth[edge] + 2
+		width := wdsttylimit - wdm
+
+		if wdx <= width {
+			printListln(sb, padx+cxp.Sprint(xattr))
+		} else {
+			// var wde = wdsttylimit - wdm
+			if err := checkStringRange(xattr, width, "xattr"); err != nil {
+				paw.Error.Fatal(err, " (may be too many fields)")
 			}
-			var padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(edge))
-			wdm += edgeWidth[edge] + 2
-			var wdx = len(xattr)
-			if wdm+wdx <= wdsttylimit {
-				printListln(sb, padx+cxp.Sprint(xattr))
+			x1 := paw.Truncate(xattr, width, "")
+			b := len(x1)
+			printListln(sb, padx+cxp.Sprint(x1))
+			switch edge {
+			case EdgeTypeMid:
+				padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(EdgeTypeLink)+SpaceIndentSize)
+			case EdgeTypeEnd:
+				padx = fmt.Sprintf("%s %s ", pad, paw.Spaces(edgeWidth[edge]))
+			}
+
+			if len(xattr[b:]) <= width {
+				printListln(sb, padx+cxp.Sprint(xattr[b:]))
 			} else {
-				var wde = wdsttylimit - wdm
-				if err := checkStringRange(xattr, wde, "xattr"); err != nil {
-					paw.Error.Fatal(err, " (may be too many fields)")
-				}
-				printListln(sb, padx+cxp.Sprint(xattr[:wde]))
-				switch edge {
-				case EdgeTypeMid:
-					padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(EdgeTypeLink)+SpaceIndentSize)
-				case EdgeTypeEnd:
-					padx = fmt.Sprintf("%s %s ", pad, paw.Spaces(edgeWidth[edge]))
-				}
-				if err := checkStringRange(xattr, wde, "xattr"); err != nil {
-					paw.Error.Fatal(err, "may be too many fields")
-				}
-				if len(xattr[wde:]) <= wde {
-					printListln(sb, padx+cxp.Sprint(xattr[wde:]))
-				} else {
-					xattrs := paw.Split(paw.Wrap(xattr[wde:], wde), "\n")
-					for _, v := range xattrs {
-						printListln(sb, padx+cxp.Sprint(v))
-					}
+				xattrs := paw.WrapToSlice(xattr[b:], width)
+				for _, v := range xattrs {
+					printListln(sb, padx+cxp.Sprint(v))
 				}
 			}
 		}

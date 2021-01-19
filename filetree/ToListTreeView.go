@@ -211,7 +211,7 @@ func xattrLTString(file *File, pad string, edge EdgeType, padx string, wmeta int
 		} else {
 			x1 := paw.Truncate(xattr, width-2, "")
 			b := len(x1)
-			printListln(sb, pad+cedge+cdashp.Sprint("@"), cxp.Sprint(xattr[:b]))
+			printListln(sb, pad+cedge+cdashp.Sprint("@"), cxp.Sprint(x1))
 			xs := paw.WrapToSlice(xattr[b:], width)
 			for _, v := range xs {
 				printListln(sb, pad+cedge+" ", cxp.Sprint(v))
