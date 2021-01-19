@@ -134,6 +134,8 @@ func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
 				nf++
 			}
 		}
+	} else {
+		return "", 0
 	}
 	di := fmt.Sprintf("%v dirs", nd-1)
 	fi := fmt.Sprintf("%v files", nf)

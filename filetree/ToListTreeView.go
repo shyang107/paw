@@ -131,80 +131,48 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 
 	fmt.Fprint(sb, wrapFileString(fl, file, edge, padMeta, wmeta))
 
-	if isExtended {
+	if isExtended && len(file.XAttributes) > 0 {
 		fmt.Fprint(sb, xattrLTString(file, pad, edge, padMeta, wmeta))
 	}
 	fmt.Fprint(wr, sb.String())
 }
 
-// func printLTFile(wr io.Writer, level int, levelsEnded []int,
-// 	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool, wmeta int) {
-
-// 	sb := paw.NewStringBuilder()
-// 	meta := pad
-// 	if pdview == PListTreeView {
-// 		tmeta, _ := file.ColorMeta(git)
-// 		meta += tmeta
-// 		// wmeta += lenmeta
-// 	}
-// 	fmt.Fprintf(sb, "%s ", meta)
-
-// 	aMeta := ""
-// 	padMeta := paw.Spaces(wmeta)
-// 	for i := 0; i < level; i++ {
-// 		if isEnded(levelsEnded, i) {
-// 			fmt.Fprintf(sb, "%v", paw.Spaces(IndentSize+1))
-// 			aMeta += paw.Spaces(IndentSize + 1)
-// 			wmeta += IndentSize + 1
-// 			continue
-// 		}
-// 		cedge := cdashp.Sprint(EdgeTypeLink)
-// 		fmt.Fprintf(sb, "%s%s", cedge, SpaceIndentSize)
-// 		aMeta += fmt.Sprintf("%s%s", cedge, SpaceIndentSize)
-// 		wmeta += edgeWidth[EdgeTypeLink] + IndentSize
-// 	}
-// 	padMeta += aMeta
-
-// 	fmt.Fprint(sb, wrapFileString(fl, file, edge, wmeta, padMeta))
-
-// 	if isExtended {
-// 		fmt.Fprint(sb, xattrLTString(file, pad, edge, padMeta, wmeta))
-// 	}
-// 	fmt.Fprint(wr, sb.String())
-// }
-
 func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wmeta int) string {
-	sb := paw.NewStringBuilder()
-	cdinf, ndinf := "", 0
+	var (
+		sb           = paw.NewStringBuilder()
+		cdinf, ndinf = "", 0
+		name         = file.BaseName
+		wname        = paw.StringWidth(name)
+		width        = sttyWidth - wmeta - edgeWidth[edge] - 4
+	)
+
 	if file.IsDir() && fl.depth == -1 {
 		cdinf, ndinf = fl.DirInfo(file)
 		cdinf += " "
 		ndinf++
-		// wmeta += ndinf
+		// width -= ndinf
 	}
-	name := file.BaseName
-	wname := paw.StringWidth(name)
-	if wmeta+ndinf+wname+edgeWidth[edge]+2 >= sttyWidth {
-		end := sttyWidth - wmeta - ndinf - edgeWidth[edge] - 4
-		if ndinf != 0 {
-			ndinf++
-			end--
-		}
+	if wname > width {
 		cedge := cdashp.Sprint(edge)
-		printListln(sb, cedge, cdinf+file.LSColorString(name[:end]))
+		// printListln(sb, cedge, cdinf+file.LSColorString(name[:width]))
+		nb := len(paw.Truncate(name, width-ndinf, ""))
+		printListln(sb, cedge, cdinf+file.LSColorString(name[:nb]))
 		switch edge {
 		case EdgeTypeMid:
 			cedge = padMeta + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
 		case EdgeTypeEnd:
 			cedge = padMeta + SpaceIndentSize
 		}
-		if paw.StringWidth(name[end:]) <= end {
-			printListln(sb, cedge, file.LSColorString(name[end:]))
+		if paw.StringWidth(name[nb:]) <= width {
+			printListln(sb, cedge, file.LSColorString(name[nb:]))
 		} else {
-			end += ndinf
-			names := paw.Split(paw.Wrap(name[end:], end), "\n")
+			names := paw.WrapToSlice(name[nb:], width)
 			for _, v := range names {
-				printListln(sb, cedge, file.LSColorString(v))
+				if edge == EdgeTypeMid {
+					printListln(sb, cedge+file.LSColorString(v))
+				} else {
+					printListln(sb, cedge, file.LSColorString(v))
+				}
 			}
 		}
 	} else {
@@ -216,29 +184,37 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 }
 
 func xattrLTString(file *File, pad string, edge EdgeType, padx string, wmeta int) string {
-	nx := len(file.XAttributes)
-	sb := paw.NewStringBuilder()
-	if nx > 0 {
-		// edge := EdgeTypeMid
-		for i := 0; i < nx; i++ {
-			wdm := wmeta
-			xattr := file.XAttributes[i]
-			cedge := ""
-			switch edge {
-			case EdgeTypeMid:
-				cedge = padx + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
-				wdm += edgeWidth[EdgeTypeLink] + IndentSize
-			case EdgeTypeEnd:
-				cedge = padx + paw.Spaces(IndentSize+1)
-				wdm += IndentSize + 1
-			}
-			wdx := paw.StringWidth(xattr)
-			if wdm+wdx <= sttyWidth-2 {
-				printListln(sb, pad+cedge+cdashp.Sprint("@"), cxp.Sprint(xattr))
-			} else {
-				wde := sttyWidth - wdm - 4
-				printListln(sb, pad+cedge+cdashp.Sprint("@"), cxp.Sprint(xattr[:wde]))
-				printListln(sb, pad+cedge+" ", cxp.Sprint(xattr[wde:]))
+	var (
+		sb = paw.NewStringBuilder()
+		nx = len(file.XAttributes)
+	)
+
+	for i := 0; i < nx; i++ {
+		var (
+			xattr = file.XAttributes[i]
+			wdx   = paw.StringWidth(xattr)
+			wdm   = wmeta
+		)
+
+		cedge := ""
+		switch edge {
+		case EdgeTypeMid:
+			cedge = padx + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
+			wdm += edgeWidth[EdgeTypeLink] + IndentSize
+		case EdgeTypeEnd:
+			cedge = padx + paw.Spaces(IndentSize+1)
+			wdm += IndentSize + 1
+		}
+		width := sttyWidth - 2 - wdm - 2
+		if wdx <= width {
+			printListln(sb, pad+cedge+cdashp.Sprint("@"), cxp.Sprint(xattr))
+		} else {
+			x1 := paw.Truncate(xattr, width-2, "")
+			b := len(x1)
+			printListln(sb, pad+cedge+cdashp.Sprint("@"), cxp.Sprint(xattr[:b]))
+			xs := paw.WrapToSlice(xattr[b:], width)
+			for _, v := range xs {
+				printListln(sb, pad+cedge+" ", cxp.Sprint(v))
 			}
 		}
 	}
@@ -259,34 +235,10 @@ func printLTDir(wr io.Writer, level int, levelsEnded []int,
 			levelsEnded = append(levelsEnded, level)
 		}
 
-		// printLTFile(wr, level, levelsEnded, edge, fl, file, git, pad, isExtended, wmeta)
 		printLTFile(wr, level, levelsEnded, edge, fl, file, fds, git, pad, isExtended, wmeta)
 
 		if file.IsDir() && len(fm[file.Dir]) > 1 {
-			// printLTDir(wr, level+1, levelsEnded, edge, fl, file, git, pad, isExtended, wmeta)
 			printLTDir(wr, level+1, levelsEnded, edge, fl, file, fds, git, pad, isExtended, wmeta)
 		}
 	}
 }
-
-// func printLTDir(wr io.Writer, level int, levelsEnded []int,
-// 	edge EdgeType, fl *FileList, file *File, git GitStatus, pad string, isExtended bool, wmeta int) {
-// 	fm := fl.Map()
-// 	files := fm[file.Dir]
-// 	nfiles := len(files)
-
-// 	for i := 1; i < nfiles; i++ {
-// 		file = files[i]
-// 		edge := EdgeTypeMid
-// 		if i == nfiles-1 {
-// 			edge = EdgeTypeEnd
-// 			levelsEnded = append(levelsEnded, level)
-// 		}
-
-// 		printLTFile(wr, level, levelsEnded, edge, fl, file, git, pad, isExtended, wmeta)
-
-// 		if file.IsDir() && len(fm[file.Dir]) > 1 {
-// 			printLTDir(wr, level+1, levelsEnded, edge, fl, file, git, pad, isExtended, wmeta)
-// 		}
-// 	}
-// }

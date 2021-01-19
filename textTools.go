@@ -891,5 +891,8 @@ func WrapToSlice(s string, w int) []string {
 
 // Spaces return a string with lenth w of spaces
 func Spaces(w int) string {
+	if w <= 0 {
+		return ""
+	}
 	return Repeat(" ", w)
 }
