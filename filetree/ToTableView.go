@@ -33,12 +33,17 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		fm          = f.store //f.Map()
 		sttywd      = sttyWidth - 2
 		widthOfName = 75
+		xsymb       = " @ "
+		xsymb2      = "-@-"
 		deftf       = &paw.TableFormat{
-			Fields:    []string{"No.", "Mode", "Size", "Files"},
-			LenFields: []int{5, 11, 6, widthOfName},
-			Aligns:    []paw.Align{paw.AlignRight, paw.AlignRight, paw.AlignRight, paw.AlignLeft},
-			Padding:   pad,
-			IsWrapped: true,
+			Fields:            []string{"No.", "Mode", "Size", "Files"},
+			LenFields:         []int{5, 11, 6, widthOfName},
+			Aligns:            []paw.Align{paw.AlignRight, paw.AlignRight, paw.AlignRight, paw.AlignLeft},
+			Padding:           pad,
+			IsWrapped:         true,
+			IsColorful:        true,
+			XAttributeSymbol:  xsymb,
+			XAttributeSymbol2: xsymb2,
 		}
 
 		nfds = len(pfields) + 1
@@ -58,11 +63,14 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	fds.Insert(0, fdNo)
 
 	tf := &paw.TableFormat{
-		Fields:    fds.Heads(),
-		LenFields: fds.HeadWidths(),
-		Aligns:    fds.HeadAligns(),
-		Padding:   pad,
-		IsWrapped: true,
+		Fields:            fds.Heads(),
+		LenFields:         fds.HeadWidths(),
+		Aligns:            fds.HeadAligns(),
+		Padding:           pad,
+		IsWrapped:         true,
+		IsColorful:        true,
+		XAttributeSymbol:  xsymb,
+		XAttributeSymbol2: xsymb2,
 	}
 
 	wdmeta := fds.MetaValuesStringWidth()
@@ -126,36 +134,26 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			tf.PrintRow(values...)
 
 			if isExtended && len(file.XAttributes) > 0 {
-				values := make([]interface{}, nfds)
-				nx := len(file.XAttributes)
-				if nx > 0 {
-					edge := EdgeTypeMid
-					for i, x := range file.XAttributes {
-						if i == nx-1 {
-							edge = EdgeTypeEnd
-						}
-						wde := edgeWidth[edge] + 1
-						wdx := sttywd - wdmeta - wde - 3
-						wx := paw.StringWidth(x)
-						if wx <= wdx {
-							values[nfds-1] = string(edge) + " " + x
-							tf.PrintRow(values...)
-						} else {
-							xs := paw.Split(paw.Wrap(x, wdx), "\n")
-							values[nfds-1] = string(edge) + " " + xs[0]
-							tf.PrintRow(values...)
-							padx := ""
-							switch edge {
-							case EdgeTypeMid:
-								padx = fmt.Sprintf("%s%s", EdgeTypeLink, SpaceIndentSize)
-							case EdgeTypeEnd:
-								padx = fmt.Sprintf("%s ", paw.Spaces(edgeWidth[edge]))
-							}
-							for i := 1; i < len(xs); i++ {
-								values[nfds-1] = padx + xs[i]
-								tf.PrintRow(values...)
-							}
+				var (
+					values = make([]interface{}, nfds)
+					// nx     = len(file.XAttributes)
 
+					wds = paw.StringWidth(xsymb)
+					wdx = fdName.Width - wds //sttywd - wdmeta - wds
+				)
+
+				for _, x := range file.XAttributes {
+					wx := paw.StringWidth(x)
+					if wx <= wdx {
+						values[nfds-1] = tf.XAttributeSymbol + x
+						tf.PrintRow(values...)
+					} else {
+						xs := paw.WrapToSlice(x, wdx)
+						values[nfds-1] = tf.XAttributeSymbol + xs[0]
+						tf.PrintRow(values...)
+						for i := 1; i < len(xs); i++ {
+							values[nfds-1] = tf.XAttributeSymbol2 + xs[i]
+							tf.PrintRow(values...)
 						}
 					}
 				}
