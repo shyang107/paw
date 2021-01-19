@@ -75,19 +75,18 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		XAttributeSymbol2: xsymb2,
 	}
 
-	wdmeta := fds.MetaValuesStringWidth()
-	if wdmeta > sttywd-10 {
-		tf = deftf
-	} else {
-		fds.Get(PFieldName).Width = sttywd - wdmeta
-	}
 	modifySizeWidth(fds, f)
 
-	// spmeta := pad + paw.Spaces(wdmeta)
+	wdmeta := fds.MetaHeadsStringWidth()
+	fdName := fds.Get(PFieldName)
+	if wdmeta > sttywd-10 {
+		paw.Error.Println("too many fields")
+		tf = deftf
+	} else {
+		fdName.Width = sttywd - wdmeta
+	}
 
 	tf.LenFields = fds.HeadWidths()
-
-	fdName := fds.Get(PFieldName)
 
 	nfds = tf.NFields()
 	tf.Prepare(w)

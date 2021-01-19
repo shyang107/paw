@@ -255,6 +255,11 @@ func fdColorizedSize(size uint64, width int) (csize string) {
 	return csize
 }
 
+// Fields will return Fields of FieldSlice
+func (f *FieldSlice) Fields() []*Field {
+	return f.fds
+}
+
 // SetValues sets up values of FieldSlice from File and GitStatus
 func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 	for _, fd := range f.fds {
