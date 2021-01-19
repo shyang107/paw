@@ -43,7 +43,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 
 		nfds = len(pfields) + 1
 		fds  = NewFieldSliceFrom(pfieldKeys, git)
-		wNo  = len(fmt.Sprint(f.NFiles())) + 1
+		wNo  = paw.MaxInt(len(fmt.Sprint(nDirs))+1, len(fmt.Sprint(nFiles))+1)
 		fdNo = &Field{
 			Key:   PFieldNone,
 			Name:  "No",
@@ -122,6 +122,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			}
 
 			values := fds.Values()
+			// fmt.Printf("%d  %#v\n", len(values), values)
 			tf.PrintRow(values...)
 
 			if isExtended && len(file.XAttributes) > 0 {

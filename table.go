@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-
-	"github.com/shyang107/paw/cast"
 )
 
 // TableFormat define the format used to print out
@@ -250,17 +248,18 @@ func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align
 		t.isAbbrSymbol = Contains(str, abbrSymbol)
 	}
 	return padding + str
+
 WRAPFIELDS:
 	wfields := make([][]string, lenOfFields)
 	nlines := make([]int, lenOfFields)
 	idx := make([]int, lenOfFields)
 	for i, v := range fields {
 		wd := widths[i]
-		wfields[i] = Split(Wrap(v, wd), "\n")
+		wfields[i] = WrapToSlice(v, wd) //Split(Wrap(v, wd), "\n")
 		nlines[i] = len(wfields[i])
 		idx[i] = 0
 	}
-	maxlines := Max(nlines).(int)
+	maxlines := MaxInts(nlines...)
 	for i := 0; i < maxlines; i++ {
 		for j, vs := range wfields {
 			v := ""
@@ -287,11 +286,11 @@ func getAlignString(al Align, width int, value string) string {
 	case AlignRight:
 		s = FillLeft(value, width)
 	case AlignCenter:
-		// lv := nh + na
 		lv := StringWidth(value)
 		nr := (width - lv) / 2
 		nl := width - lv - nr
-		s = Repeat(space, nl) + value + Repeat(space, nr)
+		// s = Repeat(space, nl) + value + Repeat(space, nr)
+		s = Spaces(nl) + value + Spaces(nr)
 	default:
 		s = value
 	}
@@ -317,10 +316,10 @@ func (t *TableFormat) PrintSart() error {
 func (t *TableFormat) PrintRow(rows ...interface{}) {
 	sRows := make([]string, len(rows))
 	for i, v := range rows {
-		sRows[i] = TrimSpace(cast.ToString(v))
+		sRows[i] = fmt.Sprintf("%v", v)
 	}
-	fmt.Fprintln(t.writer, t.getRowString(sRows, t.LenFields, t.Aligns, t.Sep, t.Padding))
-	// fmt.Fprintln(t.writer, t.getRowString(cast.ToStringSlice(rows), t.LenFields, t.Aligns, t.Sep, t.Padding))
+	row := t.getRowString(sRows, t.LenFields, t.Aligns, t.Sep, t.Padding)
+	fmt.Fprintln(t.writer, row)
 }
 
 // PrintMiddleSepLine print middle sepperating line using `MiddleChar`
