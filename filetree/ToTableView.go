@@ -3,6 +3,8 @@ package filetree
 import (
 	"fmt"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/shyang107/paw"
 )
 
@@ -137,11 +139,10 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 				var (
 					values = make([]interface{}, nfds)
 					// nx     = len(file.XAttributes)
-
 					wds = paw.StringWidth(xsymb)
 					wdx = fdName.Width - wds //sttywd - wdmeta - wds
 				)
-
+				funk.Fill(values, "")
 				for _, x := range file.XAttributes {
 					wx := paw.StringWidth(x)
 					if wx <= wdx {

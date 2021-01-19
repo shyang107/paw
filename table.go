@@ -81,8 +81,8 @@ func NewTableFormat() *TableFormat {
 		IsColorful:      false,
 		// chdEven:         tbChdEven,
 		// chdOdd:          tbChdOdd,
-		XAttributeSymbol:  xSymb,
-		XAttributeSymbol2: xSymb2,
+		XAttributeSymbol:  tbxSymb,
+		XAttributeSymbol2: tbxSymb2,
 	}
 }
 
@@ -99,9 +99,9 @@ var (
 	tbCxattrOdd  = color.New([]color.Attribute{38, 5, 249, 4, 48, 5, 234}...)
 	tbCxsymbEven = color.New([]color.Attribute{38, 5, 249, 48, 5, 236}...)
 	tbCxsymbOdd  = color.New([]color.Attribute{38, 5, 249, 48, 5, 234}...)
-	xSymb        = " @ "
-	xSymb2       = "-@-"
-	xSp          = "   "
+	tbxSymb      = " @ "
+	tbxSymb2     = "-@-"
+	tbxSp        = "   "
 )
 
 // func (t *TableFormat) setColor() {
@@ -243,13 +243,13 @@ func (t *TableFormat) checkFields() {
 func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align, sep string, padding string) string {
 	sb.Reset()
 	var (
-		str         string
-		lenOfFields = len(fields)
+		str     string
+		nFields = len(fields)
 	)
 	if t.IsWrapped {
 		goto WRAPFIELDS
 	}
-	for i := 0; i < lenOfFields; i++ {
+	for i := 0; i < nFields; i++ {
 		v := fields[i]
 		wd := widths[i]
 		// v = GetAbbrString(v, wd, "»")
@@ -282,9 +282,9 @@ func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align
 	return padding + str
 
 WRAPFIELDS:
-	wfields := make([][]string, lenOfFields)
-	nlines := make([]int, lenOfFields)
-	idx := make([]int, lenOfFields)
+	wfields := make([][]string, nFields)
+	nlines := make([]int, nFields)
+	idx := make([]int, nFields)
 	for i, v := range fields {
 		wd := widths[i]
 		wfields[i] = WrapToSlice(v, wd) //Split(Wrap(v, wd), "\n")
@@ -357,14 +357,37 @@ func (t *TableFormat) getRowColorString(col int, field string) string {
 		s = tbCxsymbOdd
 	}
 	if HasPrefix(field, t.XAttributeSymbol) {
-		txt := TrimPrefix(field, t.XAttributeSymbol)
-		return s.Sprint(t.XAttributeSymbol) + x.Sprint(txt)
+		// txt := TrimPrefix(field, t.XAttributeSymbol)
+		// wt := StringWidth(txt)
+		// txt = TrimSuffix(txt, space)
+		// wd := StringWidth(txt)
+		// tail := ""
+		// if wt-wd > 0 {
+		// 	tail = Spaces(wt - wd)
+		// }
+		// return s.Sprint(t.XAttributeSymbol) + x.Sprint(txt) + tail
+		return getColorxattr(t, field, t.XAttributeSymbol, s, x)
 	} else if HasPrefix(field, t.XAttributeSymbol2) {
-		txt := TrimPrefix(field, t.XAttributeSymbol2)
-		return s.Sprint(Spaces(StringWidth(t.XAttributeSymbol2))) + x.Sprint(txt)
+		// txt := TrimPrefix(field, t.XAttributeSymbol2)
+		// return s.Sprint(Spaces(StringWidth(t.XAttributeSymbol2))) + x.Sprint(txt)
+		return getColorxattr(t, field, t.XAttributeSymbol2, s, x)
 	} else {
 		return r.Sprint(field)
 	}
+}
+func getColorxattr(t *TableFormat, field, xsymb string, cp, xp *color.Color) string {
+	txt := TrimPrefix(field, xsymb)
+	wt := StringWidth(txt)
+	txt = TrimRight(txt, space)
+	wd := StringWidth(txt)
+	tail := ""
+	if wt-wd > 0 {
+		tail = Spaces(wt - wd)
+	}
+	if xsymb == t.XAttributeSymbol2 {
+		xsymb = tbxSp
+	}
+	return cp.Sprint(xsymb) + xp.Sprint(txt) + cp.Sprint(tail)
 }
 
 func getAlignString(al Align, width int, value string) string {
@@ -428,16 +451,19 @@ func (t *TableFormat) PrintRow(rows ...interface{}) {
 		osep := t.Sep
 		sep := "«color»"
 		t.Sep = osep
-		row := t.getRowString(sRows, t.LenFields, t.Aligns, sep, t.Padding)
-		rows := Split(row, sep)
-		crows := make([]string, len(rows))
-		for i, r := range rows {
-			// c := t.getRowColor(i)
-			// crows[i] = c.Sprint(r)
-			crows[i] = t.getRowColorString(i, r)
+		srow := t.getRowString(sRows, t.LenFields, t.Aligns, sep, t.Padding)
+		srows := Split(srow, "\n")
+		for _, row := range srows {
+			rows := Split(row, sep)
+			crows := make([]string, len(rows))
+			for i, r := range rows {
+				// c := t.getRowColor(i)
+				// crows[i] = c.Sprint(r)
+				crows[i] = t.getRowColorString(i, r)
+			}
+			row = Join(crows, t.Sep)
+			fmt.Fprintln(t.writer, row)
 		}
-		row = Join(crows, t.Sep)
-		fmt.Fprintln(t.writer, row)
 	} else {
 		fmt.Fprintln(t.writer, t.getRowString(sRows, t.LenFields, t.Aligns, t.Sep, t.Padding))
 	}
