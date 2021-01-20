@@ -43,6 +43,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	// wmeta -= pfieldWidthsMap[PFieldName]
 
 	buf.Reset()
+	modifyFDSWidth(fds, f, sttyWidth-2-paw.StringWidth(pad))
 
 	files := fm[RootMark]
 	file := files[0]
@@ -52,7 +53,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	meta := pad
 	switch pdview {
 	case PListTreeView:
-		chead, wmeta = modifyTreeHead(fds, f, pad)
+		chead, wmeta = modifyFDSTreeHead(fds, f, pad)
 		printListln(w, chead)
 		fds.SetValues(file, git)
 		meta += fds.ColorMetaValuesString()
@@ -65,7 +66,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	}
 
 	name := fmt.Sprintf("%v (%v)", file.LSColorString("."), file.ColorDirName(""))
-	printListln(w, meta+name)
+	printListln(w, meta, name)
 
 	// print files in the root dir
 	level := 0
@@ -102,17 +103,14 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	meta := pad
 	padMeta := ""
 	if pdview == PListTreeView {
-		// tmeta, _ := file.ColorMeta(git)
 		meta += fds.ColorMetaValuesString()
-		// meta += tmeta
-		wmeta = fds.MetaValuesStringWidth() + paw.StringWidth(pad)
-		// wmeta += lenmeta
+		wmeta = fds.MetaValuesStringWidth() + paw.StringWidth(pad) + 1
 		padMeta = paw.Spaces(wmeta)
+		// 1. print all fields except Name
+		fmt.Fprintf(sb, "%s ", meta)
 	} else {
 		padMeta = paw.Spaces(wmeta - 1)
 	}
-
-	fmt.Fprintf(sb, "%s", meta)
 
 	aMeta := ""
 	for i := 0; i < level; i++ {
@@ -129,11 +127,14 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	}
 	padMeta += aMeta
 
+	// 2. print out Name field
 	fmt.Fprint(sb, wrapFileString(fl, file, edge, padMeta, wmeta))
 
 	if isExtended && len(file.XAttributes) > 0 {
+		// 3. print out extended attributes
 		fmt.Fprint(sb, xattrLTString(file, pad, edge, padMeta, wmeta))
 	}
+
 	fmt.Fprint(wr, sb.String())
 }
 
@@ -148,15 +149,18 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 
 	if file.IsDir() && fl.depth == -1 {
 		cdinf, ndinf = fl.DirInfo(file)
-		cdinf += " "
-		ndinf++
-		// width -= ndinf
+		if ndinf > 0 {
+			ndinf++
+		}
 	}
 	if wname > width {
 		cedge := cdashp.Sprint(edge)
-		// printListln(sb, cedge, cdinf+file.LSColorString(name[:width]))
 		nb := len(paw.Truncate(name, width-ndinf, ""))
-		printListln(sb, cedge, cdinf+file.LSColorString(name[:nb]))
+		if ndinf == 0 {
+			printListln(sb, cedge, file.LSColorString(name[:nb]))
+		} else {
+			printListln(sb, cedge, cdinf, file.LSColorString(name[:nb]))
+		}
 		switch edge {
 		case EdgeTypeMid:
 			cedge = padMeta + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
@@ -164,12 +168,12 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 			cedge = padMeta + SpaceIndentSize
 		}
 		if paw.StringWidth(name[nb:]) <= width {
-			printListln(sb, cedge, file.LSColorString(name[nb:]))
+			printListln(sb, cedge+file.LSColorString(name[nb:]))
 		} else {
 			names := paw.WrapToSlice(name[nb:], width)
 			for _, v := range names {
 				if edge == EdgeTypeMid {
-					printListln(sb, cedge+file.LSColorString(v))
+					printListln(sb, cedge, file.LSColorString(v))
 				} else {
 					printListln(sb, cedge, file.LSColorString(v))
 				}
@@ -177,7 +181,7 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 		}
 	} else {
 		cedge := cdashp.Sprint(edge)
-		cname := cdinf + file.ColorBaseName()
+		cname := file.ColorBaseName()
 		printListln(sb, cedge, cname)
 	}
 	return sb.String()

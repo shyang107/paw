@@ -15,16 +15,17 @@ func (f *FileList) ToClassifyViewString(pad string) string {
 // ToClassifyView will return the string of FileList to display type indicator by file names (like as `exa -F` or `exa --classify`)
 func (f *FileList) ToClassifyView(pad string) string {
 	var (
-		buf  = f.StringBuilder()
-		w    = f.Writer()
-		dirs = f.Dirs()
-		fm   = f.Map()
+		buf     = f.StringBuilder()
+		w       = f.Writer()
+		dirs    = f.Dirs()
+		fm      = f.Map()
+		wdlimit = sttyWidth - 2
 	)
 	buf.Reset()
 
 	for i, dir := range dirs {
 		if f.depth != 0 {
-			fmt.Fprintf(w, "%v\n", fm[dir][0].ColorDirName(f.root))
+			fmt.Fprintln(w, fm[dir][0].ColorDirName(f.root))
 			if len(fm[dir]) == 1 {
 				fmt.Fprintln(w)
 				continue
@@ -33,10 +34,10 @@ func (f *FileList) ToClassifyView(pad string) string {
 
 		files := fm[dir][1:]
 		lens, sumlen := getFileStringWidths(files)
-		if sumlen <= sttyWidth {
+		if sumlen <= wdlimit {
 			classifyPrintFiles(w, files)
 		} else {
-			classifyGridPrintFiles(w, files, lens, sumlen, sttyWidth)
+			classifyGridPrintFiles(w, files, lens, sumlen, wdlimit)
 		}
 
 		if f.depth == 0 {
@@ -75,16 +76,24 @@ func classifyGridPrintFiles(w io.Writer, files []*File, lens []int, sumlen int, 
 				break
 			}
 			name := cgGetFileString(files[il], widths[iw])
-			fmt.Fprintf(w, "%v", name)
+			fmt.Fprintf(w, "%s", name)
 		}
 		fmt.Fprintln(w)
 	}
 }
 
 func cgGetFileString(file *File, width int) string {
-	ns := width - paw.StringWidth(file.BaseName)
-	tail := ""
-	cname := file.ColorBaseName()
+	var (
+		wname = paw.StringWidth(file.BaseName)
+		ns    = width - wname
+		cname = file.ColorBaseName()
+		tail  = ""
+	)
+	if ns < 0 {
+		cname = file.LSColorString(paw.Wrap(file.BaseName, width))
+		ns = 0
+	}
+
 	if file.IsDir() || file.IsLink() || len(file.XAttributes) > 0 {
 		ws := 0
 		if file.IsDir() {
@@ -123,9 +132,13 @@ func getFieldWidths(wds []int, maxwd int) (widths []int) {
 }
 
 func modifyWidths(wds []int, nFields, maxwd int) (widths []int) {
+
 	widths = make([]int, nFields)
 	copy(widths, wds[:nFields])
 
+	if nFields == 0 {
+		return []int{sttyWidth - 2}
+	}
 	nfolds := len(wds) / nFields
 	if nfolds*nFields < len(wds) {
 		nfolds++

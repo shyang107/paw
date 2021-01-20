@@ -203,12 +203,17 @@ func (f *Field) ValueString() string {
 func (f *Field) ColorValueString() string {
 	s := f.ValueString()
 	if f.ValueC != nil {
-		return fmt.Sprintf("%v", f.ValueC)
+		// return fmt.Sprintf("%v", f.ValueC)
+		return cast.ToString(f.ValueC)
 	}
 	if f.ValueColor != nil {
 		return f.ValueColor.Sprint(s)
 	}
 	return s
+	// if f.ValueC == nil {
+	// 	return ""
+	// }
+	// return fmt.Sprintf("%v", f.ValueC)
 }
 
 // HeadString will return string of Field.Name with width Field.Width
@@ -288,8 +293,8 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				perm += " "
 			}
 			fd.SetValue(perm)
-			fd.SetColorfulValue(file.ColorPermission())
 			fd.SetValueColor(cpmp)
+			fd.SetColorfulValue(file.ColorPermission())
 		case PFieldLinks: //"Links",
 			fd.SetValue(file.NLinks())
 			fd.SetValueColor(clkp)
@@ -298,8 +303,8 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				fd.SetValue("-")
 				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
 			} else {
-				csize := fdColorizedSize(file.Size, fd.Width)
 				fd.SetValue(ByteSize(file.Size))
+				csize := fdColorizedSize(file.Size, fd.Width)
 				fd.SetColorfulValue(csize)
 			}
 			fd.SetValueColor(csnp)
@@ -315,18 +320,23 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 		case PFieldUser: //"User",
 			fd.SetValue(urname)
 			fd.SetValueColor(cuup)
+			fd.SetColorfulValue(cuup.Sprintf("%[1]*[2]v", fd.Width, urname))
 		case PFieldGroup: //"Group",
 			fd.SetValue(gpname)
 			fd.SetValueColor(cgup)
+			fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, gpname))
 		case PFieldModified: //"Date Modified",
 			fd.SetValue(DateString(file.ModifiedTime()))
 			fd.SetValueColor(cdap)
+			// fd.SetColorfulValue(file.ColorModifyTime())
 		case PFieldCreated: //"Date Created",
 			fd.SetValue(DateString(file.CreatedTime()))
 			fd.SetValueColor(cdap)
+			// fd.SetColorfulValue(file.ColorCreatedTime())
 		case PFieldAccessed: //"Date Accessed",
 			fd.SetValue(DateString(file.AccessedTime()))
 			fd.SetValueColor(cdap)
+			// fd.SetColorfulValue(file.ColorAccessedTime())
 		case PFieldGit: //"Gid",
 			if git.NoGit {
 				continue
@@ -337,8 +347,57 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			fd.SetValueColor(cgtp)
 		case PFieldName: //"Name",
 			fd.SetValue(file.Name())
-			fd.SetColorfulValue(file.ColorName())
 			fd.SetValueColor(cfip)
+			fd.SetColorfulValue(file.ColorName())
+		}
+	}
+}
+
+// SetColorfulValues sets up colorful values of FieldSlice from File and GitStatus
+func (f *FieldSlice) SetColorfulValues(file *File, git GitStatus) {
+	for _, fd := range f.fds {
+		switch fd.Key {
+		case PFieldINode: //"inode",
+		case PFieldPermissions: //"Permissions",
+			perm := fmt.Sprintf("%v", file.Stat.Mode())
+			if len(file.XAttributes) > 0 {
+				perm += "@"
+			} else {
+				perm += " "
+			}
+			fd.SetColorfulValue(file.ColorPermission())
+		case PFieldLinks: //"Links",
+		case PFieldSize: //"Size",
+			if file.IsDir() {
+				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
+			} else {
+				csize := fdColorizedSize(file.Size, fd.Width)
+				fd.SetColorfulValue(csize)
+			}
+		case PFieldBlocks: //"User",
+			if file.IsDir() {
+				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
+			} else {
+				fd.SetColorfulValue(cbkp.Sprintf("%[1]*[2]v", fd.Width, file.Blocks()))
+			}
+		case PFieldUser: //"User",
+			fd.SetColorfulValue(cuup.Sprintf("%[1]*[2]v", fd.Width, urname))
+		case PFieldGroup: //"Group",
+			fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, gpname))
+		case PFieldModified: //"Date Modified",
+			// fd.SetColorfulValue(file.ColorModifyTime())
+		case PFieldCreated: //"Date Created",
+			// fd.SetColorfulValue(file.ColorCreatedTime())
+		case PFieldAccessed: //"Date Accessed",
+			// fd.SetColorfulValue(file.ColorAccessedTime())
+		case PFieldGit: //"Gid",
+			if git.NoGit {
+				continue
+			} else {
+				fd.SetColorfulValue(file.ColorGitStatus(git))
+			}
+		case PFieldName: //"Name",
+			fd.SetColorfulValue(file.ColorName())
 		}
 	}
 }
@@ -427,6 +486,16 @@ func (f *FieldSlice) GetByName(name string) *Field {
 	return nil
 }
 
+// Aligns will return the paw.Align slice from Field.Align of FieldSlie
+func (f *FieldSlice) Aligns() []paw.Align {
+	hds := make([]paw.Align, f.Count())
+	for i := 0; i < f.Count(); i++ {
+		fd := f.fds[i]
+		hds[i] = fd.Align
+	}
+	return hds
+}
+
 // Heads will return the string slice from Field.Name of FieldSlie
 func (f *FieldSlice) Heads() []string {
 	hds := make([]string, f.Count())
@@ -443,16 +512,6 @@ func (f *FieldSlice) HeadWidths() []int {
 	for i := 0; i < f.Count(); i++ {
 		fd := f.fds[i]
 		hds[i] = fd.Width
-	}
-	return hds
-}
-
-// HeadAligns will return the paw.Align slice from Field.Align of FieldSlie
-func (f *FieldSlice) HeadAligns() []paw.Align {
-	hds := make([]paw.Align, f.Count())
-	for i := 0; i < f.Count(); i++ {
-		fd := f.fds[i]
-		hds[i] = fd.Align
 	}
 	return hds
 }
@@ -524,7 +583,7 @@ func (f *FieldSlice) Colors() []*color.Color {
 	return vals
 }
 
-// Values will return the interface{} slice from Field.Value of FieldSlie
+// Values will return all interface{} slice from Field.Value of FieldSlie
 func (f *FieldSlice) Values() []interface{} {
 	vals := make([]interface{}, f.Count())
 	for i := 0; i < f.Count(); i++ {
@@ -534,8 +593,18 @@ func (f *FieldSlice) Values() []interface{} {
 	return vals
 }
 
-// ValuesString will return the string slice from Field.Value of FieldSlie
-func (f *FieldSlice) ValuesString() []string {
+// ValueCs will return the interface{} slice from Field.ValueC of FieldSlie
+func (f *FieldSlice) ValueCs() []interface{} {
+	vals := make([]interface{}, f.Count())
+	for i := 0; i < f.Count(); i++ {
+		fd := f.fds[i]
+		vals[i] = fd.ValueC
+	}
+	return vals
+}
+
+// ValuesStrings will return the string slice from Field.Value of FieldSlie
+func (f *FieldSlice) ValuesStrings() []string {
 	return cast.ToStringSlice(f.Values())
 	// vals := make([]string, f.Count())
 	// for i := 0; i < f.Count(); i++ {
@@ -545,14 +614,49 @@ func (f *FieldSlice) ValuesString() []string {
 	// return vals
 }
 
-// ColorValues will return the colorful string slice from Field.ColorValueString() of FieldSlie
-func (f *FieldSlice) ColorValues() []string {
+// ValuesStringSlice will return the string slice according to idx from Field.Value of FieldSlie
+func (f *FieldSlice) ValuesStringSlice(idxs ...int) []string {
+	vs := f.ValuesStrings()
+	out := make([]string, len(idxs))
+	nidxs := len(idxs)
+	for i := 0; i < nidxs; i++ {
+		idx := idxs[i]
+		if checkIndex(idx, 0, nidxs) {
+			out[i] = vs[i]
+		}
+	}
+	return out
+}
+
+func checkIndex(idx int, min, max int) bool {
+	if idx >= min && idx < max {
+		return true
+	}
+	return false
+}
+
+// ColorValueStrings will return the colorful string slice from Field.ColorValueString() of FieldSlie
+func (f *FieldSlice) ColorValueStrings() []string {
 	vals := make([]string, f.Count())
 	for i := 0; i < f.Count(); i++ {
 		fd := f.fds[i]
 		vals[i] = fd.ColorValueString()
 	}
 	return vals
+}
+
+// ColorValueStringSlice will return the string slice according to idx from Field.Value of FieldSlie
+func (f *FieldSlice) ColorValueStringSlice(idxs ...int) []string {
+	vs := f.ColorValueStrings()
+	out := make([]string, len(idxs))
+	nidxs := len(idxs)
+	for i := 0; i < nidxs; i++ {
+		idx := idxs[i]
+		if checkIndex(idx, 0, nidxs) {
+			out[i] = vs[i]
+		}
+	}
+	return out
 }
 
 // MetaValuesString will return string slice of Field.ValueString() exclude `PFieldName`
@@ -599,7 +703,17 @@ func (f *FieldSlice) ColorMetaValues() []string {
 		case PFieldName:
 			continue
 		default:
-			vals = append(vals, fd.ColorValueString())
+			value := fd.ColorValueString()
+			// if fd.ValueC == nil {
+			// 	switch fd.Align {
+			// 	case paw.AlignLeft:
+			// 		value = fmt.Sprintf("%-[1]*[2]v", fd.Width, fd.Value)
+			// 	default:
+			// 		value = fmt.Sprintf("%[1]*[2]v", fd.Width, fd.Value)
+			// 	}
+			// 	value = fd.ValueColor.Sprint(value)
+			// }
+			vals = append(vals, value)
 		}
 	}
 	return vals
@@ -607,6 +721,8 @@ func (f *FieldSlice) ColorMetaValues() []string {
 
 // ColorHeadsString will return colorful string join by a space of FieldSlice.ColorMetaValues() exclude `PFieldName`
 func (f *FieldSlice) ColorMetaValuesString() string {
+	// v := strings.Join(f.ColorMetaValues(), " ")
+	// fmt.Printf("%d, %q\n", paw.StringWidth(v), v)
 	return strings.Join(f.ColorMetaValues(), " ")
 	// sb := paw.NewStringBuilder()
 	// for i, h := range f.ColorMetaValues() {

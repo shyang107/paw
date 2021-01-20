@@ -352,12 +352,12 @@ func checkAndPrintFile(w io.Writer, path string, pad string) error {
 		return err
 	}
 	if file.IsFile() || file.IsLink() {
-		git, _ := GetShortGitStatus(file.Dir)
-		chead, _ := getColorizedHead("", urname, gpname, git)
 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getColorDirName(file.Dir, ""))
-		fmt.Fprintln(w, chead)
-		meta, _ := file.ColorMeta(git)
-		fmt.Fprintf(w, "%s%s%s\n", pad, meta, file.ColorName())
+		git, _ := GetShortGitStatus(file.Dir)
+		fds := NewFieldSliceFrom(pfieldKeys, git)
+		fds.SetValues(file, git)
+		fmt.Fprintln(w, fds.ColorHeadsString())
+		fmt.Fprint(w, rowWrapFileName(file, fds, pad, sttyWidth-2))
 		return errBreak
 	}
 	return nil

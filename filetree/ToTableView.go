@@ -61,14 +61,13 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		}
 	)
 	buf.Reset()
-	// f.DisableColor()
 
 	fds.Insert(0, fdNo)
 
 	tf := &paw.TableFormat{
 		Fields:            fds.Heads(),
 		LenFields:         fds.HeadWidths(),
-		Aligns:            fds.HeadAligns(),
+		Aligns:            fds.Aligns(),
 		Padding:           pad,
 		IsWrapped:         true,
 		IsColorful:        true,
@@ -76,15 +75,13 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		XAttributeSymbol2: xsymb2,
 	}
 
-	modifySizeWidth(fds, f)
+	modifyFDSWidth(fds, f, sttyWidth-2-paw.StringWidth(pad))
+	fdName := fds.Get(PFieldName)
 
 	wdmeta := fds.MetaHeadsStringWidth()
-	fdName := fds.Get(PFieldName)
 	if wdmeta > sttywd-10 {
 		paw.Error.Println("too many fields")
 		tf = deftf
-	} else {
-		fdName.Width = sttywd - wdmeta
 	}
 
 	tf.LenFields = fds.HeadWidths()
@@ -108,6 +105,13 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		}
 		nsubdir, nsubfiles, sumsize := 0, 0, uint64(0)
 		for jj, file := range fm[dir] {
+			fds.SetValues(file, git)
+			// fds.SetColorfulValues(file, git)
+			fdName.SetColorfulValue("")
+			fdName.SetValueColor(GetFileLSColor(file))
+			tf.Colors = fds.Colors()
+			tf.FieldsColorString = fds.ColorValueStrings()
+
 			jdx := ""
 			if file.IsDir() {
 				if jj != 0 && !paw.EqualFold(file.Dir, RootMark) {
@@ -123,21 +127,13 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 				jdx = fmt.Sprintf("%d", nfiles)
 			}
 
-			fds.SetValues(file, git)
-
 			if jj > 0 {
 				fdNo.SetValue(jdx)
 			} else { //jj==0
 				fdName.SetValue(file.Dir)
 			}
-			fdName.SetValueColor(GetFileLSColor(file))
-
-			// fmt.Println("len(tf.Colors) =", len(tf.Colors), "len(fds.Colors()) =", len(fds.Colors()))
-			tf.Colors = fds.Colors()
-			// fmt.Println("len(tf.Colors) =", len(tf.Colors), "len(fds.Colors()) =", len(fds.Colors()))
 
 			values := fds.Values()
-			// fmt.Printf("%d  %#v\n", len(values), values)
 			tf.PrintRow(values...)
 
 			if isExtended && len(file.XAttributes) > 0 {
@@ -175,8 +171,6 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 
 	tf.SetAfterMessage(fmt.Sprintf("Accumulated %v directories, %v files, total %v.", nDirs, nFiles, ByteSize(f.totalSize)))
 	tf.PrintEnd()
-
-	// f.EnableColor()
 
 	return buf.String()
 }

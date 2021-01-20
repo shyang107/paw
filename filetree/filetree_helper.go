@@ -391,29 +391,6 @@ func getColorizedHead(pad, username, groupname string, git GitStatus) (chead str
 	chead = csb.String()
 	chead = chead[:len(chead)-1]
 	return chead, width
-	// width := paw.MaxInts(4, paw.StringWidth(username))
-	// huser := fmt.Sprintf("%[1]*[2]s", width, "User")
-	// width = paw.MaxInts(5, paw.StringWidth(groupname))
-	// hgroup := fmt.Sprintf("%[1]*[2]s", width, "Group")
-
-	// ssize := fmt.Sprintf("%6s", "Size")
-
-	// dates := make([]string, len(fieldKeys))
-	// for _, v := range fields {
-	// 	dates = append(dates, chdp.Sprint(v)+" ")
-	// }
-	// cdate := paw.Join(dates, "")
-	// cdate = paw.TrimSpace(cdate)
-
-	// head := ""
-	// if git.NoGit {
-	// 	// head = fmt.Sprintf("%s%s %s %s %s %14s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Date Modified"), chdp.Sprint("Name"))
-	// 	head = fmt.Sprintf("%s%s %s %s %s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), cdate, chdp.Sprint("Name"))
-	// } else {
-	// 	// head = fmt.Sprintf("%s%s %s %s %s %14s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), chdp.Sprint(" Date Modified"), chdp.Sprint("Git"), chdp.Sprint("Name"))
-	// 	head = fmt.Sprintf("%s%s %s %s %s %s %s %s", pad, chdp.Sprint("Permissions"), chdp.Sprint(ssize), chdp.Sprint(huser), chdp.Sprint(hgroup), cdate, chdp.Sprint("Git"), chdp.Sprint("Name"))
-	// }
-	// return head
 }
 
 func printBanner(w io.Writer, pad string, mark string, length int) {
@@ -485,18 +462,16 @@ func (s *sizesStack) Accumulate(i int64) {
 
 func printListln(w io.Writer, items ...interface{}) {
 	sb := paw.NewStringBuilder()
-	sb.Grow(len(items))
-	for i := 0; i < len(items); i++ {
-		if i < len(items)-1 {
+	nitems := len(items)
+	sb.Grow(nitems)
+	for i := 0; i < nitems; i++ {
+		if i < nitems-1 {
 			fmt.Fprintf(sb, "%v ", items[i])
 		} else {
 			fmt.Fprintf(sb, "%v", items[i])
 		}
 	}
 	fmt.Fprintln(w, sb.String())
-}
-
-func printFileName(w io.Writer, pad string, fds *FieldSlice, fdNo *Field, file *File) {
 }
 
 func DateString(date time.Time) (sdate string) {
@@ -513,7 +488,82 @@ func GetColorizedTime(date time.Time) string {
 	return cdap.Sprint(DateString(date))
 }
 
-func wrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) string {
+func rowWrapDirName(dirName, pad string, wpad int, wdlimit int) string {
+	var (
+		w = paw.NewStringBuilder()
+		// wpad      = paw.StringWidth(pad)
+		sppad     = paw.Spaces(wpad)
+		dir, name = filepath.Split(dirName)
+		wdir      = paw.StringWidth(dir)
+		wname     = paw.StringWidth(name)
+		wlen      = wpad + wdir + wname
+		width     = wdlimit - wpad
+	)
+	if wlen <= wdlimit { // one line dir
+		cname := cdirp.Sprint(dir) + cdip.Sprint(name)
+		fmt.Fprintf(w, "%s%s\n", pad, cname)
+	} else { // two more lines dir
+		if wpad+wdir <= wdlimit { // 1. condisde dir
+			// 1st line dir
+			fmt.Fprintf(w, "%s%s", pad, cdirp.Sprint(dir))
+			wred := width - wdir
+			if wname <= wred {
+				// 1st line cont. +name
+				fmt.Fprintf(w, "%s\n", cdip.Sprint(name))
+			} else {
+				// 1st line cont. +name
+				name0 := paw.Truncate(name, wred, "")
+				fmt.Fprintf(w, "%s\n", cdip.Sprint(name0))
+				// 2nd line start, only name
+				p0 := len(name0)
+				name1 := name[p0:]
+				wname1 := paw.StringWidth(name1)
+				if wname1 <= width {
+					// 2nd line, end name
+					fmt.Fprintf(w, "%s%s\n", sppad, cdip.Sprint(name1))
+				} else {
+					// 2nd and more lines, name only
+					names := paw.WrapToSlice(name1, width)
+					for _, v := range names {
+						fmt.Fprintf(w, "%s%s\n", sppad, cdip.Sprint(v))
+					}
+				}
+			}
+		} else { // wpad+wdir > wdlimit
+			// 1. two and more lines, dir only
+			dirs := paw.WrapToSlice(dir, width)
+			for i := 0; i < len(dirs)-1; i++ {
+				fmt.Fprintf(w, "%s%s\n", pad, cdirp.Sprint(dirs[i]))
+			}
+			// 2. last line of dir
+			fmt.Fprintf(w, "%s%s", sppad, cdirp.Sprint(dirs[len(dirs)-1]))
+			wred := width - paw.StringWidth(dirs[len(dirs)-1])
+			if wname <= wred {
+				// 3.1 step 2 cont., +name and end
+				fmt.Fprintf(w, "%s\n", cdip.Sprint(name))
+			} else {
+				// 3.2 step 2 cont., +name and more lines
+				name0 := paw.Truncate(name, wred, "")
+				fmt.Fprintf(w, "%s\n", cdip.Sprint(name0))
+				// 4. two and more lines, name
+				p0 := len(name0)
+				name1 := name[p0:]
+				wname1 := paw.StringWidth(name1)
+				if wname1 <= width {
+					fmt.Fprintf(w, "%s%s\n", sppad, cdip.Sprint(name1))
+				} else {
+					names := paw.WrapToSlice(name1, width)
+					for _, v := range names {
+						fmt.Fprintf(w, "%s%s\n", sppad, cdip.Sprint(v))
+					}
+				}
+			}
+		}
+	}
+	return w.String()
+}
+
+func rowWrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) string {
 	var (
 		sb     = paw.NewStringBuilder()
 		wpad   = paw.StringWidth(pad)
@@ -673,7 +723,7 @@ func modifyHead(fds *FieldSlice, files []*File, pad string) (chead string, wdmet
 	return chead, wdmeta
 }
 
-func modifyTreeHead(fds *FieldSlice, fl *FileList, pad string) (chead string, wdmeta int) {
+func modifyFDSTreeHead(fds *FieldSlice, fl *FileList, pad string) (chead string, wdmeta int) {
 	wdsize := 0
 	for _, dir := range fl.Dirs() {
 		files := fl.Map()[dir][1:]
@@ -688,7 +738,7 @@ func modifyTreeHead(fds *FieldSlice, fl *FileList, pad string) (chead string, wd
 	return chead, wdmeta
 }
 
-func modifySizeWidth(fds *FieldSlice, fl *FileList) {
+func modifyFDSWidth(fds *FieldSlice, fl *FileList, sttyLimit int) {
 	wdsize := 0
 	for _, dir := range fl.Dirs() {
 		files := fl.Map()[dir][1:]
@@ -698,4 +748,6 @@ func modifySizeWidth(fds *FieldSlice, fl *FileList) {
 		}
 	}
 	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
+	wdmeta := fds.MetaHeadsStringWidth() + 1
+	fds.Get(PFieldName).Width = sttyLimit - wdmeta
 }

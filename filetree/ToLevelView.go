@@ -2,8 +2,6 @@ package filetree
 
 import (
 	"fmt"
-	"io"
-	"path/filepath"
 
 	"github.com/shyang107/paw"
 )
@@ -44,7 +42,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		// wperm       = 11
 		// wsize       = 6
 		// wdate       = 14
-		bannerWidth = sttyWidth - 2 - len(pad)
+		bannerWidth = sttyWidth - 2 - paw.StringWidth(pad)
 		fds         = NewFieldSliceFrom(pfieldKeys, git)
 		chead       = fds.ColorHeadsString()
 		wdmeta      = fds.MetaHeadsStringWidth()
@@ -85,7 +83,20 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
-					ppad = printLevelWrappedDir(w, fm[dir][0], ppad, i1, i)
+					level := len(fm[dir][0].DirSlice()) - 1
+					slevel := fmt.Sprintf("L%d: ", level)
+
+					ppad += paw.Spaces(4 * level)
+					wppad := paw.StringWidth(ppad)
+
+					istr := fmt.Sprintf("G%-[1]*[2]d", i1, i)
+					cistr := slevel + cdip.Sprint(istr) + " "
+					wistr := paw.StringWidth(slevel) + paw.StringWidth(istr) + 1
+
+					pipad := ppad + cistr
+					wpipad := wppad + wistr
+					fmt.Fprint(w, rowWrapDirName(dir, pipad, wpipad, bannerWidth))
+					// ppad = printLevelWrappedDir(w, fm[dir][0], ppad, i1, i)
 					if len(fm[dir]) > 1 {
 						ntdirs++
 					}
@@ -112,7 +123,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 			fdNo.SetValue(jstr)
 			fdNo.SetColorfulValue(cjstr)
 			fds.SetValues(file, git)
-			fmt.Fprint(w, wrapFileName(file, fds, ppad, bannerWidth))
+			fmt.Fprint(w, rowWrapFileName(file, fds, ppad, bannerWidth))
 
 			if isExtended && len(file.XAttributes) > 0 {
 				spmeta = paw.Spaces(wdmeta)
@@ -142,49 +153,4 @@ END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)
 	// spew.Dump(f.dirs)
 	return buf.String()
-}
-
-func printLevelWrappedDir(w io.Writer, file *File, pad string, i1, i int) string {
-	var (
-		level     = len(file.DirSlice()) - 1 //len(paw.Split(dir, PathSeparator)) - 1
-		ppad      = pad + paw.Spaces(4*level)
-		wppad     = paw.StringWidth(ppad)
-		slevel    = fmt.Sprintf("L%d: ", level)
-		istr      = fmt.Sprintf("G%-[1]*[2]d", i1, i)
-		cistr     = slevel + cdip.Sprint(istr)
-		wistr     = paw.StringWidth(slevel) + paw.StringWidth(istr)
-		wpi       = wppad + wistr
-		dir, name = filepath.Split(file.Dir)
-		wdir      = paw.StringWidth(dir)
-		wname     = paw.StringWidth(name)
-	)
-
-	if wpi+wdir+wname > sttyWidth-4 {
-		var (
-			sp  = paw.Spaces(wistr + 1)
-			end = sttyWidth - wpi - 4
-		)
-		if wdir <= end {
-			printListln(w, ppad+cistr, "", cdirp.Sprint(dir))
-		} else {
-			var dirs = paw.Split(paw.Wrap(dir, end), "\n")
-			printListln(w, ppad+cistr, "", cdirp.Sprint(dirs[0]))
-			for i := 1; i < len(dirs); i++ {
-				printListln(w, ppad+sp, cdirp.Sprint(dirs[i]))
-			}
-		}
-		if wname <= end {
-			printListln(w, ppad+sp, cdip.Sprint(name))
-		} else {
-			var names = paw.Split(paw.Wrap(name, end), "\n")
-			printListln(w, ppad+sp, cdip.Sprint(names[0]))
-			for i := 1; i < len(names); i++ {
-				printListln(w, ppad+sp, cdip.Sprint(names[i]))
-			}
-		}
-	} else {
-		var cname = cdirp.Sprint(dir) + cdip.Sprint(name)
-		printListln(w, ppad+cistr, "", cname)
-	}
-	return ppad
 }
