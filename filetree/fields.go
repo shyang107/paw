@@ -130,30 +130,30 @@ var (
 // 	Width: number of name on console
 // 	Value: value of the field
 // 	ValueC: colorfulString of value of the field
-// 	valuecp: *color.Color use to create colorful srtring for value;no default color, use SetValueColor to setup
-// 	headcp: *color.Color use to create colorful srtring for head; has default color, use SetHeadColor to setup
+// 	ValueColor: *color.Color use to create colorful srtring for value;no default color, use SetValueColor to setup
+// 	HeadColor: *color.Color use to create colorful srtring for head; has default color, use SetHeadColor to setup
 type Field struct {
-	Key     PDFieldFlag
-	Name    string
-	Width   int
-	Value   interface{}
-	ValueC  interface{}
-	Align   paw.Align
-	valuecp *color.Color
-	headcp  *color.Color
+	Key        PDFieldFlag
+	Name       string
+	Width      int
+	Value      interface{}
+	ValueC     interface{}
+	Align      paw.Align
+	ValueColor *color.Color
+	HeadColor  *color.Color
 }
 
 // NewField will return *Field
 func NewField(flag PDFieldFlag) *Field {
 	return &Field{
-		Key:     flag,
-		Name:    pfieldsMap[flag],
-		Width:   pfieldWidthsMap[flag],
-		Value:   nil,
-		ValueC:  nil,
-		valuecp: pfieldCPMap[flag],
-		Align:   pfieldAlignMap[flag],
-		headcp:  chdp,
+		Key:        flag,
+		Name:       pfieldsMap[flag],
+		Width:      pfieldWidthsMap[flag],
+		Value:      nil,
+		ValueC:     nil,
+		ValueColor: pfieldCPMap[flag],
+		Align:      pfieldAlignMap[flag],
+		HeadColor:  chdp,
 	}
 }
 
@@ -169,12 +169,22 @@ func (f *Field) SetColorfulValue(value interface{}) {
 
 // SetValueColor sets up color of Field.Value
 func (f *Field) SetValueColor(c *color.Color) {
-	f.valuecp = c
+	f.ValueColor = c
+}
+
+// GetValueColor returns color of Field.Value
+func (f *Field) GetValueColor(c *color.Color) *color.Color {
+	return f.ValueColor
 }
 
 // SetHeadColor sets up color of Field.Name
 func (f *Field) SetHeadColor(c *color.Color) {
-	f.headcp = c
+	f.HeadColor = c
+}
+
+// GetHeadColor returns color of Field.Name
+func (f *Field) GetHeadColor(c *color.Color) *color.Color {
+	return f.HeadColor
 }
 
 // ValueString will return string of Field.Value
@@ -192,11 +202,11 @@ func (f *Field) ValueString() string {
 // ColorValueString will colorful string of Field.Value
 func (f *Field) ColorValueString() string {
 	s := f.ValueString()
-	if f.valuecp != nil {
-		return f.valuecp.Sprint(s)
-	}
 	if f.ValueC != nil {
 		return fmt.Sprintf("%v", f.ValueC)
+	}
+	if f.ValueColor != nil {
+		return f.ValueColor.Sprint(s)
 	}
 	return s
 }
@@ -216,7 +226,7 @@ func (f *Field) HeadString() string {
 // ColorHeadString will return colorful string of Field.Name with width Field.Width as see
 func (f *Field) ColorHeadString() string {
 	s := f.HeadString()
-	return f.headcp.Sprint(s)
+	return f.HeadColor.Sprint(s)
 }
 
 // FieldSlice is Field union
@@ -239,6 +249,9 @@ func NewFieldSliceFrom(keys []PDFieldFlag, git GitStatus) (fds *FieldSlice) {
 			continue
 		}
 		field := FieldsMap[k]
+		if _, ok := pfieldAlignMap[k]; !ok {
+			field.Align = paw.AlignLeft
+		}
 		f.Add(field)
 	}
 	return f
@@ -266,6 +279,7 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 		switch fd.Key {
 		case PFieldINode: //"inode",
 			fd.SetValue(file.INode())
+			fd.SetValueColor(cinp)
 		case PFieldPermissions: //"Permissions",
 			perm := fmt.Sprintf("%v", file.Stat.Mode())
 			if len(file.XAttributes) > 0 {
@@ -275,8 +289,10 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			}
 			fd.SetValue(perm)
 			fd.SetColorfulValue(file.ColorPermission())
+			fd.SetValueColor(cpmp)
 		case PFieldLinks: //"Links",
 			fd.SetValue(file.NLinks())
+			fd.SetValueColor(clkp)
 		case PFieldSize: //"Size",
 			if file.IsDir() {
 				fd.SetValue("-")
@@ -286,6 +302,7 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				fd.SetValue(ByteSize(file.Size))
 				fd.SetColorfulValue(csize)
 			}
+			fd.SetValueColor(csnp)
 		case PFieldBlocks: //"User",
 			if file.IsDir() {
 				fd.SetValue("-")
@@ -294,16 +311,22 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				fd.SetValue(file.Blocks())
 				fd.SetColorfulValue(cbkp.Sprintf("%[1]*[2]v", fd.Width, file.Blocks()))
 			}
+			fd.SetValueColor(cbkp)
 		case PFieldUser: //"User",
 			fd.SetValue(urname)
+			fd.SetValueColor(cuup)
 		case PFieldGroup: //"Group",
 			fd.SetValue(gpname)
+			fd.SetValueColor(cgup)
 		case PFieldModified: //"Date Modified",
 			fd.SetValue(DateString(file.ModifiedTime()))
+			fd.SetValueColor(cdap)
 		case PFieldCreated: //"Date Created",
 			fd.SetValue(DateString(file.CreatedTime()))
+			fd.SetValueColor(cdap)
 		case PFieldAccessed: //"Date Accessed",
 			fd.SetValue(DateString(file.AccessedTime()))
+			fd.SetValueColor(cdap)
 		case PFieldGit: //"Gid",
 			if git.NoGit {
 				continue
@@ -311,9 +334,11 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				fd.SetValue(getGitStatus(git, file))
 				fd.SetColorfulValue(file.ColorGitStatus(git))
 			}
+			fd.SetValueColor(cgtp)
 		case PFieldName: //"Name",
 			fd.SetValue(file.Name())
 			fd.SetColorfulValue(file.ColorName())
+			fd.SetValueColor(cfip)
 		}
 	}
 }
@@ -487,6 +512,16 @@ func (f *FieldSlice) ColorHeadsString() string {
 	// 	}
 	// }
 	// return w.String()
+}
+
+// Colors will return the []*color.Color slice from Field.ValueColor of FieldSlie
+func (f *FieldSlice) Colors() []*color.Color {
+	vals := make([]*color.Color, f.Count())
+	for i := 0; i < f.Count(); i++ {
+		fd := f.fds[i]
+		vals[i] = fd.ValueColor
+	}
+	return vals
 }
 
 // Values will return the interface{} slice from Field.Value of FieldSlie

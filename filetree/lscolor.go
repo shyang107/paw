@@ -32,9 +32,9 @@ var (
 	}
 	EXAColors = map[string][]color.Attribute{
 		"fi": LSColors["fi"],
-		"di": []color.Attribute{38, 5, 30},
+		"di": LSColors["di"], //[]color.Attribute{38, 5, 30},
 		"ex": LSColors["ex"],
-		"ln": []color.Attribute{38, 5, 45},
+		"ln": LSColors["ln"], //[]color.Attribute{38, 5, 45},
 		// "ur": LSColors["ex"],
 		"ur": []color.Attribute{38, 5, 230, 1}, // user +r bit
 		"uw": []color.Attribute{38, 5, 209, 1}, // user +w bit
@@ -787,8 +787,8 @@ func getColorExt(fullpath string) (file, ext string) {
 		ext = "so" // so = socket file
 	case mode&os.ModeNamedPipe != 0:
 		ext = "pi" //pi = fifo file
-	// case mode&os.ModeDevice != 0:
-	// 	ext = ""
+	case mode&os.ModeDevice != 0:
+		ext = "cd"
 	// bd = block (buffered) special file
 	case mode&os.ModeCharDevice != 0:
 		// cd = character (unbuffered) special file
@@ -811,4 +811,53 @@ func NewLSColor(key string) *color.Color {
 // NewEXAColor will return `*color.Color` using `EXAColors[key]`
 func NewEXAColor(key string) *color.Color {
 	return color.New(EXAColors[key]...)
+}
+
+func GetFileLSColor(file *File) *color.Color {
+
+	if file.IsDir() { // os.ModeDir
+		return NewLSColor("di")
+	}
+
+	if file.IsLink() { // os.ModeSymlink
+		return NewLSColor("ln")
+	}
+
+	// if file.IsDev() { //
+	// 	return NewLSColor("so")
+	// }
+	if file.IsChardev() { // os.ModeDevice | os.ModeCharDevice
+		return NewLSColor("cd")
+	}
+	if file.IsFiFo() { //os.ModeNamedPipe
+		return NewLSColor("pi")
+	}
+	if file.IsSocket() { //os.ModeSocket
+		return NewLSColor("so")
+	}
+	if file.IsFile() { // 0
+		if _, ok := LSColors[file.BaseName]; ok {
+			return color.New(LSColors[file.BaseName]...)
+		}
+		if _, ok := LSColors[file.Ext]; ok {
+			return color.New(LSColors[file.Ext]...)
+		}
+		for re, att := range reExtLSColors {
+			if re.MatchString(file.BaseName) {
+				return color.New(att...)
+			}
+		}
+
+		mode := file.Stat.Mode()
+		sperm := fmt.Sprintf("%v", mode)
+		if mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x") {
+			return NewLSColor("ex")
+		}
+
+		return NewLSColor("fi")
+	}
+	// if file.IsNotIdentify() {
+	// 	return NewLSColor("no")
+	// }
+	return NewLSColor("no")
 }

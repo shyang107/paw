@@ -56,7 +56,8 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			Name:  "No",
 			Width: wNo,
 			Align: paw.AlignRight,
-			// headcp: chdp,
+			// HeadColor:  chdp,
+			ValueColor: cdashp,
 		}
 	)
 	buf.Reset()
@@ -129,6 +130,11 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			} else { //jj==0
 				fdName.SetValue(file.Dir)
 			}
+			fdName.SetValueColor(GetFileLSColor(file))
+
+			// fmt.Println("len(tf.Colors) =", len(tf.Colors), "len(fds.Colors()) =", len(fds.Colors()))
+			tf.Colors = fds.Colors()
+			// fmt.Println("len(tf.Colors) =", len(tf.Colors), "len(fds.Colors()) =", len(fds.Colors()))
 
 			values := fds.Values()
 			// fmt.Printf("%d  %#v\n", len(values), values)

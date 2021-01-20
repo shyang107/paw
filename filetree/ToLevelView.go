@@ -55,11 +55,12 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	buf.Reset()
 
 	fdNo := &Field{
-		Key:    PFieldNone,
-		Name:   "No",
-		Width:  wNo,
-		Align:  paw.AlignLeft,
-		headcp: chdp,
+		Key:        PFieldNone,
+		Name:       "No",
+		Width:      wNo,
+		Align:      paw.AlignLeft,
+		HeadColor:  chdp,
+		ValueColor: cdashp,
 	}
 
 	fds.Insert(0, fdNo)

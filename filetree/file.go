@@ -219,14 +219,19 @@ func (f *File) IsDev() bool {
 	return nodeTypeFromFileInfo(f.Stat) == kindDev
 }
 
-// IsNamedPipe() report whether File describes a named pipe.
-func (f *File) IsNamedPipe() bool {
+// IsFiFo() report whether File describes a named pipe.
+func (f *File) IsFiFo() bool {
 	return nodeTypeFromFileInfo(f.Stat) == kindFIFO
 }
 
 // IsSocket() report whether File describes a socket.
 func (f *File) IsSocket() bool {
 	return nodeTypeFromFileInfo(f.Stat) == kindSocket
+}
+
+// IsNotIdentify() report whether File describes a not-identify.
+func (f *File) IsNotIdentify() bool {
+	return nodeTypeFromFileInfo(f.Stat) == kindNotIdentify
 }
 
 type kindType int
