@@ -108,6 +108,13 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		}
 		nsubdir, nsubfiles, sumsize := 0, 0, uint64(0)
 		for jj, file := range fm[dir] {
+			fds.SetValues(file, git)
+			// fds.SetColorfulValues(file, git)
+			fdName.SetColorfulValue("")
+			fdName.SetValueColor(GetFileLSColor(file))
+			tf.Colors = fds.Colors()
+			tf.FieldsColorString = fds.ColorValues()
+
 			jdx := ""
 			if file.IsDir() {
 				if jj != 0 && !paw.EqualFold(file.Dir, RootMark) {
@@ -123,21 +130,19 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 				jdx = fmt.Sprintf("%d", nfiles)
 			}
 
-			fds.SetValues(file, git)
-
 			if jj > 0 {
 				fdNo.SetValue(jdx)
 			} else { //jj==0
 				fdName.SetValue(file.Dir)
 			}
-			fdName.SetValueColor(GetFileLSColor(file))
+			// fdName.SetColorfulValue("")
+			// fdName.SetValueColor(GetFileLSColor(file))
+			// fds.Get(PFieldPermissions).SetColorfulValue(file.ColorPermission())
 
-			// fmt.Println("len(tf.Colors) =", len(tf.Colors), "len(fds.Colors()) =", len(fds.Colors()))
-			tf.Colors = fds.Colors()
-			// fmt.Println("len(tf.Colors) =", len(tf.Colors), "len(fds.Colors()) =", len(fds.Colors()))
+			// if paw.StringWidth(file.Name()) < fdName.Width {
+			// }
 
 			values := fds.Values()
-			// fmt.Printf("%d  %#v\n", len(values), values)
 			tf.PrintRow(values...)
 
 			if isExtended && len(file.XAttributes) > 0 {
