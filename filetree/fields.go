@@ -621,18 +621,11 @@ func (f *FieldSlice) ValuesStringSlice(idxs ...int) []string {
 	nidxs := len(idxs)
 	for i := 0; i < nidxs; i++ {
 		idx := idxs[i]
-		if checkIndex(idx, 0, nidxs) {
+		if err := paw.CheckIndex(vs, idx); err == nil {
 			out[i] = vs[i]
 		}
 	}
 	return out
-}
-
-func checkIndex(idx int, min, max int) bool {
-	if idx >= min && idx < max {
-		return true
-	}
-	return false
 }
 
 // ColorValueStrings will return the colorful string slice from Field.ColorValueString() of FieldSlie
@@ -652,7 +645,7 @@ func (f *FieldSlice) ColorValueStringSlice(idxs ...int) []string {
 	nidxs := len(idxs)
 	for i := 0; i < nidxs; i++ {
 		idx := idxs[i]
-		if checkIndex(idx, 0, nidxs) {
+		if err := paw.CheckIndex(vs, idx); err == nil {
 			out[i] = vs[i]
 		}
 	}

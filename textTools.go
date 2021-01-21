@@ -3,7 +3,9 @@ package paw
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"reflect"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -895,4 +897,20 @@ func Spaces(w int) string {
 		return ""
 	}
 	return Repeat(" ", w)
+}
+
+// CheckIndex will check index idx whether is in range of slice. If not, return error
+func CheckIndex(slice interface{}, idx int) error {
+	v := reflect.ValueOf(slice)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Slice {
+		return fmt.Errorf("CheckIndex: expected slice type, found %q", v.Kind().String())
+	}
+	count := v.Len()
+	if idx < 0 || idx > count-1 {
+		return fmt.Errorf("CheckIndex: slice range [%d, %d), idx is %d", 0, count, idx)
+	}
+	return nil
 }
