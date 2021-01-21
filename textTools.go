@@ -900,17 +900,26 @@ func Spaces(w int) string {
 }
 
 // CheckIndex will check index idx whether is in range of slice. If not, return error
-func CheckIndex(slice interface{}, idx int) error {
+func CheckIndex(slice interface{}, idx int, varName string) error {
 	v := reflect.ValueOf(slice)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Slice {
-		return fmt.Errorf("CheckIndex: expected slice type, found %q", v.Kind().String())
+		return fmt.Errorf("CheckIndex: expected slice type, found %q, variable name is %q", v.Kind().String(), varName)
 	}
 	count := v.Len()
 	if idx < 0 || idx > count-1 {
-		return fmt.Errorf("CheckIndex: slice range [%d, %d), idx is %d", 0, count, idx)
+		return fmt.Errorf("CheckIndex: slice range [%d, %d), idx is %d, variable name is %q", 0, count, idx, varName)
+	}
+	return nil
+}
+
+// CheckIndexInString will check index idx whether is in range of string. If not, return error
+func CheckIndexInString(s string, idx int, varName string) error {
+	var ns = len(s)
+	if idx < 0 || idx > ns-1 {
+		return fmt.Errorf("CheckIndexInString: bounds out of range, lenth is %d, index: %d, variable name is %q", ns, idx, varName)
 	}
 	return nil
 }

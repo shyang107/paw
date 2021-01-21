@@ -1,7 +1,6 @@
 package filetree
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -578,7 +577,7 @@ func rowWrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) s
 	if wname <= width {
 		printListln(sb, pad+meta, file.ColorName())
 	} else { // wrap file name
-		if err := checkStringRange(name, width, "Name"); err != nil {
+		if err := paw.CheckIndexInString(name, width, "Name"); err != nil {
 			paw.Error.Fatal(err, " (may be too many fields)")
 		}
 		if !file.IsLink() {
@@ -668,7 +667,7 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 			printListln(sb, padx+cxp.Sprint(xattr))
 		} else {
 			// var wde = wdsttylimit - wdm
-			if err := checkStringRange(xattr, width, "xattr"); err != nil {
+			if err := paw.CheckIndexInString(xattr, width, "xattr"); err != nil {
 				paw.Error.Fatal(err, " (may be too many fields)")
 			}
 			x1 := paw.Truncate(xattr, width, "")
@@ -692,14 +691,6 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 		}
 	}
 	return sb.String()
-}
-
-func checkStringRange(s string, idx int, name string) error {
-	var ns = len(s)
-	if idx < 0 || idx > ns-1 {
-		return errors.New(fmt.Sprintf("slice (%s) bounds out of range,len(slice) = %d, index: %d", name, ns, idx))
-	}
-	return nil
 }
 
 func getMaxFileSizeWidth(files []*File) int {

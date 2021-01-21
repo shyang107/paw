@@ -621,8 +621,10 @@ func (f *FieldSlice) ValuesStringSlice(idxs ...int) []string {
 	nidxs := len(idxs)
 	for i := 0; i < nidxs; i++ {
 		idx := idxs[i]
-		if err := paw.CheckIndex(vs, idx); err == nil {
+		if err := paw.CheckIndex(vs, idx, "f.ValuesStrings()"); err == nil {
 			out[i] = vs[i]
+		} else {
+			out[i] = fmt.Sprint(err)
 		}
 	}
 	return out
@@ -645,8 +647,10 @@ func (f *FieldSlice) ColorValueStringSlice(idxs ...int) []string {
 	nidxs := len(idxs)
 	for i := 0; i < nidxs; i++ {
 		idx := idxs[i]
-		if err := paw.CheckIndex(vs, idx); err == nil {
+		if err := paw.CheckIndex(vs, idx, "f.ColorValueStrings()"); err == nil {
 			out[i] = vs[i]
+		} else {
+			out[i] = fmt.Sprint(err)
 		}
 	}
 	return out
