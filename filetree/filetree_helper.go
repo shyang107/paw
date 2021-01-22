@@ -700,7 +700,7 @@ func modifyHead(fds *FieldSlice, files []*File, pad string) (chead string, wdmet
 	return chead, wdmeta
 }
 
-func modifyFDSTreeHead(fds *FieldSlice, fl *FileList, pad string) (chead string, wdmeta int) {
+func modifyFDSTreeHead(fds *FieldSlice, fl *FileList) (chead string, wdmeta int) {
 	wdsize := 0
 	for _, dir := range fl.Dirs() {
 		files := fl.Map()[dir][1:]
@@ -711,7 +711,7 @@ func modifyFDSTreeHead(fds *FieldSlice, fl *FileList, pad string) (chead string,
 	}
 	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
 	chead = fds.ColorHeadsString()
-	wdmeta = fds.MetaHeadsStringWidth() + paw.StringWidth(pad)
+	wdmeta = fds.MetaHeadsStringWidth()
 	return chead, wdmeta
 }
 
