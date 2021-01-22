@@ -41,10 +41,12 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 		chead = fds.ColorHeadsString()
 		wmeta = fds.MetaHeadsStringWidth()
 
-		wpad    = paw.StringWidth(orgpad)
-		wdstty  = sttyWidth - 2 - wpad
-		ctdsize = ByteSize(f.totalSize)
-		head    = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getColorDirName(f.root, ""), cdip.Sprint(ctdsize))
+		wpad   = paw.StringWidth(orgpad)
+		wdstty = sttyWidth - 2 - wpad
+
+		rootName = getColorDirName(f.root, "")
+		ctdsize  = GetColorizedSize(f.totalSize)
+		head     = fmt.Sprintf("Root directory: %v, size ≈ %v", rootName, ctdsize)
 	)
 
 	pad = ""

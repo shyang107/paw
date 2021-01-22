@@ -15,44 +15,59 @@ func (f *FileList) ToClassifyViewString(pad string) string {
 // ToClassifyView will return the string of FileList to display type indicator by file names (like as `exa -F` or `exa --classify`)
 func (f *FileList) ToClassifyView(pad string) string {
 	var (
-		buf     = f.StringBuilder()
-		w       = f.Writer()
-		dirs    = f.Dirs()
-		fm      = f.Map()
-		wdlimit = sttyWidth - 2
+		buf      = f.StringBuilder()
+		w        = f.Writer()
+		dirs     = f.Dirs()
+		fm       = f.Map()
+		wdstty   = sttyWidth - 2 - paw.StringWidth(pad)
+		rootName = getColorDirName(f.root, "")
+		ctdsize  = GetColorizedSize(f.totalSize)
+		head     = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, rootName, ctdsize)
 	)
 	buf.Reset()
 
 	for i, dir := range dirs {
 		if f.depth != 0 {
-			fmt.Fprintln(w, fm[dir][0].ColorDirName(f.root))
-			if len(fm[dir]) == 1 {
-				fmt.Fprintln(w)
-				continue
+			if dir == RootMark {
+				fmt.Fprintln(w, head)
+				printBanner(w, "", "=", wdstty)
+			} else {
+				dirName := fm[dir][0].ColorDirName(f.root)
+				if paw.StringWidth(fm[dir][0].Dir) > wdstty {
+					dirName = rowWrapDirName(fm[dir][0].Dir, "", 0, wdstty)
+					dirName = paw.TrimSuffix(dirName, "\n")
+				}
+				fmt.Fprintln(w, dirName)
 			}
+		} else {
+			fmt.Fprintln(w, head)
+			printBanner(w, "", "=", wdstty)
 		}
 
-		files := fm[dir][1:]
-		lens, sumlen := getFileStringWidths(files)
-		if sumlen <= wdlimit {
+		var (
+			files        = fm[dir][1:]
+			lens, sumlen = getFileStringWidths(files)
+		)
+
+		if len(fm[dir]) == 1 {
+			goto AFTER
+		}
+		if sumlen <= wdstty {
 			classifyPrintFiles(w, files)
 		} else {
-			classifyGridPrintFiles(w, files, lens, sumlen, wdlimit)
+			classifyGridPrintFiles(w, files, lens, sumlen, wdstty)
 		}
-
+	AFTER:
 		if f.depth == 0 {
 			break
 		} else {
-			// printDirSummary(w,ndirs, nfiles, sumsize)
-			if i < len(dirs)-1 || len(fm[dir]) > 1 {
+			if i < len(dirs)-1 && len(fm[dir]) > 1 {
 				fmt.Fprintln(w)
 			}
 		}
 	}
 
-	if f.depth == 0 {
-		fmt.Fprintln(w)
-	}
+	printBanner(w, "", "=", wdstty)
 	printTotalSummary(w, "", f.NDirs(), f.NFiles(), f.totalSize)
 
 	b := paw.PaddingString(buf.String(), pad)
@@ -60,9 +75,9 @@ func (f *FileList) ToClassifyView(pad string) string {
 	return b
 }
 
-func classifyGridPrintFiles(w io.Writer, files []*File, lens []int, sumlen int, twidth int) {
+func classifyGridPrintFiles(w io.Writer, files []*File, lens []int, sumlen int, wdstty int) {
 
-	widths := getFieldWidths(lens, twidth)
+	widths := getFieldWidths(lens, wdstty)
 	nFields := len(widths)
 
 	nfolds := len(files) / nFields
@@ -75,14 +90,14 @@ func classifyGridPrintFiles(w io.Writer, files []*File, lens []int, sumlen int, 
 			if il > len(files)-1 {
 				break
 			}
-			name := cgGetFileString(files[il], widths[iw])
+			name := cgGetFileString(files[il], widths[iw], wdstty)
 			fmt.Fprintf(w, "%s", name)
 		}
 		fmt.Fprintln(w)
 	}
 }
 
-func cgGetFileString(file *File, width int) string {
+func cgGetFileString(file *File, width, wdstty int) string {
 	var (
 		wname = paw.StringWidth(file.BaseName)
 		ns    = width - wname
@@ -90,7 +105,7 @@ func cgGetFileString(file *File, width int) string {
 		tail  = ""
 	)
 	if ns < 0 {
-		cname = file.LSColorString(paw.Wrap(file.BaseName, width))
+		cname = file.LSColorString(paw.Wrap(file.BaseName, wdstty))
 		ns = 0
 	}
 

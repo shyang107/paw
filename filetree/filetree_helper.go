@@ -152,16 +152,48 @@ func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
 // Tolist
 //
 
+func dirSummary(pad string, ndirs int, nfiles int, sumsize uint64) string {
+	var (
+		cndirs   = csnp.Sprint(ndirs)
+		cnfiles  = csnp.Sprint(nfiles)
+		csumsize = GetColorizedSize(sumsize)
+	)
+	msg := pad +
+		cndirs +
+		cdashp.Sprint(" directories, ") +
+		cnfiles +
+		cdashp.Sprint(" files, size ≈ ") +
+		csumsize +
+		cdashp.Sprint(".")
+	// msg := fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
+	return msg
+}
+
 func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	// msg := KindLSColorString("-", fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize)))
-	msg := fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize))
-	fmt.Fprintf(w, cdashp.Sprint(msg))
+	fmt.Fprintln(w, dirSummary(pad, ndirs, nfiles, sumsize))
+}
+
+func totalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) string {
+	var (
+		cndirs   = csnp.Sprint(ndirs)
+		cnfiles  = csnp.Sprint(nfiles)
+		csumsize = GetColorizedSize(sumsize)
+	)
+	summary := pad +
+		cdashp.Sprint("Accumulated ") +
+		cndirs +
+		cdashp.Sprint(" directories, ") +
+		cnfiles +
+		cdashp.Sprint(" files, total size ≈ ") +
+		csumsize +
+		cdashp.Sprint(".")
+	// fmt.Sprintf("%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
+	return summary
 }
 
 func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	// fmt.Fprintf(w, "%s\n%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, pad, ndirs, nfiles, ByteSize(sumsize))
-	summary := fmt.Sprintf("%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, ndirs, nfiles, ByteSize(sumsize))
-	fmt.Fprintf(w, cdashp.Sprint(summary))
+
+	fmt.Fprintln(w, totalSummary(w, pad, ndirs, nfiles, sumsize))
 }
 
 var ckxy = map[rune]rune{
@@ -313,7 +345,7 @@ var cpmap = map[rune]*color.Color{
 func GetColorizedSize(size uint64) (csize string) {
 	ss := ByteSize(size)
 	nss := len(ss)
-	sn := fmt.Sprintf("%5s", ss[:nss-1])
+	sn := fmt.Sprintf("%s", ss[:nss-1])
 	su := paw.ToLower(ss[nss-1:])
 	cn := NewEXAColor("sn")
 	cu := NewEXAColor("sb")

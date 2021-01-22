@@ -48,7 +48,9 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		wdmeta      = fds.MetaHeadsStringWidth()
 		spmeta      = paw.Spaces(wdmeta)
 		// spx     = paw.Spaces(wdmeta)
-		ctdsize = ByteSize(f.totalSize)
+		rootName = getColorDirName(f.root, "")
+		ctdsize  = GetColorizedSize(f.totalSize)
+		head     = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, rootName, ctdsize)
 	)
 	buf.Reset()
 
@@ -63,11 +65,9 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 
 	fds.Insert(0, fdNo)
 
-	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, getColorDirName(f.root, ""), KindLSColorString("di", ctdsize))
-	// fmt.Fprintln(w, head)
 	fmt.Fprintln(w, pad+head)
-	fmt.Fprintln(w, pad+paw.Repeat("=", bannerWidth))
-	// printBanner(w, pad, "=", bannerWidth)
+	// fmt.Fprintln(w, pad+paw.Repeat("=", bannerWidth))
+	printBanner(w, pad, "=", bannerWidth)
 
 	if fNDirs == 0 && fNFiles == 0 {
 		goto END
@@ -135,19 +135,19 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 				printDirSummary(w, ppad, ndirs, nfiles, sumsize)
 				switch {
 				case nsdirs < fNDirs && fNFiles == 0:
-					fmt.Fprintln(w, pad+paw.Repeat("-", bannerWidth))
+					printBanner(w, pad, "-", bannerWidth)
 				case nsdirs <= fNDirs && ntfiles < fNFiles:
-					fmt.Fprintln(w, pad+paw.Repeat("-", bannerWidth))
+					printBanner(w, pad, "-", bannerWidth)
 				default:
 					if i < len(f.dirs)-1 {
-						fmt.Fprintln(w, pad+paw.Repeat("-", bannerWidth))
+						printBanner(w, pad, "-", bannerWidth)
 					}
 				}
 			}
 		}
 	}
 
-	fmt.Fprintln(w, pad+paw.Repeat("=", bannerWidth))
+	printBanner(w, pad, "=", bannerWidth)
 
 END:
 	printTotalSummary(w, pad, fNDirs, fNFiles, f.totalSize)

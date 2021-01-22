@@ -59,6 +59,10 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			// HeadColor:  chdp,
 			ValueColor: cdashp,
 		}
+
+		rootName = getColorDirName(f.root, "")
+		ctdsize  = GetColorizedSize(f.totalSize)
+		head     = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, rootName, ctdsize)
 	)
 	buf.Reset()
 
@@ -90,8 +94,6 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	tf.Prepare(w)
 	// tf.SetWrapFields()
 
-	sdsize := ByteSize(f.totalSize)
-	head := fmt.Sprintf("Root directory: %v, size ≈ %v", f.root, sdsize)
 	tf.SetBeforeMessage(head)
 
 	tf.PrintSart()
@@ -162,14 +164,14 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			}
 		}
 		if f.depth != 0 {
-			tf.PrintLineln(fmt.Sprintf("%s%v directories, %v files, size: %v.", pad+paw.Spaces(fdNo.Width+1), nsubdir, nsubfiles, ByteSize(sumsize)))
+			tf.PrintLineln(dirSummary(pad+paw.Spaces(fdNo.Width+1), nsubdir, nsubfiles, sumsize))
 			if i < len(dirs)-1 && ndirs < nDirs {
 				tf.PrintMiddleSepLine()
 			}
 		}
 	}
 
-	tf.SetAfterMessage(fmt.Sprintf("Accumulated %v directories, %v files, total %v.", nDirs, nFiles, ByteSize(f.totalSize)))
+	tf.SetAfterMessage(totalSummary(w, "", ndirs, nfiles, f.totalSize))
 	tf.PrintEnd()
 
 	return buf.String()
