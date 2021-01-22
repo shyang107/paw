@@ -54,7 +54,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	switch pdview {
 	case PListTreeView:
 		chead, wmeta = modifyFDSTreeHead(fds, f, pad)
-		printListln(w, chead)
+		fmt.Fprintln(w, chead)
 		fds.SetValues(file, git)
 		meta += fds.ColorMetaValuesString()
 		// tmeta, _ := file.ColorMeta(f.GetGitStatus())
@@ -66,7 +66,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	}
 
 	name := fmt.Sprintf("%v (%v)", file.LSColorString("."), file.ColorDirName(""))
-	printListln(w, meta, name)
+	fmt.Fprintln(w, meta, name)
 
 	// print files in the root dir
 	level := 0
@@ -157,9 +157,9 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 		cedge := cdashp.Sprint(edge)
 		nb := len(paw.Truncate(name, width-ndinf, ""))
 		if ndinf == 0 {
-			printListln(sb, cedge, file.LSColorString(name[:nb]))
+			fmt.Fprintln(sb, cedge, file.LSColorString(name[:nb]))
 		} else {
-			printListln(sb, cedge, cdinf, file.LSColorString(name[:nb]))
+			fmt.Fprintln(sb, cedge, cdinf, file.LSColorString(name[:nb]))
 		}
 		switch edge {
 		case EdgeTypeMid:
@@ -168,21 +168,21 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 			cedge = padMeta + SpaceIndentSize
 		}
 		if paw.StringWidth(name[nb:]) <= width {
-			printListln(sb, cedge+file.LSColorString(name[nb:]))
+			fmt.Fprintln(sb, cedge+file.LSColorString(name[nb:]))
 		} else {
 			names := paw.WrapToSlice(name[nb:], width)
 			for _, v := range names {
 				if edge == EdgeTypeMid {
-					printListln(sb, cedge, file.LSColorString(v))
+					fmt.Fprintln(sb, cedge, file.LSColorString(v))
 				} else {
-					printListln(sb, cedge, file.LSColorString(v))
+					fmt.Fprintln(sb, cedge, file.LSColorString(v))
 				}
 			}
 		}
 	} else {
 		cedge := cdashp.Sprint(edge)
 		cname := file.ColorBaseName()
-		printListln(sb, cedge, cname)
+		fmt.Fprintln(sb, cedge, cname)
 	}
 	return sb.String()
 }
@@ -211,14 +211,14 @@ func xattrLTString(file *File, pad string, edge EdgeType, padx string, wmeta int
 		}
 		width := sttyWidth - 2 - wdm - 2
 		if wdx <= width {
-			printListln(sb, pad+cedge+cdashp.Sprint("@"), cxp.Sprint(xattr))
+			fmt.Fprintln(sb, pad+cedge+cdashp.Sprint("@"), cxp.Sprint(xattr))
 		} else {
 			x1 := paw.Truncate(xattr, width-2, "")
 			b := len(x1)
-			printListln(sb, pad+cedge+cdashp.Sprint("@"), cxp.Sprint(x1))
+			fmt.Fprintln(sb, pad+cedge+cdashp.Sprint("@"), cxp.Sprint(x1))
 			xs := paw.WrapToSlice(xattr[b:], width)
 			for _, v := range xs {
-				printListln(sb, pad+cedge+" ", cxp.Sprint(v))
+				fmt.Fprintln(sb, pad+cedge+" ", cxp.Sprint(v))
 			}
 		}
 	}

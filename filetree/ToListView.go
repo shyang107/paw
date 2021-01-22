@@ -50,13 +50,13 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 	buf.Reset()
 	modifyFDSWidth(fds, f, bannerWidth)
 
-	printListln(w, pad+head)
+	fmt.Fprintln(w, pad+head)
 
 	if fNDirs == 0 && fNFiles == 0 {
 		goto END
 	}
 
-	printListln(w, pad+paw.Repeat("=", bannerWidth))
+	fmt.Fprintln(w, pad+paw.Repeat("=", bannerWidth))
 
 	for i, dir := range dirs {
 		var (
@@ -74,7 +74,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		if len(fm[dir]) > 1 {
 			ntdirs++
 			chead, wdmeta = modifyHead(fds, fm[dir], pad)
-			printListln(w, pad+chead)
+			fmt.Fprintln(w, pad+chead)
 		}
 		for _, file := range fm[dir][1:] {
 			if file.IsDir() {
@@ -100,19 +100,19 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 				printDirSummary(w, pad, ndirs, nfiles, sumsize)
 				switch {
 				case nsdirs < fNDirs && fNFiles == 0:
-					printListln(w, pad+paw.Repeat("-", bannerWidth))
+					fmt.Fprintln(w, pad+paw.Repeat("-", bannerWidth))
 				case nsdirs <= fNDirs && ntfiles < fNFiles:
-					printListln(w, pad+paw.Repeat("-", bannerWidth))
+					fmt.Fprintln(w, pad+paw.Repeat("-", bannerWidth))
 				default:
 					if i < len(f.dirs)-1 {
-						printListln(w, pad+paw.Repeat("-", bannerWidth))
+						fmt.Fprintln(w, pad+paw.Repeat("-", bannerWidth))
 					}
 				}
 			}
 		}
 	}
 
-	printListln(w, pad+paw.Repeat("=", bannerWidth))
+	fmt.Fprintln(w, pad+paw.Repeat("=", bannerWidth))
 
 END:
 	// printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)

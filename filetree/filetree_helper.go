@@ -459,20 +459,6 @@ func (s *sizesStack) Accumulate(i int64) {
 	s.sizes[s.top] += i
 }
 
-func printListln(w io.Writer, items ...interface{}) {
-	sb := paw.NewStringBuilder()
-	nitems := len(items)
-	sb.Grow(nitems)
-	for i := 0; i < nitems; i++ {
-		if i < nitems-1 {
-			fmt.Fprintf(sb, "%v ", items[i])
-		} else {
-			fmt.Fprintf(sb, "%v", items[i])
-		}
-	}
-	fmt.Fprintln(w, sb.String())
-}
-
 func DateString(date time.Time) (sdate string) {
 	sdate = date.Format(timeThisLayout)
 	if date.Before(thisYear) {
@@ -575,36 +561,36 @@ func rowWrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) s
 		width  = wdstty - wpad - wmeta
 	)
 	if wname <= width {
-		printListln(sb, pad+meta, file.ColorName())
+		fmt.Fprintln(sb, pad+meta, file.ColorName())
 	} else { // wrap file name
 		if err := paw.CheckIndexInString(name, width, "Name"); err != nil {
 			paw.Error.Fatal(err, " (may be too many fields)")
 		}
 		if !file.IsLink() {
 			names := paw.WrapToSlice(name, width)
-			printListln(sb, pad+meta, file.LSColorString(names[0]))
+			fmt.Fprintln(sb, pad+meta, file.LSColorString(names[0]))
 			for i := 1; i < len(names); i++ {
-				printListln(sb, pad+spmeta, file.LSColorString(names[i]))
+				fmt.Fprintln(sb, pad+spmeta, file.LSColorString(names[i]))
 			}
 		} else {
 			cname := file.LSColorString(file.BaseName)
 			wbname := paw.StringWidth(file.BaseName)
 			carrow := cdashp.Sprint(" -> ")
 			wbname += 4
-			printListln(sb, pad+meta, cname+carrow)
+			fmt.Fprintln(sb, pad+meta, cname+carrow)
 			dir, name := filepath.Split(file.LinkPath())
 			wd, wn := paw.StringWidth(dir), paw.StringWidth(name)
 
 			if wd+wn <= width {
-				printListln(sb, pad+spmeta, cdirp.Sprint(dir)+cdip.Sprint(name))
+				fmt.Fprintln(sb, pad+spmeta, cdirp.Sprint(dir)+cdip.Sprint(name))
 			} else {
 				if wd <= width {
 					clink := cdirp.Sprint(dir) + cdip.Sprint(name[:width-wd])
-					printListln(sb, pad+spmeta, clink)
+					fmt.Fprintln(sb, pad+spmeta, clink)
 					names := paw.WrapToSlice(name[width-wd:], width)
 					for _, v := range names {
 						clink = cdip.Sprint(v)
-						printListln(sb, pad+spmeta, clink)
+						fmt.Fprintln(sb, pad+spmeta, clink)
 					}
 				} else { // wd > width
 					dirs := paw.WrapToSlice(dir, width)
@@ -612,26 +598,26 @@ func rowWrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) s
 					var clink string
 					for i := 0; i < nd-1; i++ {
 						clink = cdirp.Sprint(dirs[i])
-						printListln(sb, pad+spmeta, clink)
+						fmt.Fprintln(sb, pad+spmeta, clink)
 					}
 					clink = cdirp.Sprint(dirs[nd-1])
 					wdLast := paw.StringWidth(dirs[nd-1])
 					if wn <= width-wdLast {
 						clink += cdip.Sprint(name)
-						printListln(sb, pad+spmeta, clink)
+						fmt.Fprintln(sb, pad+spmeta, clink)
 					} else { // wn > wd-width
 						clink += cdip.Sprint(name[:width-wdLast])
-						printListln(sb, pad+spmeta, clink)
+						fmt.Fprintln(sb, pad+spmeta, clink)
 						rname := name[width-wdLast:]
 						wr := paw.StringWidth(rname)
 						if wr <= width {
 							clink = cdip.Sprint(rname)
-							printListln(sb, pad+spmeta, clink)
+							fmt.Fprintln(sb, pad+spmeta, clink)
 						} else { // wr > width
 							names := paw.WrapToSlice(rname, width)
 							for _, v := range names {
 								clink = cdip.Sprint(v)
-								printListln(sb, pad+spmeta, clink)
+								fmt.Fprintln(sb, pad+spmeta, clink)
 							}
 						}
 					}
@@ -664,7 +650,7 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 		width := wdsttylimit - wdm
 
 		if wdx <= width {
-			printListln(sb, padx+cxp.Sprint(xattr))
+			fmt.Fprintln(sb, padx+cxp.Sprint(xattr))
 		} else {
 			// var wde = wdsttylimit - wdm
 			if err := paw.CheckIndexInString(xattr, width, "xattr"); err != nil {
@@ -672,7 +658,7 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 			}
 			x1 := paw.Truncate(xattr, width, "")
 			b := len(x1)
-			printListln(sb, padx+cxp.Sprint(x1))
+			fmt.Fprintln(sb, padx+cxp.Sprint(x1))
 			switch edge {
 			case EdgeTypeMid:
 				padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(EdgeTypeLink)+SpaceIndentSize)
@@ -681,11 +667,11 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 			}
 
 			if len(xattr[b:]) <= width {
-				printListln(sb, padx+cxp.Sprint(xattr[b:]))
+				fmt.Fprintln(sb, padx+cxp.Sprint(xattr[b:]))
 			} else {
 				xattrs := paw.WrapToSlice(xattr[b:], width)
 				for _, v := range xattrs {
-					printListln(sb, padx+cxp.Sprint(v))
+					fmt.Fprintln(sb, padx+cxp.Sprint(v))
 				}
 			}
 		}

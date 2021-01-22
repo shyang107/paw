@@ -548,11 +548,11 @@ func getMeta(file *File, git GitStatus) (string, int) {
 	// width += wd + 1
 
 	// if git.NoGit {
-	// 	printListln(sb, cperm, cfsize, curname, cgpname, cTime)
+	// 	fmt.Fprintln(sb, cperm, cfsize, curname, cgpname, cTime)
 	// } else {
 	// 	cgit := file.ColorGitStatus(git)
 	// 	width += 4
-	// 	printListln(sb, cperm, cfsize, curname, cgpname, cTime, cgit)
+	// 	fmt.Fprintln(sb, cperm, cfsize, curname, cgpname, cTime, cgit)
 	// }
 	// return paw.TrimRight(sb.String(), "\n"), width
 }
