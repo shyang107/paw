@@ -31,11 +31,10 @@ func (f *FileList) ToListTreeExtendView(pad string) string {
 
 func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	var (
-		buf = f.StringBuilder()
-		w   = f.Writer()
-		fm  = f.store
-		git = f.GetGitStatus()
-		// chead, wmeta = f.GetHead4Meta(pad, urname, gpname, git)
+		buf   = f.StringBuilder()
+		w     = f.Writer()
+		fm    = f.store
+		git   = f.GetGitStatus()
 		fds   = NewFieldSliceFrom(pfieldKeys, git)
 		chead = fds.ColorHeadsString()
 		wmeta = fds.MetaHeadsStringWidth() + paw.StringWidth(pad)

@@ -320,15 +320,6 @@ WRAPFIELDS:
 	return PaddingString(str, padding)
 }
 
-// func (t *TableFormat) getHeadColor(col int) *color.Color {
-// 	switch col % 2 {
-// 	case 0:
-// 		return tbChdEven
-// 	case 1:
-// 		return tbChdOdd
-// 	}
-// 	return nil
-// }
 func (t *TableFormat) getHeadColorString(col int, field string) string {
 	var c *color.Color
 	switch col % 2 {
@@ -339,43 +330,6 @@ func (t *TableFormat) getHeadColorString(col int, field string) string {
 	}
 	return c.Sprint(field)
 }
-
-// func (t *TableFormat) getRowColor(col int) *color.Color {
-// 	switch col % 2 {
-// 	case 0:
-// 		return tbCRowEven
-// 	case 1:
-// 		return tbCRowOdd
-// 	}
-// 	return nil
-// }
-
-// func (t *TableFormat) getRowColorString(col int, field string, align Align) string {
-// 	var (
-// 		r *color.Color
-// 		c *color.Color
-// 	)
-
-// 	switch col % 2 {
-// 	case 0:
-// 		r = tbCRowEven
-// 	case 1:
-// 		r = tbCRowOdd
-// 	}
-
-// 	if t.Colors != nil {
-// 		c = t.Colors[col]
-// 	} else {
-// 		c = r
-// 	}
-// 	if HasPrefix(field, t.XAttributeSymbol) {
-// 		return getColorxattr(t, field, t.XAttributeSymbol, tbCxsymb, tbCxattr)
-// 	} else if HasPrefix(field, t.XAttributeSymbol2) {
-// 		return getColorxattr(t, field, t.XAttributeSymbol2, tbCxsymb, tbCxattr)
-// 	}
-
-// 	return getColorField(field, c, r, align)
-// }
 
 func getColorField(value string, cf, ct *color.Color, align Align, width int) string {
 	// wf := StringWidth(value)
@@ -445,11 +399,12 @@ func (t *TableFormat) getAlignString(col int, al Align, width int, value string)
 		case AlignRight:
 			s = FillLeft(value, width)
 		case AlignCenter:
-			lv := StringWidth(value)
-			nr := (width - lv) / 2
-			nl := width - lv - nr
-			// s = Repeat(space, nl) + value + Repeat(space, nr)
-			s = Spaces(nl) + value + Spaces(nr)
+			// lv := StringWidth(value)
+			// nr := (width - lv) / 2
+			// nl := width - lv - nr
+			// // s = Repeat(space, nl) + value + Repeat(space, nr)
+			// s = Spaces(nl) + value + Spaces(nr)
+			s = FillLeftRight(value, width)
 		default:
 			s = value
 		}
@@ -468,21 +423,6 @@ func (t *TableFormat) PrintSart() error {
 	}
 	fmt.Fprintln(t.writer, t.topBanner)
 
-	// if t.IsColorful {
-	// 	osep := t.Sep
-	// 	sep := "«color»"
-	// 	t.Sep = osep
-	// 	row := t.getRowString(t.Fields, t.LenFields, t.Aligns, sep, t.Padding)
-	// 	rows := Split(row, sep)
-	// 	crows := make([]string, len(rows))
-	// 	for i, r := range rows {
-	// 		crows[i] = t.getHeadColorString(i, r)
-	// 	}
-	// 	row = Join(crows, t.Sep)
-	// 	fmt.Fprintln(t.writer, row)
-	// } else {
-	// 	fmt.Fprintln(t.writer, t.getRowString(t.Fields, t.LenFields, t.Aligns, t.Sep, t.Padding))
-	// }
 	fmt.Fprintln(t.writer, t.getRowString(t.Fields, t.LenFields, t.Aligns, t.Sep, t.Padding))
 
 	fmt.Fprintln(t.writer, t.midBanner)
@@ -495,30 +435,26 @@ func (t *TableFormat) PrintRow(rows ...interface{}) {
 	for i, v := range rows {
 		sRows[i] = cast.ToString(v) //fmt.Sprintf("%v", v)
 	}
-	// if t.IsColorful {
-	// 	osep := t.Sep
-	// 	sep := "«color»"
-	// 	t.Sep = osep
-	// 	srow := t.getRowString(sRows, t.LenFields, t.Aligns, sep, t.Padding)
-	// 	srows := Split(srow, "\n")
 
-	// 	for _, row := range srows {
-	// 		rows := Split(row, sep)
-	// 		crows := make([]string, len(rows)-1)
-	// 		for i := 0; i < len(rows)-1; i++ {
-	// 			if t.FieldsColorString != nil && len(t.FieldsColorString[i]) > 0 {
-	// 				crows[i] = t.FieldsColorString[i]
-	// 				continue
-	// 			}
-	// 			crows[i] = t.getRowColorString(i, rows[i], t.Aligns[i])
-	// 		}
-	// 		row = Join(crows, t.Sep)
-	// 		fmt.Fprintln(t.writer, row)
-	// 	}
-	// } else {
-	// 	fmt.Fprintln(t.writer, t.getRowString(sRows, t.LenFields, t.Aligns, t.Sep, t.Padding))
-	// }
 	fmt.Fprintln(t.writer, t.getRowString(sRows, t.LenFields, t.Aligns, t.Sep, t.Padding))
+}
+
+// PrintLine prints s without field speration into `t.writer` in default format
+func (t *TableFormat) PrintLine(s interface{}) {
+	ss := t.Padding + fmt.Sprint(s)
+	fmt.Fprintf(t.writer, "%s", ss)
+}
+
+// PrintLineln print s without field speration into `t.writer` in default format, end with '\n'
+func (t *TableFormat) PrintLineln(s interface{}) {
+	ss := t.Padding + fmt.Sprint(s)
+	fmt.Fprintf(t.writer, "%s\n", ss)
+}
+
+// PrintLinef print s with format and no field speration into `t.writer`
+func (t *TableFormat) PrintLinef(format string, s ...interface{}) {
+	ss := t.Padding + fmt.Sprintf(format, s...)
+	fmt.Fprintf(t.writer, "%s", ss)
 }
 
 // PrintMiddleSepLine print middle sepperating line using `MiddleChar`
@@ -529,8 +465,7 @@ func (t *TableFormat) PrintMiddleSepLine() {
 // PrintEnd print end-section into `t.writer`
 func (t *TableFormat) PrintEnd() {
 	if t.isAbbrSymbol {
-		fmt.Fprintln(t.writer,
-			ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
+		fmt.Fprintln(t.writer, ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
 		fmt.Fprintln(t.writer, t.Padding+"* '"+abbrSymbol+"' : abbreviated symbol of a term")
 	}
 	fmt.Fprintln(t.writer, t.botBanner)

@@ -725,6 +725,7 @@ func modifyFDSWidth(fds *FieldSlice, fl *FileList, sttyLimit int) {
 		}
 	}
 	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
+
 	wdmeta := fds.MetaHeadsStringWidth() + 1
 	fds.Get(PFieldName).Width = sttyLimit - wdmeta
 }

@@ -268,34 +268,6 @@ func NewRand() *rand.Rand {
 	return rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
-// PaddingString add pad-prefix in every line of string
-func PaddingString(s string, pad string) string {
-	if !Contains(s, "\n") {
-		return pad + s
-	}
-	ss := Split(s, "\n")
-	// sb := strings.Builder{}
-	sb := ""
-	for i := 0; i < len(ss)-1; i++ {
-		sb += pad + ss[i] + "\n"
-	}
-	sb += pad + ss[len(ss)-1]
-	return sb
-}
-
-// PaddingBytes add pad-prefix in every line('\n') of []byte
-func PaddingBytes(bytes []byte, pad string) []byte {
-	b := make([]byte, len(bytes))
-	b = append(b, pad...)
-	for _, v := range bytes {
-		b = append(b, v)
-		if v == '\n' {
-			b = append(b, pad...)
-		}
-	}
-	return b
-}
-
 // GetTerminalSize get size of console using `stty size`
 func GetTerminalSize() (height, width int) {
 	cmd := exec.Command("stty", "size")
@@ -730,13 +702,4 @@ func ReverseFloat32(s []float32) []float32 {
 		s[i], s[j] = s[j], s[i]
 	}
 	return s
-}
-
-// ReverseString reverses a string
-func ReverseString(s string) string {
-	r := []rune(s)
-	for i, j := 0, len(r)-1; i < len(r)/2; i, j = i+1, j-1 {
-		r[i], r[j] = r[j], r[i]
-	}
-	return string(r)
 }

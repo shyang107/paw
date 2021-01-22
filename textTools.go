@@ -613,33 +613,6 @@ func GetAbbrString(str string, maxlen int, conSymbole string) string {
 		conSymbole = "..."
 	}
 	return Truncate(str, maxlen, conSymbole)
-
-	// limit := maxlen - len(conSymbole)
-	// c := 0
-	// sb := strings.Builder{}
-	// for _, ch := range str {
-	// 	rl := runewidth.RuneWidth(ch) //utf8.RuneLen(ch)
-	// 	if rl == 3 {
-	// 		c += 2
-	// 	} else {
-	// 		c++
-	// 	}
-	// 	if c <= limit {
-	// 		sb.WriteRune(ch)
-	// 	} else {
-	// 		break
-	// 	}
-	// }
-	// // hc, ac = CountPlaceHolder(sb.String())
-	// // c = hc + ac
-	// c = runewidth.StringWidth(sb.String())
-	// if c < limit {
-	// 	for i := 0; i < limit-c; i++ {
-	// 		sb.WriteString(" ")
-	// 	}
-	// }
-	// str = sb.String() + conSymbole
-	// return str
 }
 
 // CountPlaceHolder return `nHan` and `nASCII`
@@ -689,12 +662,16 @@ func NumberBanner(width int) string {
 
 // Reverse reverse the string `s` based on `rune`
 func Reverse(s string) string {
-	// sl := []rune(s)
-	// for i, j := 0, len(sl)-1; i < j; i, j = i+1, j-1 {
-	// 	sl[i], sl[j] = sl[j], sl[i]
-	// }
-	// return string(sl)
 	return ReverseString(s)
+}
+
+// ReverseString reverses a string
+func ReverseString(s string) string {
+	r := []rune(s)
+	for i, j := 0, len(r)-1; i < len(r)/2; i, j = i+1, j-1 {
+		r[i], r[j] = r[j], r[i]
+	}
+	return string(r)
 }
 
 // ReverseByte reverse the string `s` based on `byte`
@@ -863,6 +840,25 @@ func FillRight(s string, w int) string {
 	return runewidth.FillRight(s, w)
 }
 
+// FillLeftRight return string filled in left and right by spaces in cells with width w (aligns center)
+func FillLeftRight(s string, w int) string {
+	ns := StringWidth(s)
+	if ns <= w {
+		return s
+	}
+	nr := (w - ns) / 2
+	nl := w - ns - nr
+	lsp := make([]byte, nr)
+	for i := range lsp {
+		lsp[i] = ' '
+	}
+	rsp := make([]byte, nl)
+	for i := range rsp {
+		rsp[i] = ' '
+	}
+	return string(lsp) + s + string(rsp)
+}
+
 // StringWidth will return width as you can see (the numbers of placeholders on terminal)
 func StringWidth(s string) int {
 	return runewidth.StringWidth(s)
@@ -923,3 +919,69 @@ func CheckIndexInString(s string, idx int, varName string) error {
 	}
 	return nil
 }
+
+// PaddingString add pad-prefix in every line of string
+func PaddingString(s string, pad string) string {
+	if !Contains(s, "\n") {
+		return pad + s
+	}
+	r := []rune(s)
+	sb := NewStringBuilder()
+	sb.WriteString(pad)
+	for _, v := range r {
+		if v == '\n' {
+			sb.WriteString("\n")
+			sb.WriteString(pad)
+		} else {
+			sb.WriteRune(v)
+		}
+	}
+	return sb.String()
+}
+
+// PaddingBytes add pad-prefix in every line('\n') of []byte
+func PaddingBytes(bytes []byte, pad string) []byte {
+	b := make([]byte, len(bytes))
+	b = append(b, pad...)
+	for _, v := range bytes {
+		b = append(b, v)
+		if v == '\n' {
+			b = append(b, pad...)
+		}
+	}
+	return b
+}
+
+// // ForEachString higher order function that processes each line of text by callback function.
+// // The last non-empty line of input will be processed even if it has no newline.
+// // 	`br` : read from `br` reader
+// // 	`callback` : the function used to treatment the each line from `br`
+// //
+// // modify from "github.com/liuzl/goutil"
+// func ForEachString(br *bufio.Reader, callback func(string) error) error {
+// 	stop := false
+// 	for {
+// 		if stop {
+// 			break
+// 		}
+// 		line, err := br.ReadString('\n')
+// 		if err == io.EOF {
+// 			stop = true
+// 		} else if err != nil {
+// 			return err
+// 		}
+// 		line = TrimSuffix(line, "\n")
+// 		if line == "" {
+// 			if !stop {
+// 				if err = callback(line); err != nil {
+// 					return err
+// 				}
+// 			}
+// 			continue
+// 		}
+// 		if err = callback(line); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }

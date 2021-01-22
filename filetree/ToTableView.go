@@ -162,7 +162,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			}
 		}
 		if f.depth != 0 {
-			fmt.Fprintln(w, fmt.Sprintf("%s%v directories, %v files, size: %v.", pad+paw.Spaces(fdNo.Width+1), nsubdir, nsubfiles, ByteSize(sumsize)))
+			tf.PrintLineln(fmt.Sprintf("%s%v directories, %v files, size: %v.", pad+paw.Spaces(fdNo.Width+1), nsubdir, nsubfiles, ByteSize(sumsize)))
 			if i < len(dirs)-1 && ndirs < nDirs {
 				tf.PrintMiddleSepLine()
 			}
