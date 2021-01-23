@@ -51,6 +51,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		rootName = getColorDirName(f.root, "")
 		ctdsize  = GetColorizedSize(f.totalSize)
 		head     = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, rootName, ctdsize)
+		nIterms  = fNDirs + fNFiles
 	)
 	buf.Reset()
 
@@ -80,6 +81,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		// level := len(fm[dir][0].DirSlice()) - 1
 		ppad := pad //+ paw.Spaces(4*level)
 		// sntd := ""
+		istr := ""
 		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
@@ -89,7 +91,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 					ppad += paw.Spaces(4 * level)
 					wppad := paw.StringWidth(ppad)
 
-					istr := fmt.Sprintf("G%-[1]*[2]d", i1, i)
+					istr = fmt.Sprintf("G%-[1]*[2]d", i1, i)
 					cistr := slevel + cdip.Sprint(istr) + " "
 					wistr := paw.StringWidth(slevel) + paw.StringWidth(istr) + 1
 
@@ -105,10 +107,13 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		}
 
 		if len(fm[dir]) > 1 {
-			chead, wdmeta = modifyHead(fds, fm[dir], ppad)
+			modifyFDSWidth(fds, f, bannerWidth-paw.StringWidth(ppad))
+			chead = fds.ColorHeadsString()
+			wdmeta = fds.MetaHeadsStringWidth()
 			fmt.Fprintln(w, ppad+chead)
 		}
 		for _, file := range fm[dir][1:] {
+			fds.SetValues(file, git)
 			jstr, cjstr := "", ""
 			if file.IsDir() {
 				ndirs, nsdirs = ndirs+1, nsdirs+1
@@ -118,11 +123,11 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 				nfiles, ntfiles, j = nfiles+1, ntfiles+1, j+1
 				sumsize += file.Size
 				jstr = fmt.Sprintf("F%-[1]*[2]d", j1, ntfiles)
-				cjstr = cfip.Sprint(jstr)
+				cjstr = cdashp.Sprint(jstr)
 			}
+
 			fdNo.SetValue(jstr)
 			fdNo.SetColorfulValue(cjstr)
-			fds.SetValues(file, git)
 			fmt.Fprint(w, rowWrapFileName(file, fds, ppad, bannerWidth))
 
 			if isExtended && len(file.XAttributes) > 0 {
@@ -133,16 +138,19 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		if f.depth != 0 {
 			if len(fm[dir]) > 1 {
 				printDirSummary(w, ppad, ndirs, nfiles, sumsize)
-				switch {
-				case nsdirs < fNDirs && fNFiles == 0:
-					printBanner(w, pad, "-", bannerWidth)
-				case nsdirs <= fNDirs && ntfiles < fNFiles:
-					printBanner(w, pad, "-", bannerWidth)
-				default:
-					if i < len(f.dirs)-1 {
-						printBanner(w, pad, "-", bannerWidth)
-					}
-				}
+				// switch {
+				// case nsdirs < fNDirs && fNFiles == 0:
+				// 	printBanner(w, pad, "-", bannerWidth)
+				// case nsdirs <= fNDirs && ntfiles < fNFiles:
+				// 	printBanner(w, pad, "-", bannerWidth)
+				// default:
+				// 	if i < len(f.dirs)-1 {
+				// 		printBanner(w, pad, "-", bannerWidth)
+				// 	}
+				// }
+			}
+			if i < len(f.dirs)-1 && ndirs+nfiles < nIterms {
+				printBanner(w, pad, "-", bannerWidth)
 			}
 		}
 	}

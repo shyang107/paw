@@ -23,9 +23,11 @@ func (f *FileList) ToClassifyView(pad string) string {
 		rootName = getColorDirName(f.root, "")
 		ctdsize  = GetColorizedSize(f.totalSize)
 		head     = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, rootName, ctdsize)
+		nitems   = f.NDirs() + f.NFiles()
 	)
 	buf.Reset()
 
+	nsitems := 0
 	for i, dir := range dirs {
 		if f.depth != 0 {
 			if dir == RootMark {
@@ -49,6 +51,7 @@ func (f *FileList) ToClassifyView(pad string) string {
 			lens, sumlen = getFileStringWidths(files)
 		)
 
+		nsitems += len(files) - 1
 		if len(fm[dir]) == 1 {
 			goto AFTER
 		}
@@ -61,8 +64,9 @@ func (f *FileList) ToClassifyView(pad string) string {
 		if f.depth == 0 {
 			break
 		} else {
-			if i < len(dirs)-1 && len(fm[dir]) > 1 {
-				fmt.Fprintln(w)
+			if i < len(dirs)-1 && nsitems < nitems {
+				// fmt.Fprintln(w)
+				printBanner(w, "", "-", wdstty)
 			}
 		}
 	}

@@ -455,8 +455,8 @@ func (f *File) ColorSize() string {
 }
 
 // ColorDirName will return a colorful string of {{dir of Path}}+{{name of path }} for human-reading like as exa
-func (f *File) ColorDirName(root string) string {
-	return GetColorizedDirName(f.Path, root)
+func (f *File) ColorDirName(replaceRoot string) string {
+	return GetColorizedDirName(f.Path, replaceRoot)
 }
 
 // ColorMeta will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File) and its' length.

@@ -74,7 +74,9 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		}
 		if len(fm[dir]) > 1 {
 			ntdirs++
-			chead, wdmeta = modifyHead(fds, fm[dir], pad)
+			modifyFDSWidth(fds, f, bannerWidth-wpad)
+			chead = fds.ColorHeadsString()
+			wdmeta = fds.MetaHeadsStringWidth()
 			fmt.Fprintln(w, pad+chead)
 		}
 		for _, file := range fm[dir][1:] {

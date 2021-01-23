@@ -582,15 +582,15 @@ func rowWrapDirName(dirName, pad string, wpad int, wdlimit int) string {
 
 func rowWrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) string {
 	var (
-		sb     = paw.NewStringBuilder()
-		wpad   = paw.StringWidth(pad)
+		sb = paw.NewStringBuilder()
+		// wpad   = paw.StringWidth(pad)
 		meta   = fds.ColorMetaValuesString()
 		wmeta  = fds.MetaValuesStringWidth()
 		spmeta = paw.Spaces(wmeta)
 		name   = file.BaseNameToLink()
 		wname  = paw.StringWidth(name)
-		wdstty = wdsttylimit - 1
-		width  = wdstty - wpad - wmeta
+		// wdstty = wdsttylimit - 1
+		width = fds.Get(PFieldName).Width // wdstty - wpad - wmeta
 	)
 	if wname <= width {
 		fmt.Fprintln(sb, pad+meta, file.ColorName())
@@ -724,11 +724,14 @@ func getMaxFileSizeWidth(files []*File) int {
 	return wdsize
 }
 
-func modifyHead(fds *FieldSlice, files []*File, pad string) (chead string, wdmeta int) {
+func modifyHead(fds *FieldSlice, files []*File, pad string, wdstty int) (chead string, wdmeta int) {
+
 	wdsize := getMaxFileSizeWidth(files)
 	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
 	chead = fds.ColorHeadsString()
 	wdmeta = fds.MetaHeadsStringWidth() + paw.StringWidth(pad)
+	fds.Get(PFieldName).Width = wdstty - wdmeta - 1
+
 	return chead, wdmeta
 }
 

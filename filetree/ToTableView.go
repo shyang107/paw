@@ -101,7 +101,6 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	ndirs, nfiles := 0, 0
 	for i, dir := range dirs {
 		idx := fmt.Sprintf("G%d", i)
-		fdNo.SetValue(idx)
 		if len(fm[dir]) < 2 {
 			continue
 		}
@@ -109,32 +108,35 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		for jj, file := range fm[dir] {
 			fds.SetValues(file, git)
 			// fds.SetColorfulValues(file, git)
-			fdName.SetColorfulValue("")
-			fdName.SetValueColor(GetFileLSColor(file))
-			tf.Colors = fds.Colors()
-			tf.FieldsColorString = fds.ColorValueStrings()
+			// fdName.SetColorfulValue("")
+			// fdName.SetValueColor(GetFileLSColor(file))
 
-			jdx := ""
-			if file.IsDir() {
-				if jj != 0 && !paw.EqualFold(file.Dir, RootMark) {
+			if jj == 0 {
+				fdNo.SetValue(idx)
+				if paw.EqualFold(file.Dir, RootMark) {
+					fdName.SetColorfulValue(file.ColorDirName(""))
+				} else {
+					fdName.SetColorfulValue(file.ColorDirName(f.Root()))
+				}
+			} else { // jj>0
+				jdx := ""
+				if file.IsDir() {
 					ndirs++
 					nsubdir++
+					jdx = fmt.Sprintf("d%d", ndirs)
+				} else {
+					j++
+					nfiles++
+					nsubfiles++
+					sumsize += file.Size
+					jdx = fmt.Sprintf("%d", nfiles)
 				}
-				jdx = fmt.Sprintf("d%d", ndirs)
-			} else {
-				sumsize += file.Size
-				j++
-				nfiles++
-				nsubfiles++
-				jdx = fmt.Sprintf("%d", nfiles)
-			}
-
-			if jj > 0 {
 				fdNo.SetValue(jdx)
-			} else { //jj==0
-				fdName.SetValue(file.Dir)
+				fdName.SetValue(file.Name())
 			}
 
+			tf.Colors = fds.Colors()
+			tf.FieldsColorString = fds.ColorValueStrings()
 			values := fds.Values()
 			tf.PrintRow(values...)
 
@@ -165,7 +167,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		}
 		if f.depth != 0 {
 			tf.PrintLineln(dirSummary(pad+paw.Spaces(fdNo.Width+1), nsubdir, nsubfiles, sumsize))
-			if i < len(dirs)-1 && ndirs < nDirs {
+			if i < len(dirs)-1 && nfiles < nFiles {
 				tf.PrintMiddleSepLine()
 			}
 		}
