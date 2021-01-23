@@ -34,6 +34,9 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		w                       = f.Writer()
 		dirs                    = f.Dirs()
 		fm                      = f.Map()
+		nDirs                   = f.NDirs()
+		nFiles                  = f.NFiles()
+		nIterms                 = nDirs + nFiles
 		git                     = f.GetGitStatus()
 		fds                     = NewFieldSliceFrom(pfieldKeys, git)
 		chead                   = fds.ColorHeadsString()
@@ -49,7 +52,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 	)
 
 	buf.Reset()
-	modifyFDSWidth(fds, f, bannerWidth)
+	modifyFDSWidth(fds, f, bannerWidth-wpad)
 
 	fmt.Fprintln(w, pad+head)
 
@@ -74,7 +77,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		}
 		if len(fm[dir]) > 1 {
 			ntdirs++
-			modifyFDSWidth(fds, f, bannerWidth-wpad)
+			// modifyFDSWidth(fds, f, bannerWidth-wpad)
 			chead = fds.ColorHeadsString()
 			wdmeta = fds.MetaHeadsStringWidth()
 			fmt.Fprintln(w, pad+chead)
@@ -101,16 +104,9 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		if f.depth != 0 {
 			if len(fm[dir]) > 1 {
 				printDirSummary(w, pad, ndirs, nfiles, sumsize)
-				switch {
-				case nsdirs < fNDirs && fNFiles == 0:
-					printBanner(w, pad, "-", bannerWidth)
-				case nsdirs <= fNDirs && ntfiles < fNFiles:
-					printBanner(w, pad, "-", bannerWidth)
-				default:
-					if i < len(f.dirs)-1 {
-						printBanner(w, pad, "-", bannerWidth)
-					}
-				}
+			}
+			if i < len(f.dirs)-1 && ndirs+nfiles < nIterms {
+				printBanner(w, pad, "-", bannerWidth)
 			}
 		}
 	}

@@ -30,10 +30,14 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		w           = f.writer          //f.Writer()
 		nDirs       = f.NDirs()
 		nFiles      = f.NFiles()
+		wdidx       = len(fmt.Sprint(nDirs))
+		wdjdx       = paw.MaxInts(wdidx, len(fmt.Sprint(nFiles)))
 		git         = f.GetGitStatus()
 		dirs        = f.dirs  //f.Dirs()
 		fm          = f.store //f.Map()
-		sttywd      = sttyWidth - 2
+		wpad        = paw.StringWidth(pad)
+		wstty       = sttyWidth - 2 - wpad
+		banner      = paw.Repeat("-", wstty)
 		widthOfName = 75
 		xsymb       = " @ "
 		xsymb2      = "-@-"
@@ -50,7 +54,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 
 		nfds = len(pfields) + 1
 		fds  = NewFieldSliceFrom(pfieldKeys, git)
-		wNo  = paw.MaxInt(len(fmt.Sprint(nDirs))+1, len(fmt.Sprint(nFiles))+1)
+		wNo  = paw.MaxInt(wdidx, wdjdx) + 1
 		fdNo = &Field{
 			Key:   PFieldNone,
 			Name:  "No",
@@ -69,8 +73,8 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	fds.Insert(0, fdNo)
 
 	tf := &paw.TableFormat{
-		Fields:            fds.Heads(),
-		LenFields:         fds.HeadWidths(),
+		Fields:            fds.Heads(false),
+		LenFields:         fds.Widths(),
 		Aligns:            fds.Aligns(),
 		Padding:           pad,
 		IsWrapped:         true,
@@ -79,16 +83,16 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		XAttributeSymbol2: xsymb2,
 	}
 
-	modifyFDSWidth(fds, f, sttyWidth-2-paw.StringWidth(pad))
+	modifyFDSWidth(fds, f, wstty)
 	fdName := fds.Get(PFieldName)
 
 	wdmeta := fds.MetaHeadsStringWidth()
-	if wdmeta > sttywd-10 {
+	if wdmeta > wstty-10 {
 		paw.Error.Println("too many fields")
 		tf = deftf
 	}
 
-	tf.LenFields = fds.HeadWidths()
+	tf.LenFields = fds.Widths()
 
 	nfds = tf.NFields()
 	tf.Prepare(w)
@@ -98,42 +102,64 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 
 	tf.PrintSart()
 	j := 0
-	ndirs, nfiles := 0, 0
+	var ndirs, nfiles = 0, 0
 	for i, dir := range dirs {
-		idx := fmt.Sprintf("G%d", i)
-		if len(fm[dir]) < 2 {
-			continue
+		var nsubdir, nsubfiles, sumsize = 0, 0, uint64(0)
+
+		idx := fmt.Sprintf("G%-[1]*[2]d ", wdidx, i)
+		cidx := cdip.Sprint(idx)
+		widx := paw.StringWidth(idx)
+		if len(fm[dir]) > 0 {
+			if !paw.EqualFold(dir, RootMark) {
+				if f.depth != 0 {
+					cdir := rowWrapDirName(dir, "", 0, wstty-widx)
+					if paw.StringWidth(dir) <= wstty-widx {
+						tf.PrintLine(cidx + cdir)
+					} else {
+						cdirs := paw.Split(cdir, "\n")
+						cdirs[0] = cidx + cdirs[0]
+						for i := 1; i < len(cdirs)-1; i++ {
+							cdirs[i] = paw.Spaces(widx) + cdirs[i]
+						}
+						cdir = paw.Join(cdirs, "\n")
+						tf.PrintLine(cdir)
+					}
+				}
+			}
 		}
-		nsubdir, nsubfiles, sumsize := 0, 0, uint64(0)
-		for jj, file := range fm[dir] {
+		if len(fm[dir]) < 2 {
+			if i < len(dirs)-1 {
+				tf.PrintLineln(banner)
+			}
+			continue
+		} else if f.depth != 0 && !paw.EqualFold(dir, RootMark) {
+			tf.Fields = fds.Heads(false)
+			tf.PrintHeads()
+		}
+
+		for _, file := range fm[dir][1:] {
+			cjdx, jdx := "", ""
+			if file.IsDir() {
+				ndirs++
+				nsubdir++
+				jdx = fmt.Sprintf("d%d", ndirs)
+				cjdx = cdip.Sprintf("%[1]*[2]s", wNo, jdx)
+			} else {
+				j++
+				nfiles++
+				nsubfiles++
+				sumsize += file.Size
+				jdx = fmt.Sprintf("%d", nfiles)
+				cjdx = cfip.Sprintf("%[1]*[2]s", wNo, jdx)
+			}
 			fds.SetValues(file, git)
 			// fds.SetColorfulValues(file, git)
 			// fdName.SetColorfulValue("")
-			// fdName.SetValueColor(GetFileLSColor(file))
-
-			if jj == 0 {
-				fdNo.SetValue(idx)
-				if paw.EqualFold(file.Dir, RootMark) {
-					fdName.SetColorfulValue(file.ColorDirName(""))
-				} else {
-					fdName.SetColorfulValue(file.ColorDirName(f.Root()))
-				}
-			} else { // jj>0
-				jdx := ""
-				if file.IsDir() {
-					ndirs++
-					nsubdir++
-					jdx = fmt.Sprintf("d%d", ndirs)
-				} else {
-					j++
-					nfiles++
-					nsubfiles++
-					sumsize += file.Size
-					jdx = fmt.Sprintf("%d", nfiles)
-				}
-				fdNo.SetValue(jdx)
-				fdName.SetValue(file.Name())
-			}
+			// fdNo.SetValue(jdx)
+			fdNo.SetColorfulValue(cjdx)
+			fdNo.Width = wNo
+			fdName.SetValueColor(GetFileLSColor(file))
+			fdName.SetValue(file.Name())
 
 			tf.Colors = fds.Colors()
 			tf.FieldsColorString = fds.ColorValueStrings()
@@ -167,8 +193,8 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		}
 		if f.depth != 0 {
 			tf.PrintLineln(dirSummary(pad+paw.Spaces(fdNo.Width+1), nsubdir, nsubfiles, sumsize))
-			if i < len(dirs)-1 && nfiles < nFiles {
-				tf.PrintMiddleSepLine()
+			if i < len(dirs)-1 {
+				tf.PrintLineln(banner)
 			}
 		}
 	}

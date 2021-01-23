@@ -6,7 +6,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
-	"github.com/shyang107/paw/cast"
+	"github.com/spf13/cast"
 )
 
 type PDFieldFlag int
@@ -385,11 +385,17 @@ func (f *FieldSlice) SetColorfulValues(file *File, git GitStatus) {
 		case PFieldGroup: //"Group",
 			fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, gpname))
 		case PFieldModified: //"Date Modified",
-			// fd.SetColorfulValue(file.ColorModifyTime())
+			date := DateString(file.ModifiedTime())
+			cdate := cdap.Sprintf("%-[1]*[2]s", fd.Width, date)
+			fd.SetColorfulValue(cdate)
 		case PFieldCreated: //"Date Created",
-			// fd.SetColorfulValue(file.ColorCreatedTime())
+			date := DateString(file.CreatedTime())
+			cdate := cdap.Sprintf("%-[1]*[2]s", fd.Width, date)
+			fd.SetColorfulValue(cdate)
 		case PFieldAccessed: //"Date Accessed",
-			// fd.SetColorfulValue(file.ColorAccessedTime())
+			date := DateString(file.AccessedTime())
+			cdate := cdap.Sprintf("%-[1]*[2]s", fd.Width, date)
+			fd.SetColorfulValue(cdate)
 		case PFieldGit: //"Gid",
 			if git.NoGit {
 				continue
@@ -416,7 +422,7 @@ func (f *FieldSlice) Add(field *Field) {
 func (f *FieldSlice) Remove(key PDFieldFlag) {
 	for i, fd := range f.fds {
 		if fd.Key == key {
-			if i == f.Count() {
+			if i == f.Count()-1 {
 				f.fds = f.fds[:i]
 			} else {
 				f.fds = append(f.fds[:i], f.fds[i+1:]...)
@@ -486,6 +492,25 @@ func (f *FieldSlice) GetByName(name string) *Field {
 	return nil
 }
 
+// Widths will return Field.Width slice of FieldSlice
+func (f *FieldSlice) Widths() []int {
+	widths := make([]int, f.Count())
+	for i, fd := range f.fds {
+		widths[i] = fd.Width
+	}
+	return widths
+}
+
+// // HeadWidths will return the int slice from Field.Width of FieldSlie
+// func (f *FieldSlice) HeadWidths() []int {
+// 	hds := make([]int, f.Count())
+// 	for i := 0; i < f.Count(); i++ {
+// 		fd := f.fds[i]
+// 		hds[i] = fd.Width
+// 	}
+// 	return hds
+// }
+
 // Aligns will return the paw.Align slice from Field.Align of FieldSlie
 func (f *FieldSlice) Aligns() []paw.Align {
 	hds := make([]paw.Align, f.Count())
@@ -497,38 +522,31 @@ func (f *FieldSlice) Aligns() []paw.Align {
 }
 
 // Heads will return the string slice from Field.Name of FieldSlie
-func (f *FieldSlice) Heads() []string {
+func (f *FieldSlice) Heads(isColor bool) []string {
 	hds := make([]string, f.Count())
 	for i := 0; i < f.Count(); i++ {
 		fd := f.fds[i]
-		hds[i] = fd.HeadString()
+		if isColor {
+			hds[i] = fd.ColorHeadString()
+		} else {
+			hds[i] = fd.HeadString()
+		}
 	}
 	return hds
 }
 
-// HeadWidths will return the int slice from Field.Width of FieldSlie
-func (f *FieldSlice) HeadWidths() []int {
-	hds := make([]int, f.Count())
-	for i := 0; i < f.Count(); i++ {
-		fd := f.fds[i]
-		hds[i] = fd.Width
+// HeadsInterface will return the string slice from Field.Name of FieldSlie
+func (f *FieldSlice) HeadsInterface(isColor bool) []interface{} {
+	hds := make([]interface{}, f.Count())
+	for i, v := range f.Heads(isColor) {
+		hds[i] = v
 	}
 	return hds
 }
 
 // HeadsString will return string join by a space of FieldSlice.Head()
 func (f *FieldSlice) HeadsString() string {
-	return strings.Join(f.Heads(), " ")
-	// sb := paw.NewStringBuilder()
-	// for i := 0; i < f.Count(); i++ {
-	// 	fd := f.fds[i]
-	// 	if i < f.Count()-1 {
-	// 		fmt.Fprintf(sb, "%s ", fd.HeadString())
-	// 	} else {
-	// 		fmt.Fprintf(sb, "%s", fd.HeadString())
-	// 	}
-	// }
-	// return sb.String()
+	return strings.Join(f.Heads(false), " ")
 }
 
 // HeadsStringWidth will return width of FieldSlice.HeadString() as you see
@@ -539,14 +557,15 @@ func (f *FieldSlice) HeadsStringWidth() int {
 
 // MetaHeadsStringWidth will return width of FieldSlice.HeadString() exclude `PFieldName` as you see
 func (f *FieldSlice) MetaHeadsStringWidth() int {
-	wd := 0
-	for _, fd := range f.fds {
-		if fd.Key == PFieldName {
-			continue
-		}
-		wd += fd.Width + 1
-	}
-	return wd - 1
+	return f.HeadsStringWidth() - f.Get(PFieldName).Width - 1
+	// wd := 0
+	// for _, fd := range f.fds {
+	// 	if fd.Key == PFieldName {
+	// 		continue
+	// 	}
+	// 	wd += fd.Width + 1
+	// }
+	// return wd - 1
 }
 
 // ColorHeads will return the colorful string slice from Field.Name of FieldSlie
@@ -562,15 +581,6 @@ func (f *FieldSlice) ColorHeads() []string {
 // ColorHeadsString will return colorful string join by a space of FieldSlice.Head()
 func (f *FieldSlice) ColorHeadsString() string {
 	return strings.Join(f.ColorHeads(), " ")
-	// w := paw.NewStringBuilder()
-	// for i, h := range f.ColorHeads() {
-	// 	if i < f.Count() {
-	// 		fmt.Fprintf(w, "%s ", h)
-	// 	} else {
-	// 		fmt.Fprintf(w, "%s", h)
-	// 	}
-	// }
-	// return w.String()
 }
 
 // Colors will return the []*color.Color slice from Field.ValueColor of FieldSlie
@@ -606,12 +616,6 @@ func (f *FieldSlice) ValueCs() []interface{} {
 // ValuesStrings will return the string slice from Field.Value of FieldSlie
 func (f *FieldSlice) ValuesStrings() []string {
 	return cast.ToStringSlice(f.Values())
-	// vals := make([]string, f.Count())
-	// for i := 0; i < f.Count(); i++ {
-	// 	fd := f.fds[i]
-	// 	vals[i] = fd.ValueString()
-	// }
-	// return vals
 }
 
 // ValuesStringSlice will return the string slice according to idx from Field.Value of FieldSlie
@@ -674,15 +678,6 @@ func (f *FieldSlice) MetaValues() []string {
 // MetaValuesString will return string of FieldSlice.MetaValuesString() exclude `PFieldName` as you see
 func (f *FieldSlice) MetaValuesString() string {
 	return strings.Join(f.MetaValues(), " ")
-	// sb := paw.NewStringBuilder()
-	// for i, h := range f.MetaValues() {
-	// 	if i < f.Count()-1 {
-	// 		fmt.Fprintf(sb, "%s ", h)
-	// 	} else {
-	// 		fmt.Fprintf(sb, "%s", h)
-	// 	}
-	// }
-	// return sb.String()
 }
 
 // MetaValuesStringWidth will return width of FieldSlice.MetaValuesString() exclude `PFieldName` as you see
@@ -700,17 +695,7 @@ func (f *FieldSlice) ColorMetaValues() []string {
 		case PFieldName:
 			continue
 		default:
-			value := fd.ColorValueString()
-			// if fd.ValueC == nil {
-			// 	switch fd.Align {
-			// 	case paw.AlignLeft:
-			// 		value = fmt.Sprintf("%-[1]*[2]v", fd.Width, fd.Value)
-			// 	default:
-			// 		value = fmt.Sprintf("%[1]*[2]v", fd.Width, fd.Value)
-			// 	}
-			// 	value = fd.ValueColor.Sprint(value)
-			// }
-			vals = append(vals, value)
+			vals = append(vals, fd.ColorValueString())
 		}
 	}
 	return vals
@@ -718,16 +703,5 @@ func (f *FieldSlice) ColorMetaValues() []string {
 
 // ColorHeadsString will return colorful string join by a space of FieldSlice.ColorMetaValues() exclude `PFieldName`
 func (f *FieldSlice) ColorMetaValuesString() string {
-	// v := strings.Join(f.ColorMetaValues(), " ")
-	// fmt.Printf("%d, %q\n", paw.StringWidth(v), v)
 	return strings.Join(f.ColorMetaValues(), " ")
-	// sb := paw.NewStringBuilder()
-	// for i, h := range f.ColorMetaValues() {
-	// 	if i < f.Count() {
-	// 		fmt.Fprintf(sb, "%s ", h)
-	// 	} else {
-	// 		fmt.Fprintf(sb, "%s", h)
-	// 	}
-	// }
-	// return sb.String()
 }

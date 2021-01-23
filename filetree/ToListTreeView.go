@@ -186,7 +186,12 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 		}
 
 		if paw.StringWidth(name[nb:]) <= width {
-			fmt.Fprintln(sb, padMeta+cedge+file.LSColorString(name[nb:]))
+			switch pdview {
+			case PTreeView:
+				fmt.Fprintln(sb, padMeta, cedge+file.LSColorString(name[nb:]))
+			default:
+				fmt.Fprintln(sb, padMeta+cedge+file.LSColorString(name[nb:]))
+			}
 		} else {
 			names := paw.WrapToSlice(name[nb:], width)
 			for _, v := range names {

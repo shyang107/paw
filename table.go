@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
-	"github.com/shyang107/paw/cast"
+	"github.com/spf13/cast"
 )
 
 // TableFormat define the format used to print out
@@ -244,12 +244,18 @@ func (t *TableFormat) checkFields() {
 	}
 }
 
-func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align, sep string, padding string) string {
+func (t *TableFormat) getRowString(fields []string) string {
 	sb.Reset()
 	var (
 		str     string
 		nFields = len(fields)
+		widths  = t.LenFields
+		aligns  = t.Aligns
+		// colors  = t.Colors
+		sep     = t.Sep
+		padding = t.Padding
 	)
+
 	if t.IsWrapped {
 		goto WRAPFIELDS
 	}
@@ -262,6 +268,11 @@ func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align
 		// nh, na := CountPlaceHolder(v)
 		al := aligns[i]
 		s := t.getAlignString(i, al, wd, v)
+		// if t.IsColorful && colors != nil {
+		// 	sb.WriteString(colors[i].Sprint(s) + sep)
+		// } else {
+		// 	sb.WriteString(s + sep)
+		// }
 		sb.WriteString(s + sep)
 	}
 	str = sb.String()
@@ -271,16 +282,21 @@ func (t *TableFormat) getRowString(fields []string, widths []int, aligns []Align
 	return padding + str
 
 WRAPFIELDS:
-	// wfields store [nfields][nlines]
-	wfields := make([][]string, nFields)
-	// niles number of lines of every wrapped field
-	nlines := make([]int, nFields)
-	// idx record index postion
-	idx := make([]int, nFields)
+	var (
+		// wfields store [nfields][nlines]
+		wfields = make([][]string, nFields)
+		// niles number of lines of every wrapped field
+		nlines = make([]int, nFields)
+		// idx record index postion
+		idx = make([]int, nFields)
+		// vwidths record original string width of field
+		vwidths = make([]int, nFields)
+	)
 	for i, v := range fields {
 		wd := widths[i]
 		wfields[i] = WrapToSlice(v, wd) //Split(Wrap(v, wd), "\n")
-		nlines[i] = len(wfields[i])     // count number of lines: wfields[i]
+		vwidths[i] = StringWidth(v)
+		nlines[i] = len(wfields[i]) // count number of lines: wfields[i]
 		idx[i] = 0
 	}
 	maxlines := MaxInts(nlines...)
@@ -305,10 +321,22 @@ WRAPFIELDS:
 			if i == 0 && !hasXattr &&
 				t.FieldsColorString != nil &&
 				len(t.FieldsColorString[j]) > 0 {
-				s = t.FieldsColorString[j]
+				if vwidths[j] <= widths[j] {
+					s = t.FieldsColorString[j]
+				} else {
+					// TODO Name too long how to
+					// s = Repeat("x", widths[j])
+					ps := Split(t.FieldsColorString[j], fields[j])
+					s = ps[0] + v + ps[1]
+				}
 			} else {
 				s = t.getAlignString(j, aligns[j], widths[j], v)
 			}
+			// if t.IsColorful && colors != nil {
+			// 	sb.WriteString(colors[i].Sprint(s) + sep)
+			// } else {
+			// 	sb.WriteString(s + sep)
+			// }
 			sb.WriteString(s + sep)
 			idx[j]++
 		}
@@ -392,23 +420,24 @@ func (t *TableFormat) getAlignString(col int, al Align, width int, value string)
 		s := getColorField(value, c, r, al, width)
 		return s
 	} else {
-		var s string
-		switch al {
-		case AlignLeft:
-			s = FillRight(value, width)
-		case AlignRight:
-			s = FillLeft(value, width)
-		case AlignCenter:
-			// lv := StringWidth(value)
-			// nr := (width - lv) / 2
-			// nl := width - lv - nr
-			// // s = Repeat(space, nl) + value + Repeat(space, nr)
-			// s = Spaces(nl) + value + Spaces(nr)
-			s = FillLeftRight(value, width)
-		default:
-			s = value
-		}
-		return s
+		return StringWithWidth(al, value, width)
+		// var s string
+		// switch al {
+		// case AlignLeft:
+		// 	s = FillRight(value, width)
+		// case AlignRight:
+		// 	s = FillLeft(value, width)
+		// case AlignCenter:
+		// 	// lv := StringWidth(value)
+		// 	// nr := (width - lv) / 2
+		// 	// nl := width - lv - nr
+		// 	// // s = Repeat(space, nl) + value + Repeat(space, nr)
+		// 	// s = Spaces(nl) + value + Spaces(nr)
+		// 	s = FillLeftRight(value, width)
+		// default:
+		// 	s = value
+		// }
+		// return s
 	}
 	return ""
 }
@@ -423,10 +452,23 @@ func (t *TableFormat) PrintSart() error {
 	}
 	fmt.Fprintln(t.writer, t.topBanner)
 
-	fmt.Fprintln(t.writer, t.getRowString(t.Fields, t.LenFields, t.Aligns, t.Sep, t.Padding))
+	// fmt.Fprintln(t.writer, t.getRowString(t.Fields))
+	t.PrintHeads()
 
-	fmt.Fprintln(t.writer, t.midBanner)
+	// fmt.Fprintln(t.writer, t.midBanner)
 	return nil
+}
+
+// PrintHeads print out head line in `t.Writer`
+func (t *TableFormat) PrintHeads() {
+	fcs := t.FieldsColorString
+	cs := t.Colors
+	t.Colors = nil
+	t.FieldsColorString = nil
+	fmt.Fprintln(t.writer, t.getRowString(t.Fields))
+	fmt.Fprintln(t.writer, t.midBanner)
+	t.FieldsColorString = fcs
+	t.Colors = cs
 }
 
 // PrintRow print row into `t.writer`
@@ -436,25 +478,25 @@ func (t *TableFormat) PrintRow(rows ...interface{}) {
 		sRows[i] = cast.ToString(v) //fmt.Sprintf("%v", v)
 	}
 
-	fmt.Fprintln(t.writer, t.getRowString(sRows, t.LenFields, t.Aligns, t.Sep, t.Padding))
+	fmt.Fprintln(t.writer, t.getRowString(sRows))
 }
 
 // PrintLine prints s without field speration into `t.writer` in default format
-func (t *TableFormat) PrintLine(s interface{}) {
-	ss := t.Padding + fmt.Sprint(s)
-	fmt.Fprintf(t.writer, "%s", ss)
+func (t *TableFormat) PrintLine(s ...interface{}) {
+	fmt.Fprint(t.writer, t.Padding)
+	fmt.Fprint(t.writer, s...)
 }
 
-// PrintLineln print s without field speration into `t.writer` in default format, end with '\n'
-func (t *TableFormat) PrintLineln(s interface{}) {
-	ss := t.Padding + fmt.Sprint(s)
-	fmt.Fprintf(t.writer, "%s\n", ss)
+// PrintLineln print s without field speration into `t.writer` in default format, ended with '\n'
+func (t *TableFormat) PrintLineln(s ...interface{}) {
+	fmt.Fprint(t.writer, t.Padding)
+	fmt.Fprintln(t.writer, s...)
 }
 
 // PrintLinef print s with format and no field speration into `t.writer`
 func (t *TableFormat) PrintLinef(format string, s ...interface{}) {
-	ss := t.Padding + fmt.Sprintf(format, s...)
-	fmt.Fprintf(t.writer, "%s", ss)
+	fmt.Fprint(t.writer, t.Padding)
+	fmt.Fprintf(t.writer, format, s...)
 }
 
 // PrintMiddleSepLine print middle sepperating line using `MiddleChar`

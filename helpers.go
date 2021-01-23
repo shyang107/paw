@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/shyang107/paw/cast"
+	"github.com/spf13/cast"
 	// log "github.com/sirupsen/logrus"
 )
 

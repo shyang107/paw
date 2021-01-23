@@ -953,6 +953,31 @@ func PaddingBytes(bytes []byte, pad string) []byte {
 	return b
 }
 
+// StringWithWidth will return a constant width string according to align. If width of value as you see is greater than width, then return value
+func StringWithWidth(align Align, value string, width int) string {
+	if StringWidth(value) >= width || width <= 0 {
+		return value
+	}
+	var r string
+	switch align {
+	case AlignLeft:
+		r = FillRight(value, width)
+	case AlignRight:
+		r = FillLeft(value, width)
+	case AlignCenter:
+		r = FillLeftRight(value, width)
+	default:
+		r = value
+	}
+	return r
+}
+
+// RemainSameContent will return src same as remain string. (use to color string)
+func RemainSameContent(csrc, src, remian string) string {
+	ps := Split(csrc, src)
+	return ps[0] + remian + ps[1]
+}
+
 // // ForEachString higher order function that processes each line of text by callback function.
 // // The last non-empty line of input will be processed even if it has no newline.
 // // 	`br` : read from `br` reader
