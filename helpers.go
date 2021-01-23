@@ -1,6 +1,7 @@
 package paw
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -31,10 +32,27 @@ func GetDate() string {
 
 }
 
+func indirect(a interface{}) interface{} {
+	if a == nil {
+		return nil
+	}
+	if t := reflect.TypeOf(a); t.Kind() != reflect.Ptr {
+		// Avoid creating a reflect.Value if it's not a pointer.
+		return a
+	}
+	v := reflect.ValueOf(a)
+	for v.Kind() == reflect.Ptr && !v.IsNil() {
+		v = v.Elem()
+	}
+	return v.Interface()
+}
+
 // Max return the maximum value of `x`, the type of x is one of []int, []float32, []float64, []string.
 // If x is empty, and type is one of []int, []float32 and []float64, will return 0.
 // If x is empty, and type is one of []string, will return "".
 func Max(x interface{}) interface{} {
+	x = indirect(x)
+
 	var r interface{}
 	switch x.(type) {
 	case []int:
@@ -124,6 +142,8 @@ func MaxStrings(x ...string) string {
 // If x is empty, and type is one of []int, []float32 and []float64, will return 0.
 // If x is empty, and type is one of []string, will return "".
 func Min(x interface{}) interface{} {
+	x = indirect(x)
+
 	var r interface{}
 	switch x.(type) {
 	case []int:
@@ -210,10 +230,36 @@ func MinStrings(x ...string) string {
 	return m
 }
 
+// SumMap manipulates an iterate and sum it, like as SumMapE and if error occures, will return -1, but ignore error.
+func SumMap(a interface{}, mapFunc func(idx int) int) int {
+	s, _ := SumMapE(a, mapFunc)
+	return s
+}
+
+// SumMapE manipulates an iterate and sum it, and if error occures, will return -1, error.
+func SumMapE(a interface{}, mapFunc func(idx int) int) (int, error) {
+	a = indirect(a)
+
+	v := reflect.ValueOf(a)
+	if v.Kind() != reflect.Slice {
+		return -1, fmt.Errorf("CheckIndex: expected slice type, found %q", v.Kind().String())
+	}
+
+	count := v.Len()
+	wd := 0
+	for i := 0; i < count; i++ {
+		wd += mapFunc(i)
+	}
+
+	return wd, nil
+}
+
 // Sum will return summation of []int, []float32, []flot64, []string.
 // If the type of `x` is not one of []int, []float32, []flot64 and []string, then return `nil`
 // If `x` is []string, will return concatenation using `strings.Join(a,"")`.
 func Sum(x interface{}) interface{} {
+	x = indirect(x)
+
 	var r interface{}
 	switch x.(type) {
 	case []int:

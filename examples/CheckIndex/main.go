@@ -3,15 +3,57 @@ package main
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/shyang107/paw"
 )
 
 type tstruct struct {
-	a int
+	s string
 }
 type tslice []int
 type tint int
 
 func main() {
+	a := []tstruct{
+		tstruct{
+			s: "test",
+		},
+		tstruct{
+			s: "台灣",
+		},
+		tstruct{
+			s: "台灣tw",
+		},
+	}
+	spew.Dump(a)
+	s := paw.SumMap(a, func(i int) int {
+		return paw.StringWidth(a[i].s) + 1
+	})
+	fmt.Println("SumMapWidth: ", s)
+}
+
+func SumMapWidth(a interface{}, mapFunc func(idx int) int) (int, error) {
+	wd := 0
+
+	v := reflect.ValueOf(a)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	if v.Kind() != reflect.Slice {
+		return -1, fmt.Errorf("CheckIndex: expected slice type, found %q", v.Kind().String())
+	}
+
+	count := v.Len()
+	for i := 0; i < count; i++ {
+		wd += mapFunc(i)
+	}
+
+	return wd, nil
+}
+
+func testCheckIndex() {
 	var (
 		a         = make([]int, 1)
 		b         = make([]string, 2)
