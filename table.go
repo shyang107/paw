@@ -323,6 +323,9 @@ WRAPFIELDS:
 				len(t.FieldsColorString[j]) > 0 {
 				if vwidths[j] <= widths[j] {
 					s = t.FieldsColorString[j]
+					sa := StripANSI(s)
+					sp := Spaces(widths[j] - StringWidth(sa))
+					s += t.getDefaultColor(j).Sprint(sp)
 				} else {
 					// TODO Name too long how to
 					// s = Repeat("x", widths[j])
@@ -349,6 +352,11 @@ WRAPFIELDS:
 }
 
 func (t *TableFormat) getHeadColorString(col int, field string) string {
+	c := t.getDefaultColor(col)
+	return c.Sprint(field)
+}
+
+func (t *TableFormat) getDefaultColor(col int) *color.Color {
 	var c *color.Color
 	switch col % 2 {
 	case 0:
@@ -356,7 +364,7 @@ func (t *TableFormat) getHeadColorString(col int, field string) string {
 	case 1:
 		c = tbChdOdd
 	}
-	return c.Sprint(field)
+	return c
 }
 
 func getColorField(value string, cf, ct *color.Color, align Align, width int) string {
