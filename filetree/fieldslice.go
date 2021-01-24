@@ -64,15 +64,9 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			fd.SetValue(file.INode())
 			fd.SetValueColor(cinp)
 		case PFieldPermissions: //"Permissions",
-			perm := fmt.Sprintf("%v", file.Stat.Mode())
-			if len(file.XAttributes) > 0 {
-				perm += "@"
-			} else {
-				perm += " "
-			}
-			fd.SetValue(perm)
-			fd.SetValueColor(cpmp)
+			fd.SetValue(file.Permission())
 			fd.SetColorfulValue(file.ColorPermission())
+			fd.SetValueColor(cpmp)
 		case PFieldLinks: //"Links",
 			fd.SetValue(file.NLinks())
 			fd.SetValueColor(clkp)
@@ -119,14 +113,15 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			if git.NoGit {
 				continue
 			} else {
-				fd.SetValue(getGitStatus(git, file))
+				// fd.SetValue(getGitStatus(git, file))
+				fd.SetValue(file.GitStatus(git))
 				fd.SetColorfulValue(file.ColorGitStatus(git))
 			}
 			fd.SetValueColor(cgtp)
 		case PFieldName: //"Name",
 			fd.SetValue(file.Name())
 			fd.SetColorfulValue(file.ColorName())
-			fd.SetValueColor(GetFileLSColor(file))
+			fd.SetValueColor(file.LSColor())
 			// fd.SetValueColor(cfip)
 		}
 	}

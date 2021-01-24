@@ -708,35 +708,42 @@ func getColorAttribute(code string) []color.Attribute {
 
 // FileLSColorString will return the color string of `s` according `fullpath` (xxx.yyy)
 func FileLSColorString(fullpath, s string) (string, error) {
-	file, ext := getColorExt(fullpath)
-	if ext == "«link»" {
-		// link, err := os.Readlink(fullpath)
-		ext = "ln"
-		_, err := filepath.EvalSymlinks(fullpath)
-		if err != nil {
-			ext = "or"
-		}
-		// else {
-		// 	file, ext = getColorExt(link)
-		// }
+
+	file, err := NewFile(fullpath)
+	if err != nil {
+		return "", err
 	}
-	switch {
-	case NoColor:
-		return s, nil
-	default:
-		if _, ok := LSColors[file]; ok {
-			return colorstr(LSColors[file], s), nil
-		}
-		if _, ok := LSColors[ext]; ok {
-			return colorstr(LSColors[ext], s), nil
-		}
-		for re, att := range reExtLSColors {
-			if re.MatchString(file) {
-				return colorstr(att, s), nil
-			}
-		}
-		return colorstr(LSColors["no"], s), nil
-	}
+	return file.LSColor().Sprint(s), nil
+
+	// file, ext := getColorExt(fullpath)
+	// if ext == "«link»" {
+	// 	// link, err := os.Readlink(fullpath)
+	// 	ext = "ln"
+	// 	_, err := filepath.EvalSymlinks(fullpath)
+	// 	if err != nil {
+	// 		ext = "or"
+	// 	}
+	// 	// else {
+	// 	// 	file, ext = getColorExt(link)
+	// 	// }
+	// }
+	// switch {
+	// case NoColor:
+	// 	return s, nil
+	// default:
+	// 	if _, ok := LSColors[file]; ok {
+	// 		return colorstr(LSColors[file], s), nil
+	// 	}
+	// 	if _, ok := LSColors[ext]; ok {
+	// 		return colorstr(LSColors[ext], s), nil
+	// 	}
+	// 	for re, att := range reExtLSColors {
+	// 		if re.MatchString(file) {
+	// 			return colorstr(att, s), nil
+	// 		}
+	// 	}
+	// 	return colorstr(LSColors["no"], s), nil
+	// }
 }
 
 // KindLSColorString will colorful string `s` using key `kind`

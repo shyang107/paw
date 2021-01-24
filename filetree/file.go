@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
@@ -148,8 +149,9 @@ func (f File) ColorName() string {
 
 // LSColorString will return a color string using LS_COLORS according to `f.Path` of file
 func (f *File) LSColorString(s string) string {
-	str, _ := FileLSColorString(f.Path, s)
-	return str
+	// str, _ := FileLSColorString(f.Path, s)
+	// return str
+	return f.LSColor().Sprint(s)
 }
 
 // IsDir reports whether `f` describes a directory. That is, it tests for the ModeDir bit being set in `f`.
@@ -413,6 +415,11 @@ func (f *File) DirSlice() []string {
 	return strings.Split(f.Dir, PathSeparator)
 }
 
+// LSColor will return LS_COLORS color of File
+func (f *File) LSColor() *color.Color {
+	return GetFileLSColor(f)
+}
+
 // ColorBaseName will return a colorful string of BaseName using LS_COLORS like as exa
 func (f *File) ColorBaseName() string {
 	return f.LSColorString(f.BaseName)
@@ -440,6 +447,12 @@ func (f *File) Permission() string {
 		permission += " "
 	}
 	return permission
+}
+
+// GitStatus will return a string of git status like as exa.
+// The length of placeholder in terminal is 3.
+func (f *File) GitStatus(git GitStatus) string {
+	return getGitStatus(git, f)
 }
 
 // ColorGitStatus will return a colorful string of git status like as exa.
