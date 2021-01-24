@@ -232,3 +232,7 @@ func (f *Field) ColorHeadString() string {
 	s := f.HeadString()
 	return f.HeadColor.Sprint(s)
 }
+
+const (
+	XattrSymbol = " @ "
+)

@@ -1,4 +1,4 @@
-package filetree
+package paw
 
 import (
 	"fmt"
@@ -54,17 +54,19 @@ var (
 		"gn": []color.Attribute{38, 5, 214},    // group without you
 		"da": []color.Attribute{38, 5, 153},    // timestamp + 8 -> concealed
 		// "hd": []color.Attribute{4, 38, 5, 15}, // head
-		"hd":    []color.Attribute{38, 5, 251, 4}, // head + 4-> underline
-		"-":     []color.Attribute{38, 5, 8},      // Concealed
-		".":     []color.Attribute{38, 5, 8},      // Concealed
-		" ":     []color.Attribute{38, 5, 8},      // Concealed
-		"ga":    []color.Attribute{38, 5, 156},    // git new
-		"gm":    []color.Attribute{38, 5, 117},    // git modified
-		"gd":    []color.Attribute{38, 5, 209},    // git deleted
-		"gv":    []color.Attribute{38, 5, 230},    // git renamed
-		"gt":    []color.Attribute{38, 5, 135},    // git type change
-		"dir":   []color.Attribute{38, 5, 189},    //addition 'dir'
-		"xattr": []color.Attribute{38, 5, 249, 4}, //addition 'xattr'+ 4-> underline
+		"hd":  []color.Attribute{38, 5, 251, 4}, // head + 4-> underline
+		"-":   []color.Attribute{38, 5, 8},      // Concealed
+		".":   []color.Attribute{38, 5, 8},      // Concealed
+		" ":   []color.Attribute{38, 5, 8},      // Concealed
+		"ga":  []color.Attribute{38, 5, 156},    // git new
+		"gm":  []color.Attribute{38, 5, 117},    // git modified
+		"gd":  []color.Attribute{38, 5, 209},    // git deleted
+		"gv":  []color.Attribute{38, 5, 230},    // git renamed
+		"gt":  []color.Attribute{38, 5, 135},    // git type change
+		"dir": []color.Attribute{38, 5, 189},    //addition 'dir'
+		// "xattr": []color.Attribute{38, 5, 249, 4}, //addition 'xattr'+ 4-> underline
+		"xattr": []color.Attribute{38, 5, 249, 4, 48, 5, 234},
+		"xsymb": []color.Attribute{38, 5, 249, 48, 5, 234},
 		"in":    []color.Attribute{38, 5, 213},    // inode
 		"lk":    []color.Attribute{38, 5, 209, 1}, // links
 		"bk":    []color.Attribute{38, 5, 189},    // blocks
@@ -706,46 +708,6 @@ func getColorAttribute(code string) []color.Attribute {
 	return att
 }
 
-// FileLSColorString will return the color string of `s` according `fullpath` (xxx.yyy)
-func FileLSColorString(fullpath, s string) (string, error) {
-
-	file, err := NewFile(fullpath)
-	if err != nil {
-		return "", err
-	}
-	return file.LSColor().Sprint(s), nil
-
-	// file, ext := getColorExt(fullpath)
-	// if ext == "«link»" {
-	// 	// link, err := os.Readlink(fullpath)
-	// 	ext = "ln"
-	// 	_, err := filepath.EvalSymlinks(fullpath)
-	// 	if err != nil {
-	// 		ext = "or"
-	// 	}
-	// 	// else {
-	// 	// 	file, ext = getColorExt(link)
-	// 	// }
-	// }
-	// switch {
-	// case NoColor:
-	// 	return s, nil
-	// default:
-	// 	if _, ok := LSColors[file]; ok {
-	// 		return colorstr(LSColors[file], s), nil
-	// 	}
-	// 	if _, ok := LSColors[ext]; ok {
-	// 		return colorstr(LSColors[ext], s), nil
-	// 	}
-	// 	for re, att := range reExtLSColors {
-	// 		if re.MatchString(file) {
-	// 			return colorstr(att, s), nil
-	// 		}
-	// 	}
-	// 	return colorstr(LSColors["no"], s), nil
-	// }
-}
-
 // KindLSColorString will colorful string `s` using key `kind`
 func KindLSColorString(kind, s string) string {
 	att, ok := LSColors[kind]
@@ -818,53 +780,4 @@ func NewLSColor(key string) *color.Color {
 // NewEXAColor will return `*color.Color` using `EXAColors[key]`
 func NewEXAColor(key string) *color.Color {
 	return color.New(EXAColors[key]...)
-}
-
-func GetFileLSColor(file *File) *color.Color {
-
-	if file.IsDir() { // os.ModeDir
-		return NewLSColor("di")
-	}
-
-	if file.IsLink() { // os.ModeSymlink
-		return NewLSColor("ln")
-	}
-
-	// if file.IsDev() { //
-	// 	return NewLSColor("so")
-	// }
-	if file.IsChardev() { // os.ModeDevice | os.ModeCharDevice
-		return NewLSColor("cd")
-	}
-	if file.IsFiFo() { //os.ModeNamedPipe
-		return NewLSColor("pi")
-	}
-	if file.IsSocket() { //os.ModeSocket
-		return NewLSColor("so")
-	}
-	if file.IsFile() { // 0
-		if _, ok := LSColors[file.BaseName]; ok {
-			return color.New(LSColors[file.BaseName]...)
-		}
-		if _, ok := LSColors[file.Ext]; ok {
-			return color.New(LSColors[file.Ext]...)
-		}
-		for re, att := range reExtLSColors {
-			if re.MatchString(file.BaseName) {
-				return color.New(att...)
-			}
-		}
-
-		mode := file.Stat.Mode()
-		sperm := fmt.Sprintf("%v", mode)
-		if mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x") {
-			return NewLSColor("ex")
-		}
-
-		return NewLSColor("fi")
-	}
-	// if file.IsNotIdentify() {
-	// 	return NewLSColor("no")
-	// }
-	return NewLSColor("no")
 }

@@ -45,8 +45,8 @@ func fdColorizedSize(size uint64, width int) (csize string) {
 	nss := len(ss)
 	sn := fmt.Sprintf("%[1]*[2]s", width-1, ss[:nss-1])
 	su := paw.ToLower(ss[nss-1:])
-	cn := NewEXAColor("sn")
-	cu := NewEXAColor("sb")
+	cn := paw.NewEXAColor("sn")
+	cu := paw.NewEXAColor("sb")
 	csize = cn.Sprint(sn) + cu.Sprint(su)
 	return csize
 }

@@ -238,14 +238,14 @@ func xattrLTString(file *File, edge EdgeType, padx string, wmeta, wdstty int) st
 			cedge = padx + paw.Spaces(IndentSize+1)
 		}
 		if wdx <= width {
-			fmt.Fprintln(sb, cedge+cdashp.Sprint("@"), cxp.Sprint(xattr))
+			fmt.Fprintln(sb, cedge+cdashp.Sprint("@"), cxap.Sprint(xattr))
 		} else {
 			x1 := paw.Truncate(xattr, width-2, "")
 			b := len(x1)
-			fmt.Fprintln(sb, cedge+cdashp.Sprint("@"), cxp.Sprint(x1))
+			fmt.Fprintln(sb, cedge+cdashp.Sprint("@"), cxap.Sprint(x1))
 			xs := paw.WrapToSlice(xattr[b:], width)
 			for _, v := range xs {
-				fmt.Fprintln(sb, cedge+" ", cxp.Sprint(v))
+				fmt.Fprintln(sb, cedge+" ", cxap.Sprint(v))
 			}
 		}
 	}

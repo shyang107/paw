@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"time"
 
@@ -39,24 +40,25 @@ var (
 	now                   = time.Now()
 	thisYear              = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local)
 	SpaceIndentSize       = paw.Spaces(IndentSize)
-	chdp                  = NewEXAColor("hd")    // head
-	cdirp                 = NewEXAColor("dir")   // pre-dir part of path
+	chdp                  = paw.NewEXAColor("hd")    // head
+	cdirp                 = paw.NewEXAColor("dir")   // pre-dir part of path
 	lsdip                 = NewLSColor("di")     // directory
-	cdip                  = NewEXAColor("di")    // directory
-	cfip                  = NewEXAColor("fi")    // file
-	cnop                  = NewEXAColor("-")     // serial number
-	cinp                  = NewEXAColor("in")    // inode
-	cpmp                  = NewEXAColor("uw")    // permission
-	csnp                  = NewEXAColor("sn")    // size number
-	csup                  = NewEXAColor("sn")    // size unit
-	cuup                  = NewEXAColor("uu")    // user
-	cgup                  = NewEXAColor("gu")    // group
-	clkp                  = NewEXAColor("lk")    // symlink
-	cbkp                  = NewEXAColor("bk")    // blocks
-	cdap                  = NewEXAColor("da")    // date
-	cgtp                  = NewEXAColor("gm")    // git
-	cxp                   = NewEXAColor("xattr") // extended attributes
-	cdashp                = NewEXAColor("-")
+	cdip                  = paw.NewEXAColor("di")    // directory
+	cfip                  = paw.NewEXAColor("fi")    // file
+	cnop                  = paw.NewEXAColor("-")     // serial number
+	cinp                  = paw.NewEXAColor("in")    // inode
+	cpmp                  = paw.NewEXAColor("uw")    // permission
+	csnp                  = paw.NewEXAColor("sn")    // size number
+	csup                  = paw.NewEXAColor("sn")    // size unit
+	cuup                  = paw.NewEXAColor("uu")    // user
+	cgup                  = paw.NewEXAColor("gu")    // group
+	clkp                  = paw.NewEXAColor("lk")    // symlink
+	cbkp                  = paw.NewEXAColor("bk")    // blocks
+	cdap                  = paw.NewEXAColor("da")    // date
+	cgtp                  = paw.NewEXAColor("gm")    // git
+	cxap                  = paw.NewEXAColor("xattr") // extended attributes
+	cxbp                  = paw.NewEXAColor("xsymb") // extended attributes
+	cdashp                = paw.NewEXAColor("-")
 	currentuser, _        = user.Current()
 	urname                = currentuser.Username
 	usergp, _             = user.LookupGroupId(currentuser.Gid)
@@ -313,31 +315,31 @@ func GetColorizePermission(mode os.FileMode) string {
 			s = "."
 		}
 		// c += color.New(EXAColors[cs]...).Add(color.Bold).Sprint(s)
-		c += NewEXAColor(cs).Sprint(s)
+		c += paw.NewEXAColor(cs).Sprint(s)
 	}
 
 	return c
 }
 
 var cpmap = map[rune]*color.Color{
-	'L': NewEXAColor("ln"),
-	'l': NewEXAColor("ln"),
-	'd': NewEXAColor("di"),
-	'r': NewEXAColor("ur"),
-	'w': NewEXAColor("uw"),
-	'x': NewEXAColor("ux"),
-	'-': NewEXAColor("-"),  //color.New(color.Concealed),
-	'.': NewEXAColor("."),  //color.New(color.Concealed),
-	' ': NewEXAColor(" "),  //color.New(color.Concealed), //unmodified
-	'M': NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //modified
-	'A': NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //added
-	'D': NewEXAColor("gd"), //color.New(EXAColors["gd"]...), //deleted
-	'R': NewEXAColor("gv"), //color.New(EXAColors["gv"]...), //renamed
-	'C': NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //copied
-	'U': NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //updated but unmerged
-	'?': NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //untracked
-	'N': NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //untracked
-	'!': NewEXAColor("-"),  //color.New(EXAColors["-"]...),  //ignored
+	'L': paw.NewEXAColor("ln"),
+	'l': paw.NewEXAColor("ln"),
+	'd': paw.NewEXAColor("di"),
+	'r': paw.NewEXAColor("ur"),
+	'w': paw.NewEXAColor("uw"),
+	'x': paw.NewEXAColor("ux"),
+	'-': paw.NewEXAColor("-"),  //color.New(color.Concealed),
+	'.': paw.NewEXAColor("."),  //color.New(color.Concealed),
+	' ': paw.NewEXAColor(" "),  //color.New(color.Concealed), //unmodified
+	'M': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //modified
+	'A': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //added
+	'D': paw.NewEXAColor("gd"), //color.New(EXAColors["gd"]...), //deleted
+	'R': paw.NewEXAColor("gv"), //color.New(EXAColors["gv"]...), //renamed
+	'C': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //copied
+	'U': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //updated but unmerged
+	'?': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //untracked
+	'N': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //untracked
+	'!': paw.NewEXAColor("-"),  //color.New(EXAColors["-"]...),  //ignored
 }
 
 // GetColorizedSize will return a humman-readable and colorful string of size.
@@ -347,8 +349,8 @@ func GetColorizedSize(size uint64) (csize string) {
 	nss := len(ss)
 	sn := fmt.Sprintf("%s", ss[:nss-1])
 	su := paw.ToLower(ss[nss-1:])
-	cn := NewEXAColor("sn")
-	cu := NewEXAColor("sb")
+	cn := paw.NewEXAColor("sn")
+	cu := paw.NewEXAColor("sb")
 	csize = cn.Sprint(sn) + cu.Sprint(su)
 	return csize
 }
@@ -503,6 +505,95 @@ func DateString(date time.Time) (sdate string) {
 // The length of placeholder in terminal is 14.
 func GetColorizedTime(date time.Time) string {
 	return cdap.Sprint(DateString(date))
+}
+
+func GetFileLSColor(file *File) *color.Color {
+
+	if file.IsDir() { // os.ModeDir
+		return NewLSColor("di")
+	}
+
+	if file.IsLink() { // os.ModeSymlink
+		return NewLSColor("ln")
+	}
+
+	// if file.IsDev() { //
+	// 	return NewLSColor("so")
+	// }
+	if file.IsChardev() { // os.ModeDevice | os.ModeCharDevice
+		return NewLSColor("cd")
+	}
+	if file.IsFiFo() { //os.ModeNamedPipe
+		return NewLSColor("pi")
+	}
+	if file.IsSocket() { //os.ModeSocket
+		return NewLSColor("so")
+	}
+	if file.IsFile() { // 0
+		if _, ok := LSColors[file.BaseName]; ok {
+			return color.New(LSColors[file.BaseName]...)
+		}
+		if _, ok := LSColors[file.Ext]; ok {
+			return color.New(LSColors[file.Ext]...)
+		}
+		for re, att := range reExtLSColors {
+			if re.MatchString(file.BaseName) {
+				return color.New(att...)
+			}
+		}
+
+		mode := file.Stat.Mode()
+		sperm := fmt.Sprintf("%v", mode)
+		if mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x") {
+			return NewLSColor("ex")
+		}
+
+		return NewLSColor("fi")
+	}
+	// if file.IsNotIdentify() {
+	// 	return NewLSColor("no")
+	// }
+	return NewLSColor("no")
+}
+
+// FileLSColorString will return the color string of `s` according `fullpath` (xxx.yyy)
+func FileLSColorString(fullpath, s string) (string, error) {
+
+	file, err := NewFile(fullpath)
+	if err != nil {
+		return "", err
+	}
+	return file.LSColor().Sprint(s), nil
+
+	// file, ext := getColorExt(fullpath)
+	// if ext == "«link»" {
+	// 	// link, err := os.Readlink(fullpath)
+	// 	ext = "ln"
+	// 	_, err := filepath.EvalSymlinks(fullpath)
+	// 	if err != nil {
+	// 		ext = "or"
+	// 	}
+	// 	// else {
+	// 	// 	file, ext = getColorExt(link)
+	// 	// }
+	// }
+	// switch {
+	// case NoColor:
+	// 	return s, nil
+	// default:
+	// 	if _, ok := LSColors[file]; ok {
+	// 		return colorstr(LSColors[file], s), nil
+	// 	}
+	// 	if _, ok := LSColors[ext]; ok {
+	// 		return colorstr(LSColors[ext], s), nil
+	// 	}
+	// 	for re, att := range reExtLSColors {
+	// 		if re.MatchString(file) {
+	// 			return colorstr(att, s), nil
+	// 		}
+	// 	}
+	// 	return colorstr(LSColors["no"], s), nil
+	// }
 }
 
 func rowWrapDirName(dirName, pad string, wpad int, wdlimit int) string {
@@ -682,7 +773,7 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 		width := wdsttylimit - wdm
 
 		if wdx <= width {
-			fmt.Fprintln(sb, padx+cxp.Sprint(xattr))
+			fmt.Fprintln(sb, padx+cxap.Sprint(xattr))
 		} else {
 			// var wde = wdsttylimit - wdm
 			if err := paw.CheckIndexInString(xattr, width, "xattr"); err != nil {
@@ -690,7 +781,7 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 			}
 			x1 := paw.Truncate(xattr, width, "")
 			b := len(x1)
-			fmt.Fprintln(sb, padx+cxp.Sprint(x1))
+			fmt.Fprintln(sb, padx+cxap.Sprint(x1))
 			switch edge {
 			case EdgeTypeMid:
 				padx = fmt.Sprintf("%s %s ", pad, cdashp.Sprint(EdgeTypeLink)+SpaceIndentSize)
@@ -699,11 +790,11 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 			}
 
 			if len(xattr[b:]) <= width {
-				fmt.Fprintln(sb, padx+cxp.Sprint(xattr[b:]))
+				fmt.Fprintln(sb, padx+cxap.Sprint(xattr[b:]))
 			} else {
 				xattrs := paw.WrapToSlice(xattr[b:], width)
 				for _, v := range xattrs {
-					fmt.Fprintln(sb, padx+cxp.Sprint(v))
+					fmt.Fprintln(sb, padx+cxap.Sprint(v))
 				}
 			}
 		}
