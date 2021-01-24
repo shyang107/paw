@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -972,10 +973,12 @@ func StringWithWidth(align Align, value string, width int) string {
 	return r
 }
 
-// RemainSameContent will return src same as remain string. (use to color string)
-func RemainSameContent(csrc, src, remian string) string {
-	ps := Split(csrc, src)
-	return ps[0] + remian + ps[1]
+const ansi = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
+
+var reANSI = regexp.MustCompile(ansi)
+
+func StripANSI(str string) string {
+	return reANSI.ReplaceAllString(str, "")
 }
 
 // // ForEachString higher order function that processes each line of text by callback function.
