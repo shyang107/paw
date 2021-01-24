@@ -2,7 +2,10 @@ package filetree
 
 import (
 	"fmt"
+	"io"
 	"strings"
+
+	"github.com/thoas/go-funk"
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
@@ -122,8 +125,9 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			fd.SetValueColor(cgtp)
 		case PFieldName: //"Name",
 			fd.SetValue(file.Name())
-			fd.SetValueColor(cfip)
 			fd.SetColorfulValue(file.ColorName())
+			fd.SetValueColor(GetFileLSColor(file))
+			// fd.SetValueColor(cfip)
 		}
 	}
 }
@@ -479,4 +483,79 @@ func (f *FieldSlice) ColorMetaValues() []string {
 // ColorHeadsString will return colorful string join by a space of FieldSlice.ColorMetaValues() exclude `PFieldName`
 func (f *FieldSlice) ColorMetaValuesString() string {
 	return strings.Join(f.ColorMetaValues(), " ")
+}
+
+// PrintHeadRow prints out all Filed.Name to w
+func (f *FieldSlice) PrintHeadRow(w io.Writer, pad string) {
+	// print head
+	fmt.Fprintln(w, pad+f.ColorHeadsString())
+}
+
+// PrintRow prints out all value of Field to w
+func (f *FieldSlice) PrintRow(w io.Writer, pad string) {
+	// print meta
+	fmt.Fprint(w, pad+f.ColorMetaValuesString()+" ")
+	// print Name field
+	var (
+		wpad   = f.MetaHeadsStringWidth()
+		fdName = f.Get(PFieldName)
+		width  = fdName.Width
+		value  = cast.ToString(fdName.Value)
+		wv     = paw.StringWidth(value)
+		cvalue = cast.ToString(fdName.ValueC)
+		c      = fdName.ValueColor
+	)
+	if wv <= width {
+		if fdName.ValueC != nil {
+			fmt.Fprintln(w, cvalue)
+		} else {
+			fmt.Fprintln(w, c.Sprint(value))
+		}
+	} else {
+		names := paw.WrapToSlice(value, width)
+		fmt.Fprintln(w, c.Sprint(names[0]))
+		sp := pad + paw.Spaces(wpad)
+		for i := 1; i < len(names); i++ {
+			fmt.Fprintln(w, sp, c.Sprint(names[i]))
+		}
+	}
+}
+
+// PrintRowButIgnoreln prints out all value of Field to w excluding ignoreIdx,ended with '\n'
+func (f *FieldSlice) PrintRowButIgnoreln(w io.Writer, pad string, ignoreIdx ...int) {
+	f.PrintRowButIgnore(w, pad, ignoreIdx...)
+	fmt.Fprint(w, '\n')
+}
+
+// PrintRowButIgnore prints out all value of Field to w excluding ignoreIdx
+func (f *FieldSlice) PrintRowButIgnore(w io.Writer, pad string, ignoreIdx ...int) {
+	for i, fd := range f.Fields() {
+		if funk.ContainsInt(ignoreIdx, i) {
+			continue
+		}
+		var (
+			width  = fd.Width
+			value  = cast.ToString(fd.Value)
+			wv     = paw.StringWidth(value)
+			cvalue = cast.ToString(fd.ValueC)
+			c      = fd.ValueColor
+		)
+		if i == 0 {
+			fmt.Fprint(w, pad)
+		}
+		if wv <= width {
+			if fd.ValueC != nil {
+				fmt.Fprintln(w, cvalue)
+			} else {
+				fmt.Fprintln(w, c.Sprint(value))
+			}
+		} else {
+			names := paw.WrapToSlice(value, width)
+			fmt.Fprintln(w, c.Sprint(names[0]))
+			for i := 1; i < len(names); i++ {
+				fmt.Fprintln(w, c.Sprint(names[i]))
+			}
+		}
+		fmt.Fprint(w, " ")
+	}
 }
