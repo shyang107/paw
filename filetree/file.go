@@ -147,8 +147,8 @@ func (f File) ColorName() string {
 	return f.ColorBaseNameToLink()
 }
 
-// LSColorString will return a color string using LS_COLORS according to `f.Path` of file
-func (f *File) LSColorString(s string) string {
+// LSColorstring will return a color string using LS_COLORS according to `f.Path` of file
+func (f *File) LSColorstring(s string) string {
 	// str, _ := FileLSColorString(f.Path, s)
 	// return str
 	return f.LSColor().Sprint(s)
@@ -422,7 +422,7 @@ func (f *File) LSColor() *color.Color {
 
 // ColorBaseName will return a colorful string of BaseName using LS_COLORS like as exa
 func (f *File) ColorBaseName() string {
-	return f.LSColorString(f.BaseName)
+	return f.LSColor().Sprint(f.BaseName)
 }
 
 // ColorPermission will return a colorful string of Stat.Mode() like as exa.

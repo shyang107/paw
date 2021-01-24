@@ -109,7 +109,7 @@ func cgGetFileString(file *File, width, wdstty int) string {
 		tail  = ""
 	)
 	if ns < 0 {
-		cname = file.LSColorString(paw.Wrap(file.BaseName, wdstty))
+		cname = file.LSColor().Sprint(paw.Wrap(file.BaseName, wdstty))
 		ns = 0
 	}
 

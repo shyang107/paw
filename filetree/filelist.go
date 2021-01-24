@@ -209,11 +209,11 @@ func (f *FileList) AddFile(file *File) {
 }
 
 func (f *FileList) DisableColor() {
-	SetNoColor()
+	paw.SetNoColor()
 }
 
 func (f *FileList) EnableColor() {
-	DefaultNoColor()
+	paw.DefaultNoColor()
 }
 
 // SkipThis is used as a return value indicate that the regular path

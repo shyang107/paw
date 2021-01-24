@@ -90,7 +90,7 @@ func listfl(fl *filetree.FileList) {
 	}
 }
 
-func lscolors() {
+func paw.LSColors() {
 	// spew.Dump(fl.Map())
 	// fmt.Println(filetree.KindLSColorString(".sh", "sh"))
 	// fmt.Println(filetree.KindLSColorString(".go", "go"))

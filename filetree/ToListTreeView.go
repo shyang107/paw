@@ -75,7 +75,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 		wmeta = 0
 	}
 
-	fmt.Fprintln(w, meta, dinf+" "+file.LSColorString("."))
+	fmt.Fprintln(w, meta, dinf+" "+file.LSColor().Sprint("."))
 
 	// print files in the root dir
 	level := 0
@@ -174,9 +174,9 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 		cedge := cdashp.Sprint(edge)
 		nb := len(paw.Truncate(name, width-ndinf, ""))
 		if ndinf == 0 {
-			fmt.Fprintln(sb, cedge, file.LSColorString(name[:nb]))
+			fmt.Fprintln(sb, cedge, file.LSColor().Sprint(name[:nb]))
 		} else {
-			fmt.Fprintln(sb, cedge, cdinf, file.LSColorString(name[:nb]))
+			fmt.Fprintln(sb, cedge, cdinf, file.LSColor().Sprint(name[:nb]))
 		}
 		switch edge {
 		case EdgeTypeMid:
@@ -188,17 +188,17 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 		if paw.StringWidth(name[nb:]) <= width {
 			switch pdview {
 			case PTreeView:
-				fmt.Fprintln(sb, padMeta, cedge+file.LSColorString(name[nb:]))
+				fmt.Fprintln(sb, padMeta, cedge+file.LSColor().Sprint(name[nb:]))
 			default:
-				fmt.Fprintln(sb, padMeta+cedge+file.LSColorString(name[nb:]))
+				fmt.Fprintln(sb, padMeta+cedge+file.LSColor().Sprint(name[nb:]))
 			}
 		} else {
 			names := paw.WrapToSlice(name[nb:], width)
 			for _, v := range names {
 				if edge == EdgeTypeMid {
-					fmt.Fprintln(sb, spmeta, cedge+file.LSColorString(v))
+					fmt.Fprintln(sb, spmeta, cedge+file.LSColor().Sprint(v))
 				} else {
-					fmt.Fprintln(sb, padMeta, cedge+file.LSColorString(v))
+					fmt.Fprintln(sb, padMeta, cedge+file.LSColor().Sprint(v))
 				}
 			}
 		}

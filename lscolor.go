@@ -664,8 +664,8 @@ var (
 		".xln":                 []color.Attribute{38, 5, 7},
 		".iml":                 []color.Attribute{38, 5, 166},
 	}
-	// LS_COLORS code for specific pattern of file extentions
-	reExtLSColors = map[*regexp.Regexp][]color.Attribute{
+	// ReExtLSColors is LS_COLORS code for specific pattern of file extentions
+	ReExtLSColors = map[*regexp.Regexp][]color.Attribute{
 		regexp.MustCompile(`r[0-9]{0,2}$`):  []color.Attribute{38, 5, 239},
 		regexp.MustCompile(`zx[0-9]{0,2}$`): []color.Attribute{38, 5, 239},
 		regexp.MustCompile(`z[0-9]{0,2}$`):  []color.Attribute{38, 5, 239},
@@ -716,6 +716,7 @@ func KindLSColorString(kind, s string) string {
 	}
 	return colorstr(att, s)
 }
+
 func KindEXAColorString(kind, s string) string {
 	att, ok := EXAColors[kind]
 	if !ok {

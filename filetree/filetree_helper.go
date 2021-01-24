@@ -42,7 +42,7 @@ var (
 	SpaceIndentSize       = paw.Spaces(IndentSize)
 	chdp                  = paw.NewEXAColor("hd")    // head
 	cdirp                 = paw.NewEXAColor("dir")   // pre-dir part of path
-	lsdip                 = NewLSColor("di")     // directory
+	lsdip                 = paw.NewLSColor("di")     // directory
 	cdip                  = paw.NewEXAColor("di")    // directory
 	cfip                  = paw.NewEXAColor("fi")    // file
 	cnop                  = paw.NewEXAColor("-")     // serial number
@@ -92,7 +92,7 @@ func getColorDirName(path string, root string) string {
 		name = cdirp.Sprint(dir) + lsdip.Sprint(name)
 		return name
 	}
-	name := file.LSColorString(file.BaseName)
+	name := file.ColorBaseName()
 	if file.IsDir() {
 		dir, _ := filepath.Split(file.Path)
 		if len(root) > 0 {
@@ -510,33 +510,33 @@ func GetColorizedTime(date time.Time) string {
 func GetFileLSColor(file *File) *color.Color {
 
 	if file.IsDir() { // os.ModeDir
-		return NewLSColor("di")
+		return paw.NewLSColor("di")
 	}
 
 	if file.IsLink() { // os.ModeSymlink
-		return NewLSColor("ln")
+		return paw.NewLSColor("ln")
 	}
 
 	// if file.IsDev() { //
-	// 	return NewLSColor("so")
+	// 	return paw.NewLSColor("so")
 	// }
 	if file.IsChardev() { // os.ModeDevice | os.ModeCharDevice
-		return NewLSColor("cd")
+		return paw.NewLSColor("cd")
 	}
 	if file.IsFiFo() { //os.ModeNamedPipe
-		return NewLSColor("pi")
+		return paw.NewLSColor("pi")
 	}
 	if file.IsSocket() { //os.ModeSocket
-		return NewLSColor("so")
+		return paw.NewLSColor("so")
 	}
 	if file.IsFile() { // 0
-		if _, ok := LSColors[file.BaseName]; ok {
-			return color.New(LSColors[file.BaseName]...)
+		if _, ok := paw.LSColors[file.BaseName]; ok {
+			return color.New(paw.LSColors[file.BaseName]...)
 		}
-		if _, ok := LSColors[file.Ext]; ok {
-			return color.New(LSColors[file.Ext]...)
+		if _, ok := paw.LSColors[file.Ext]; ok {
+			return color.New(paw.LSColors[file.Ext]...)
 		}
-		for re, att := range reExtLSColors {
+		for re, att := range paw.ReExtLSColors {
 			if re.MatchString(file.BaseName) {
 				return color.New(att...)
 			}
@@ -545,15 +545,15 @@ func GetFileLSColor(file *File) *color.Color {
 		mode := file.Stat.Mode()
 		sperm := fmt.Sprintf("%v", mode)
 		if mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x") {
-			return NewLSColor("ex")
+			return paw.NewLSColor("ex")
 		}
 
-		return NewLSColor("fi")
+		return paw.NewLSColor("fi")
 	}
 	// if file.IsNotIdentify() {
-	// 	return NewLSColor("no")
+	// 	return paw.NewLSColor("no")
 	// }
-	return NewLSColor("no")
+	return paw.NewLSColor("no")
 }
 
 // FileLSColorString will return the color string of `s` according `fullpath` (xxx.yyy)
@@ -581,10 +581,10 @@ func FileLSColorString(fullpath, s string) (string, error) {
 	// case NoColor:
 	// 	return s, nil
 	// default:
-	// 	if _, ok := LSColors[file]; ok {
+	// 	if _, ok := paw.LSColors[file]; ok {
 	// 		return colorstr(LSColors[file], s), nil
 	// 	}
-	// 	if _, ok := LSColors[ext]; ok {
+	// 	if _, ok := paw.LSColors[ext]; ok {
 	// 		return colorstr(LSColors[ext], s), nil
 	// 	}
 	// 	for re, att := range reExtLSColors {
@@ -691,12 +691,12 @@ func rowWrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) s
 		}
 		if !file.IsLink() {
 			names := paw.WrapToSlice(name, width)
-			fmt.Fprintln(sb, pad+meta, file.LSColorString(names[0]))
+			fmt.Fprintln(sb, pad+meta, file.LSColor().Sprint(names[0]))
 			for i := 1; i < len(names); i++ {
-				fmt.Fprintln(sb, pad+spmeta, file.LSColorString(names[i]))
+				fmt.Fprintln(sb, pad+spmeta, file.LSColor().Sprint(names[i]))
 			}
 		} else {
-			cname := file.LSColorString(file.BaseName)
+			cname := file.LSColor().Sprint(file.BaseName)
 			wbname := paw.StringWidth(file.BaseName)
 			carrow := cdashp.Sprint(" -> ")
 			wbname += 4
