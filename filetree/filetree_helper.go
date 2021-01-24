@@ -79,10 +79,6 @@ func isEnded(levelsEnded []int, level int) bool {
 
 // GetColorizedDirName will return a colorful string of {{ dir }}/{{ name }}
 func GetColorizedDirName(path string, root string) string {
-	return getColorDirName(path, root)
-}
-
-func getColorDirName(path string, root string) string {
 	file, err := NewFile(path)
 	if err != nil {
 		dir, name := filepath.Split(path)
@@ -389,43 +385,6 @@ func getColorizedDates(file *File) (cdate string, wd int) {
 	return cdate, wd
 }
 
-func getColorizedHead(pad, username, groupname string, git GitStatus) (chead string, width int) {
-	sb := paw.NewStringBuilder()
-	csb := paw.NewStringBuilder()
-	sb.WriteString(pad)
-	csb.WriteString(pad)
-	for i, k := range pfieldKeys {
-		switch k {
-		// case PFieldINode: //"inode",
-		// 	// field = fmt.Sprintf("%-[1]*[2]s", pfieldWidthsMap[k], fieldsMap[k])
-		// case PFieldPermissions: //"Permissions",
-		// case PFieldLinks: //"Links",
-		// case PFieldSize: //"Size",
-		// case PFieldUser: //"User",
-		// case PFieldGroup: //"Group",
-		// case PFieldModified: //"Date Modified",
-		// case PFieldCreated: //"Date Created",
-		// case PFieldAccessed: //"Date Accessed",
-		case PFieldGit: //"Git",
-			if git.NoGit {
-				pfieldKeys = append(pfieldKeys[:i], pfieldKeys[i+1:]...)
-				pfields = append(pfields[:i], pfields[i+1:]...)
-				continue
-			}
-			// case PFieldName: //"Name",
-		}
-		field := fmt.Sprintf("%[1]*[2]s", pfieldWidthsMap[k], pfieldsMap[k])
-		fmt.Fprintf(sb, "%s ", field)
-		fmt.Fprintf(csb, "%s ", chdp.Sprint(field))
-	}
-	head := sb.String()
-	head = head[:len(head)-1]
-	width = paw.StringWidth(head)
-	chead = csb.String()
-	chead = chead[:len(chead)-1]
-	return chead, width
-}
-
 func printBanner(w io.Writer, pad string, mark string, length int) {
 	banner := fmt.Sprintf("%s%s", pad, paw.Repeat(mark, length))
 	fmt.Fprintln(w, cdashp.Sprint(banner))
@@ -550,9 +509,6 @@ func GetFileLSColor(file *File) *color.Color {
 
 		return paw.NewLSColor("fi")
 	}
-	// if file.IsNotIdentify() {
-	// 	return paw.NewLSColor("no")
-	// }
 	return paw.NewLSColor("no")
 }
 
@@ -564,36 +520,6 @@ func FileLSColorString(fullpath, s string) (string, error) {
 		return "", err
 	}
 	return file.LSColor().Sprint(s), nil
-
-	// file, ext := getColorExt(fullpath)
-	// if ext == "«link»" {
-	// 	// link, err := os.Readlink(fullpath)
-	// 	ext = "ln"
-	// 	_, err := filepath.EvalSymlinks(fullpath)
-	// 	if err != nil {
-	// 		ext = "or"
-	// 	}
-	// 	// else {
-	// 	// 	file, ext = getColorExt(link)
-	// 	// }
-	// }
-	// switch {
-	// case NoColor:
-	// 	return s, nil
-	// default:
-	// 	if _, ok := paw.LSColors[file]; ok {
-	// 		return colorstr(LSColors[file], s), nil
-	// 	}
-	// 	if _, ok := paw.LSColors[ext]; ok {
-	// 		return colorstr(LSColors[ext], s), nil
-	// 	}
-	// 	for re, att := range reExtLSColors {
-	// 		if re.MatchString(file) {
-	// 			return colorstr(att, s), nil
-	// 		}
-	// 	}
-	// 	return colorstr(LSColors["no"], s), nil
-	// }
 }
 
 func rowWrapDirName(dirName, pad string, wpad int, wdlimit int) string {

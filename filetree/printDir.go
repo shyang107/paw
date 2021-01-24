@@ -352,7 +352,7 @@ func checkAndPrintFile(w io.Writer, path string, pad string) error {
 		return err
 	}
 	if file.IsFile() || file.IsLink() {
-		fmt.Fprintf(w, "%sDirectory: %v \n", pad, getColorDirName(file.Dir, ""))
+		fmt.Fprintf(w, "%sDirectory: %v \n", pad, GetColorizedDirName(file.Dir, ""))
 		git, _ := GetShortGitStatus(file.Dir)
 		fds := NewFieldSliceFrom(pfieldKeys, git)
 		fds.SetValues(file, git)

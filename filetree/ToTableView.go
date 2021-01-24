@@ -39,8 +39,8 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		wstty       = sttyWidth - 2 - wpad
 		banner      = paw.Repeat("-", wstty)
 		widthOfName = 75
-		xsymb       = " @ "
-		xsymb2      = "-@-"
+		xsymb       = paw.XAttrSymbol
+		xsymb2      = paw.XAttrSymbol2
 		deftf       = &paw.TableFormat{
 			Fields:            []string{"No.", "Mode", "Size", "Files"},
 			LenFields:         []int{5, 11, 6, widthOfName},
@@ -64,7 +64,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			ValueColor: cdashp,
 		}
 
-		rootName = getColorDirName(f.root, "")
+		rootName = GetColorizedDirName(f.root, "")
 		ctdsize  = GetColorizedSize(f.totalSize)
 		head     = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, rootName, ctdsize)
 	)

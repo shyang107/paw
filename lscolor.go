@@ -54,19 +54,19 @@ var (
 		"gn": []color.Attribute{38, 5, 214},    // group without you
 		"da": []color.Attribute{38, 5, 153},    // timestamp + 8 -> concealed
 		// "hd": []color.Attribute{4, 38, 5, 15}, // head
-		"hd":  []color.Attribute{38, 5, 251, 4}, // head + 4-> underline
-		"-":   []color.Attribute{38, 5, 8},      // Concealed
-		".":   []color.Attribute{38, 5, 8},      // Concealed
-		" ":   []color.Attribute{38, 5, 8},      // Concealed
-		"ga":  []color.Attribute{38, 5, 156},    // git new
-		"gm":  []color.Attribute{38, 5, 117},    // git modified
-		"gd":  []color.Attribute{38, 5, 209},    // git deleted
-		"gv":  []color.Attribute{38, 5, 230},    // git renamed
-		"gt":  []color.Attribute{38, 5, 135},    // git type change
-		"dir": []color.Attribute{38, 5, 189},    //addition 'dir'
+		"hd":  []color.Attribute{38, 5, 251, 4, 48, 5, 236}, // head + 4-> underline
+		"-":   []color.Attribute{38, 5, 8},                  // Concealed
+		".":   []color.Attribute{38, 5, 8},                  // Concealed
+		" ":   []color.Attribute{38, 5, 8},                  // Concealed
+		"ga":  []color.Attribute{38, 5, 156},                // git new
+		"gm":  []color.Attribute{38, 5, 117},                // git modified
+		"gd":  []color.Attribute{38, 5, 209},                // git deleted
+		"gv":  []color.Attribute{38, 5, 230},                // git renamed
+		"gt":  []color.Attribute{38, 5, 135},                // git type change
+		"dir": []color.Attribute{38, 5, 189},                //addition 'dir'
 		// "xattr": []color.Attribute{38, 5, 249, 4}, //addition 'xattr'+ 4-> underline
-		"xattr": []color.Attribute{38, 5, 249, 4, 48, 5, 234},
-		"xsymb": []color.Attribute{38, 5, 249, 48, 5, 234},
+		"xattr": []color.Attribute{38, 5, 8, 4, 48, 5, 234},
+		"xsymb": []color.Attribute{38, 5, 8, 48, 5, 234},
 		"in":    []color.Attribute{38, 5, 213},    // inode
 		"lk":    []color.Attribute{38, 5, 209, 1}, // links
 		"bk":    []color.Attribute{38, 5, 189},    // blocks

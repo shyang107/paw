@@ -56,6 +56,14 @@ func (f *FieldSlice) Fields() []*Field {
 	return f.fds
 }
 
+// EmptyValues will empty all Field.Value[C] of FieldSlice with nil
+func (f *FieldSlice) EmptyValues() {
+	for _, fd := range f.fds {
+		fd.Value = nil
+		fd.ValueC = nil
+	}
+}
+
 // SetValues sets up values of FieldSlice from File and GitStatus
 func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 	for _, fd := range f.fds {
@@ -552,5 +560,37 @@ func (f *FieldSlice) PrintRowButIgnore(w io.Writer, pad string, ignoreIdx ...int
 			}
 		}
 		fmt.Fprint(w, " ")
+	}
+}
+
+// PrintRow prints out all value of Field to w
+func (f *FieldSlice) PrintRowXattr(w io.Writer, pad string, xattrs []string, xsymb string) {
+
+	if len(xattrs) == 0 {
+		return
+	}
+	if len(xsymb) == 0 {
+		xsymb = XattrSymbol
+	}
+	var (
+		wmeta  = f.MetaHeadsStringWidth()
+		spmeta = pad + paw.Spaces(wmeta)
+		fdName = f.Get(PFieldName)
+		csymb  = cxbp.Sprint(xsymb)
+		wsymb  = paw.StringWidth(xsymb)
+		cbsp   = cxbp.Sprint(paw.Spaces(wsymb))
+		width  = fdName.Width - wsymb
+	)
+	for _, value := range xattrs {
+		wv := paw.StringWidth(value)
+		if wv <= width {
+			fmt.Fprintln(w, spmeta, csymb+cxap.Sprint(value))
+		} else {
+			names := paw.WrapToSlice(value, width)
+			fmt.Fprintln(w, spmeta, csymb+cxap.Sprint(names[0]))
+			for i := 1; i < len(names); i++ {
+				fmt.Fprintln(w, spmeta, cbsp+cxap.Sprint(names[i]))
+			}
+		}
 	}
 }

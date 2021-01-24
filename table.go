@@ -53,8 +53,11 @@ type TableFormat struct {
 type Align int
 
 const (
-	space      = " "
-	abbrSymbol = "»"
+	space        = " "
+	abbrSymbol   = "»"
+	XAttrSymbol  = "@ "
+	XAttrSymbol2 = "@-"
+	tbxSp        = "  "
 	// AlignLeft align left
 	AlignLeft Align = iota
 	// AlignCenter align center
@@ -83,8 +86,8 @@ func NewTableFormat() *TableFormat {
 		IsColorful:      false,
 		// chdEven:         tbChdEven,
 		// chdOdd:          tbChdOdd,
-		XAttributeSymbol:  tbxSymb,
-		XAttributeSymbol2: tbxSymb2,
+		XAttributeSymbol:  XAttrSymbol,
+		XAttributeSymbol2: XAttrSymbol2,
 	}
 }
 
@@ -101,11 +104,8 @@ var (
 	// tbCxattrOdd  = color.New([]color.Attribute{38, 5, 249, 4, 48, 5, 234}...)
 	// tbCxsymbEven = color.New([]color.Attribute{38, 5, 249, 48, 5, 236}...)
 	// tbCxsymbOdd  = color.New([]color.Attribute{38, 5, 249, 48, 5, 234}...)
-	tbCxattr = color.New([]color.Attribute{38, 5, 249, 4, 48, 5, 234}...)
-	tbCxsymb = color.New([]color.Attribute{38, 5, 249, 48, 5, 234}...)
-	tbxSymb  = " @ "
-	tbxSymb2 = "-@-"
-	tbxSp    = "   "
+	tbCxattr = color.New([]color.Attribute{38, 5, 8, 4, 48, 5, 234}...)
+	tbCxsymb = color.New([]color.Attribute{38, 5, 8, 48, 5, 234}...)
 )
 
 // func (t *TableFormat) setColor() {

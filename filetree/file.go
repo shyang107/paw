@@ -24,6 +24,11 @@ const (
 	PathSeparator = string(os.PathSeparator)
 	// PathListSeparator is OS-specific path list separator (':')
 	PathListSeparator = string(os.PathListSeparator)
+	XattrSymbol       = paw.XAttrSymbol
+)
+
+var (
+	xattrsp = paw.Spaces(paw.StringWidth(XattrSymbol))
 )
 
 // File will store information of a file
@@ -468,8 +473,13 @@ func (f *File) ColorSize() string {
 }
 
 // ColorDirName will return a colorful string of {{dir of Path}}+{{name of path }} for human-reading like as exa
-func (f *File) ColorDirName(replaceRoot string) string {
-	return GetColorizedDirName(f.Path, replaceRoot)
+func (f *File) ColorDirName() string {
+	return GetColorizedDirName(f.Path, "")
+}
+
+// ColorShortDirName will return a colorful string of {{dir of Path}}+{{name of path }} (replace root with '.') for human-reading like as exa
+func (f *File) ColorShortDirName(root string) string {
+	return GetColorizedDirName(f.Path, root)
 }
 
 // ColorMeta will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File) and its' length.
@@ -543,29 +553,5 @@ func getMeta(file *File, git GitStatus) (string, int) {
 	chead := csb.String()
 	chead = chead[:len(chead)-1]
 	return chead, width
-	// width := 0
-	// sb := paw.NewStringBuilder()
-	// cperm := file.ColorPermission()
-	// width += paw.StringWidth(fmt.Sprintf("%v", file.Stat.Mode())) + 2
 
-	// cfsize := file.ColorSize()
-	// if file.IsDir() {
-	// 	cfsize = cdashp.Sprint(fmt.Sprintf("%6s", "-"))
-	// }
-	// width += 7
-	// width += paw.StringWidth(urname) + paw.StringWidth(gpname) + 1
-
-	// // cTime := file.ColorModifyTime()
-	// // width += paw.StringWidth(DateString(file.ModifiedTime())) + 1
-	// cTime, wd := getColorizedDates(file)
-	// width += wd + 1
-
-	// if git.NoGit {
-	// 	fmt.Fprintln(sb, cperm, cfsize, curname, cgpname, cTime)
-	// } else {
-	// 	cgit := file.ColorGitStatus(git)
-	// 	width += 4
-	// 	fmt.Fprintln(sb, cperm, cfsize, curname, cgpname, cTime, cgit)
-	// }
-	// return paw.TrimRight(sb.String(), "\n"), width
 }

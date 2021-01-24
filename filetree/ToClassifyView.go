@@ -20,7 +20,7 @@ func (f *FileList) ToClassifyView(pad string) string {
 		dirs     = f.Dirs()
 		fm       = f.Map()
 		wdstty   = sttyWidth - 2 - paw.StringWidth(pad)
-		rootName = getColorDirName(f.root, "")
+		rootName = GetColorizedDirName(f.root, "")
 		ctdsize  = GetColorizedSize(f.totalSize)
 		head     = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, rootName, ctdsize)
 		nitems   = f.NDirs() + f.NFiles()
@@ -34,7 +34,7 @@ func (f *FileList) ToClassifyView(pad string) string {
 				fmt.Fprintln(w, head)
 				printBanner(w, "", "=", wdstty)
 			} else {
-				dirName := fm[dir][0].ColorDirName(f.root)
+				dirName := fm[dir][0].ColorShortDirName(f.root)
 				if paw.StringWidth(fm[dir][0].Dir) > wdstty {
 					dirName = rowWrapDirName(fm[dir][0].Dir, "", 0, wdstty)
 					dirName = paw.TrimSuffix(dirName, "\n")

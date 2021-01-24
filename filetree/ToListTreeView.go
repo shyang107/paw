@@ -44,7 +44,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 		wpad   = paw.StringWidth(orgpad)
 		wdstty = sttyWidth - 2 - wpad
 
-		rootName = getColorDirName(f.root, "")
+		rootName = GetColorizedDirName(f.root, "")
 		ctdsize  = GetColorizedSize(f.totalSize)
 		head     = fmt.Sprintf("Root directory: %v, size ≈ %v", rootName, ctdsize)
 	)
@@ -114,14 +114,12 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 		sb      = paw.NewStringBuilder()
 		padMeta = ""
 		meta    = ""
-		// dinf, ndinf = fl.DirInfo(file)
 	)
 
 	// fds.SetValues(file, git)
 	if pdview == PListTreeView {
 		meta = fds.ColorMetaValuesString()
 		wmeta = fds.MetaHeadsStringWidth()
-		// meta += fds.ColorMetaValuesString()
 		padMeta = paw.Spaces(wmeta + 1)
 		// 1. print all fields except Name
 		fmt.Fprintf(sb, "%s ", meta)
@@ -238,14 +236,14 @@ func xattrLTString(file *File, edge EdgeType, padx string, wmeta, wdstty int) st
 			cedge = padx + paw.Spaces(IndentSize+1)
 		}
 		if wdx <= width {
-			fmt.Fprintln(sb, cedge+cdashp.Sprint("@"), cxap.Sprint(xattr))
+			fmt.Fprintln(sb, cedge+cxbp.Sprint("@ ")+cxap.Sprint(xattr))
 		} else {
 			x1 := paw.Truncate(xattr, width-2, "")
 			b := len(x1)
-			fmt.Fprintln(sb, cedge+cdashp.Sprint("@"), cxap.Sprint(x1))
+			fmt.Fprintln(sb, cedge+cxbp.Sprint("@ ")+cxap.Sprint(x1))
 			xs := paw.WrapToSlice(xattr[b:], width)
 			for _, v := range xs {
-				fmt.Fprintln(sb, cedge+" ", cxap.Sprint(v))
+				fmt.Fprintln(sb, cedge+cxbp.Sprint("  ")+cxap.Sprint(v))
 			}
 		}
 	}

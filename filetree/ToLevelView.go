@@ -39,9 +39,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		j           = 0
 		bannerWidth = sttyWidth - 2 - paw.StringWidth(orgpad)
 		fds         = NewFieldSliceFrom(pfieldKeys, git)
-		wdmeta      = fds.MetaHeadsStringWidth()
-		spmeta      = paw.Spaces(wdmeta)
-		rootName    = getColorDirName(f.root, "")
+		rootName    = GetColorizedDirName(f.root, "")
 		ctdsize     = GetColorizedSize(f.totalSize)
 		head        = fmt.Sprintf("Root directory: %v, size ≈ %v", rootName, ctdsize)
 		nIterms     = fNDirs + fNFiles
@@ -68,11 +66,13 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	}
 
 	for i, dir := range dirs {
-		sumsize := uint64(0)
-		nfiles := 0
-		ndirs := 0
-		ppad := "" //+ paw.Spaces(4*level)
-		istr := ""
+		var (
+			sumsize = uint64(0)
+			nfiles  = 0
+			ndirs   = 0
+			ppad    = "" //+ paw.Spaces(4*level)
+			istr    = ""
+		)
 		if len(fm[dir]) > 0 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
@@ -98,7 +98,6 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 
 		if len(fm[dir]) > 1 {
 			modifyFDSWidth(fds, f, bannerWidth-paw.StringWidth(ppad))
-			wdmeta = fds.MetaHeadsStringWidth()
 			fds.PrintHeadRow(w, ppad)
 		}
 		for _, file := range fm[dir][1:] {
@@ -118,11 +117,9 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 			fdNo.SetValue(jstr)
 			fdNo.SetColorfulValue(cjstr)
 			fds.PrintRow(w, ppad)
-			// fmt.Fprint(w, rowWrapFileName(file, fds, ppad, bannerWidth))
 
 			if isExtended && len(file.XAttributes) > 0 {
-				spmeta = paw.Spaces(wdmeta)
-				fmt.Fprint(w, xattrEdgeString(file, ppad+spmeta, wdmeta+len(ppad), bannerWidth))
+				fds.PrintRowXattr(w, ppad, file.XAttributes, "")
 			}
 		}
 		if f.depth != 0 {
@@ -139,7 +136,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 
 END:
 	printTotalSummary(w, "", fNDirs, fNFiles, f.totalSize)
-	// spew.Dump(f.dirs)
+
 	str := paw.PaddingString(w.String(), orgpad)
 	fmt.Fprintln(f.Writer(), str)
 
