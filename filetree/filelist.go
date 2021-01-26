@@ -135,44 +135,120 @@ func (f *FileList) Map() FileMap {
 	return f.store
 }
 
-// Dirs will retun keys of `FileMap`
+// Dirs will retun directories of FileList (keys of `FileMap`)
 func (f *FileList) Dirs() []string {
 	return f.dirs
 }
 
+// TotalSize will retun total size of FileList
+func (f *FileList) TotalSize() uint64 {
+	return f.totalSize
+}
+
+// TotalByteSize will retun total size string of FileList in byte-format as human read
+func (f *FileList) TotalByteSize() string {
+	return ByteSize(f.totalSize)
+}
+
+// ColorfulTotalByteSize will retun colorful total size string of FileList in byte-format as human read
+func (f *FileList) ColorfulTotalByteSize() string {
+	return GetColorizedSize(f.totalSize)
+}
+
 // NDirs is the numbers of sub-directories of `root`
 func (f *FileList) NDirs() int {
-	return len(f.Dirs()) - 1
+	// return len(f.Dirs()) - 1
+	ndirs, _, _ := f.NTotalDirsAndFile()
+	return ndirs
 }
 
 // NFiles is the numbers of all files
 func (f *FileList) NFiles() int {
-	dirs := f.dirs
-	fm := f.store
-	nf := 0
-	for _, dir := range dirs {
-		for _, file := range fm[dir][1:] {
-			if !file.IsDir() {
-				nf++
+	_, nfiles, _ := f.NTotalDirsAndFile()
+	return nfiles
+}
+
+// NItems will return FileList.NDirs() + FileList.NFiles()
+func (f *FileList) NItems() int {
+	ndirs, nfiles, _ := f.NTotalDirsAndFile()
+	return ndirs + nfiles
+}
+
+// NTotalDirsAndFile will return NDirs, NFiles and TotalSize of FileList
+func (f *FileList) NTotalDirsAndFile() (ndirs, nfiles int, size uint64) {
+	for _, dir := range f.dirs {
+		for _, file := range f.store[dir][1:] {
+			if file.IsDir() {
+				ndirs++
+			} else {
+				nfiles++
+				// size += file.Size
 			}
 		}
 	}
-	return nf //- f.NDirs()
+	return ndirs, nfiles, f.totalSize
 }
 
-// NSubDirsAndFiles will return the number of sub-dirs and sub-files in dir
-func (f *FileList) NSubDirsAndFiles(dir string) (ndirs, nfiles int) {
-	if _, ok := f.store[dir]; !ok {
-		return ndirs, nfiles
-	}
-	for _, file := range f.store[dir] {
-		if file.IsDir() {
-			ndirs++
-		} else {
-			nfiles++
+// TotalSummary will return information about dir.
+//
+// 	Example:
+// 	2 directories, 2 files, size ≈ 0b.
+func (f *FileList) TotalSummary() string {
+	ndirs, nfiles, sumsize := f.NTotalDirsAndFile()
+	return totalSummary("", ndirs, nfiles, sumsize)
+}
+
+// DirSummary will return information about dir.
+//
+// 	Example:
+// 	2 directories, 2 files, size ≈ 0b.
+func (f *FileList) DirSummary(dir string) string {
+	ndirs, nfiles, sumsize := f.NSubDirsAndFiles(dir)
+	return dirSummary("", ndirs, nfiles, sumsize)
+}
+
+// NSubDirs will return number of sub-directories of (key) dir
+func (f *FileList) NSubDirs(dir string) int {
+	nsdirs, _, _ := f.NSubDirsAndFiles(dir)
+	return nsdirs
+}
+
+// NSubFiles will return number of sub-files of (key) dir
+func (f *FileList) NSubFiles(dir string) int {
+	_, nsfiles, _ := f.NSubDirsAndFiles(dir)
+	return nsfiles
+}
+
+// NSubDirsAndFiles will return NSubDirs, NSubFiles and sum of size of FileList
+func (f *FileList) NSubDirsAndFiles(dir string) (nsDirs, nsFiles int, sumsize uint64) {
+	if files, ok := f.Map()[dir]; ok {
+		for _, file := range files[1:] {
+			if file.IsDir() {
+				nsDirs++
+			} else {
+				nsFiles++
+				sumsize += file.Size
+			}
 		}
 	}
+	return nsDirs, nsFiles, sumsize
+}
+
+// NSubItems will return number of sub-dirs and sub-files in dir
+func (f *FileList) NSubItems(dir string) (ndirs, nfiles int) {
+	ndirs, nfiles, _ = f.NSubDirsAndFiles(dir)
 	return ndirs, nfiles
+}
+
+// SubSize will retun total size of dir of FileList
+func (f *FileList) SubSize(dir string) uint64 {
+	_, _, size := f.NSubDirsAndFiles(dir)
+	return size
+}
+
+// SubByteSize will retun total size string of FileList in byte-format as human read
+func (f *FileList) SubByteSize(dir string) string {
+	return ByteSize(f.SubSize(dir))
 }
 
 // DirInfo will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.
@@ -198,13 +274,14 @@ func (f *FileList) AddFile(file *File) {
 		// f.totalSize += file.Size
 	}
 	f.store[file.Dir] = append(f.store[file.Dir], file)
-	f.totalSize += file.Size
 	if file.IsDir() {
 		dd := paw.Split(file.Dir, PathSeparator)
 		pdir := paw.Join(dd[:len(dd)-1], PathSeparator)
 		if !paw.EqualFold(pdir, file.Dir) {
 			f.store[pdir] = append(f.store[pdir], file)
 		}
+	} else {
+		f.totalSize += file.Size
 	}
 }
 

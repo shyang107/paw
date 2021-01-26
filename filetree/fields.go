@@ -49,16 +49,20 @@ var (
 		PFieldBlocks:      "Blocks",
 		PFieldUser:        "User",
 		PFieldGroup:       "Group",
-		PFieldModified:    "Date Modified",
-		PFieldCreated:     "Date Created",
-		PFieldAccessed:    "Date Accessed",
-		PFieldGit:         "Git",
-		PFieldName:        "Name",
-		PFieldNone:        "",
+		PFieldModified:    "Modified",
+		PFieldCreated:     "Created",
+		PFieldAccessed:    "Accessed",
+		// PFieldModified:    "Date Modified",
+		// PFieldCreated:     "Date Created",
+		// PFieldAccessed:    "Date Accessed",
+		PFieldGit:  "Git",
+		PFieldName: "Name",
+		PFieldNone: "",
 	}
 	pfieldWidths    = []int{}
 	pfieldWidthsMap = map[PDFieldFlag]int{
-		PFieldINode:       paw.MaxInt(8, len(pfieldsMap[PFieldINode])),
+		// PFieldINode:       paw.MaxInt(8, len(pfieldsMap[PFieldINode])),
+		PFieldINode:       paw.MaxInt(5, len(pfieldsMap[PFieldINode])),
 		PFieldPermissions: paw.MaxInt(11, len(pfieldsMap[PFieldPermissions])),
 		PFieldLinks:       paw.MaxInt(2, len(pfieldsMap[PFieldLinks])),
 		PFieldSize:        paw.MaxInt(4, len(pfieldsMap[PFieldSize])),
@@ -72,22 +76,26 @@ var (
 		PFieldName:        paw.MaxInt(4, len(pfieldsMap[PFieldName])),
 		PFieldNone:        0,
 	}
-	pfieldKeys  = []PDFieldFlag{}
+
+	pfieldKeys = []PDFieldFlag{}
+
+	pfieldKeysDefualt = []PDFieldFlag{PFieldPermissions, PFieldSize, PFieldUser, PFieldGroup, PFieldModified, PFieldName}
+
 	pfieldCPMap = map[PDFieldFlag]*color.Color{
 		PFieldINode:       cinp,
-		PFieldPermissions: nil,
+		PFieldPermissions: cpmp,
 		PFieldLinks:       clkp,
-		PFieldSize:        nil,
+		PFieldSize:        csnp,
 		// PFieldBlocks:      cbkp,
-		PFieldBlocks:   nil,
+		PFieldBlocks:   cbkp,
 		PFieldUser:     cuup,
 		PFieldGroup:    cgup,
 		PFieldModified: cdap,
 		PFieldCreated:  cdap,
 		PFieldAccessed: cdap,
-		PFieldGit:      nil,
-		PFieldName:     nil,
-		PFieldNone:     nil,
+		PFieldGit:      cgitp,
+		PFieldName:     cfip,
+		PFieldNone:     cnop,
 	}
 	pfieldAlignMap = map[PDFieldFlag]paw.Align{
 		PFieldINode:       paw.AlignRight,
@@ -95,14 +103,16 @@ var (
 		PFieldLinks:       paw.AlignRight,
 		PFieldSize:        paw.AlignRight,
 		PFieldBlocks:      paw.AlignRight,
-		PFieldUser:        paw.AlignRight,
-		PFieldGroup:       paw.AlignRight,
-		PFieldModified:    paw.AlignLeft,
-		PFieldCreated:     paw.AlignLeft,
-		PFieldAccessed:    paw.AlignLeft,
-		PFieldGit:         paw.AlignRight,
-		PFieldName:        paw.AlignLeft,
-		PFieldNone:        paw.AlignRight,
+		PFieldUser:        paw.AlignLeft,
+		PFieldGroup:       paw.AlignLeft,
+		// PFieldUser:        paw.AlignRight,
+		// PFieldGroup:       paw.AlignRight,
+		PFieldModified: paw.AlignLeft,
+		PFieldCreated:  paw.AlignLeft,
+		PFieldAccessed: paw.AlignLeft,
+		PFieldGit:      paw.AlignRight,
+		PFieldName:     paw.AlignLeft,
+		PFieldNone:     paw.AlignRight,
 	}
 	FieldsMap = map[PDFieldFlag]*Field{
 		PFieldINode:       NewField(PFieldINode),
@@ -188,23 +198,42 @@ func (f *Field) GetHeadColor(c *color.Color) *color.Color {
 
 // ValueString will return string of Field.Value
 func (f *Field) ValueString() string {
-	s := ""
-	switch f.Align {
-	case paw.AlignLeft:
-		s = fmt.Sprintf("%-[1]*[2]v", f.Width, f.Value)
-	default:
-		s = fmt.Sprintf("%[1]*[2]v", f.Width, f.Value)
+	s := alignedSring(f.Value, f.Align, f.Width)
+	return s
+}
+
+func alignedSring(value interface{}, align paw.Align, width int) string {
+	// wf := StringWidth(value)
+	s := paw.TrimSpace(fmt.Sprintf("%v", value))
+	ws := paw.StringWidth(s)
+	if ws > width {
+		return s
 	}
+	// fmt.Println("width =", width, "wf =", wf)
+	switch align {
+	case paw.AlignRight:
+		// s = paw.Spaces(width-ws) + s
+		s = fmt.Sprintf("%[1]*[2]s", width, s)
+	case paw.AlignCenter:
+		wsl := (width - ws) / 2
+		wsr := width - ws - wsl
+		s = paw.Spaces(wsl) + s + paw.Spaces(wsr)
+	default: //AlignLeft
+		// s = s + paw.Spaces(width-ws)
+		s = fmt.Sprintf("%-[1]*[2]s", width, s)
+	}
+
 	return s
 }
 
 // ColorValueString will colorful string of Field.Value
 func (f *Field) ColorValueString() string {
-	s := f.ValueString()
 	if f.ValueC != nil {
 		// return fmt.Sprintf("%v", f.ValueC)
 		return cast.ToString(f.ValueC)
 	}
+
+	s := f.ValueString()
 	if f.ValueColor != nil {
 		return f.ValueColor.Sprint(s)
 	}
@@ -217,14 +246,15 @@ func (f *Field) ColorValueString() string {
 
 // HeadString will return string of Field.Name with width Field.Width
 func (f *Field) HeadString() string {
-	s := ""
-	switch f.Align {
-	case paw.AlignLeft:
-		s = fmt.Sprintf("%-[1]*[2]v", f.Width, f.Name)
-	default:
-		s = fmt.Sprintf("%[1]*[2]v", f.Width, f.Name)
-	}
-	return s
+	return alignedSring(f.Name, f.Align, f.Width)
+	// s := ""
+	// switch f.Align {
+	// case paw.AlignLeft:
+	// 	s = fmt.Sprintf("%-[1]*[2]v", f.Width, f.Name)
+	// default:
+	// 	s = fmt.Sprintf("%[1]*[2]v", f.Width, f.Name)
+	// }
+	// return s
 }
 
 // ColorHeadString will return colorful string of Field.Name with width Field.Width as see

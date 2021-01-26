@@ -27,15 +27,14 @@ func NewFieldSlice() *FieldSlice {
 // NewFieldSliceFrom will return *fieldSlice created from []PDFieldFlag and GitStatus
 func NewFieldSliceFrom(keys []PDFieldFlag, git GitStatus) (fds *FieldSlice) {
 	f := NewFieldSlice()
+	if keys == nil || len(keys) == 0 {
+		keys = pfieldKeysDefualt
+	}
 	for _, k := range keys {
 		if k == PFieldGit && git.NoGit {
 			continue
 		}
-		field := FieldsMap[k]
-		if _, ok := pfieldAlignMap[k]; !ok {
-			field.Align = paw.AlignLeft
-		}
-		f.Add(field)
+		f.Add(k)
 	}
 	return f
 }
@@ -70,24 +69,24 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 		switch fd.Key {
 		case PFieldINode: //"inode",
 			fd.SetValue(file.INode())
-			fd.SetValueColor(cinp)
+			// fd.SetValueColor(cinp)
 		case PFieldPermissions: //"Permissions",
 			fd.SetValue(file.Permission())
 			fd.SetColorfulValue(file.ColorPermission())
-			fd.SetValueColor(cpmp)
+			// fd.SetValueColor(cpmp)
 		case PFieldLinks: //"Links",
 			fd.SetValue(file.NLinks())
-			fd.SetValueColor(clkp)
+			// fd.SetValueColor(clkp)
 		case PFieldSize: //"Size",
 			if file.IsDir() {
 				fd.SetValue("-")
 				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
 			} else {
-				fd.SetValue(ByteSize(file.Size))
+				fd.SetValue(file.ByteSize())
 				csize := fdColorizedSize(file.Size, fd.Width)
 				fd.SetColorfulValue(csize)
 			}
-			fd.SetValueColor(csnp)
+			// fd.SetValueColor(csnp)
 		case PFieldBlocks: //"User",
 			if file.IsDir() {
 				fd.SetValue("-")
@@ -96,36 +95,35 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				fd.SetValue(file.Blocks())
 				fd.SetColorfulValue(cbkp.Sprintf("%[1]*[2]v", fd.Width, file.Blocks()))
 			}
-			fd.SetValueColor(cbkp)
+			// fd.SetValueColor(cbkp)
 		case PFieldUser: //"User",
 			fd.SetValue(urname)
-			fd.SetValueColor(cuup)
 			fd.SetColorfulValue(cuup.Sprintf("%[1]*[2]v", fd.Width, urname))
+			// fd.SetValueColor(cuup)
 		case PFieldGroup: //"Group",
 			fd.SetValue(gpname)
-			fd.SetValueColor(cgup)
 			fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, gpname))
+			// fd.SetValueColor(cgup)
 		case PFieldModified: //"Date Modified",
 			fd.SetValue(DateString(file.ModifiedTime()))
-			fd.SetValueColor(cdap)
 			// fd.SetColorfulValue(file.ColorModifyTime())
+			// fd.SetValueColor(cdap)
 		case PFieldCreated: //"Date Created",
 			fd.SetValue(DateString(file.CreatedTime()))
-			fd.SetValueColor(cdap)
 			// fd.SetColorfulValue(file.ColorCreatedTime())
+			// fd.SetValueColor(cdap)
 		case PFieldAccessed: //"Date Accessed",
 			fd.SetValue(DateString(file.AccessedTime()))
-			fd.SetValueColor(cdap)
 			// fd.SetColorfulValue(file.ColorAccessedTime())
+			// fd.SetValueColor(cdap)
 		case PFieldGit: //"Gid",
 			if git.NoGit {
 				continue
 			} else {
-				// fd.SetValue(getGitStatus(git, file))
 				fd.SetValue(file.GitStatus(git))
 				fd.SetColorfulValue(file.ColorGitStatus(git))
 			}
-			fd.SetValueColor(cgtp)
+			// fd.SetValueColor(cgitp)
 		case PFieldName: //"Name",
 			fd.SetValue(file.Name())
 			fd.SetColorfulValue(file.ColorName())
@@ -195,13 +193,24 @@ func (f *FieldSlice) Count() int {
 	return len(f.fds)
 }
 
-// Add will append a Field to FieldSlice
-func (f *FieldSlice) Add(field *Field) {
+// Add will append a Field to FieldSlice by Field ke
+func (f *FieldSlice) Add(key PDFieldFlag) *FieldSlice {
+	field := FieldsMap[key]
+	if _, ok := pfieldAlignMap[key]; !ok {
+		field.Align = paw.AlignLeft
+	}
+	f.AddByField(field)
+	return f
+}
+
+// AddByField will append a Field to FieldSlice
+func (f *FieldSlice) AddByField(field *Field) *FieldSlice {
 	f.fds = append(f.fds, field)
+	return f
 }
 
 // Remove will remove the first matched field according to PDFieldFlag
-func (f *FieldSlice) Remove(key PDFieldFlag) {
+func (f *FieldSlice) Remove(key PDFieldFlag) *FieldSlice {
 	for i, fd := range f.fds {
 		if fd.Key == key {
 			if i == f.Count()-1 {
@@ -211,10 +220,11 @@ func (f *FieldSlice) Remove(key PDFieldFlag) {
 			}
 		}
 	}
+	return f
 }
 
 // RemoveByName will remove the first matched field according to Field.Name
-func (f *FieldSlice) RemoveByName(name string) {
+func (f *FieldSlice) RemoveByName(name string) *FieldSlice {
 	for i, fd := range f.fds {
 		if fd.Name == name {
 			if i == f.Count() {
@@ -224,6 +234,7 @@ func (f *FieldSlice) RemoveByName(name string) {
 			}
 		}
 	}
+	return f
 }
 
 // Insert will insert a field into the poisition of FieldSlice according to the index `startIndex`
@@ -264,10 +275,10 @@ func (f *FieldSlice) Get(key PDFieldFlag) *Field {
 	return nil
 }
 
-// Get will return *Field for first matched name in FieldSlice
+// Get will return *Field for first matched name (case-insensetive) in FieldSlice
 func (f *FieldSlice) GetByName(name string) *Field {
 	for _, fd := range f.fds {
-		if fd.Name == name {
+		if paw.ToLower(fd.Name) == paw.ToLower(name) {
 			return fd
 		}
 	}
@@ -281,6 +292,54 @@ func (f *FieldSlice) Widths() []int {
 		widths[i] = fd.Width
 	}
 	return widths
+}
+
+// ModifyWidth modifies Field.Width according to FileList and wdstty (maximum width on console).
+func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
+	var (
+		wdinode = 0
+		wdlinks = 0
+		wdsize  = 0
+		wdblock = 0
+	)
+
+	for _, dir := range fl.Dirs() {
+		for _, file := range fl.Map()[dir][1:] {
+			ws := len(fmt.Sprint(file.INode()))
+			if wdinode < ws {
+				wdinode = ws
+			}
+			ws = len(fmt.Sprint(file.NLinks()))
+			if wdlinks < ws {
+				wdlinks = ws
+			}
+			ws = len(file.ByteSize())
+			if wdsize < ws {
+				wdsize = ws
+			}
+			ws = len(fmt.Sprint(file.Blocks()))
+			if wdblock < ws {
+				wdblock = ws
+			}
+		}
+	}
+
+	if fd := f.Get(PFieldINode); fd != nil {
+		fd.Width = paw.MaxInt(wdinode, fd.Width)
+	}
+	if fd := f.Get(PFieldLinks); fd != nil {
+		fd.Width = paw.MaxInt(wdlinks, fd.Width)
+	}
+	if fd := f.Get(PFieldSize); fd != nil {
+		fd.Width = paw.MaxInt(wdsize, fd.Width)
+	}
+	if fd := f.Get(PFieldBlocks); fd != nil {
+		fd.Width = paw.MaxInt(wdblock, fd.Width)
+	}
+	if fd := f.Get(PFieldName); fd != nil {
+		wdmeta := f.MetaHeadsStringWidth() + 1
+		fd.Width = wdstty - wdmeta
+	}
 }
 
 // // HeadWidths will return the int slice from Field.Width of FieldSlie
@@ -340,14 +399,6 @@ func (f *FieldSlice) HeadsStringWidth() int {
 // MetaHeadsStringWidth will return width of FieldSlice.HeadString() exclude `PFieldName` as you see
 func (f *FieldSlice) MetaHeadsStringWidth() int {
 	return f.HeadsStringWidth() - f.Get(PFieldName).Width - 1
-	// wd := 0
-	// for _, fd := range f.fds {
-	// 	if fd.Key == PFieldName {
-	// 		continue
-	// 	}
-	// 	wd += fd.Width + 1
-	// }
-	// return wd - 1
 }
 
 // ColorHeads will return the colorful string slice from Field.Name of FieldSlie
@@ -365,49 +416,48 @@ func (f *FieldSlice) ColorHeadsString() string {
 	return strings.Join(f.ColorHeads(), " ")
 }
 
-// Colors will return the []*color.Color slice from Field.ValueColor of FieldSlie
+// Colors will return a copy of the []*color.Color slice from Field.ValueColor of FieldSlie
 func (f *FieldSlice) Colors() []*color.Color {
 	vals := make([]*color.Color, f.Count())
-	for i := 0; i < f.Count(); i++ {
-		fd := f.fds[i]
+	for i, fd := range f.fds {
 		vals[i] = fd.ValueColor
 	}
 	return vals
 }
 
-// Values will return all interface{} slice from Field.Value of FieldSlie
+// Values will return a copy of all interface{} slice from Field.Value of FieldSlie
 func (f *FieldSlice) Values() []interface{} {
 	vals := make([]interface{}, f.Count())
-	for i := 0; i < f.Count(); i++ {
-		fd := f.fds[i]
+	for i, fd := range f.fds {
 		vals[i] = fd.Value
 	}
 	return vals
 }
 
-// ValueCs will return the interface{} slice from Field.ValueC of FieldSlie
+// ValueCs will return a copy of the interface{} slice from Field.ValueC of FieldSlie
 func (f *FieldSlice) ValueCs() []interface{} {
 	vals := make([]interface{}, f.Count())
-	for i := 0; i < f.Count(); i++ {
-		fd := f.fds[i]
+	for i, fd := range f.fds {
 		vals[i] = fd.ValueC
 	}
 	return vals
 }
 
-// ValuesStrings will return the string slice from Field.Value of FieldSlie
+// ValuesStrings will return a copy of the string slice from Field.Value of FieldSlie
 func (f *FieldSlice) ValuesStrings() []string {
-	return cast.ToStringSlice(f.Values())
+	vals := make([]string, f.Count())
+	for i, fd := range f.fds {
+		vals[i] = fd.ValueString()
+	}
+	return vals
 }
 
-// ValuesStringSlice will return the string slice according to idx from Field.Value of FieldSlie
+// ValuesStringSlice will return a copy of the string slice according to idx from Field.Value of FieldSlie
 func (f *FieldSlice) ValuesStringSlice(idxs ...int) []string {
 	vs := f.ValuesStrings()
 	out := make([]string, len(idxs))
-	nidxs := len(idxs)
-	for i := 0; i < nidxs; i++ {
-		idx := idxs[i]
-		if err := paw.CheckIndex(vs, idx, "f.ValuesStrings()"); err == nil {
+	for _, i := range idxs {
+		if err := paw.CheckIndex(vs, i, "f.ValuesStrings()"); err == nil {
 			out[i] = vs[i]
 		} else {
 			out[i] = fmt.Sprint(err)
@@ -416,24 +466,21 @@ func (f *FieldSlice) ValuesStringSlice(idxs ...int) []string {
 	return out
 }
 
-// ColorValueStrings will return the colorful string slice from Field.ColorValueString() of FieldSlie
+// ColorValueStrings will return a copy of the colorful string slice from Field.ColorValueString() of FieldSlie
 func (f *FieldSlice) ColorValueStrings() []string {
 	vals := make([]string, f.Count())
-	for i := 0; i < f.Count(); i++ {
-		fd := f.fds[i]
+	for i, fd := range f.fds {
 		vals[i] = fd.ColorValueString()
 	}
 	return vals
 }
 
-// ColorValueStringSlice will return the string slice according to idx from Field.Value of FieldSlie
+// ColorValueStringSlice will return a copy of the string slice according to idx from Field.Value of FieldSlie
 func (f *FieldSlice) ColorValueStringSlice(idxs ...int) []string {
 	vs := f.ColorValueStrings()
 	out := make([]string, len(idxs))
-	nidxs := len(idxs)
-	for i := 0; i < nidxs; i++ {
-		idx := idxs[i]
-		if err := paw.CheckIndex(vs, idx, "f.ColorValueStrings()"); err == nil {
+	for _, i := range idxs {
+		if err := paw.CheckIndex(vs, i, "f.ColorValueStrings()"); err == nil {
 			out[i] = vs[i]
 		} else {
 			out[i] = fmt.Sprint(err)
@@ -442,7 +489,7 @@ func (f *FieldSlice) ColorValueStringSlice(idxs ...int) []string {
 	return out
 }
 
-// MetaValuesString will return string slice of Field.ValueString() exclude `PFieldName`
+// MetaValuesString will return a copy of string slice of Field.ValueString() exclude `PFieldName`
 func (f *FieldSlice) MetaValues() []string {
 	var vals []string
 	for i := 0; i < f.Count(); i++ {
@@ -496,11 +543,43 @@ func (f *FieldSlice) PrintHeadRow(w io.Writer, pad string) {
 
 // PrintRow prints out all value of Field to w
 func (f *FieldSlice) PrintRow(w io.Writer, pad string) {
+	f.PrintRowPrefix(w, pad, "")
+	// // print meta
+	// fmt.Fprint(w, pad+f.ColorMetaValuesString()+" ")
+	// // print Name field
+	// var (
+	// 	wpad   = f.MetaHeadsStringWidth()
+	// 	fdName = f.Get(PFieldName)
+	// 	width  = fdName.Width
+	// 	value  = cast.ToString(fdName.Value)
+	// 	wv     = paw.StringWidth(value)
+	// 	cvalue = cast.ToString(fdName.ValueC)
+	// 	c      = fdName.ValueColor
+	// )
+	// if wv <= width {
+	// 	if fdName.ValueC != nil {
+	// 		fmt.Fprintln(w, cvalue)
+	// 	} else {
+	// 		fmt.Fprintln(w, c.Sprint(value))
+	// 	}
+	// } else {
+	// 	names := paw.WrapToSlice(value, width)
+	// 	fmt.Fprintln(w, c.Sprint(names[0]))
+	// 	sp := pad + paw.Spaces(wpad)
+	// 	for i := 1; i < len(names); i++ {
+	// 		fmt.Fprintln(w, sp, c.Sprint(names[i]))
+	// 	}
+	// }
+}
+
+// PrintRowPrefix prints out all value of Field to w
+func (f *FieldSlice) PrintRowPrefix(w io.Writer, pad, prefix string) {
 	// print meta
 	fmt.Fprint(w, pad+f.ColorMetaValuesString()+" ")
 	// print Name field
 	var (
 		wpad   = f.MetaHeadsStringWidth()
+		wprf   = paw.StringWidth(paw.StripANSI(prefix))
 		fdName = f.Get(PFieldName)
 		width  = fdName.Width
 		value  = cast.ToString(fdName.Value)
@@ -508,15 +587,19 @@ func (f *FieldSlice) PrintRow(w io.Writer, pad string) {
 		cvalue = cast.ToString(fdName.ValueC)
 		c      = fdName.ValueColor
 	)
+	if wprf > 0 {
+		prefix += " "
+		width -= wprf - 1
+	}
 	if wv <= width {
 		if fdName.ValueC != nil {
-			fmt.Fprintln(w, cvalue)
+			fmt.Fprintln(w, prefix+cvalue)
 		} else {
-			fmt.Fprintln(w, c.Sprint(value))
+			fmt.Fprintln(w, prefix+c.Sprint(value))
 		}
 	} else {
 		names := paw.WrapToSlice(value, width)
-		fmt.Fprintln(w, c.Sprint(names[0]))
+		fmt.Fprintln(w, prefix+c.Sprint(names[0]))
 		sp := pad + paw.Spaces(wpad)
 		for i := 1; i < len(names); i++ {
 			fmt.Fprintln(w, sp, c.Sprint(names[i]))

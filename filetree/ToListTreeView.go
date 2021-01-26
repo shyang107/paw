@@ -45,43 +45,46 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 		wdstty = sttyWidth - 2 - wpad
 
 		rootName = GetColorizedDirName(f.root, "")
-		ctdsize  = GetColorizedSize(f.totalSize)
+		ctdsize  = f.ColorfulTotalByteSize()
 		head     = fmt.Sprintf("Root directory: %v, size ≈ %v", rootName, ctdsize)
 	)
 
 	pad = ""
 
 	// buf.Reset()
-	modifyFDSWidth(fds, f, wdstty)
+	fds.ModifyWidth(f, wdstty)
 
 	fmt.Fprintln(w, head)
 	printBanner(w, "", "=", wdstty)
 
 	files := fm[RootMark]
-	file := files[0]
 	nfiles := len(files)
+
+	file := files[0]
 
 	// print root file
 	meta := ""
-	dinf, _ := f.DirInfo(file)
+	cdinf, _ := f.DirInfo(file)
+	cdinf += " "
 	switch pdview {
 	case PListTreeView:
-		chead, wmeta = modifyFDSTreeHead(fds, f)
+		chead = fds.ColorHeadsString()
+		wmeta = fds.HeadsStringWidth()
 		fmt.Fprintln(w, chead)
 		fds.SetValues(file, git)
 		meta = fds.ColorMetaValuesString()
-		wmeta = fds.MetaHeadsStringWidth()
+		fmt.Fprintln(w, meta, cdinf+file.ColorShortDirName(f.Root()))
 	case PTreeView:
 		wmeta = 0
+		fmt.Fprintln(w, cdinf+file.ColorShortDirName(f.Root()))
 	}
-
-	fmt.Fprintln(w, meta, dinf+" "+file.LSColor().Sprint("."))
 
 	// print files in the root dir
 	level := 0
 	var levelsEnded []int
 	for i := 1; i < nfiles; i++ {
 		file = files[i]
+
 		edge := EdgeTypeMid
 		if i == nfiles-1 {
 			edge = EdgeTypeEnd
@@ -98,7 +101,8 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 
 	// print end message
 	printBanner(w, "", "=", wdstty)
-	printTotalSummary(w, pad, f.NDirs(), f.NFiles(), f.totalSize)
+
+	fmt.Fprintln(w, f.TotalSummary())
 
 	s := paw.PaddingString(w.String(), orgpad)
 	s = paw.TrimSpace(s)
