@@ -45,7 +45,7 @@ var (
 	lsdip                 = paw.NewLSColor("di")     // directory
 	cdip                  = paw.NewEXAColor("di")    // directory
 	cfip                  = paw.NewEXAColor("fi")    // file
-	cnop                  = paw.NewEXAColor("-")     // serial number
+	cNop                  = paw.NewEXAColor("-")     // serial number
 	cinp                  = paw.NewEXAColor("in")    // inode
 	cpmp                  = paw.NewEXAColor("uw")    // permission
 	csnp                  = paw.NewEXAColor("sn")    // size number
@@ -55,10 +55,11 @@ var (
 	clkp                  = paw.NewEXAColor("lk")    // symlink
 	cbkp                  = paw.NewEXAColor("bk")    // blocks
 	cdap                  = paw.NewEXAColor("da")    // date
-	cgtp                  = paw.NewEXAColor("gm")    // git
+	cgitp                 = paw.NewEXAColor("gm")    // git
 	cxap                  = paw.NewEXAColor("xattr") // extended attributes
 	cxbp                  = paw.NewEXAColor("xsymb") // extended attributes
 	cdashp                = paw.NewEXAColor("-")
+	cnop                  = paw.NewEXAColor("no") // no this file kind
 	currentuser, _        = user.Current()
 	urname                = currentuser.Username
 	usergp, _             = user.LookupGroupId(currentuser.Gid)
@@ -103,27 +104,27 @@ func GetColorizedDirName(path string, root string) string {
 	return name
 }
 
-func getDirAndName(path string, root string) (dir, name string) {
-	file, err := NewFile(path)
-	if err != nil {
-		dir, name = filepath.Split(path)
-		if len(root) > 0 {
-			dir = paw.Replace(dir, root, RootMark, 1)
-		}
-		return dir, name
-	}
-	name = file.BaseName
-	if file.IsDir() {
-		dir, _ = filepath.Split(file.Path)
-		if len(root) > 0 {
-			dir = paw.Replace(dir, root, RootMark, 1)
-		}
-	}
-	if file.IsLink() {
-		return dir + name, file.LinkPath()
-	}
-	return dir, name
-}
+// func getDirAndName(path string, root string) (dir, name string) {
+// 	file, err := NewFile(path)
+// 	if err != nil {
+// 		dir, name = filepath.Split(path)
+// 		if len(root) > 0 {
+// 			dir = paw.Replace(dir, root, RootMark, 1)
+// 		}
+// 		return dir, name
+// 	}
+// 	name = file.BaseName
+// 	if file.IsDir() {
+// 		dir, _ = filepath.Split(file.Path)
+// 		if len(root) > 0 {
+// 			dir = paw.Replace(dir, root, RootMark, 1)
+// 		}
+// 	}
+// 	if file.IsLink() {
+// 		return dir + name, file.LinkPath()
+// 	}
+// 	return dir, name
+// }
 
 func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
 	nd, nf := 0, 0
@@ -171,7 +172,7 @@ func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uin
 	fmt.Fprintln(w, dirSummary(pad, ndirs, nfiles, sumsize))
 }
 
-func totalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) string {
+func totalSummary(pad string, ndirs int, nfiles int, sumsize uint64) string {
 	var (
 		cndirs   = csnp.Sprint(ndirs)
 		cnfiles  = csnp.Sprint(nfiles)
@@ -191,7 +192,7 @@ func totalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64
 
 func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
 
-	fmt.Fprintln(w, totalSummary(w, pad, ndirs, nfiles, sumsize))
+	fmt.Fprintln(w, totalSummary(pad, ndirs, nfiles, sumsize))
 }
 
 var ckxy = map[rune]rune{
@@ -522,10 +523,10 @@ func FileLSColorString(fullpath, s string) (string, error) {
 	return file.LSColor().Sprint(s), nil
 }
 
-func rowWrapDirName(dirName, pad string, wpad int, wdlimit int) string {
+func rowWrapDirName(dirName, pad string, wdlimit int) string {
 	var (
-		w = paw.NewStringBuilder()
-		// wpad      = paw.StringWidth(pad)
+		w         = paw.NewStringBuilder()
+		wpad      = paw.StringWidth(paw.StripANSI(pad))
 		sppad     = paw.Spaces(wpad)
 		dir, name = filepath.Split(dirName)
 		wdir      = paw.StringWidth(dir)
@@ -566,8 +567,9 @@ func rowWrapDirName(dirName, pad string, wpad int, wdlimit int) string {
 		} else { // wpad+wdir > wdlimit
 			// 1. two and more lines, dir only
 			dirs := paw.WrapToSlice(dir, width)
-			for i := 0; i < len(dirs)-1; i++ {
-				fmt.Fprintf(w, "%s%s\n", pad, cdirp.Sprint(dirs[i]))
+			fmt.Fprintf(w, "%s%s\n", pad, cdirp.Sprint(dirs[0]))
+			for i := 1; i < len(dirs)-1; i++ {
+				fmt.Fprintf(w, "%s%s\n", sppad, cdirp.Sprint(dirs[i]))
 			}
 			// 2. last line of dir
 			fmt.Fprintf(w, "%s%s", sppad, cdirp.Sprint(dirs[len(dirs)-1]))
@@ -728,56 +730,56 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 	return sb.String()
 }
 
-func getMaxFileSizeWidth(files []*File) int {
-	var (
-		wdsize = 0
-	)
-	for _, f := range files {
-		var size = ByteSize(f.Size)
-		if wdsize < len(size) {
-			wdsize = len(size)
-		}
-	}
-	return wdsize
-}
+// func getMaxFileSizeWidth(files []*File) int {
+// 	var (
+// 		wdsize = 0
+// 	)
+// 	for _, f := range files {
+// 		var size = ByteSize(f.Size)
+// 		if wdsize < len(size) {
+// 			wdsize = len(size)
+// 		}
+// 	}
+// 	return wdsize
+// }
 
-func modifyHead(fds *FieldSlice, files []*File, pad string, wdstty int) (chead string, wdmeta int) {
+// func modifyHead(fds *FieldSlice, files []*File, pad string, wdstty int) (chead string, wdmeta int) {
 
-	wdsize := getMaxFileSizeWidth(files)
-	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
-	chead = fds.ColorHeadsString()
-	wdmeta = fds.MetaHeadsStringWidth() + paw.StringWidth(pad)
-	fds.Get(PFieldName).Width = wdstty - wdmeta - 1
+// 	wdsize := getMaxFileSizeWidth(files)
+// 	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
+// 	chead = fds.ColorHeadsString()
+// 	wdmeta = fds.MetaHeadsStringWidth() + paw.StringWidth(pad)
+// 	fds.Get(PFieldName).Width = wdstty - wdmeta - 1
 
-	return chead, wdmeta
-}
+// 	return chead, wdmeta
+// }
 
-func modifyFDSTreeHead(fds *FieldSlice, fl *FileList) (chead string, wdmeta int) {
-	wdsize := 0
-	for _, dir := range fl.Dirs() {
-		files := fl.Map()[dir][1:]
-		wd := getMaxFileSizeWidth(files)
-		if wdsize < wd {
-			wdsize = wd
-		}
-	}
-	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
-	chead = fds.ColorHeadsString()
-	wdmeta = fds.MetaHeadsStringWidth()
-	return chead, wdmeta
-}
+// func modifyFDSTreeHead(fds *FieldSlice, fl *FileList) (chead string, wdmeta int) {
+// 	wdsize := 0
+// 	for _, dir := range fl.Dirs() {
+// 		files := fl.Map()[dir][1:]
+// 		wd := getMaxFileSizeWidth(files)
+// 		if wdsize < wd {
+// 			wdsize = wd
+// 		}
+// 	}
+// 	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
+// 	chead = fds.ColorHeadsString()
+// 	wdmeta = fds.MetaHeadsStringWidth()
+// 	return chead, wdmeta
+// }
 
-func modifyFDSWidth(fds *FieldSlice, fl *FileList, sttyLimit int) {
-	wdsize := 0
-	for _, dir := range fl.Dirs() {
-		files := fl.Map()[dir][1:]
-		wd := getMaxFileSizeWidth(files)
-		if wdsize < wd {
-			wdsize = wd
-		}
-	}
-	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
+// func modifyFDSWidth(fds *FieldSlice, fl *FileList, sttyLimit int) {
+// 	wdsize := 0
+// 	for _, dir := range fl.Dirs() {
+// 		files := fl.Map()[dir][1:]
+// 		wd := getMaxFileSizeWidth(files)
+// 		if wdsize < wd {
+// 			wdsize = wd
+// 		}
+// 	}
+// 	fds.Get(PFieldSize).Width = paw.MaxInt(wdsize, fds.Get(PFieldSize).Width)
 
-	wdmeta := fds.MetaHeadsStringWidth() + 1
-	fds.Get(PFieldName).Width = sttyLimit - wdmeta
-}
+// 	wdmeta := fds.MetaHeadsStringWidth() + 1
+// 	fds.Get(PFieldName).Width = sttyLimit - wdmeta
+// }

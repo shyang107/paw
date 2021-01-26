@@ -327,19 +327,12 @@ WRAPFIELDS:
 					sp := Spaces(widths[j] - StringWidth(sa))
 					s += t.getDefaultColor(j).Sprint(sp)
 				} else {
-					// TODO Name too long how to
-					// s = Repeat("x", widths[j])
-					ps := Split(t.FieldsColorString[j], fields[j])
-					s = ps[0] + v + ps[1]
+					s = t.Colors[j].Sprint(v)
 				}
 			} else {
 				s = t.getAlignString(j, aligns[j], widths[j], v)
 			}
-			// if t.IsColorful && colors != nil {
-			// 	sb.WriteString(colors[i].Sprint(s) + sep)
-			// } else {
-			// 	sb.WriteString(s + sep)
-			// }
+
 			sb.WriteString(s + sep)
 			idx[j]++
 		}

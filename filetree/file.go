@@ -152,26 +152,9 @@ func (f File) ColorName() string {
 	return f.ColorBaseNameToLink()
 }
 
-// LSColorstring will return a color string using LS_COLORS according to `f.Path` of file
-func (f *File) LSColorstring(s string) string {
-	// str, _ := FileLSColorString(f.Path, s)
-	// return str
-	return f.LSColor().Sprint(s)
-}
-
-// IsDir reports whether `f` describes a directory. That is, it tests for the ModeDir bit being set in `f`.
-func (f *File) IsDir() bool {
-	return f.Stat.IsDir()
-}
-
-// // IsRegularFile reports whether `f` describes a regular file. That is, it tests that no mode type bits are set.
-// func (f *File) IsRegularFile() bool {
-// 	return f.Stat.Mode().IsRegular()
-// }
-
-// IsLink() report whether File describes a symbolic link.
-func (f *File) IsLink() bool {
-	return nodeTypeFromFileInfo(f.Stat) == kindSymlink
+// ColorBaseName will return a colorful string of BaseName using LS_COLORS like as exa
+func (f *File) ColorBaseName() string {
+	return f.LSColor().Sprint(f.BaseName)
 }
 
 // LinkPath report far-end path of a symbolic link.
@@ -205,6 +188,146 @@ func (f *File) ColorBaseNameToLink() string {
 		return f.ColorBaseName() + cdashp.Sprint(" -> ") + f.ColorLinkPath()
 	}
 	return f.ColorBaseName()
+}
+
+// PathSlice will split `f.Path` following Spearator, seperating it into a string slice.
+func (f *File) PathSlice() []string {
+	return strings.Split(f.Path, PathSeparator)
+}
+
+// DirSlice will split `f.Dir` following Spearator, seperating it into a string slice.
+func (f *File) DirSlice() []string {
+	return strings.Split(f.Dir, PathSeparator)
+}
+
+// ColorDirName will return a colorful string of {{dir of Path}}+{{name of path }} for human-reading like as exa
+func (f *File) ColorDirName() string {
+	return GetColorizedDirName(f.Path, "")
+}
+
+// ColorShortDirName will return a colorful string of {{dir of Path}}+{{name of path }} (replace root with '.') for human-reading like as exa
+func (f *File) ColorShortDirName(root string) string {
+	if f.Path == root {
+		return cdip.Sprint(".")
+	}
+	return GetColorizedDirName(f.Path, root)
+}
+
+// ColorWrapDirName will return a colorful wrapped string according to width adn seprating with '\n'. If width <= 0, use sttyWidth
+func (f *File) ColorWrapDirName(pad string, width int) string {
+	return rowWrapDirName(f.Dir, pad, width)
+}
+
+// ByteSize will retun total size of File in byte-format as human read
+func (f *File) ByteSize() string {
+	return ByteSize(f.Size)
+}
+
+// NLinks will return the number of hard links of File
+func (f *File) NLinks() uint64 {
+	nlink := uint64(0)
+	if sys := f.Stat.Sys(); sys != nil {
+		if stat, ok := sys.(*syscall.Stat_t); ok {
+			nlink = uint64(stat.Nlink)
+		}
+	}
+	return nlink
+}
+
+// INode will return the inode number of File
+func (f *File) INode() uint64 {
+	inode := uint64(0)
+	if sys := f.Stat.Sys(); sys != nil {
+		if stat, ok := sys.(*syscall.Stat_t); ok {
+			inode = uint64(stat.Ino)
+		}
+	}
+	return inode
+}
+
+// Blocks will return number of file system blocks of File
+func (f *File) Blocks() uint64 {
+	blocks := uint64(0)
+	if sys := f.Stat.Sys(); sys != nil {
+		if stat, ok := sys.(*syscall.Stat_t); ok {
+			blocks = uint64(stat.Blocks)
+		}
+	}
+	return blocks
+}
+
+// // Size will return size of `File`
+// func (f *File) Size() uint64 {
+// 	return uint64(f.Stat.Size())
+// }
+
+// LSColor will return LS_COLORS color of File
+func (f *File) LSColor() *color.Color {
+	return GetFileLSColor(f)
+}
+
+// Permission will return a string of Stat.Mode() like as exa.
+// The length of placeholder in terminal is 11.
+func (f *File) Permission() string {
+	permission := fmt.Sprint(f.Stat.Mode())
+	if len(f.XAttributes) > 0 {
+		permission += "@"
+	} else {
+		permission += " "
+	}
+	return permission
+}
+
+// ColorPermission will return a colorful string of Stat.Mode() like as exa.
+// The length of placeholder in terminal is 11.
+func (f *File) ColorPermission() string {
+	permission := GetColorizePermission(f.Stat.Mode())
+	if len(f.XAttributes) > 0 {
+		permission += cdashp.Sprint("@")
+	} else {
+		permission += " "
+	}
+	return permission
+}
+
+// GitStatus will return a string of git status like as exa.
+// The length of placeholder in terminal is 3.
+func (f *File) GitStatus(git GitStatus) string {
+	return getGitStatus(git, f)
+}
+
+// ColorGitStatus will return a colorful string of git status like as exa.
+// The length of placeholder in terminal is 3.
+func (f *File) ColorGitStatus(git GitStatus) string {
+	return getColorizedGitStatus(git, f)
+}
+
+// ColorSize will return a colorful string of Size for human-reading like as exa.
+// The length of placeholder in terminal is 6.
+func (f *File) ColorSize() string {
+	return GetColorizedSize(f.Size)
+}
+
+// LSColorstring will return a color string using LS_COLORS according to `f.Path` of file
+func (f *File) LSColorstring(s string) string {
+	// str, _ := FileLSColorString(f.Path, s)
+	// return str
+	return f.LSColor().Sprint(s)
+}
+
+// IsDir reports whether `f` describes a directory. That is, it tests for the ModeDir bit being set in `f`.
+func (f *File) IsDir() bool {
+	return f.Stat.IsDir()
+}
+
+// // IsRegularFile reports whether `f` describes a regular file. That is, it tests that no mode type bits are set.
+// func (f *File) IsRegularFile() bool {
+// 	return f.Stat.Mode().IsRegular()
+// }
+
+// IsLink() report whether File describes a symbolic link.
+func (f *File) IsLink() bool {
+	return nodeTypeFromFileInfo(f.Stat) == kindSymlink
 }
 
 // IsFile reports whether File describes a file (not directory and symbolic link).
@@ -372,186 +495,82 @@ func (f *File) ColorCreatedTime() string {
 	return GetColorizedTime(date) //+ sp
 }
 
-// NLinks will return the number of hard links of File
-func (f *File) NLinks() uint64 {
-	nlink := uint64(0)
-	if sys := f.Stat.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			nlink = uint64(stat.Nlink)
-		}
-	}
-	return nlink
-}
-
-// INode will return the inode number of File
-func (f *File) INode() uint64 {
-	inode := uint64(0)
-	if sys := f.Stat.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			inode = uint64(stat.Ino)
-		}
-	}
-	return inode
-}
-
-// Blocks will return number of file system blocks of File
-func (f *File) Blocks() uint64 {
-	blocks := uint64(0)
-	if sys := f.Stat.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			blocks = uint64(stat.Blocks)
-		}
-	}
-	return blocks
-}
-
-// // Size will return size of `File`
-// func (f *File) Size() uint64 {
-// 	return uint64(f.Stat.Size())
-// }
-
-// PathSlice will split `f.Path` following Spearator, seperating it into a string slice.
-func (f *File) PathSlice() []string {
-	return strings.Split(f.Path, PathSeparator)
-}
-
-// DirSlice will split `f.Dir` following Spearator, seperating it into a string slice.
-func (f *File) DirSlice() []string {
-	return strings.Split(f.Dir, PathSeparator)
-}
-
-// LSColor will return LS_COLORS color of File
-func (f *File) LSColor() *color.Color {
-	return GetFileLSColor(f)
-}
-
-// ColorBaseName will return a colorful string of BaseName using LS_COLORS like as exa
-func (f *File) ColorBaseName() string {
-	return f.LSColor().Sprint(f.BaseName)
-}
-
-// ColorPermission will return a colorful string of Stat.Mode() like as exa.
-// The length of placeholder in terminal is 11.
-func (f *File) ColorPermission() string {
-	permission := GetColorizePermission(f.Stat.Mode())
-	if len(f.XAttributes) > 0 {
-		permission += cdashp.Sprint("@")
-	} else {
-		permission += " "
-	}
-	return permission
-}
-
-// Permission will return a string of Stat.Mode() like as exa.
-// The length of placeholder in terminal is 11.
-func (f *File) Permission() string {
-	permission := fmt.Sprint(f.Stat.Mode())
-	if len(f.XAttributes) > 0 {
-		permission += "@"
-	} else {
-		permission += " "
-	}
-	return permission
-}
-
-// GitStatus will return a string of git status like as exa.
-// The length of placeholder in terminal is 3.
-func (f *File) GitStatus(git GitStatus) string {
-	return getGitStatus(git, f)
-}
-
-// ColorGitStatus will return a colorful string of git status like as exa.
-// The length of placeholder in terminal is 3.
-func (f *File) ColorGitStatus(git GitStatus) string {
-	return getColorizedGitStatus(git, f)
-}
-
-// ColorSize will return a colorful string of Size for human-reading like as exa.
-// The length of placeholder in terminal is 6.
-func (f *File) ColorSize() string {
-	return GetColorizedSize(f.Size)
-}
-
-// ColorDirName will return a colorful string of {{dir of Path}}+{{name of path }} for human-reading like as exa
-func (f *File) ColorDirName() string {
-	return GetColorizedDirName(f.Path, "")
-}
-
-// ColorShortDirName will return a colorful string of {{dir of Path}}+{{name of path }} (replace root with '.') for human-reading like as exa
-func (f *File) ColorShortDirName(root string) string {
-	return GetColorizedDirName(f.Path, root)
-}
-
 // ColorMeta will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File) and its' length.
 func (f *File) ColorMeta(git GitStatus) (string, int) {
-	meta, length := getMeta(f, git)
-	return meta, length
-}
 
-func getMeta(file *File, git GitStatus) (string, int) {
-	sb := paw.NewStringBuilder()
-	csb := paw.NewStringBuilder()
-	for _, k := range pfieldKeys {
-		field, cfield := "", ""
-		switch k {
-		case PFieldINode: //"inode",
-			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.INode())
-			cfield = cinp.Sprint(field)
-		case PFieldPermissions: //"Permissions",
-			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.INode())
-			cfield = file.ColorPermission()
-		case PFieldLinks: //"Links",
-			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.NLinks())
-			cfield = clkp.Sprint(field)
-		case PFieldSize: //"Size",
-			if file.IsDir() {
-				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], "-")
-				cfield = cdashp.Sprint(field)
-			} else {
-				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], ByteSize(file.Size))
-				cfield = file.ColorSize()
-			}
-		case PFieldBlocks: //"User",
-			if file.IsDir() {
-				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], "-")
-				cfield = cdashp.Sprint(field)
-			} else {
-				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.Blocks())
-				cfield = cbkp.Sprint(field)
-			}
-		case PFieldUser: //"User",
-			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], urname)
-			cfield = cuup.Sprint(field)
-		case PFieldGroup: //"Group",
-			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], gpname)
-			cfield = cgup.Sprint(field)
-		case PFieldModified: //"Date Modified",
-			field = fmt.Sprintf("%-[1]*[2]v", pfieldWidthsMap[k], DateString(file.ModifiedTime()))
-			cfield = cdap.Sprint(field)
-		case PFieldCreated: //"Date Created",
-			field = fmt.Sprintf("%-[1]*[2]v", pfieldWidthsMap[k], DateString(file.CreatedTime()))
-			cfield = cdap.Sprint(field)
-		case PFieldAccessed: //"Date Accessed",
-			field = fmt.Sprintf("%-[1]*[2]v", pfieldWidthsMap[k], DateString(file.AccessedTime()))
-			cfield = cdap.Sprint(field)
-		case PFieldGit: //"Gid",
-			if git.NoGit {
-				continue
-			} else {
-				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.Stat.Mode())
-				cfield = file.ColorGitStatus(git)
-			}
-			// case PFieldName: //"Name",
-		}
-		// field := fmt.Sprintf("%[1]*[2]s", pfieldWidthsMap[k], fieldsMap[k])
-		fmt.Fprintf(sb, "%s ", field)
-		fmt.Fprintf(csb, "%s ", cfield)
+	if len(pfieldKeys) == 0 {
+		pfieldKeys = pfieldKeysDefualt
 	}
-	head := sb.String()
-	head = head[:len(head)-1]
-	width := paw.StringWidth(head)
-	chead := csb.String()
-	chead = chead[:len(chead)-1]
-	return chead, width
 
+	fds := NewFieldSliceFrom(pfieldKeys, git)
+	fds.SetValues(f, git)
+	return fds.ColorMetaValuesString(), fds.MetaHeadsStringWidth()
 }
+
+// func getMeta(file *File, git GitStatus) (string, int) {
+// 	sb := paw.NewStringBuilder()
+// 	csb := paw.NewStringBuilder()
+// 	for _, k := range pfieldKeys {
+// 		field, cfield := "", ""
+// 		switch k {
+// 		case PFieldINode: //"inode",
+// 			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.INode())
+// 			cfield = cinp.Sprint(field)
+// 		case PFieldPermissions: //"Permissions",
+// 			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.INode())
+// 			cfield = file.ColorPermission()
+// 		case PFieldLinks: //"Links",
+// 			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.NLinks())
+// 			cfield = clkp.Sprint(field)
+// 		case PFieldSize: //"Size",
+// 			if file.IsDir() {
+// 				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], "-")
+// 				cfield = cdashp.Sprint(field)
+// 			} else {
+// 				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], ByteSize(file.Size))
+// 				cfield = file.ColorSize()
+// 			}
+// 		case PFieldBlocks: //"User",
+// 			if file.IsDir() {
+// 				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], "-")
+// 				cfield = cdashp.Sprint(field)
+// 			} else {
+// 				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.Blocks())
+// 				cfield = cbkp.Sprint(field)
+// 			}
+// 		case PFieldUser: //"User",
+// 			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], urname)
+// 			cfield = cuup.Sprint(field)
+// 		case PFieldGroup: //"Group",
+// 			field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], gpname)
+// 			cfield = cgup.Sprint(field)
+// 		case PFieldModified: //"Date Modified",
+// 			field = fmt.Sprintf("%-[1]*[2]v", pfieldWidthsMap[k], DateString(file.ModifiedTime()))
+// 			cfield = cdap.Sprint(field)
+// 		case PFieldCreated: //"Date Created",
+// 			field = fmt.Sprintf("%-[1]*[2]v", pfieldWidthsMap[k], DateString(file.CreatedTime()))
+// 			cfield = cdap.Sprint(field)
+// 		case PFieldAccessed: //"Date Accessed",
+// 			field = fmt.Sprintf("%-[1]*[2]v", pfieldWidthsMap[k], DateString(file.AccessedTime()))
+// 			cfield = cdap.Sprint(field)
+// 		case PFieldGit: //"Gid",
+// 			if git.NoGit {
+// 				continue
+// 			} else {
+// 				field = fmt.Sprintf("%[1]*[2]v", pfieldWidthsMap[k], file.Stat.Mode())
+// 				cfield = file.ColorGitStatus(git)
+// 			}
+// 			// case PFieldName: //"Name",
+// 		}
+// 		// field := fmt.Sprintf("%[1]*[2]s", pfieldWidthsMap[k], fieldsMap[k])
+// 		fmt.Fprintf(sb, "%s ", field)
+// 		fmt.Fprintf(csb, "%s ", cfield)
+// 	}
+// 	head := sb.String()
+// 	head = head[:len(head)-1]
+// 	width := paw.StringWidth(head)
+// 	chead := csb.String()
+// 	chead = chead[:len(chead)-1]
+// 	return chead, width
+
+// }

@@ -30,29 +30,21 @@ func (f *FileList) ToListExtendView(pad string) string {
 func toListView(f *FileList, pad string, isExtended bool) string {
 
 	var (
-		orgpad  = pad
-		w       = f.stringBuilder
-		dirs    = f.Dirs()
-		fm      = f.Map()
-		nDirs   = f.NDirs()
-		nFiles  = f.NFiles()
-		nIterms = nDirs + nFiles
-		git     = f.GetGitStatus()
-		fds     = NewFieldSliceFrom(pfieldKeys, git)
-		// fdName                  = fds.Get(PFieldName)
-		// wdmeta                  = fds.MetaHeadsStringWidth() + paw.StringWidth(pad)
-		ntdirs, nsdirs, ntfiles = 1, 0, 0
-		fNDirs                  = f.NDirs()
-		fNFiles                 = f.NFiles()
-		wpad                    = paw.StringWidth(orgpad)
-		bannerWidth             = sttyWidth - 2 - wpad
-		rootName                = GetColorizedDirName(f.root, "")
-		ctdsize                 = GetColorizedSize(f.totalSize)
-		head                    = fmt.Sprintf("Root directory: %v, size ≈ %v", rootName, ctdsize)
+		w                  = f.stringBuilder
+		dirs               = f.Dirs()
+		fm                 = f.Map()
+		git                = f.GetGitStatus()
+		fds                = NewFieldSliceFrom(pfieldKeys, git)
+		fNDirs, fNFiles, _ = f.NTotalDirsAndFile()
+		nItems             = fNDirs + fNFiles
+		ndirs, nfiles      = 0, 0
+		wdstty             = sttyWidth - 2 - paw.StringWidth(pad)
+		head               = fmt.Sprintf("Root directory: %v, size ≈ %v", GetColorizedDirName(f.root, ""), f.ColorfulTotalByteSize())
 	)
 
 	w.Reset()
-	modifyFDSWidth(fds, f, bannerWidth-wpad)
+
+	fds.ModifyWidth(f, wdstty)
 
 	fmt.Fprintln(w, head)
 
@@ -60,33 +52,27 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		goto END
 	}
 
-	printBanner(w, "", "=", bannerWidth)
+	printBanner(w, "", "=", wdstty)
 
-	for i, dir := range dirs {
-		var (
-			sumsize = uint64(0)
-			nfiles  = 0
-			ndirs   = 0
-		)
-		if len(fm[dir]) > 0 {
+	for _, dir := range dirs {
+
+		if len(fm[dir]) > 1 {
 			if !paw.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
-					fmt.Fprint(w, rowWrapDirName(dir, "", wpad, bannerWidth))
+					fmt.Fprint(w, fm[dir][0].ColorWrapDirName("", wdstty))
 				}
 			}
+		} else {
+			continue
 		}
-		if len(fm[dir]) > 1 {
-			ntdirs++
-			fds.PrintHeadRow(w, "")
-		}
+
+		fds.PrintHeadRow(w, "")
+
 		for _, file := range fm[dir][1:] {
 			if file.IsDir() {
 				ndirs++
-				nsdirs++
 			} else {
 				nfiles++
-				ntfiles++
-				sumsize += file.Size
 			}
 
 			fds.SetValues(file, git)
@@ -94,27 +80,26 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 
 			if isExtended && len(file.XAttributes) > 0 {
 				// sp := paw.Spaces(wdmeta)
-				// fmt.Fprint(w, xattrEdgeString(file, sp, wdmeta, bannerWidth))
+				// fmt.Fprint(w, xattrEdgeString(file, sp, wdmeta, wdstty))
 				fds.PrintRowXattr(w, "", file.XAttributes, "")
 			}
 		}
 
 		if f.depth != 0 {
-			if len(fm[dir]) > 1 {
-				printDirSummary(w, "", ndirs, nfiles, sumsize)
-			}
-			if i < len(f.dirs)-1 && ndirs+nfiles < nIterms {
-				printBanner(w, "", "-", bannerWidth)
+			fmt.Fprintln(w, f.DirSummary(dir))
+
+			if ndirs+nfiles < nItems {
+				printBanner(w, "", "-", wdstty)
 			}
 		}
 	}
 
-	printBanner(w, "", "=", bannerWidth)
+	printBanner(w, "", "=", wdstty)
 
 END:
-	printTotalSummary(w, "", fNDirs, fNFiles, f.totalSize)
+	fmt.Fprintln(w, f.TotalSummary())
 
-	str := paw.PaddingString(w.String(), orgpad)
+	str := paw.PaddingString(w.String(), pad)
 	fmt.Fprintln(f.Writer(), str)
 
 	return str

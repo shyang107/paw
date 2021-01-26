@@ -351,13 +351,16 @@ func checkAndPrintFile(w io.Writer, path string, pad string) error {
 	if err != nil {
 		return err
 	}
-	if file.IsFile() || file.IsLink() {
+	if !file.IsDir() {
 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, GetColorizedDirName(file.Dir, ""))
 		git, _ := GetShortGitStatus(file.Dir)
-		fds := NewFieldSliceFrom(pfieldKeys, git)
+		fds := NewFieldSliceFrom(pfieldKeysDefualt, git)
+		fl := NewFileList(file.Dir)
+		fds.ModifyWidth(fl, sttyWidth-2)
 		fds.SetValues(file, git)
 		fmt.Fprintln(w, fds.ColorHeadsString())
-		fmt.Fprint(w, rowWrapFileName(file, fds, pad, sttyWidth-2))
+		// fmt.Fprint(w, rowWrapFileName(file, fds, pad, sttyWidth-2))
+		fds.PrintRow(w, pad)
 		return errBreak
 	}
 	return nil
