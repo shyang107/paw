@@ -2,6 +2,7 @@ package filetree
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
@@ -204,7 +205,7 @@ func (f *Field) ValueString() string {
 
 func alignedSring(value interface{}, align paw.Align, width int) string {
 	// wf := StringWidth(value)
-	s := paw.TrimSpace(fmt.Sprintf("%v", value))
+	s := strings.TrimSpace(fmt.Sprintf("%v", value))
 	ws := paw.StringWidth(s)
 	if ws > width {
 		return s

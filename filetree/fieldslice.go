@@ -43,7 +43,7 @@ func fdColorizedSize(size uint64, width int) (csize string) {
 	ss := ByteSize(size)
 	nss := len(ss)
 	sn := fmt.Sprintf("%[1]*[2]s", width-1, ss[:nss-1])
-	su := paw.ToLower(ss[nss-1:])
+	su := strings.ToLower(ss[nss-1:])
 	cn := paw.NewEXAColor("sn")
 	cu := paw.NewEXAColor("sb")
 	csize = cn.Sprint(sn) + cu.Sprint(su)
@@ -278,7 +278,7 @@ func (f *FieldSlice) Get(key PDFieldFlag) *Field {
 // Get will return *Field for first matched name (case-insensetive) in FieldSlice
 func (f *FieldSlice) GetByName(name string) *Field {
 	for _, fd := range f.fds {
-		if paw.ToLower(fd.Name) == paw.ToLower(name) {
+		if strings.ToLower(fd.Name) == strings.ToLower(name) {
 			return fd
 		}
 	}

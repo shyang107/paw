@@ -1,5 +1,7 @@
 package paw
 
+import "strings"
+
 // StrChain contains all tools which can be chained.
 type StrChain struct {
 	v string
@@ -107,225 +109,225 @@ func (t *StrChain) ReverseByte() *StrChain {
 
 // HasPrefix return `HasPrefix(t.v, prefix)`
 func (t *StrChain) HasPrefix(prefix string) bool {
-	return HasPrefix(t.v, prefix)
+	return strings.HasPrefix(t.v, prefix)
 }
 
 // HasSuffix return `HasSuffix(t.v, Suffix)`
 func (t *StrChain) HasSuffix(suffix string) bool {
-	return HasSuffix(t.v, suffix)
+	return strings.HasSuffix(t.v, suffix)
 }
 
 // Contains return `Contains(t.v, substr)`
 func (t *StrChain) Contains(substr string) bool {
-	return Contains(t.v, substr)
+	return strings.Contains(t.v, substr)
 }
 
 // ContainsAny return `ContainsAny(t.v, chars)`
 func (t *StrChain) ContainsAny(chars string) bool {
-	return ContainsAny(t.v, chars)
+	return strings.ContainsAny(t.v, chars)
 }
 
 // Fields return Fields(t.v)
 func (t *StrChain) Fields() []string {
-	return Fields(t.v)
+	return strings.Fields(t.v)
 }
 
 // FieldsFunc return FieldsFunc(t.v, f)
 func (t *StrChain) FieldsFunc(f func(rune) bool) []string {
-	return FieldsFunc(t.v, f)
+	return strings.FieldsFunc(t.v, f)
 }
 
 // ContainsAny return ContainsRune(t.v, r) bool
 func (t *StrChain) ContainsRune(r rune) bool {
-	return ContainsRune(t.v, r)
+	return strings.ContainsRune(t.v, r)
 }
 
 // EqualFold return EqualFold(t.v,, t) bool
 func (t *StrChain) EqualFold(s string) bool {
-	return EqualFold(t.v, s)
+	return strings.EqualFold(t.v, s)
 }
 
 // Index return Index(t.v, substr) int
 func (t *StrChain) Index(substr string) int {
-	return Index(t.v, substr)
+	return strings.Index(t.v, substr)
 }
 
 // IndexAny return IndexAny(t.v, chars) int
 func (t *StrChain) IndexAny(chars string) int {
-	return IndexAny(t.v, chars)
+	return strings.IndexAny(t.v, chars)
 }
 
 // IndexByte return IndexByte(t.v, c) int
 func (t *StrChain) IndexByte(c byte) int {
-	return IndexByte(t.v, c)
+	return strings.IndexByte(t.v, c)
 }
 
 // IndexFunc return IndexFunc(t.v, f) int
 func (t *StrChain) IndexFunc(f func(rune) bool) int {
-	return IndexFunc(t.v, f)
+	return strings.IndexFunc(t.v, f)
 }
 
 // IndexRune return IndexRune(t.v, r) int
 func (t *StrChain) IndexRune(r rune) int {
-	return IndexRune(t.v, r)
+	return strings.IndexRune(t.v, r)
 }
 
 // LastIndex return LastIndex(t.v, substr) int
 func (t *StrChain) LastIndex(substr string) int {
-	return LastIndex(t.v, substr)
+	return strings.LastIndex(t.v, substr)
 }
 
 // LastIndexAny return LastIndexAny(t.v, chars) int
 func (t *StrChain) LastIndexAny(chars string) int {
-	return LastIndexAny(t.v, chars)
+	return strings.LastIndexAny(t.v, chars)
 }
 
 // LastIndexByte return LastIndexByte(t.v, c) int
 func (t *StrChain) LastIndexByte(c byte) int {
-	return LastIndexByte(t.v, c)
+	return strings.LastIndexByte(t.v, c)
 }
 
 // LastIndexFunc return LastIndexFunc(t.v, f) int
 func (t *StrChain) LastIndexFunc(f func(rune) bool) int {
-	return LastIndexFunc(t.v, f)
+	return strings.LastIndexFunc(t.v, f)
 }
 
 // Split return Split(t.v, sep) []string
 func (t *StrChain) Split(sep string) []string {
-	return Split(t.v, sep)
+	return strings.Split(t.v, sep)
 }
 
 // Split return Split(t.v, sep) []string
 func (t *StrChain) SplitN(sep string, n int) []string {
-	return SplitN(t.v, sep, n)
+	return strings.SplitN(t.v, sep, n)
 }
 
 // Split return Split(t.v, sep) []string
 func (t *StrChain) SplitAfter(sep string) []string {
-	return SplitAfter(t.v, sep)
+	return strings.SplitAfter(t.v, sep)
 }
 
 // Split return Split(t.v, sep) []string
 func (t *StrChain) SplitAfterN(sep string, n int) []string {
-	return SplitAfterN(t.v, sep, n)
+	return strings.SplitAfterN(t.v, sep, n)
 }
 
 // Trim packs `Trim(s, cutset)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) Trim(cutset string) *StrChain {
-	t.v = Trim(t.v, cutset)
+	t.v = strings.Trim(t.v, cutset)
 	return t
 }
 
 // TrimFunc packs `TrimFunc(s string, f func(rune) bool)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) TrimFunc(f func(rune) bool) *StrChain {
-	t.v = TrimFunc(t.v, f)
+	t.v = strings.TrimFunc(t.v, f)
 	return t
 }
 
 // TrimLeft packs `TrimLeft(s, cutset string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) TrimLeft(cutset string) *StrChain {
-	t.v = TrimLeft(t.v, cutset)
+	t.v = strings.TrimLeft(t.v, cutset)
 	return t
 }
 
 // TrimLeftFunc packs `TrimLeftFunc(s string, f func(rune) bool)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) TrimLeftFunc(f func(rune) bool) *StrChain {
-	t.v = TrimLeftFunc(t.v, f)
+	t.v = strings.TrimLeftFunc(t.v, f)
 	return t
 }
 
 // TrimPrefix packs `TrimPrefix(s, prefix string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) TrimPrefix(prefix string) *StrChain {
-	t.v = TrimPrefix(t.v, prefix)
+	t.v = strings.TrimPrefix(t.v, prefix)
 	return t
 }
 
 // TrimRight packs `TrimRight(s, cutset string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) TrimRight(cutset string) *StrChain {
-	t.v = TrimRight(t.v, cutset)
+	t.v = strings.TrimRight(t.v, cutset)
 	return t
 }
 
 // TrimRightFunc packs `TrimRightFunc(s string, f func(rune) bool)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) TrimRightFunc(f func(rune) bool) *StrChain {
-	t.v = TrimRightFunc(t.v, f)
+	t.v = strings.TrimRightFunc(t.v, f)
 	return t
 }
 
 // TrimSpace packs `TrimSpace(s string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) TrimSpace() *StrChain {
-	t.v = TrimSpace(t.v)
+	t.v = strings.TrimSpace(t.v)
 	return t
 }
 
 // TrimSuffix packs `TrimSuffix(s, suffix string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) TrimSuffix(suffix string) *StrChain {
-	t.v = TrimSuffix(t.v, suffix)
+	t.v = strings.TrimSuffix(t.v, suffix)
 	return t
 }
 
 // ToUpper packs `ToUpper(s string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) ToUpper() *StrChain {
-	t.v = ToUpper(t.v)
+	t.v = strings.ToUpper(t.v)
 	return t
 }
 
 // ToTitle packs `ToTitle(s string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) ToTitle() *StrChain {
-	t.v = ToTitle(t.v)
+	t.v = strings.ToTitle(t.v)
 	return t
 }
 
 // ToLower packs ` ToLower(s string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) ToLower() *StrChain {
-	t.v = ToLower(t.v)
+	t.v = strings.ToLower(t.v)
 	return t
 }
 
 // Title returns packs `Title(s string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) Title() *StrChain {
-	t.v = Title(t.v)
+	t.v = strings.Title(t.v)
 	return t
 }
 
 // Map packs `Map(mapping func(rune) rune, s string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) Map(mapping func(rune) rune) *StrChain {
-	t.v = Map(mapping, t.v)
+	t.v = strings.Map(mapping, t.v)
 	return t
 }
 
 // Repeat packs `Repeat(s string, count int)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) Repeat(count int) *StrChain {
-	t.v = Repeat(t.v, count)
+	t.v = strings.Repeat(t.v, count)
 	return t
 }
 
 // Replace packs `Replace(s, old, new string, n int)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) Replace(old, new string, n int) *StrChain {
-	t.v = Replace(t.v, old, new, n)
+	t.v = strings.Replace(t.v, old, new, n)
 	return t
 }
 
 // ReplaceAll packs `ReplaceAll(s, old, new string)`
 // 	set `StrChain.S` to the result
 func (t *StrChain) ReplaceAll(old, new string) *StrChain {
-	t.v = ReplaceAll(t.v, old, new)
+	t.v = strings.ReplaceAll(t.v, old, new)
 	return t
 }
 

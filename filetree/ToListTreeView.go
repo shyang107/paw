@@ -3,6 +3,7 @@ package filetree
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -31,7 +32,7 @@ func (f *FileList) ToListTreeExtendView(pad string) string {
 
 func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	var (
-		w      = paw.NewStringBuilder()
+		w      = new(strings.Builder)
 		fm     = f.store
 		git    = f.GetGitStatus()
 		fds    = NewFieldSliceFrom(pfieldKeys, git)
@@ -95,7 +96,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	fmt.Fprintln(w, f.TotalSummary())
 
 	s := paw.PaddingString(w.String(), pad)
-	s = paw.TrimSpace(s)
+	s = strings.TrimSpace(s)
 	fmt.Fprintln(f.Writer(), s)
 
 	return s // buf.String()
@@ -105,7 +106,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	edge EdgeType, fl *FileList, file *File, fds *FieldSlice, isExtended bool, wmeta, wdstty int) {
 
 	var (
-		sb      = paw.NewStringBuilder()
+		sb      = new(strings.Builder)
 		padMeta = ""
 		meta    = ""
 	)
@@ -149,7 +150,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 
 func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wmeta, wdstty int) string {
 	var (
-		sb           = paw.NewStringBuilder()
+		sb           = new(strings.Builder)
 		cdinf, ndinf = "", 0
 		name         = file.BaseName
 		wname        = paw.StringWidth(name)
@@ -211,7 +212,7 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 
 func xattrLTString(file *File, edge EdgeType, padx string, wmeta, wdstty int) string {
 	var (
-		sb    = paw.NewStringBuilder()
+		sb    = new(strings.Builder)
 		nx    = len(file.XAttributes)
 		wedge = edgeWidth[edge]
 		width = wdstty - wmeta - wedge - 2

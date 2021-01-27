@@ -132,11 +132,11 @@ func NewFileRelTo(path, root string) (*File, error) {
 		return nil, err
 	}
 	if f.IsDir() {
-		f.Dir = paw.Replace(f.Path, root, RootMark, 1)
+		f.Dir = strings.Replace(f.Path, root, RootMark, 1)
 		return f, nil
 	}
 
-	f.Dir = paw.Replace(f.Dir, root, RootMark, 1)
+	f.Dir = strings.Replace(f.Dir, root, RootMark, 1)
 	return f, nil
 }
 

@@ -1,5 +1,7 @@
 package paw
 
+import "strings"
+
 // TextTools is the collections of tools of text
 type TextTools interface {
 	GetAbbrString(maxlen int, contSymbol string) TextTools
@@ -135,225 +137,225 @@ func (t *TextBuilder) Reverse() TextTools {
 
 // HasPrefix return `HasPrefix(t.Text, prefix)`
 func (t *TextBuilder) HasPrefix(prefix string) bool {
-	return HasPrefix(t.Text, prefix)
+	return strings.HasPrefix(t.Text, prefix)
 }
 
 // HasSuffix return `HasSuffix(t.Text, Suffix)`
 func (t *TextBuilder) HasSuffix(suffix string) bool {
-	return HasSuffix(t.Text, suffix)
+	return strings.HasSuffix(t.Text, suffix)
 }
 
 // Contains return `Contains(t.Text, substr)`
 func (t *TextBuilder) Contains(substr string) bool {
-	return Contains(t.Text, substr)
+	return strings.Contains(t.Text, substr)
 }
 
 // ContainsAny return `ContainsAny(t.Text, chars)`
 func (t *TextBuilder) ContainsAny(chars string) bool {
-	return ContainsAny(t.Text, chars)
+	return strings.ContainsAny(t.Text, chars)
 }
 
 // Fields return Fields(t.Text)
 func (t *TextBuilder) Fields() []string {
-	return Fields(t.Text)
+	return strings.Fields(t.Text)
 }
 
 // FieldsFunc return FieldsFunc(t.Text, f)
 func (t *TextBuilder) FieldsFunc(f func(rune) bool) []string {
-	return FieldsFunc(t.Text, f)
+	return strings.FieldsFunc(t.Text, f)
 }
 
 // ContainsAny return ContainsRune(t.Text, r) bool
 func (t *TextBuilder) ContainsRune(r rune) bool {
-	return ContainsRune(t.Text, r)
+	return strings.ContainsRune(t.Text, r)
 }
 
 // EqualFold return EqualFold(t.Text,, t) bool
 func (t *TextBuilder) EqualFold(s string) bool {
-	return EqualFold(t.Text, s)
+	return strings.EqualFold(t.Text, s)
 }
 
 // Index return Index(t.Text, substr) int
 func (t *TextBuilder) Index(substr string) int {
-	return Index(t.Text, substr)
+	return strings.Index(t.Text, substr)
 }
 
 // IndexAny return IndexAny(t.Text, chars) int
 func (t *TextBuilder) IndexAny(chars string) int {
-	return IndexAny(t.Text, chars)
+	return strings.IndexAny(t.Text, chars)
 }
 
 // IndexByte return IndexByte(t.Text, c) int
 func (t *TextBuilder) IndexByte(c byte) int {
-	return IndexByte(t.Text, c)
+	return strings.IndexByte(t.Text, c)
 }
 
 // IndexFunc return IndexFunc(t.Text, f) int
 func (t *TextBuilder) IndexFunc(f func(rune) bool) int {
-	return IndexFunc(t.Text, f)
+	return strings.IndexFunc(t.Text, f)
 }
 
 // IndexRune return IndexRune(t.Text, r) int
 func (t *TextBuilder) IndexRune(r rune) int {
-	return IndexRune(t.Text, r)
+	return strings.IndexRune(t.Text, r)
 }
 
 // LastIndex return LastIndex(t.Text, substr) int
 func (t *TextBuilder) LastIndex(substr string) int {
-	return LastIndex(t.Text, substr)
+	return strings.LastIndex(t.Text, substr)
 }
 
 // LastIndexAny return LastIndexAny(t.Text, chars) int
 func (t *TextBuilder) LastIndexAny(chars string) int {
-	return LastIndexAny(t.Text, chars)
+	return strings.LastIndexAny(t.Text, chars)
 }
 
 // LastIndexByte return LastIndexByte(t.Text, c) int
 func (t *TextBuilder) LastIndexByte(c byte) int {
-	return LastIndexByte(t.Text, c)
+	return strings.LastIndexByte(t.Text, c)
 }
 
 // LastIndexFunc return LastIndexFunc(t.Text, f) int
 func (t *TextBuilder) LastIndexFunc(f func(rune) bool) int {
-	return LastIndexFunc(t.Text, f)
+	return strings.LastIndexFunc(t.Text, f)
 }
 
 // Split return Split(t.Text, sep) []string
 func (t *TextBuilder) Split(sep string) []string {
-	return Split(t.Text, sep)
+	return strings.Split(t.Text, sep)
 }
 
 // Split return Split(t.Text, sep) []string
 func (t *TextBuilder) SplitN(sep string, n int) []string {
-	return SplitN(t.Text, sep, n)
+	return strings.SplitN(t.Text, sep, n)
 }
 
 // Split return Split(t.Text, sep) []string
 func (t *TextBuilder) SplitAfter(sep string) []string {
-	return SplitAfter(t.Text, sep)
+	return strings.SplitAfter(t.Text, sep)
 }
 
 // Split return Split(t.Text, sep) []string
 func (t *TextBuilder) SplitAfterN(sep string, n int) []string {
-	return SplitAfterN(t.Text, sep, n)
+	return strings.SplitAfterN(t.Text, sep, n)
 }
 
 // Trim packs `Trim(s, cutset)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) Trim(cutset string) TextTools {
-	t.Text = Trim(t.Text, cutset)
+	t.Text = strings.Trim(t.Text, cutset)
 	return t
 }
 
 // TrimFunc packs `TrimFunc(s string, f func(rune) bool)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) TrimFunc(f func(rune) bool) TextTools {
-	t.Text = TrimFunc(t.Text, f)
+	t.Text = strings.TrimFunc(t.Text, f)
 	return t
 }
 
 // TrimLeft packs `TrimLeft(s, cutset string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) TrimLeft(cutset string) TextTools {
-	t.Text = TrimLeft(t.Text, cutset)
+	t.Text = strings.TrimLeft(t.Text, cutset)
 	return t
 }
 
 // TrimLeftFunc packs `TrimLeftFunc(s string, f func(rune) bool)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) TrimLeftFunc(f func(rune) bool) TextTools {
-	t.Text = TrimLeftFunc(t.Text, f)
+	t.Text = strings.TrimLeftFunc(t.Text, f)
 	return t
 }
 
 // TrimPrefix packs `TrimPrefix(s, prefix string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) TrimPrefix(prefix string) TextTools {
-	t.Text = TrimPrefix(t.Text, prefix)
+	t.Text = strings.TrimPrefix(t.Text, prefix)
 	return t
 }
 
 // TrimRight packs `TrimRight(s, cutset string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) TrimRight(cutset string) TextTools {
-	t.Text = TrimRight(t.Text, cutset)
+	t.Text = strings.TrimRight(t.Text, cutset)
 	return t
 }
 
 // TrimRightFunc packs `TrimRightFunc(s string, f func(rune) bool)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) TrimRightFunc(f func(rune) bool) TextTools {
-	t.Text = TrimRightFunc(t.Text, f)
+	t.Text = strings.TrimRightFunc(t.Text, f)
 	return t
 }
 
 // TrimSpace packs `TrimSpace(s string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) TrimSpace() TextTools {
-	t.Text = TrimSpace(t.Text)
+	t.Text = strings.TrimSpace(t.Text)
 	return t
 }
 
 // TrimSuffix packs `TrimSuffix(s, suffix string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) TrimSuffix(suffix string) TextTools {
-	t.Text = TrimSuffix(t.Text, suffix)
+	t.Text = strings.TrimSuffix(t.Text, suffix)
 	return t
 }
 
 // ToUpper packs `ToUpper(s string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) ToUpper() TextTools {
-	t.Text = ToUpper(t.Text)
+	t.Text = strings.ToUpper(t.Text)
 	return t
 }
 
 // ToTitle packs `ToTitle(s string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) ToTitle() TextTools {
-	t.Text = ToTitle(t.Text)
+	t.Text = strings.ToTitle(t.Text)
 	return t
 }
 
 // ToLower packs ` ToLower(s string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) ToLower() TextTools {
-	t.Text = ToLower(t.Text)
+	t.Text = strings.ToLower(t.Text)
 	return t
 }
 
 // Title returns packs `Title(s string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) Title() TextTools {
-	t.Text = Title(t.Text)
+	t.Text = strings.Title(t.Text)
 	return t
 }
 
 // Map packs `Map(mapping func(rune) rune, s string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) Map(mapping func(rune) rune) TextTools {
-	t.Text = Map(mapping, t.Text)
+	t.Text = strings.Map(mapping, t.Text)
 	return t
 }
 
 // Repeat packs `Repeat(s string, count int)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) Repeat(count int) TextTools {
-	t.Text = Repeat(t.Text, count)
+	t.Text = strings.Repeat(t.Text, count)
 	return t
 }
 
 // Replace packs `Replace(s, old, new string, n int)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) Replace(old, new string, n int) TextTools {
-	t.Text = Replace(t.Text, old, new, n)
+	t.Text = strings.Replace(t.Text, old, new, n)
 	return t
 }
 
 // ReplaceAll packs `ReplaceAll(s, old, new string)`
 // 	set `TextCollection.Text` to the result
 func (t *TextBuilder) ReplaceAll(old, new string) TextTools {
-	t.Text = ReplaceAll(t.Text, old, new)
+	t.Text = strings.ReplaceAll(t.Text, old, new)
 	return t
 }
 

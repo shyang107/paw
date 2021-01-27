@@ -2,6 +2,7 @@ package filetree
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -33,7 +34,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		dirs             = f.dirs  //f.Dirs()
 		fm               = f.store //f.Map()
 		wstty            = sttyWidth - 2 - paw.StringWidth(pad)
-		banner           = paw.Repeat("-", wstty)
+		banner           = strings.Repeat("-", wstty)
 		widthOfName      = 75
 		// xsymb            = paw.XAttrSymbol
 		// xsymb2           = paw.XAttrSymbol2
@@ -105,7 +106,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		widx := paw.StringWidth(idx)
 		cidx := cdip.Sprint(idx)
 		if len(fm[dir]) > 1 {
-			if !paw.EqualFold(dir, RootMark) {
+			if !strings.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
 					tf.PrintLine(fm[dir][0].ColorWrapDirName(cidx, wstty-widx))
 				}
@@ -115,7 +116,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		}
 		if len(fm[dir]) > 1 &&
 			f.depth != 0 &&
-			!paw.EqualFold(dir, RootMark) {
+			!strings.EqualFold(dir, RootMark) {
 			tf.Fields = fds.Heads(false)
 			tf.PrintHeads()
 		}

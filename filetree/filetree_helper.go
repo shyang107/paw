@@ -84,7 +84,7 @@ func GetColorizedDirName(path string, root string) string {
 	if err != nil {
 		dir, name := filepath.Split(path)
 		if len(root) > 0 {
-			dir = paw.Replace(dir, root, RootMark, 1)
+			dir = strings.Replace(dir, root, RootMark, 1)
 		}
 		name = cdirp.Sprint(dir) + lsdip.Sprint(name)
 		return name
@@ -94,7 +94,7 @@ func GetColorizedDirName(path string, root string) string {
 		dir, _ := filepath.Split(file.Path)
 		if len(root) > 0 {
 			// dir = strings.TrimPrefix(dir, root)
-			dir = paw.Replace(dir, root, RootMark, 1)
+			dir = strings.Replace(dir, root, RootMark, 1)
 		}
 		name = cdirp.Sprint(dir) + name
 	}
@@ -222,7 +222,7 @@ func getColorizedGitStatus(git GitStatus, file *File) string {
 	if file.IsDir() {
 		// gits := getGitSlice(git, file)
 		for k, v := range git.FilesStatus {
-			if paw.HasPrefix(k, file.Path) {
+			if strings.HasPrefix(k, file.Path) {
 				vx, vy := v.Split()
 				cx, cy := ckxy[vx], ckxy[vy]
 				if cx != '-' && x != 'N' {
@@ -259,7 +259,7 @@ func getGitStatus(git GitStatus, file *File) string {
 	if file.IsDir() {
 		// gits := getGitSlice(git, file)
 		for k, v := range git.FilesStatus {
-			if paw.HasPrefix(k, file.Path) {
+			if strings.HasPrefix(k, file.Path) {
 				vx, vy := v.Split()
 				cx, cy := ckxy[vx], ckxy[vy]
 				if cx != '-' && x != 'N' {
@@ -345,7 +345,7 @@ func GetColorizedSize(size uint64) (csize string) {
 	ss := ByteSize(size)
 	nss := len(ss)
 	sn := fmt.Sprintf("%s", ss[:nss-1])
-	su := paw.ToLower(ss[nss-1:])
+	su := strings.ToLower(ss[nss-1:])
 	cn := paw.NewEXAColor("sn")
 	cu := paw.NewEXAColor("sb")
 	csize = cn.Sprint(sn) + cu.Sprint(su)
@@ -380,14 +380,14 @@ func getColorizedDates(file *File) (cdate string, wd int) {
 		// wd += paw.StringWidth(sv)
 		wd += fwd + 1
 	}
-	cdate = paw.Join(dates, "")
+	cdate = strings.Join(dates, "")
 	cdate = cdate[:len(cdate)-1]
 	wd--
 	return cdate, wd
 }
 
 func printBanner(w io.Writer, pad string, mark string, length int) {
-	banner := fmt.Sprintf("%s%s", pad, paw.Repeat(mark, length))
+	banner := fmt.Sprintf("%s%s", pad, strings.Repeat(mark, length))
 	fmt.Fprintln(w, cdashp.Sprint(banner))
 }
 
@@ -525,7 +525,7 @@ func FileLSColorString(fullpath, s string) (string, error) {
 
 func rowWrapDirName(dirName, pad string, wdlimit int) string {
 	var (
-		w         = paw.NewStringBuilder()
+		w         = new(strings.Builder)
 		wpad      = paw.StringWidth(paw.StripANSI(pad))
 		sppad     = paw.Spaces(wpad)
 		dir, name = filepath.Split(dirName)
@@ -601,7 +601,7 @@ func rowWrapDirName(dirName, pad string, wdlimit int) string {
 
 func rowWrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) string {
 	var (
-		sb = paw.NewStringBuilder()
+		sb = new(strings.Builder)
 		// wpad   = paw.StringWidth(pad)
 		meta   = fds.ColorMetaValuesString()
 		wmeta  = fds.MetaValuesStringWidth()
@@ -683,7 +683,7 @@ func rowWrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) s
 func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string {
 	var (
 		nx   = len(file.XAttributes)
-		sb   = paw.NewStringBuilder()
+		sb   = new(strings.Builder)
 		edge = EdgeTypeMid
 	)
 

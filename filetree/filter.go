@@ -2,6 +2,7 @@ package filetree
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -42,7 +43,7 @@ var (
 			if len(fl.store[dir]) <= 1 {
 				emptyDirs = append(emptyDirs, dir)
 				hasEmpty = true
-				tdirs := paw.Split(dir, PathSeparator)
+				tdirs := strings.Split(dir, PathSeparator)
 				name = tdirs[len(tdirs)-1]
 				pdir = filepath.Join(tdirs[:len(tdirs)-1]...)
 				if pdir == UpDirMark {

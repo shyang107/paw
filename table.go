@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cast"
@@ -55,9 +56,9 @@ type Align int
 const (
 	space        = " "
 	abbrSymbol   = "»"
-	XAttrSymbol  = "@ "
-	XAttrSymbol2 = "@-"
-	tbxSp        = "  "
+	XAttrSymbol  = " @ "
+	XAttrSymbol2 = "-@-"
+	tbxSp        = "   "
 	// AlignLeft align left
 	AlignLeft Align = iota
 	// AlignCenter align center
@@ -104,8 +105,10 @@ var (
 	// tbCxattrOdd  = color.New([]color.Attribute{38, 5, 249, 4, 48, 5, 234}...)
 	// tbCxsymbEven = color.New([]color.Attribute{38, 5, 249, 48, 5, 236}...)
 	// tbCxsymbOdd  = color.New([]color.Attribute{38, 5, 249, 48, 5, 234}...)
-	tbCxattr = color.New([]color.Attribute{38, 5, 8, 4, 48, 5, 234}...)
-	tbCxsymb = color.New([]color.Attribute{38, 5, 8, 48, 5, 234}...)
+	// tbCxattr = color.New([]color.Attribute{38, 5, 8, 4, 48, 5, 234}...)
+	// tbCxsymb = color.New([]color.Attribute{38, 5, 8, 48, 5, 234}...)
+	tbCxattr = NewEXAColor("xattr")
+	tbCxsymb = NewEXAColor("xsymb")
 )
 
 // func (t *TableFormat) setColor() {
@@ -208,14 +211,14 @@ func (t *TableFormat) setBanner() {
 		tlen += lsep
 	}
 	tlen += t.LenFields[llf-1]
-	t.topBanner = Repeat(t.TopChar, tlen)
-	t.botBanner = Repeat(t.BottomChar, tlen)
+	t.topBanner = strings.Repeat(t.TopChar, tlen)
+	t.botBanner = strings.Repeat(t.BottomChar, tlen)
 	sb.Reset()
 	for i := 0; i < llf-1; i++ {
-		sb.WriteString(Repeat(t.MiddleChar, t.LenFields[i]))
+		sb.WriteString(strings.Repeat(t.MiddleChar, t.LenFields[i]))
 		sb.WriteString(t.Sep)
 	}
-	sb.WriteString(Repeat(t.MiddleChar, t.LenFields[llf-1]))
+	sb.WriteString(strings.Repeat(t.MiddleChar, t.LenFields[llf-1]))
 	t.midBanner = sb.String()
 	sb.Reset()
 	if len(t.Padding) > 0 {
@@ -277,7 +280,7 @@ func (t *TableFormat) getRowString(fields []string) string {
 	}
 	str = sb.String()
 	if !t.isAbbrSymbol {
-		t.isAbbrSymbol = Contains(str, abbrSymbol)
+		t.isAbbrSymbol = strings.Contains(str, abbrSymbol)
 	}
 	return padding + str
 
@@ -305,8 +308,8 @@ WRAPFIELDS:
 		for j, wrapfields := range wfields {
 			if idx[j] < nlines[j] {
 				v := wrapfields[idx[j]]
-				if HasPrefix(v, t.XAttributeSymbol) ||
-					HasPrefix(v, t.XAttributeSymbol2) {
+				if strings.HasPrefix(v, t.XAttributeSymbol) ||
+					strings.HasPrefix(v, t.XAttributeSymbol2) {
 					hasXattr = true
 					break
 				}
@@ -362,7 +365,7 @@ func (t *TableFormat) getDefaultColor(col int) *color.Color {
 
 func getColorField(value string, cf, ct *color.Color, align Align, width int) string {
 	// wf := StringWidth(value)
-	s := TrimSpace(value)
+	s := strings.TrimSpace(value)
 	ws := StringWidth(s)
 	// fmt.Println("width =", width, "wf =", wf)
 	switch align {
@@ -382,7 +385,7 @@ func getColorField(value string, cf, ct *color.Color, align Align, width int) st
 }
 
 func getColorxattr(t *TableFormat, value, xsymb string, cs, cx, r *color.Color, width int) string {
-	xattr := TrimRight(TrimPrefix(value, xsymb), space)
+	xattr := strings.TrimRight(strings.TrimPrefix(value, xsymb), space)
 	wd := StringWidth(xattr) + StringWidth(xsymb)
 	tail := ""
 	if width-wd > 0 {
@@ -412,9 +415,9 @@ func (t *TableFormat) getAlignString(col int, al Align, width int, value string)
 		} else {
 			c = r
 		}
-		if HasPrefix(value, t.XAttributeSymbol) {
+		if strings.HasPrefix(value, t.XAttributeSymbol) {
 			return getColorxattr(t, value, t.XAttributeSymbol, tbCxsymb, tbCxattr, r, width)
-		} else if HasPrefix(value, t.XAttributeSymbol2) {
+		} else if strings.HasPrefix(value, t.XAttributeSymbol2) {
 			return getColorxattr(t, value, t.XAttributeSymbol2, tbCxsymb, tbCxattr, r, width)
 		}
 		// value = fmt.Sprintf("%[1]*[2]s", width, value)
@@ -508,7 +511,7 @@ func (t *TableFormat) PrintMiddleSepLine() {
 // PrintEnd print end-section into `t.writer`
 func (t *TableFormat) PrintEnd() {
 	if t.isAbbrSymbol {
-		fmt.Fprintln(t.writer, ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
+		fmt.Fprintln(t.writer, strings.ReplaceAll(t.botBanner, t.BottomChar, t.MiddleChar))
 		fmt.Fprintln(t.writer, t.Padding+"* '"+abbrSymbol+"' : abbreviated symbol of a term")
 	}
 	fmt.Fprintln(t.writer, t.botBanner)

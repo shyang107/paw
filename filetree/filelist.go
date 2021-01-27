@@ -45,7 +45,7 @@ func NewFileList(root string) *FileList {
 		root:          root,
 		store:         make(map[string][]*File),
 		dirs:          []string{},
-		stringBuilder: paw.NewStringBuilder(),
+		stringBuilder: new(strings.Builder),
 		IsSort:        true,
 		filesBy:       nil,
 		dirsBy:        nil,
@@ -275,9 +275,9 @@ func (f *FileList) AddFile(file *File) {
 	}
 	f.store[file.Dir] = append(f.store[file.Dir], file)
 	if file.IsDir() {
-		dd := paw.Split(file.Dir, PathSeparator)
-		pdir := paw.Join(dd[:len(dd)-1], PathSeparator)
-		if !paw.EqualFold(pdir, file.Dir) {
+		dd := strings.Split(file.Dir, PathSeparator)
+		pdir := strings.Join(dd[:len(dd)-1], PathSeparator)
+		if !strings.EqualFold(pdir, file.Dir) {
 			f.store[pdir] = append(f.store[pdir], file)
 		}
 	} else {
@@ -322,7 +322,7 @@ var DefaultIgnoreFn = func(f *File, err error) error {
 		return err
 	}
 	_, file := filepath.Split(f.Path)
-	if paw.HasPrefix(file, ".") {
+	if strings.HasPrefix(file, ".") {
 		return SkipThis
 	}
 	return nil
@@ -417,11 +417,11 @@ var (
 		} else if fi.IsFile() && fj.IsDir() {
 			return false
 		}
-		return paw.ToLower(fi.Path) < paw.ToLower(fj.Path)
+		return strings.ToLower(fi.Path) < strings.ToLower(fj.Path)
 	}
 
 	DefaultDirsBy DirsBy = func(di string, dj string) bool {
-		return paw.ToLower(di) < paw.ToLower(dj)
+		return strings.ToLower(di) < strings.ToLower(dj)
 	}
 )
 

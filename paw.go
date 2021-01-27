@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	sb = NewStringBuilder() //strings.Builder{}
+	sb = new(strings.Builder)
 	// Logger is logrus.Logger
 	// Logger = logrus.New()
 	Logger = &logrus.Logger{

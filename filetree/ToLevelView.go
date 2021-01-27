@@ -2,6 +2,7 @@ package filetree
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -62,7 +63,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	for i, dir := range dirs {
 		ppad := ""
 		if len(fm[dir]) > 1 {
-			if !paw.EqualFold(dir, RootMark) {
+			if !strings.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
 					level := len(fm[dir][0].DirSlice()) - 1
 					slevel := cNop.Sprintf("L%d: ", level)

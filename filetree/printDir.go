@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-
-	"github.com/shyang107/paw"
+	"strings"
 )
 
 // PrintDirOption is the option of PrintDir
@@ -220,7 +219,7 @@ func checkPDSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PDSortOption)
 				fl.SetFilesSorter(func(fi, fj *File) bool {
 					if fl.IsGrouped {
 						if fi.IsDir() && fj.IsDir() {
-							return paw.ToLower(fi.Path) < paw.ToLower(fj.Path)
+							return strings.ToLower(fi.Path) < strings.ToLower(fj.Path)
 						}
 					}
 					return fi.Size < fj.Size
@@ -228,7 +227,7 @@ func checkPDSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PDSortOption)
 			case PDSortByReverseName:
 				// paw.Info.Println("PDSortByReverseName")
 				fl.SetFilesSorter(func(fi, fj *File) bool {
-					return paw.ToLower(fi.Path) > paw.ToLower(fj.Path)
+					return strings.ToLower(fi.Path) > strings.ToLower(fj.Path)
 				})
 			case PDSortByReverseMtime:
 				// paw.Info.Println("PDSortByReverseMtime")
@@ -240,7 +239,7 @@ func checkPDSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PDSortOption)
 				fl.SetFilesSorter(func(fi, fj *File) bool {
 					if fl.IsGrouped {
 						if fi.IsDir() && fj.IsDir() {
-							return paw.ToLower(fi.Path) > paw.ToLower(fj.Path)
+							return strings.ToLower(fi.Path) > strings.ToLower(fj.Path)
 						}
 					}
 					return fi.Size > fj.Size
@@ -248,7 +247,7 @@ func checkPDSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PDSortOption)
 			default: //case PDSortByName :
 				// paw.Info.Println("PDSortByName")
 				fl.SetFilesSorter(func(fi, fj *File) bool {
-					return paw.ToLower(fi.Path) < paw.ToLower(fj.Path)
+					return strings.ToLower(fi.Path) < strings.ToLower(fj.Path)
 				})
 			}
 		}

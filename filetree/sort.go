@@ -2,8 +2,7 @@ package filetree
 
 import (
 	"sort"
-
-	"github.com/shyang107/paw"
+	"strings"
 )
 
 // FilesBy is the type of a "less" function that defines the ordering of its File arguments.
@@ -96,7 +95,7 @@ type ByLowerString []string
 
 func (a ByLowerString) Len() int           { return len(a) }
 func (a ByLowerString) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByLowerString) Less(i, j int) bool { return paw.ToLower(a[i]) < paw.ToLower(a[j]) }
+func (a ByLowerString) Less(i, j int) bool { return strings.ToLower(a[i]) < strings.ToLower(a[j]) }
 
 // type FileSortByPath []File
 

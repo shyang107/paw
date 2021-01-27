@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"reflect"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/spf13/cast"
@@ -305,7 +306,7 @@ func SumFloat64s(a ...float64) float64 {
 
 // SumStrings will return concatenation of []string using strings.Join(a, "")
 func SumStrings(a ...string) string {
-	return Join(a, "")
+	return strings.Join(a, "")
 }
 
 // NewRand return a instance of
@@ -324,7 +325,7 @@ func GetTerminalSize() (height, width int) {
 		// Error.Println("run stty, err: ", err)
 		return 38, 100
 	}
-	size := Split(TrimSpace(string(out)), " ")
+	size := strings.Split(strings.TrimSpace(string(out)), " ")
 	height = cast.ToInt(size[0])
 	width = cast.ToInt(size[1])
 	return height, width
