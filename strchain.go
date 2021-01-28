@@ -9,8 +9,8 @@ type StrChain struct {
 }
 
 // NewStrChain return a instance of `StrChain` and return `*StrChain`
-func (t *StrChain) NewStrChain(s string) *StrChain {
-	t = &StrChain{s}
+func NewStrChain(s string) *StrChain {
+	t := &StrChain{s}
 	return t
 }
 

@@ -11,7 +11,7 @@ import (
 
 func main() {
 
-	str := paw.StrChain{"abcde Abcde 12中文3 4.?!abcde"}
+	str := paw.NewStrChain("abcde Abcde 12中文3 4.?!abcde")
 	t := str
 	fmt.Println("t=", t)
 	fmt.Printf("[]byte = %v, len = %d\n", t.Bytes(), len(t.Bytes()))
@@ -79,7 +79,7 @@ func main() {
 	t1 := "ABcde"
 	t2 := "abCDE"
 	fmt.Println("14. t1 =", t1, "\n    t2 =", t2)
-	s1 := paw.StrChain{t1}
+	s1 := paw.NewStrChain(t1)
 	fmt.Println("    t1.EqualFold(t2) =", s1.EqualFold(t2))
 
 	fmt.Println("\nt=", t)
@@ -121,31 +121,31 @@ func main() {
 	s = str
 	fmt.Printf("27. Trim(\"abcde\")  = %q\n", s.Trim("abcde"))
 
-	s = paw.StrChain{"¡¡¡" + str.String() + "!!!"}
+	s = paw.NewStrChain("¡¡¡" + str.String() + "!!!")
 	fmt.Println("\n", s, "len =", s.Len(), "byteWidth =", len(s.Bytes()), "runeLen =", len(s.Runes()), "StringWidth =", s.StringWidth())
 	fmt.Println("", s.NumberBanner())
-	s = paw.StrChain{"¡¡¡" + str.String() + "!!!"}
+	s = paw.NewStrChain("¡¡¡" + str.String() + "!!!")
 	f = func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsNumber(r) }
 	fmt.Println(`f = func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsNumber(r)}`)
 	fmt.Printf("28. TrimFunc(f)  = %q\n", s.TrimFunc(f))
 
-	s = paw.StrChain{"¡¡¡" + str.String() + "!!!"}
+	s = paw.NewStrChain("¡¡¡" + str.String() + "!!!")
 	fmt.Printf("29. TrimLeft(\"¡¡¡\")  = %q\n", s.TrimLeft("¡¡¡"))
 
-	s = paw.StrChain{"¡¡¡" + str.String() + "!!!"}
+	s = paw.NewStrChain("¡¡¡" + str.String() + "!!!")
 	fmt.Printf("30. TrimLeftFunc(f)  = %q\n", s.TrimLeftFunc(f))
 
-	s = paw.StrChain{"¡¡¡" + str.String() + "!!!"}
+	s = paw.NewStrChain("¡¡¡" + str.String() + "!!!")
 	fmt.Printf("31. TrimPrefix(\"¡¡\")  = %q\n", s.TrimPrefix("¡¡"))
 
-	s = paw.StrChain{"¡¡¡" + str.String() + "!!!"}
+	s = paw.NewStrChain("¡¡¡" + str.String() + "!!!")
 	fmt.Printf("32. TrimRight(\"!!\")  = %q\n", s.TrimRight("!!"))
-	s = paw.StrChain{"¡¡¡" + str.String() + "!!!"}
+	s = paw.NewStrChain("¡¡¡" + str.String() + "!!!")
 	fmt.Printf("33. TrimRightFunc(f)  = %q\n", s.TrimRightFunc(f))
-	s = paw.StrChain{"¡¡¡" + str.String() + "!!!"}
+	s = paw.NewStrChain("¡¡¡" + str.String() + "!!!")
 	fmt.Printf("34. TrimSuffix(\"!!\")  = %q\n", s.TrimSuffix("!!"))
 
-	s = paw.StrChain{"\r ¡¡¡" + str.String() + "!!!\r "}
+	s = paw.NewStrChain("\r ¡¡¡" + str.String() + "!!!\r ")
 	fmt.Printf("\n%#v\n", s)
 	fmt.Printf("35. TrimSpace()  = %q\n", s.TrimSpace())
 
@@ -202,27 +202,27 @@ func main() {
 	us, _ = bs.Big5ToUtf8String()
 	fmt.Printf("42. Big5ToUtf8String()  = %q\n", us)
 
-	s = paw.StrChain{"abcDE"}
+	s = paw.NewStrChain("abcDE")
 	fmt.Printf("\n%#v\n", s)
 	fmt.Printf("43. IsEqualString(\"ABCDE\",true)  = %v\n", s.IsEqualString("ABCDE", true))
 	fmt.Printf("44. IsEqualString(\"ABCDE\",false)  = %v\n", s.IsEqualString("ABCDE", false))
 
-	s = paw.StrChain{"abcDE"}
+	s = paw.NewStrChain("abcDE")
 	fmt.Printf("\n%#v\n", s)
 	fmt.Printf("43. FillLeft(10)  = %q\n", s.FillLeft(10))
 	fmt.Printf("                     %s\n", s.NumberBanner())
 	fmt.Printf("   StringWidth()  = %v\n", s.StringWidth())
-	s = paw.StrChain{"abcDE"}
+	s = paw.NewStrChain("abcDE")
 	fmt.Printf("44. FillRight(10)  = %q\n", s.FillRight(10))
 	fmt.Printf("                      %s\n", s.NumberBanner())
 	fmt.Printf("   StringWidth()  = %v\n", s.StringWidth())
 
-	s = paw.StrChain{"abc中defghijklmnopqrstuvwxyz"}
+	s = paw.NewStrChain("abc中defghijklmnopqrstuvwxyz")
 	fmt.Printf("\n%#v\n", s)
 	fmt.Printf("45. Truncate(10,\"-»\")  = %q\n", s.Truncate(10, "-»"))
 	fmt.Printf("                          %s\n", s.NumberBanner())
 
-	s = paw.StrChain{"abc中defghijklmnopqrstuvwxyz"}
+	s = paw.NewStrChain("abc中defghijklmnopqrstuvwxyz")
 	fmt.Printf("\n%#v\n", s)
 	fmt.Printf("46. Wrap(10)  =\n%v\n", s.Wrap(10))
 	fmt.Printf("%s\n", "0123456789")

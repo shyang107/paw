@@ -78,7 +78,7 @@ func NewFile(path string) (*File, error) {
 	// 	size, _ = sizes(path)
 	// }
 
-	list, err := getXattr(path)
+	xattrs, err := getXattr(path)
 	if err != nil {
 		return nil, err
 	}
@@ -91,22 +91,22 @@ func NewFile(path string) (*File, error) {
 		Ext:         ext,
 		Stat:        stat,
 		Size:        size,
-		XAttributes: list,
+		XAttributes: xattrs,
 	}, nil
 }
 
 func getXattr(path string) ([]string, error) {
-	list, err := xattr.List(path)
+	xattrs, err := xattr.List(path)
 	if err != nil {
-		return list, err
+		return xattrs, err
 	}
-	if len(list) > 0 {
-		for i := 0; i < len(list); i++ {
-			xl, _ := xattr.Get(path, list[i])
-			list[i] = fmt.Sprintf("%s (len %d)", list[i], len(xl))
+	if len(xattrs) > 0 {
+		for i, x := range xattrs {
+			x, _ := xattr.Get(path, x)
+			xattrs[i] = fmt.Sprintf("%s (len %d)", xattrs[i], len(x))
 		}
 	}
-	return list, nil
+	return xattrs, nil
 }
 
 const (
@@ -162,7 +162,7 @@ func (f *File) LinkPath() string {
 	if f.IsLink() {
 		alink, err := filepath.EvalSymlinks(f.Path)
 		if err != nil {
-			alink = alink + " ERR: " + err.Error()
+			return fmt.Errorf("%s Err: %s", alink, err.Error()).Error()
 		}
 		return alink
 	}
@@ -223,6 +223,19 @@ func (f *File) ByteSize() string {
 	return ByteSize(f.Size)
 }
 
+// Dev will return dev id of File
+func (f *File) Dev() uint64 {
+	dev := uint64(0)
+	if sys := f.Stat.Sys(); sys != nil {
+		if stat, ok := sys.(*syscall.Stat_t); ok {
+			dev = uint64(stat.Dev)
+		}
+	}
+	return dev
+	// dev := reflect.ValueOf(f.Stat.Sys()).Elem().FieldByName("dev").Uint()
+	// return dev
+}
+
 // NLinks will return the number of hard links of File
 func (f *File) NLinks() uint64 {
 	nlink := uint64(0)
@@ -232,6 +245,8 @@ func (f *File) NLinks() uint64 {
 		}
 	}
 	return nlink
+	// nlink := reflect.ValueOf(f.Stat.Sys()).Elem().FieldByName("Nlink").Uint()
+	// return nlink
 }
 
 // INode will return the inode number of File
@@ -239,10 +254,13 @@ func (f *File) INode() uint64 {
 	inode := uint64(0)
 	if sys := f.Stat.Sys(); sys != nil {
 		if stat, ok := sys.(*syscall.Stat_t); ok {
-			inode = uint64(stat.Ino)
+			inode = stat.Ino
 		}
 	}
 	return inode
+	// sys := f.Stat.Sys()
+	// inode := reflect.ValueOf(sys).Elem().FieldByName("Ino").Uint()
+	// return inode
 }
 
 // Blocks will return number of file system blocks of File
@@ -254,6 +272,8 @@ func (f *File) Blocks() uint64 {
 		}
 	}
 	return blocks
+	// block := reflect.ValueOf(f.Stat.Sys()).Elem().FieldByName("Blocks").Int()
+	// return block
 }
 
 // // Size will return size of `File`
@@ -465,34 +485,19 @@ func timespecToTime(ts syscall.Timespec) time.Time {
 // ColorModifyTime will return a colorful string of Stat.ModTime() like as exa.
 // The length of placeholder in terminal is 14.
 func (f *File) ColorModifyTime() string {
-	date := f.ModifiedTime()
-	// sfield := fieldsMap[PFieldModified]
-	// wd := paw.StringWidth(sfield)
-	// wdd := len(DateString(date))
-	// sp := paw.Spaces(wd - wdd)
-	return GetColorizedTime(date) //+ sp
+	return GetColorizedTime(f.ModifiedTime()) //+ sp
 }
 
 // ColorAccessTime will return a colorful string of File.AccessTime() like as exa.
 // The length of placeholder in terminal is 14.
 func (f *File) ColorAccessedTime() string {
-	date := f.AccessedTime()
-	// sfield := fieldsMap[PFieldAccessed]
-	// wd := paw.StringWidth(sfield)
-	// wdd := len(DateString(date))
-	// sp := paw.Spaces(wd - wdd)
-	return GetColorizedTime(date) //+ sp
+	return GetColorizedTime(f.AccessedTime()) //+ sp
 }
 
 // ColorCreatedTime will return a colorful string of File.CreateTime() like as exa.
 // The length of placeholder in terminal is 14.
 func (f *File) ColorCreatedTime() string {
-	date := f.CreatedTime()
-	// sfield := fieldsMap[PFieldCreated]
-	// wd := paw.StringWidth(sfield)
-	// wdd := len(DateString(date))
-	// sp := paw.Spaces(wd - wdd)
-	return GetColorizedTime(date) //+ sp
+	return GetColorizedTime(f.CreatedTime()) //+ sp
 }
 
 // ColorMeta will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File) and its' length.

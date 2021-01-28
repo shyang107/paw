@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/shyang107/paw"
+	_ "github.com/shyang107/paw"
+
 	"github.com/sirupsen/logrus"
 )
 

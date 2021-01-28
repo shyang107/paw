@@ -21,7 +21,7 @@ func exPrintDir(root string) {
 		Ignore: filetree.DefaultIgnoreFn,
 	}
 
-	err := filetree.PrintDir(os.Stdout, root, false, opt, nil, nil, ">")
+	err, _ := filetree.PrintDir(os.Stdout, root, false, opt, ">")
 	if err != nil {
 		paw.Logger.Error(err)
 	}

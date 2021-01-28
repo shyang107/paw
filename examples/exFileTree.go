@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/afero"
 
@@ -68,9 +69,9 @@ func xafero(root string) {
 	if err != nil {
 		paw.Logger.Fatal(err)
 	}
-	git, _ := filetree.GetShortStatus(root)
+	git, _ := filetree.GetShortGitStatus(root)
 	for i, fi := range fis {
-		if paw.HasPrefix(fi.Name(), ".") {
+		if strings.HasPrefix(fi.Name(), ".") {
 			continue
 		}
 		file, _ := filetree.NewFile(root + "/" + fi.Name())
@@ -90,7 +91,7 @@ func listfl(fl *filetree.FileList) {
 	}
 }
 
-func paw.LSColors() {
+func LSColors() {
 	// spew.Dump(fl.Map())
 	// fmt.Println(filetree.KindLSColorString(".sh", "sh"))
 	// fmt.Println(filetree.KindLSColorString(".go", "go"))

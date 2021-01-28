@@ -14,7 +14,7 @@ import (
 
 func exGitstatus(path string) {
 	path, _ = filepath.Abs(path)
-	status, err := filetree.GetShortStatus(path)
+	status, err := filetree.GetShortGitStatus(path)
 	if err != nil {
 		log.Errorf("unable to read git repository status : %s", err.Error())
 	}

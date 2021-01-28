@@ -23,7 +23,7 @@ func main() {
 	}
 	// sb := &strings.Builder{}
 	// w := io.MultiWriter(os.Stdout, sb)
-	err, fl := filetree.PrintDir(nil, root, false, opt, nil, nil, "> ")
+	err, fl := filetree.PrintDir(nil, root, false, opt, "> ")
 	if err != nil {
 		paw.Logger.Error(err)
 	}

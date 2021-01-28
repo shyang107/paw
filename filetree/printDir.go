@@ -206,7 +206,8 @@ func cehckAndFiltPrintDirFiltOpt(fl *FileList, filtOpt *PDFilterOption) {
 
 func checkPDSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PDSortOption) {
 
-	if opt.OutOpt != PTreeView || opt.OutOpt != PListTreeView {
+	if opt.OutOpt&PTreeView == 0 ||
+		opt.OutOpt&PListTreeView == 0 {
 		if sortOpt.IsSort {
 			switch sortOpt.SortWay {
 			case PDSortByMtime:

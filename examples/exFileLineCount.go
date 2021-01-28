@@ -7,10 +7,10 @@ import (
 )
 
 func exFileLineCount() {
-	lg.Info("testFileLineCount")
+	paw.Logger.Info("testFileLineCount")
 	lc, err := paw.FileLineCount("../README.md")
 	if err != nil {
-		lg.Error(err)
+		paw.Logger.Error(err)
 	}
 	fmt.Println("FileLineCount:", lc)
 
