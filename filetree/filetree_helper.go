@@ -52,6 +52,8 @@ var (
 	csup                  = paw.NewEXAColor("sn")    // size unit
 	cuup                  = paw.NewEXAColor("uu")    // user
 	cgup                  = paw.NewEXAColor("gu")    // group
+	cunp                  = paw.NewEXAColor("un")    // user is not you
+	cgnp                  = paw.NewEXAColor("gn")    // group without you
 	clkp                  = paw.NewEXAColor("lk")    // symlink
 	cbkp                  = paw.NewEXAColor("bk")    // blocks
 	cdap                  = paw.NewEXAColor("da")    // date
@@ -284,8 +286,15 @@ func getGitStatus(git GitStatus, file *File) string {
 
 // GetColorizePermission will return a colorful string of mode
 // The length of placeholder in terminal is 10.
-func GetColorizePermission(mode os.FileMode) string {
-	sperm := fmt.Sprintf("%v", mode)
+func GetColorizePermission(sperm string) string {
+	// sperm := fmt.Sprintf("%v", mode)
+	// func GetColorizePermission(mode os.FileMode) string {
+	// if strings.HasPrefix(sperm, "Dc") {
+	// 	sperm = strings.Replace(sperm, "Dc", "c", 1)
+	// }
+	// if strings.HasPrefix(sperm, "D") {
+	// 	sperm = strings.Replace(sperm, "D", "b", 1)
+	// }
 	c := ""
 	// fmt.Println(len(s))
 	for i := 0; i < len(sperm); i++ {
@@ -295,12 +304,26 @@ func GetColorizePermission(mode os.FileMode) string {
 			switch i {
 			case 0:
 				switch s {
+				case "b": // "D":
+					cs = "bd"
+				case "c":
+					cs = "cd"
 				case "d":
 					cs = "di"
-				case "L":
+				case "l": // "L":
 					cs = "ln"
+				case "p":
+					cs = "pi"
+				case "S":
+					cs = "so"
 				}
 			case 1, 2, 3:
+				// switch s {
+				// case "c":
+				// 	cs = "cd"
+				// default:
+				// 	cs = "u" + s
+				// }
 				cs = "u" + s
 			case 4, 5, 6:
 				cs = "g" + s
@@ -477,9 +500,10 @@ func GetFileLSColor(file *File) *color.Color {
 		return paw.NewLSColor("ln")
 	}
 
-	// if file.IsDev() { //
-	// 	return paw.NewLSColor("so")
-	// }
+	if file.IsDev() { //
+		return paw.NewLSColor("bd")
+	}
+
 	if file.IsChardev() { // os.ModeDevice | os.ModeCharDevice
 		return paw.NewLSColor("cd")
 	}

@@ -28,8 +28,10 @@ var (
 	}
 	// NestedFormatter ...
 	nestedFormatter = &nested.Formatter{
-		HideKeys: true,
+		HideKeys: false,
 		// FieldsOrder:     []string{"component", "category"},
+		NoColors:       false,
+		NoFieldsColors: false,
 		// TimestampFormat: "2006-01-02 15:04:05",
 		TimestampFormat: "0102-150405.000",
 		TrimMessages:    true,
@@ -37,7 +39,12 @@ var (
 		CustomCallerFormatter: func(f *runtime.Frame) string {
 			s := strings.Split(f.Function, ".")
 			funcName := s[len(s)-1]
-			return fmt.Sprintf(" [%s:%d][%s()]", filepath.Base(f.File), f.Line, funcName)
+			name := filepath.Base(f.File)
+			cp := NewLSColor(filepath.Ext(name))
+			cname := cp.Sprint(name)
+			cfuncName := color.New(color.FgHiGreen).Sprint(funcName)
+			cln := NewEXAColor("sn").Sprint(f.Line)
+			return fmt.Sprintf(" [%s:%s][%s]", cname, cln, cfuncName)
 		},
 	}
 )
@@ -46,6 +53,7 @@ var (
 	Info    *log.Logger
 	Warning *log.Logger
 	Error   *log.Logger
+	Debug   *log.Logger
 )
 
 func init() {
@@ -74,6 +82,10 @@ func GologInit(
 		Error = log.New(errorHandle,
 			color.New(color.FgRed).Add(color.Bold).Sprint("[ERROR] "),
 			log.Ldate|log.Ltime|log.Lshortfile)
+
+		Debug = log.New(infoHandle,
+			color.New(color.FgHiMagenta).Add(color.Bold).Sprint("[DEBUG] "),
+			log.Ldate|log.Ltime|log.Lshortfile)
 		return
 	}
 	Info = log.New(infoHandle,
@@ -81,12 +93,16 @@ func GologInit(
 		log.Ldate|log.Ltime)
 
 	Warning = log.New(warnHandle,
-		color.New(color.FgYellow).Add(color.Bold).Sprint("[WARNING] "),
+		color.New(color.FgYellow).Add(color.Bold).Sprint("[WARN] "),
 		log.Ldate|log.Ltime)
 
 	Error = log.New(errorHandle,
-		color.New(color.FgRed).Add(color.Bold).Sprint("[ERROR] "),
+		color.New(color.FgRed).Add(color.Bold).Sprint("[ERRO] "),
 		log.Ldate|log.Ltime)
+
+	Debug = log.New(infoHandle,
+		color.New(color.FgHiMagenta).Add(color.Bold).Sprint("[DEBU] "),
+		log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 // SetLoggerFieldsOrder set `nestedFormatter.FieldsOrder`

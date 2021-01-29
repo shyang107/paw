@@ -103,3 +103,26 @@ func AppendToFile(fileName string, s string) error {
 	}
 	return nil
 }
+
+// Major returns the major component of a Darwin device number.
+func Major(dev uint64) uint32 {
+	// copy from https://golang.org/src/archive/tar/stat_unix.go
+	return uint32((dev >> 24) & 0xff)
+}
+
+// Minor returns the minor component of a Darwin device number.
+func Minor(dev uint64) uint32 {
+	// copy from https://golang.org/src/archive/tar/stat_unix.go
+	return uint32(dev & 0xffffff)
+}
+
+// Mkdev returns a Darwin device number generated from the given major and minor
+// components.
+func Mkdev(major, minor uint32) uint64 {
+	return (uint64(major) << 24) | uint64(minor)
+}
+
+// DevNumber returns the major and minor component of a Darwin device number.
+func DevNumber(dev uint64) (uint32, uint32) {
+	return Major(dev), Minor(dev)
+}

@@ -443,7 +443,7 @@ func (t *TableFormat) getAlignString(col int, al Align, width int, value string)
 		// }
 		// return s
 	}
-	return ""
+	// return ""
 }
 
 // PrintSart print out head-section in `t.Writer`

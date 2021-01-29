@@ -54,7 +54,7 @@ func indirect(a interface{}) interface{} {
 func Max(x interface{}) interface{} {
 	x = indirect(x)
 
-	var r interface{}
+	// var r interface{}
 	switch x.(type) {
 	case []int:
 		return MaxInts(x.([]int)...)
@@ -67,7 +67,7 @@ func Max(x interface{}) interface{} {
 	default:
 		return nil
 	}
-	return r
+	// return r
 }
 
 // MaxInt will return maximum value of `i` and `j`
@@ -145,7 +145,7 @@ func MaxStrings(x ...string) string {
 func Min(x interface{}) interface{} {
 	x = indirect(x)
 
-	var r interface{}
+	// var r interface{}
 	switch x.(type) {
 	case []int:
 		return MinInts(x.([]int)...)
@@ -158,7 +158,7 @@ func Min(x interface{}) interface{} {
 	default:
 		return nil
 	}
-	return r
+	// return r
 }
 
 // MinInt will return minimum value of `i` and `j`
@@ -261,7 +261,7 @@ func SumMapE(a interface{}, mapFunc func(idx int) int) (int, error) {
 func Sum(x interface{}) interface{} {
 	x = indirect(x)
 
-	var r interface{}
+	// var r interface{}
 	switch x.(type) {
 	case []int:
 		return SumInts(x.([]int)...)
@@ -274,7 +274,7 @@ func Sum(x interface{}) interface{} {
 	default:
 		return nil
 	}
-	return r
+	// return r
 }
 
 // SumInts will return summation of []int

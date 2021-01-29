@@ -71,23 +71,41 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			fd.SetValue(file.INode())
 			// fd.SetValueColor(cinp)
 		case PFieldPermissions: //"Permissions",
-			fd.SetValue(file.Permission())
-			fd.SetColorfulValue(file.ColorPermission())
+			perm := file.Permission()
+			fd.SetValue(perm)
+			wp := len(perm)
+			sp := ""
+			if wp < fd.Width {
+				sp = paw.Spaces(fd.Width - wp)
+			}
+			fd.SetColorfulValue(file.ColorPermission() + sp)
 			// fd.SetValueColor(cpmp)
 		case PFieldLinks: //"Links",
 			fd.SetValue(file.NLinks())
 			// fd.SetValueColor(clkp)
 		case PFieldSize: //"Size",
-			if file.IsDir() {
+			sperm := file.Permission()
+			c := string(sperm[0])
+			switch c {
+			case "c", "b": //file.IsChardev() || file.IsDev()
+				dev := file.DevNumberString()
+				wp := len(dev)
+				sp := ""
+				if wp < fd.Width {
+					sp = paw.Spaces(fd.Width - wp)
+				}
+				fd.SetValue(dev)
+				fd.SetColorfulValue(sp + file.ColorDevNumberString())
+			case "d": //file.IsDir()
 				fd.SetValue("-")
 				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
-			} else {
+			default:
 				fd.SetValue(file.ByteSize())
 				csize := fdColorizedSize(file.Size, fd.Width)
 				fd.SetColorfulValue(csize)
 			}
 			// fd.SetValueColor(csnp)
-		case PFieldBlocks: //"User",
+		case PFieldBlocks: //"Block",
 			if file.IsDir() {
 				fd.SetValue("-")
 				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
@@ -97,12 +115,27 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			}
 			// fd.SetValueColor(cbkp)
 		case PFieldUser: //"User",
-			fd.SetValue(urname)
-			fd.SetColorfulValue(cuup.Sprintf("%[1]*[2]v", fd.Width, urname))
-			// fd.SetValueColor(cuup)
+			furname := file.User()
+			fd.SetValue(furname)
+			if furname != urname {
+				fd.SetColorfulValue(cunp.Sprintf("%[1]*[2]v", fd.Width, furname))
+				fd.SetValueColor(cunp)
+			} else {
+				fd.SetColorfulValue(cuup.Sprintf("%[1]*[2]v", fd.Width, furname))
+			}
+		// fd.SetValue(urname)
+		// fd.SetColorfulValue(cuup.Sprintf("%[1]*[2]v", fd.Width, urname))
 		case PFieldGroup: //"Group",
-			fd.SetValue(gpname)
-			fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, gpname))
+			fgpname := file.Group()
+			fd.SetValue(fgpname)
+			if fgpname != gpname {
+				fd.SetColorfulValue(cgnp.Sprintf("%[1]*[2]v", fd.Width, fgpname))
+				fd.SetValueColor(cgnp)
+			} else {
+				fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, fgpname))
+			}
+			// fd.SetValue(gpname)
+			// fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, gpname))
 			// fd.SetValueColor(cgup)
 		case PFieldModified: //"Date Modified",
 			fd.SetValue(DateString(file.ModifiedTime()))
@@ -133,60 +166,60 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 	}
 }
 
-// SetColorfulValues sets up colorful values of FieldSlice from File and GitStatus
-func (f *FieldSlice) SetColorfulValues(file *File, git GitStatus) {
-	for _, fd := range f.fds {
-		switch fd.Key {
-		case PFieldINode: //"inode",
-		case PFieldPermissions: //"Permissions",
-			perm := fmt.Sprintf("%v", file.Stat.Mode())
-			if len(file.XAttributes) > 0 {
-				perm += "@"
-			} else {
-				perm += " "
-			}
-			fd.SetColorfulValue(file.ColorPermission())
-		case PFieldLinks: //"Links",
-		case PFieldSize: //"Size",
-			if file.IsDir() {
-				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
-			} else {
-				csize := fdColorizedSize(file.Size, fd.Width)
-				fd.SetColorfulValue(csize)
-			}
-		case PFieldBlocks: //"User",
-			if file.IsDir() {
-				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
-			} else {
-				fd.SetColorfulValue(cbkp.Sprintf("%[1]*[2]v", fd.Width, file.Blocks()))
-			}
-		case PFieldUser: //"User",
-			fd.SetColorfulValue(cuup.Sprintf("%[1]*[2]v", fd.Width, urname))
-		case PFieldGroup: //"Group",
-			fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, gpname))
-		case PFieldModified: //"Date Modified",
-			date := DateString(file.ModifiedTime())
-			cdate := cdap.Sprintf("%-[1]*[2]s", fd.Width, date)
-			fd.SetColorfulValue(cdate)
-		case PFieldCreated: //"Date Created",
-			date := DateString(file.CreatedTime())
-			cdate := cdap.Sprintf("%-[1]*[2]s", fd.Width, date)
-			fd.SetColorfulValue(cdate)
-		case PFieldAccessed: //"Date Accessed",
-			date := DateString(file.AccessedTime())
-			cdate := cdap.Sprintf("%-[1]*[2]s", fd.Width, date)
-			fd.SetColorfulValue(cdate)
-		case PFieldGit: //"Gid",
-			if git.NoGit {
-				continue
-			} else {
-				fd.SetColorfulValue(file.ColorGitStatus(git))
-			}
-		case PFieldName: //"Name",
-			fd.SetColorfulValue(file.ColorName())
-		}
-	}
-}
+// // SetColorfulValues sets up colorful values of FieldSlice from File and GitStatus
+// func (f *FieldSlice) SetColorfulValues(file *File, git GitStatus) {
+// 	for _, fd := range f.fds {
+// 		switch fd.Key {
+// 		case PFieldINode: //"inode",
+// 		case PFieldPermissions: //"Permissions",
+// 			perm := fmt.Sprintf("%v", file.Stat.Mode())
+// 			if len(file.XAttributes) > 0 {
+// 				perm += "@"
+// 			} else {
+// 				perm += " "
+// 			}
+// 			fd.SetColorfulValue(file.ColorPermission())
+// 		case PFieldLinks: //"Links",
+// 		case PFieldSize: //"Size",
+// 			if file.IsDir() {
+// 				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
+// 			} else {
+// 				csize := fdColorizedSize(file.Size, fd.Width)
+// 				fd.SetColorfulValue(csize)
+// 			}
+// 		case PFieldBlocks: //"User",
+// 			if file.IsDir() {
+// 				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
+// 			} else {
+// 				fd.SetColorfulValue(cbkp.Sprintf("%[1]*[2]v", fd.Width, file.Blocks()))
+// 			}
+// 		case PFieldUser: //"User",
+// 			fd.SetColorfulValue(cuup.Sprintf("%[1]*[2]v", fd.Width, urname))
+// 		case PFieldGroup: //"Group",
+// 			fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, gpname))
+// 		case PFieldModified: //"Date Modified",
+// 			date := DateString(file.ModifiedTime())
+// 			cdate := cdap.Sprintf("%-[1]*[2]s", fd.Width, date)
+// 			fd.SetColorfulValue(cdate)
+// 		case PFieldCreated: //"Date Created",
+// 			date := DateString(file.CreatedTime())
+// 			cdate := cdap.Sprintf("%-[1]*[2]s", fd.Width, date)
+// 			fd.SetColorfulValue(cdate)
+// 		case PFieldAccessed: //"Date Accessed",
+// 			date := DateString(file.AccessedTime())
+// 			cdate := cdap.Sprintf("%-[1]*[2]s", fd.Width, date)
+// 			fd.SetColorfulValue(cdate)
+// 		case PFieldGit: //"Gid",
+// 			if git.NoGit {
+// 				continue
+// 			} else {
+// 				fd.SetColorfulValue(file.ColorGitStatus(git))
+// 			}
+// 		case PFieldName: //"Name",
+// 			fd.SetColorfulValue(file.ColorName())
+// 		}
+// 	}
+// }
 
 // Count will return number of fields in FieldSlice
 func (f *FieldSlice) Count() int {
@@ -297,15 +330,22 @@ func (f *FieldSlice) Widths() []int {
 // ModifyWidth modifies Field.Width according to FileList and wdstty (maximum width on console).
 func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
 	var (
+		wperm   = 0
 		wdinode = 0
 		wdlinks = 0
 		wdsize  = 0
 		wdblock = 0
+		wu      = 0
+		wg      = 0
 	)
 
 	for _, dir := range fl.Dirs() {
-		for _, file := range fl.Map()[dir][1:] {
-			ws := len(fmt.Sprint(file.INode()))
+		for _, file := range fl.Map()[dir][:] {
+			ws := len(file.Permission())
+			if wperm < ws {
+				wperm = ws
+			}
+			ws = len(fmt.Sprint(file.INode()))
 			if wdinode < ws {
 				wdinode = ws
 			}
@@ -313,17 +353,35 @@ func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
 			if wdlinks < ws {
 				wdlinks = ws
 			}
-			ws = len(file.ByteSize())
-			if wdsize < ws {
-				wdsize = ws
+			if !file.IsChardev() {
+				ws = len(file.ByteSize())
+				if wdsize < ws {
+					wdsize = ws
+				}
+			} else {
+				ws = len(file.DevNumberString())
+				if wdsize < ws {
+					wdsize = ws
+				}
 			}
 			ws = len(fmt.Sprint(file.Blocks()))
 			if wdblock < ws {
 				wdblock = ws
 			}
+			ws = len(fmt.Sprint(file.User()))
+			if wu < ws {
+				wu = ws
+			}
+			ws = len(fmt.Sprint(file.Group()))
+			if wg < ws {
+				wg = ws
+			}
 		}
 	}
 
+	if fd := f.Get(PFieldPermissions); fd != nil {
+		fd.Width = paw.MaxInt(wperm, fd.Width)
+	}
 	if fd := f.Get(PFieldINode); fd != nil {
 		fd.Width = paw.MaxInt(wdinode, fd.Width)
 	}
@@ -336,10 +394,17 @@ func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
 	if fd := f.Get(PFieldBlocks); fd != nil {
 		fd.Width = paw.MaxInt(wdblock, fd.Width)
 	}
+	if fd := f.Get(PFieldUser); fd != nil {
+		fd.Width = paw.MaxInt(wu, fd.Width)
+	}
+	if fd := f.Get(PFieldGroup); fd != nil {
+		fd.Width = paw.MaxInt(wg, fd.Width)
+	}
 	if fd := f.Get(PFieldName); fd != nil {
 		wdmeta := f.MetaHeadsStringWidth() + 1
 		fd.Width = wdstty - wdmeta
 	}
+
 }
 
 // // HeadWidths will return the int slice from Field.Width of FieldSlie

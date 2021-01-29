@@ -3,13 +3,13 @@ package filetree
 import (
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
 )
@@ -51,37 +51,48 @@ type File struct {
 	Stat        os.FileInfo
 	Size        uint64
 	XAttributes []string
+	// User        string
+	// Group       string
 }
 
 // NewFile will the pointer of instance of `File`, and is a constructor of `File`.
 func NewFile(path string) (*File, error) {
 	// path = strings.TrimSuffix(path, "/")
 	var err error
-	if strings.HasPrefix(path, "~") {
-		path, err = homedir.Expand(path)
-	} else {
-		path, err = filepath.Abs(path)
-	}
-	if err != nil {
-		return nil, err
-	}
+	// if strings.HasPrefix(path, "~") {
+	// 	path, err = homedir.Expand(path)
+	// } else {
+	// 	path, err = filepath.Abs(path)
+	// }
+	// if err != nil {
+	// 	return nil, err
+	// }
+	tpath := path
+	// paw.Logger.WithField("path", path).Info("income")
 	stat, err := os.Lstat(path)
 	if err != nil {
 		return nil, err
 	}
-	dir := filepath.Dir(path)
-	basename := filepath.Base(path)
-	ext := filepath.Ext(path)
+	dir := filepath.Dir(tpath)
+	basename := stat.Name() // filepath.Base(path)
+	ext := filepath.Ext(tpath)
 	file := strings.TrimSuffix(basename, ext)
 	size := uint64(stat.Size())
-	// if stat.IsDir() {
-	// 	size, _ = sizes(path)
-	// }
 
-	xattrs, err := getXattr(path)
+	xattrs, err := getXattr(tpath)
 	if err != nil {
 		return nil, err
 	}
+
+	// paw.Logger.WithFields(logrus.Fields{
+	// 	"path":     path,
+	// 	"dir":      dir,
+	// 	"file":     file,
+	// 	"ext":      ext,
+	// 	"BaseName": basename,
+	// 	"size":     size,
+	// 	// "stat":     stat,
+	// }).Info("file")
 
 	return &File{
 		Path:        path,
@@ -96,6 +107,7 @@ func NewFile(path string) (*File, error) {
 }
 
 func getXattr(path string) ([]string, error) {
+	// paw.Logger.WithField("path", path).Info("income")
 	xattrs, err := xattr.List(path)
 	if err != nil {
 		return xattrs, err
@@ -119,24 +131,63 @@ const (
 // 	If `path` == `root`, then
 // 		f.Dir = "."
 func NewFileRelTo(path, root string) (*File, error) {
-	path, err := filepath.Abs(path)
+	// path, err := filepath.Abs(path)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// root, err = filepath.Abs(root)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// paw.Logger.WithField("path", path).Info("input")
+
+	// f, err := NewFile(path)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	stat, err := os.Stat(path)
 	if err != nil {
-		return nil, err
+		// paw.Logger.Error(err)
 	}
-	root, err = filepath.Abs(root)
-	if err != nil {
-		return nil, err
+	dir := filepath.Dir(path)
+	basename := stat.Name() // filepath.Base(path)
+	ext := filepath.Ext(path)
+	afile := strings.TrimSuffix(basename, ext)
+	size := uint64(stat.Size())
+	xattrs, _ := getXattr(path)
+	// if err != nil {
+	// 	paw.Logger.Error(err)
+	// }
+
+	// paw.Logger.WithFields(logrus.Fields{
+	// 	"path":     path,
+	// 	"dir":      dir,
+	// 	"file":     afile,
+	// 	"ext":      ext,
+	// 	"BaseName": basename,
+	// 	"size":     size,
+	// 	// "stat":     stat,
+	// }).Info("before")
+
+	f := &File{
+		Path:        path,
+		Dir:         dir,
+		BaseName:    basename,
+		File:        afile,
+		Ext:         ext,
+		Stat:        stat,
+		Size:        size,
+		XAttributes: xattrs,
 	}
-	f, err := NewFile(path)
-	if err != nil {
-		return nil, err
-	}
+
 	if f.IsDir() {
 		f.Dir = strings.Replace(f.Path, root, RootMark, 1)
 		return f, nil
 	}
 
 	f.Dir = strings.Replace(f.Dir, root, RootMark, 1)
+
 	return f, nil
 }
 
@@ -223,17 +274,77 @@ func (f *File) ByteSize() string {
 	return ByteSize(f.Size)
 }
 
+// Uid returns user id of File
+func (f *File) Uid() uint32 {
+	id := uint32(0)
+	if sys := f.Stat.Sys(); sys != nil {
+		if stat, ok := sys.(*syscall.Stat_t); ok {
+			id = (stat.Uid)
+		}
+	}
+	return id
+}
+
+// User returns user (owner) name of File
+func (f *File) User() string {
+	u, err := user.LookupId(fmt.Sprint(f.Uid()))
+	if err != nil {
+		return err.Error()
+	}
+	return u.Username
+}
+
+// Gid returns group id of File
+func (f *File) Gid() uint32 {
+	id := uint32(0)
+	if sys := f.Stat.Sys(); sys != nil {
+		if stat, ok := sys.(*syscall.Stat_t); ok {
+			id = (stat.Gid)
+		}
+	}
+	return id
+}
+
+// Group returns group (owner) name of File
+func (f *File) Group() string {
+	g, err := user.LookupGroupId(fmt.Sprint(f.Gid()))
+	if err != nil {
+		return err.Error()
+	}
+	return g.Name
+}
+
 // Dev will return dev id of File
 func (f *File) Dev() uint64 {
 	dev := uint64(0)
 	if sys := f.Stat.Sys(); sys != nil {
 		if stat, ok := sys.(*syscall.Stat_t); ok {
-			dev = uint64(stat.Dev)
+			dev = uint64(stat.Rdev)
 		}
 	}
 	return dev
 	// dev := reflect.ValueOf(f.Stat.Sys()).Elem().FieldByName("dev").Uint()
 	// return dev
+}
+
+// DevNumber returns device number of a Darwin device number.
+func (f *File) DevNumber() (uint32, uint32) {
+	major, minor := paw.DevNumber(f.Dev())
+	return major, minor
+}
+
+// DevNumberString returns device number of a Darwin device number.
+func (f *File) DevNumberString() string {
+	major, minor := paw.DevNumber(f.Dev())
+	dev := fmt.Sprintf("%v,%v", major, minor)
+	return dev
+}
+
+// ColorDevNumberString returns device number of a Darwin device number.
+func (f *File) ColorDevNumberString() string {
+	major, minor := paw.DevNumber(f.Dev())
+	dev := csnp.Sprint(major) + cdap.Sprint(",") + csnp.Sprint(minor)
+	return dev
 }
 
 // NLinks will return the number of hard links of File
@@ -289,23 +400,54 @@ func (f *File) LSColor() *color.Color {
 // Permission will return a string of Stat.Mode() like as exa.
 // The length of placeholder in terminal is 11.
 func (f *File) Permission() string {
-	permission := fmt.Sprint(f.Stat.Mode())
-	if len(f.XAttributes) > 0 {
-		permission += "@"
-	} else {
-		permission += " "
+	sperm := fmt.Sprint(f.Stat.Mode())
+
+	if strings.HasPrefix(sperm, "Dc") {
+		sperm = strings.Replace(sperm, "Dc", "c", 1)
 	}
-	return permission
+	if strings.HasPrefix(sperm, "D") {
+		sperm = strings.Replace(sperm, "D", "b", 1)
+	}
+	if strings.HasPrefix(sperm, "L") {
+		sperm = strings.Replace(sperm, "L", "l", 1)
+	}
+
+	if f.XAttributes == nil {
+		sperm += "?"
+	} else {
+		if len(f.XAttributes) > 0 {
+			sperm += "@"
+		} else {
+			sperm += " "
+		}
+	}
+	return sperm
 }
 
 // ColorPermission will return a colorful string of Stat.Mode() like as exa.
 // The length of placeholder in terminal is 11.
 func (f *File) ColorPermission() string {
-	permission := GetColorizePermission(f.Stat.Mode())
-	if len(f.XAttributes) > 0 {
-		permission += cdashp.Sprint("@")
+	sperm := fmt.Sprint(f.Stat.Mode())
+
+	if strings.HasPrefix(sperm, "Dc") {
+		sperm = strings.Replace(sperm, "Dc", "c", 1)
+	}
+	if strings.HasPrefix(sperm, "D") {
+		sperm = strings.Replace(sperm, "D", "b", 1)
+	}
+	if strings.HasPrefix(sperm, "L") {
+		sperm = strings.Replace(sperm, "L", "l", 1)
+	}
+
+	permission := GetColorizePermission(sperm)
+	if f.XAttributes == nil {
+		permission += cdashp.Sprint("?")
 	} else {
-		permission += " "
+		if len(f.XAttributes) > 0 {
+			permission += cdashp.Sprint("@")
+		} else {
+			permission += " "
+		}
 	}
 	return permission
 }

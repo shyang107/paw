@@ -6,6 +6,8 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+
+	"github.com/shyang107/paw"
 )
 
 // PrintDirOption is the option of PrintDir
@@ -111,10 +113,11 @@ type PDFilterOption struct {
 // PrintDir will find files using codintion `ignore` func
 func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad string) (error, *FileList) {
 
-	root, err := filepath.Abs(path)
-	if err != nil {
-		return err, nil
-	}
+	var err error
+
+	paw.Logger.WithField("path", path).Info()
+
+	root := cleanPath(path)
 
 	pdOpt = opt
 	checkPrintDirOption(pdOpt)
@@ -123,19 +126,20 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 
 	sortOpt := checkSortOpt(pdOpt.SortOpt)
 
-	err = checkAndPrintFile(w, path, pad)
-	if err != nil {
-		if err == errBreak {
-			return nil, nil
-		}
-		return err, nil
-	}
+	// err := checkAndPrintFile(w, root, pad)
+	// if err != nil {
+	// 	if err == errBreak {
+	// 		return nil, nil
+	// 	}
+	// 	return err, nil
+	// }
 
 	setIgnoreFn(pdOpt)
 
 	pdview = pdOpt.OutOpt
 
 	fl := setFileList(w, root, isGrouped, sortOpt)
+
 	if !fl.IsSort {
 		goto FIND
 	}
@@ -347,10 +351,14 @@ func checkSortOpt(sortOpt *PDSortOption) *PDSortOption {
 var errBreak = errors.New("return nil")
 
 func checkAndPrintFile(w io.Writer, path string, pad string) error {
+
+	// paw.Logger.WithField("path", path).Info()
+
 	file, err := NewFile(path)
 	if err != nil {
 		return err
 	}
+
 	if !file.IsDir() {
 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, GetColorizedDirName(file.Dir, ""))
 		git, _ := GetShortGitStatus(file.Dir)
@@ -364,4 +372,27 @@ func checkAndPrintFile(w io.Writer, path string, pad string) error {
 		return errBreak
 	}
 	return nil
+}
+
+func cleanPath(path string) string {
+	paw.Logger.WithField("path", path).Info()
+
+	tpath := path
+	if strings.Contains(tpath, "~") {
+		tpath = strings.ReplaceAll(tpath, "~", paw.GetHomeDir())
+	}
+	paw.Logger.WithField("~", tpath).Info()
+	tpath = filepath.Clean(tpath)
+	paw.Logger.WithField("clean", tpath).Info()
+
+	if !filepath.IsAbs(tpath) {
+		tpath, err := filepath.Abs(tpath)
+		if err != nil {
+			paw.Logger.Error(err)
+			return tpath
+		}
+	}
+	paw.Logger.WithField("abs", tpath).Info()
+
+	return tpath
 }

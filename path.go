@@ -92,8 +92,11 @@ func GetDotDir() string {
 
 // GetHomeDir get the home directory of user
 func GetHomeDir() string {
-	Log.Info("get home dir")
-	home, _ := homedir.Dir()
+	// Log.Info("get home dir")
+	home, err := homedir.Dir()
+	if err != nil {
+		Logger.Error(err)
+	}
 	return home
 }
 

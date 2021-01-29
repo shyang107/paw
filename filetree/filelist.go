@@ -345,32 +345,71 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	switch depth {
 	case 0: //{root directory}/*
 		// scratchBuffer := make([]byte, godirwalk.MinimumScratchBufferSize)
-		files, err := godirwalk.ReadDirnames(f.root, nil)
-		if err != nil {
-			return errors.New(f.root + ": " + err.Error())
-		}
-		if f.IsSort {
-			sort.Sort(ByLowerString(files))
-		}
+		paw.Logger.WithField("root", f.root).Info()
 
 		file, err := NewFileRelTo(f.root, f.root)
 		if err != nil {
 			return err
 		}
+		// paw.Logger.WithFields(logrus.Fields{
+		// 	"path":     file.Path,
+		// 	"dir":      file.Dir,
+		// 	"file":     file.File,
+		// 	"ext":      file.Ext,
+		// 	"BaseName": file.BaseName,
+		// 	"size":     file.Size,
+		// 	// "stat":     stat,
+		// }).Info("after")
+
 		f.AddFile(file)
 
+		files, err := filepath.Glob(filepath.Join(f.root, "*"))
+		if err != nil {
+			return errors.New(f.root + ": " + err.Error())
+		}
+
+		if f.IsSort {
+			sort.Sort(ByLowerString(files))
+		}
+
 		for _, name := range files {
-			path := filepath.Join(f.root, name)
-			file, err := NewFileRelTo(path, f.root)
+			file, err := NewFileRelTo(name, f.root)
 			if err != nil {
 				return err
 			}
+
 			if err := ignore(file, nil); err == SkipThis {
 				continue
 			}
 
 			f.AddFile(file)
 		}
+		// files, err := godirwalk.ReadDirnames(f.root, nil)
+		// if err != nil {
+		// 	return errors.New(f.root + ": " + err.Error())
+		// }
+		// if f.IsSort {
+		// 	sort.Sort(ByLowerString(files))
+		// }
+
+		// file, err := NewFileRelTo(f.root, f.root)
+		// if err != nil {
+		// 	return err
+		// }
+		// f.AddFile(file)
+
+		// for _, name := range files {
+		// 	path := filepath.Join(f.root, name)
+		// 	file, err := NewFileRelTo(path, f.root)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	if err := ignore(file, nil); err == SkipThis {
+		// 		continue
+		// 	}
+
+		// 	f.AddFile(file)
+		// }
 	default: //walk through all directories of {root directory}
 		err := godirwalk.Walk(f.root, &godirwalk.Options{
 			Callback: func(path string, de *godirwalk.Dirent) error {
