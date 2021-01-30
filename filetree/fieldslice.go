@@ -69,7 +69,8 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 		switch fd.Key {
 		case PFieldINode: //"inode",
 			fd.SetValue(file.INode())
-			// fd.SetValueColor(cinp)
+			fd.SetColorfulValue(calign(cinp, fd.Align, fd.Width, file.INode()))
+			fd.SetValueColor(cinp)
 		case PFieldPermissions: //"Permissions",
 			perm := file.Permission()
 			fd.SetValue(perm)
@@ -79,10 +80,11 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				sp = paw.Spaces(fd.Width - wp)
 			}
 			fd.SetColorfulValue(file.ColorPermission() + sp)
-			// fd.SetValueColor(cpmp)
+			fd.SetValueColor(cpmp)
 		case PFieldLinks: //"Links",
 			fd.SetValue(file.NLinks())
-			// fd.SetValueColor(clkp)
+			fd.SetColorfulValue(calign(clkp, fd.Align, fd.Width, file.NLinks()))
+			fd.SetValueColor(clkp)
 		case PFieldSize: //"Size",
 			sperm := file.Permission()
 			c := string(sperm[0])
@@ -95,75 +97,92 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 					sp = paw.Spaces(fd.Width - wp)
 				}
 				fd.SetValue(dev)
-				fd.SetColorfulValue(sp + file.ColorDevNumberString())
+				switch fd.Align {
+				case paw.AlignLeft:
+					fd.SetColorfulValue(file.ColorDevNumberString() + sp)
+				default:
+					fd.SetColorfulValue(sp + file.ColorDevNumberString())
+				}
 			case "d": //file.IsDir()
 				fd.SetValue("-")
-				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
+				fd.SetColorfulValue(calign(cdashp, fd.Align, fd.Width, "-"))
 			default:
 				fd.SetValue(file.ByteSize())
 				csize := fdColorizedSize(file.Size, fd.Width)
 				fd.SetColorfulValue(csize)
 			}
-			// fd.SetValueColor(csnp)
+			fd.SetValueColor(csnp)
 		case PFieldBlocks: //"Block",
 			if file.IsDir() {
 				fd.SetValue("-")
-				fd.SetColorfulValue(cdashp.Sprintf("%[1]*[2]v", fd.Width, "-"))
+				fd.SetColorfulValue(calign(cdashp, fd.Align, fd.Width, "-"))
 			} else {
 				fd.SetValue(file.Blocks())
-				fd.SetColorfulValue(cbkp.Sprintf("%[1]*[2]v", fd.Width, file.Blocks()))
+				fd.SetColorfulValue(calign(cbkp, fd.Align, fd.Width, file.Blocks()))
+				fd.SetValueColor(cbkp)
 			}
-			// fd.SetValueColor(cbkp)
 		case PFieldUser: //"User",
 			furname := file.User()
 			fd.SetValue(furname)
+			var c *color.Color
 			if furname != urname {
-				fd.SetColorfulValue(cunp.Sprintf("%[1]*[2]v", fd.Width, furname))
-				fd.SetValueColor(cunp)
+				c = cunp
+				fd.SetValueColor(c)
 			} else {
-				fd.SetColorfulValue(cuup.Sprintf("%[1]*[2]v", fd.Width, furname))
+				c = cuup
 			}
-		// fd.SetValue(urname)
-		// fd.SetColorfulValue(cuup.Sprintf("%[1]*[2]v", fd.Width, urname))
+			fd.SetColorfulValue(calign(c, fd.Align, fd.Width, furname))
 		case PFieldGroup: //"Group",
 			fgpname := file.Group()
 			fd.SetValue(fgpname)
+			var c *color.Color
 			if fgpname != gpname {
-				fd.SetColorfulValue(cgnp.Sprintf("%[1]*[2]v", fd.Width, fgpname))
-				fd.SetValueColor(cgnp)
+				c = cgnp
 			} else {
-				fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, fgpname))
+				c = cgup
 			}
-			// fd.SetValue(gpname)
-			// fd.SetColorfulValue(cgup.Sprintf("%[1]*[2]v", fd.Width, gpname))
-			// fd.SetValueColor(cgup)
+			fd.SetColorfulValue(calign(c, fd.Align, fd.Width, fgpname))
+			fd.SetValueColor(c)
 		case PFieldModified: //"Date Modified",
-			fd.SetValue(DateString(file.ModifiedTime()))
-			// fd.SetColorfulValue(file.ColorModifyTime())
-			// fd.SetValueColor(cdap)
+			sd := DateString(file.ModifiedTime())
+			fd.SetValue(sd)
+			fd.SetColorfulValue(calign(cdap, fd.Align, fd.Width, sd))
+			fd.SetValueColor(cdap)
 		case PFieldCreated: //"Date Created",
-			fd.SetValue(DateString(file.CreatedTime()))
-			// fd.SetColorfulValue(file.ColorCreatedTime())
-			// fd.SetValueColor(cdap)
+			sd := DateString(file.CreatedTime())
+			fd.SetValue(sd)
+			fd.SetColorfulValue(calign(cdap, fd.Align, fd.Width, sd))
+			fd.SetValueColor(cdap)
 		case PFieldAccessed: //"Date Accessed",
-			fd.SetValue(DateString(file.AccessedTime()))
-			// fd.SetColorfulValue(file.ColorAccessedTime())
-			// fd.SetValueColor(cdap)
+			sd := DateString(file.AccessedTime())
+			fd.SetValue(sd)
+			fd.SetColorfulValue(calign(cdap, fd.Align, fd.Width, sd))
+			fd.SetValueColor(cdap)
 		case PFieldGit: //"Gid",
 			if git.NoGit {
 				continue
 			} else {
 				fd.SetValue(file.GitStatus(git))
 				fd.SetColorfulValue(file.ColorGitStatus(git))
+				fd.SetValueColor(cgitp)
 			}
-			// fd.SetValueColor(cgitp)
 		case PFieldName: //"Name",
 			fd.SetValue(file.Name())
 			fd.SetColorfulValue(file.ColorName())
 			fd.SetValueColor(file.LSColor())
-			// fd.SetValueColor(cfip)
 		}
 	}
+}
+
+func calign(c *color.Color, al paw.Align, width int, value interface{}) string {
+	var s string
+	switch al {
+	case paw.AlignLeft:
+		s = c.Sprintf("%-[1]*[2]v", width, value)
+	default:
+		s = c.Sprintf("%[1]*[2]v", width, value)
+	}
+	return s
 }
 
 // // SetColorfulValues sets up colorful values of FieldSlice from File and GitStatus

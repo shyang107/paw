@@ -275,10 +275,12 @@ func (f *FileList) AddFile(file *File) {
 	}
 	f.store[file.Dir] = append(f.store[file.Dir], file)
 	if file.IsDir() {
-		dd := strings.Split(file.Dir, PathSeparator)
-		pdir := strings.Join(dd[:len(dd)-1], PathSeparator)
-		if !strings.EqualFold(pdir, file.Dir) {
-			f.store[pdir] = append(f.store[pdir], file)
+		if f.Root() != PathSeparator {
+			dd := strings.Split(file.Dir, PathSeparator)
+			pdir := strings.Join(dd[:len(dd)-1], PathSeparator)
+			if !strings.EqualFold(pdir, file.Dir) {
+				f.store[pdir] = append(f.store[pdir], file)
+			}
 		}
 	} else {
 		f.totalSize += file.Size
@@ -345,6 +347,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	switch depth {
 	case 0: //{root directory}/*
 		// scratchBuffer := make([]byte, godirwalk.MinimumScratchBufferSize)
+
 		paw.Logger.WithField("root", f.root).Info()
 
 		file, err := NewFileRelTo(f.root, f.root)
@@ -373,9 +376,14 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 		}
 
 		for _, name := range files {
+			// paw.Logger.WithField("name", name).Info()
 			file, err := NewFileRelTo(name, f.root)
 			if err != nil {
-				return err
+				paw.Logger.Error(err)
+				// if os.IsNotExist(err) {
+				// 	continue
+				// }
+				continue
 			}
 
 			if err := ignore(file, nil); err == SkipThis {
@@ -383,7 +391,32 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			}
 
 			f.AddFile(file)
+			// paw.Logger.WithFields(logrus.Fields{
+			// 	"path":     file.Path,
+			// 	"dir":      file.Dir,
+			// 	"file":     file.File,
+			// 	"ext":      file.Ext,
+			// 	"BaseName": file.BaseName,
+			// 	"size":     file.Size,
+			// 	// "stat":     stat,
+			// }).Info("after")
 		}
+		// paw.Logger.Info("after AddFile")
+		// // spew.Dump(f.Map())
+		// // spew.Dump(f.Dirs())
+		// fmt.Println("ls Dirs Map")
+		// for _, dir := range f.Dirs() {
+		// 	for _, file := range f.Map()[dir][1:] {
+		// 		fmt.Println(file.Path)
+		// 	}
+		// }
+		// fmt.Println("ls Map")
+		// for dir, files := range f.Map() {
+		// 	for _, file := range files[1:] {
+		// 		fmt.Printf("dir: %q; path: %q\n", dir, file.Path)
+		// 	}
+		// }
+
 		// files, err := godirwalk.ReadDirnames(f.root, nil)
 		// if err != nil {
 		// 	return errors.New(f.root + ": " + err.Error())
@@ -446,6 +479,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	if f.IsSort {
 		f.Sort()
 	}
+
 	return nil
 }
 

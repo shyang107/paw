@@ -115,9 +115,13 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 
 	var err error
 
-	paw.Logger.WithField("path", path).Info()
+	// paw.Logger.WithField("path", path).Info()
 
-	root := cleanPath(path)
+	// root := cleanPath(path)
+	root, err := filepath.Abs(path)
+	if err != nil {
+		paw.Logger.Fatal(err)
+	}
 
 	pdOpt = opt
 	checkPrintDirOption(pdOpt)
@@ -378,20 +382,25 @@ func cleanPath(path string) string {
 	paw.Logger.WithField("path", path).Info()
 
 	tpath := path
-	if strings.Contains(tpath, "~") {
-		tpath = strings.ReplaceAll(tpath, "~", paw.GetHomeDir())
-	}
-	paw.Logger.WithField("~", tpath).Info()
-	tpath = filepath.Clean(tpath)
-	paw.Logger.WithField("clean", tpath).Info()
+	// if strings.Contains(tpath, "~") {
+	// 	tpath = strings.ReplaceAll(tpath, "~", paw.GetHomeDir())
+	// }
+	// paw.Logger.WithField("~", tpath).Info()
+	// tpath = filepath.Clean(tpath)
+	// paw.Logger.WithField("clean", tpath).Info()
 
-	if !filepath.IsAbs(tpath) {
-		tpath, err := filepath.Abs(tpath)
-		if err != nil {
-			paw.Logger.Error(err)
-			return tpath
-		}
+	tpath, err := filepath.Abs(tpath)
+	if err != nil {
+		paw.Logger.Error(err)
+		return tpath
 	}
+	// if !filepath.IsAbs(tpath) {
+	// 	tpath, err := filepath.Abs(tpath)
+	// 	if err != nil {
+	// 		paw.Logger.Error(err)
+	// 		return tpath
+	// 	}
+	// }
 	paw.Logger.WithField("abs", tpath).Info()
 
 	return tpath

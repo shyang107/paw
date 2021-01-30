@@ -148,10 +148,11 @@ func NewFileRelTo(path, root string) (*File, error) {
 	// }
 	stat, err := os.Stat(path)
 	if err != nil {
-		// paw.Logger.Error(err)
+		paw.Logger.Error(err)
+		return nil, err
 	}
 	dir := filepath.Dir(path)
-	basename := stat.Name() // filepath.Base(path)
+	basename := filepath.Base(path)
 	ext := filepath.Ext(path)
 	afile := strings.TrimSuffix(basename, ext)
 	size := uint64(stat.Size())
@@ -181,12 +182,14 @@ func NewFileRelTo(path, root string) (*File, error) {
 		XAttributes: xattrs,
 	}
 
-	if f.IsDir() {
-		f.Dir = strings.Replace(f.Path, root, RootMark, 1)
-		return f, nil
-	}
+	// if f.IsDir() {
+	// 	f.Dir = strings.Replace(f.Path, root, RootMark, 1)
+	// 	return f, nil
+	// }
 
-	f.Dir = strings.Replace(f.Dir, root, RootMark, 1)
+	if f.Dir != PathSeparator {
+		f.Dir = strings.Replace(f.Dir, root, RootMark, 1)
+	}
 
 	return f, nil
 }
@@ -400,7 +403,7 @@ func (f *File) LSColor() *color.Color {
 // Permission will return a string of Stat.Mode() like as exa.
 // The length of placeholder in terminal is 11.
 func (f *File) Permission() string {
-	sperm := fmt.Sprint(f.Stat.Mode())
+	sperm := f.Stat.Mode().String() //fmt.Sprint(f.Stat.Mode())
 
 	if strings.HasPrefix(sperm, "Dc") {
 		sperm = strings.Replace(sperm, "Dc", "c", 1)
@@ -427,7 +430,7 @@ func (f *File) Permission() string {
 // ColorPermission will return a colorful string of Stat.Mode() like as exa.
 // The length of placeholder in terminal is 11.
 func (f *File) ColorPermission() string {
-	sperm := fmt.Sprint(f.Stat.Mode())
+	sperm := f.Stat.Mode().String() //fmt.Sprint(f.Stat.Mode())
 
 	if strings.HasPrefix(sperm, "Dc") {
 		sperm = strings.Replace(sperm, "Dc", "c", 1)

@@ -82,6 +82,10 @@ func isEnded(levelsEnded []int, level int) bool {
 
 // GetColorizedDirName will return a colorful string of {{ dir }}/{{ name }}
 func GetColorizedDirName(path string, root string) string {
+	if path == PathSeparator {
+		return cdip.Sprint(path)
+	}
+
 	file, err := NewFile(path)
 	if err != nil {
 		dir, name := filepath.Split(path)
