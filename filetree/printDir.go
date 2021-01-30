@@ -4,121 +4,28 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/shyang107/paw"
 )
 
-// PrintDirOption is the option of PrintDir
-//
-// Fields:
-// 	Depth:
-// 		Depth < 0 : print all files and directories recursively of argument path of PrintDir.
-// 		Depth = 0 : print files and directories only in argument path of PrintDir.
-// 		Depth > 0 : print files and directories recursively under depth of directory in argument path of PrintDir.
-// OutOpt: the view-option of PrintDir
-// Call
-type PrintDirOption struct {
-	Depth     int
-	OutOpt    PDViewFlag
-	FieldFlag PDFieldFlag
-	SortOpt   *PDSortOption
-	FiltOpt   *PDFilterOption
-	Ignore    IgnoreFunc
-}
-
-func NewPrintDirOption() *PrintDirOption {
-	return &PrintDirOption{
-		Depth:     0,
-		OutOpt:    PListView,
-		FieldFlag: PFieldModified,
-		// SortOpt:
-		// FiltOpt:,
-		Ignore: DefaultIgnoreFn,
-	}
-}
-
-var pdOpt *PrintDirOption
-
-type PDViewFlag int
-
-const (
-	// PListView is the option of list view using in PrintDir
-	PListView PDViewFlag = 1 << iota // 1 << 0 which is 00000001
-	// PListExtendView is the option of list view icluding extend attributes using in PrintDir
-	PListExtendView
-	// PTreeView is the option of tree view using in PrintDir
-	PTreeView
-	// PTreeExtendView is the option of tree view icluding extend atrribute using in PrintDir
-	PTreeExtendView
-	// PLevelView is the option of level view using in PrintDir
-	PLevelView
-	// PLevelExtendView is the option of level view icluding extend attributes using in PrintDir
-	PLevelExtendView
-	// PTableView is the option of table view using in PrintDir
-	PTableView
-	// PTableView is the option of table view icluding extend attributes using in PrintDir
-	PTableExtendView
-	// PClassifyView display type indicator by file names (like as `exa -F` or `exa --classify`) in PrintDir
-	PClassifyView
-	// PListTreeView is the option of combining list & tree view using in PrintDir
-	PListTreeView = PListView | PTreeView
-	// PListTreeExtendView is the option of combining list & tree view including extend attribute using in PrintDir
-	PListTreeExtendView = PListView | PTreeExtendView
+var (
+	pdOpt  *PrintDirOption
+	pdview PDViewFlag
 )
-
-var pdview PDViewFlag
-
-// PDSortOption defines sorting way view of PrintDir
-//
-// Defaut:
-//  increasing sort by lower name of path
-type PDSortOption struct {
-	IsSort  bool
-	SortWay PDSortFlag
-}
-
-type PDSortFlag int
-
-const (
-	PDSort PDSortFlag = 1 << iota
-	PDSortReverse
-	pdSortKeyName
-	pdSortKeyMTime
-	pdSortKeySize
-	PDSortByName         = PDSort | pdSortKeyName
-	PDSortByMtime        = PDSort | pdSortKeyMTime
-	PDSortBySize         = PDSort | pdSortKeySize
-	PDSortByReverseName  = PDSortByName | PDSortReverse
-	PDSortByReverseMtime = PDSortByMtime | PDSortReverse
-	PDSortByReverseSize  = PDSortBySize | PDSortReverse
-)
-
-type PDFiltFlag int
-
-const (
-	PDFiltNoEmptyDir = 1 << iota
-	PDFiltJustDirs
-	PDFiltJustFiles
-	PDFiltJustDirsButNoEmpty     = PDFiltNoEmptyDir | PDFiltJustDirs
-	PDFiltJustFilesButNoEmptyDir = PDFiltJustFiles
-)
-
-type PDFilterOption struct {
-	IsFilt  bool
-	FiltWay PDFiltFlag
-}
 
 // PrintDir will find files using codintion `ignore` func
 func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad string) (error, *FileList) {
 
 	var err error
 
-	// paw.Logger.WithField("path", path).Info()
+	// paw.Logger.WithField("root", opt.Root).Info()
 
 	// root := cleanPath(path)
-	root, err := filepath.Abs(path)
+	// root, err := filepath.Abs(path)
+	root, err := filepath.Abs(opt.Root)
 	if err != nil {
 		paw.Logger.Fatal(err)
 	}
@@ -151,16 +58,137 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 	checkPDSortOption(fl, pdOpt, sortOpt)
 
 FIND:
-	fl.FindFiles(pdOpt.Depth, pdOpt.Ignore)
+	if pdOpt.NPath() > 0 {
+		var (
+			dirs  []string
+			files []string
+		)
+		for _, path := range pdOpt.Paths {
+			fi, err := os.Stat(path)
+			if err != nil {
+				paw.Logger.Error(err)
+				continue
+			}
+			if fi.IsDir() {
+				dirs = append(dirs, path)
+			} else {
+				files = append(files, path)
+			}
+		}
+		// files
+		if len(files) > 0 {
+			for _, path := range files {
+				file, err := NewFile(path)
+				if err != nil {
+					paw.Logger.Error(err)
+					continue
+				}
+				if err := pdOpt.Ignore(file, nil); err == SkipThis {
+					continue
+				}
+				fl.AddFile(file)
+			}
+			if fl.IsSort {
+				fl.Sort()
+			}
+			cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
+			listFiles(fl, pad, pdOpt)
 
-	cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
-
-	err = switchFileListView(fl, pdOpt.OutOpt, pad)
-	if err != nil {
-		return err, nil
+			fl.dirs = []string{}
+			fl.store = make(FileMap)
+		}
+		// dirs
+		if len(dirs) > 0 {
+			for _, path := range dirs {
+				pdOpt.SetRoot(path)
+				fl.SetRoot(path)
+				fl.FindFiles(pdOpt.Depth, pdOpt.Ignore)
+				cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
+				err = switchFileListView(fl, pdOpt.OutOpt, pad)
+				if err != nil {
+					return err, nil
+				}
+				fl.dirs = []string{}
+				fl.store = make(FileMap)
+			}
+		}
+	} else {
+		fl.SetRoot(root)
+		fl.FindFiles(pdOpt.Depth, pdOpt.Ignore)
+		cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
+		err = switchFileListView(fl, pdOpt.OutOpt, pad)
+		if err != nil {
+			return err, nil
+		}
 	}
 
 	return nil, fl
+}
+
+func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
+	var (
+		w          = f.stringBuilder
+		dirs       = f.Dirs()
+		fm         = f.Map()
+		files      = []*File{}
+		git        = f.GetGitStatus()
+		fds        = NewFieldSliceFrom(pfieldKeys, git)
+		fdName     = fds.Get(PFieldName)
+		wdstty     = sttyWidth - 2 - paw.StringWidth(pad)
+		isExtended = isExtendedView(pdOpt.OutOpt)
+	)
+
+	for _, dir := range dirs {
+		for _, file := range fm[dir] {
+			files = append(files, file)
+		}
+	}
+
+	w.Reset()
+	fds.ModifyWidth(f, wdstty)
+
+	printBanner(w, "", "=", wdstty)
+	fds.PrintHeadRow(w, "")
+	var size uint64
+	for _, file := range files {
+		size += file.Size
+
+		fds.SetValues(file, git)
+		fdName.Value = file.Path
+		cdir := cdirp.Sprint(file.Dir + "/")
+		cname := file.ColorName()
+		fdName.ValueC = cdir + cname
+		fds.PrintRow(w, "")
+
+		if isExtended && len(file.XAttributes) > 0 {
+			// sp := paw.Spaces(wdmeta)
+			// fmt.Fprint(w, xattrEdgeString(file, sp, wdmeta, wdstty))
+			fds.PrintRowXattr(w, "", file.XAttributes, "")
+		}
+	}
+	printBanner(w, "", "=", wdstty)
+
+	cnfiles := csnp.Sprint(len(files))
+	csize := GetColorizedSize(size)
+	summary := pad +
+		cdashp.Sprint("Accumulated ") +
+		cnfiles +
+		cdashp.Sprint(" files, total size ≈ ") +
+		csize + cdashp.Sprint(".")
+	fmt.Fprintln(w, summary)
+
+	str := paw.PaddingString(w.String(), pad)
+	fmt.Fprintln(f.Writer(), str)
+
+}
+
+func isExtendedView(outOpt PDViewFlag) bool {
+	switch outOpt {
+	case PListExtendView, PTreeExtendView, PListTreeExtendView, PLevelExtendView, PTableExtendView:
+		return true
+	default:
+		return false
+	}
 }
 
 func switchFileListView(fl *FileList, outOpt PDViewFlag, pad string) error {

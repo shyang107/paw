@@ -125,6 +125,11 @@ func (f *FileList) Writer() io.Writer {
 	return f.writer
 }
 
+// Root set path to FieldList.root
+func (f *FileList) SetRoot(path string) {
+	f.root = path
+}
+
 // Root will return the `root` field (root directory)
 func (f *FileList) Root() string {
 	return f.root
@@ -268,24 +273,43 @@ func (f *FileList) GetGitStatus() GitStatus {
 
 // AddFile will add file into the file list
 func (f *FileList) AddFile(file *File) {
-	if _, ok := f.store[file.Dir]; !ok {
-		f.store[file.Dir] = []*File{}
-		f.dirs = append(f.dirs, file.Dir)
+	var dir = file.Dir
+	if _, ok := f.store[dir]; !ok {
+		f.store[dir] = []*File{}
+		f.dirs = append(f.dirs, dir)
 		// f.totalSize += file.Size
 	}
-	f.store[file.Dir] = append(f.store[file.Dir], file)
-	if file.IsDir() {
-		if f.Root() != PathSeparator {
-			dd := strings.Split(file.Dir, PathSeparator)
-			pdir := strings.Join(dd[:len(dd)-1], PathSeparator)
-			if !strings.EqualFold(pdir, file.Dir) {
-				f.store[pdir] = append(f.store[pdir], file)
-			}
-		}
-	} else {
+	f.store[dir] = append(f.store[dir], file)
+	if file.IsFile() {
 		f.totalSize += file.Size
 	}
 }
+
+// func (f *FileList) AddFile(file *File) {
+// 	var dir string
+// 	if file.Dir == PathSeparator {
+// 		dir = "."
+// 	} else {
+// 		dir = file.Dir
+// 	}
+// 	if _, ok := f.store[dir]; !ok {
+// 		f.store[dir] = []*File{}
+// 		f.dirs = append(f.dirs, dir)
+// 		// f.totalSize += file.Size
+// 	}
+// 	f.store[dir] = append(f.store[dir], file)
+// 	if file.IsDir() {
+// 		if file.Dir != PathSeparator {
+// 			dd := strings.Split(file.Dir, PathSeparator)
+// 			pdir := strings.Join(dd[:len(dd)-1], PathSeparator)
+// 			if !strings.EqualFold(pdir, file.Dir) {
+// 				f.store[pdir] = append(f.store[pdir], file)
+// 			}
+// 		}
+// 	} else {
+// 		f.totalSize += file.Size
+// 	}
+// }
 
 func (f *FileList) DisableColor() {
 	paw.SetNoColor()
@@ -346,27 +370,8 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	f.depth = depth
 	switch depth {
 	case 0: //{root directory}/*
-		// scratchBuffer := make([]byte, godirwalk.MinimumScratchBufferSize)
-
-		paw.Logger.WithField("root", f.root).Info()
-
-		file, err := NewFileRelTo(f.root, f.root)
-		if err != nil {
-			return err
-		}
-		// paw.Logger.WithFields(logrus.Fields{
-		// 	"path":     file.Path,
-		// 	"dir":      file.Dir,
-		// 	"file":     file.File,
-		// 	"ext":      file.Ext,
-		// 	"BaseName": file.BaseName,
-		// 	"size":     file.Size,
-		// 	// "stat":     stat,
-		// }).Info("after")
-
-		f.AddFile(file)
-
-		files, err := filepath.Glob(filepath.Join(f.root, "*"))
+		// paw.Logger.WithField("root", f.root).Info("root")
+		files, err := godirwalk.ReadDirnames(f.root, nil)
 		if err != nil {
 			return errors.New(f.root + ": " + err.Error())
 		}
@@ -375,74 +380,39 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			sort.Sort(ByLowerString(files))
 		}
 
+		file, err := NewFileRelTo(f.root, f.root)
+		if err != nil {
+			return err
+		}
+		f.AddFile(file)
+
 		for _, name := range files {
-			// paw.Logger.WithField("name", name).Info()
-			file, err := NewFileRelTo(name, f.root)
+			path := filepath.Join(f.root, name)
+			file, err := NewFileRelTo(path, f.root)
 			if err != nil {
-				paw.Logger.Error(err)
-				// if os.IsNotExist(err) {
-				// 	continue
-				// }
+				// paw.Logger.Error(err)
+				paw.Error.Panicln(err)
+				// return err
 				continue
 			}
-
 			if err := ignore(file, nil); err == SkipThis {
 				continue
 			}
 
 			f.AddFile(file)
 			// paw.Logger.WithFields(logrus.Fields{
-			// 	"path":     file.Path,
-			// 	"dir":      file.Dir,
-			// 	"file":     file.File,
-			// 	"ext":      file.Ext,
-			// 	"BaseName": file.BaseName,
-			// 	"size":     file.Size,
-			// 	// "stat":     stat,
-			// }).Info("after")
+			// 	"path": path,
+			// 	"name": name,
+			// }).Info()
 		}
-		// paw.Logger.Info("after AddFile")
-		// // spew.Dump(f.Map())
-		// // spew.Dump(f.Dirs())
-		// fmt.Println("ls Dirs Map")
-		// for _, dir := range f.Dirs() {
-		// 	for _, file := range f.Map()[dir][1:] {
-		// 		fmt.Println(file.Path)
+		// for i, dir := range f.Dirs() {
+		// 	fmt.Println("i =", i, "dir =", dir)
+		// 	for j, file := range f.Map()[dir] {
+		// 		fmt.Println("\tj =", j, "dir =", file.Dir, "name =", file.BaseName)
 		// 	}
 		// }
-		// fmt.Println("ls Map")
-		// for dir, files := range f.Map() {
-		// 	for _, file := range files[1:] {
-		// 		fmt.Printf("dir: %q; path: %q\n", dir, file.Path)
-		// 	}
-		// }
-
-		// files, err := godirwalk.ReadDirnames(f.root, nil)
-		// if err != nil {
-		// 	return errors.New(f.root + ": " + err.Error())
-		// }
-		// if f.IsSort {
-		// 	sort.Sort(ByLowerString(files))
-		// }
-
-		// file, err := NewFileRelTo(f.root, f.root)
-		// if err != nil {
-		// 	return err
-		// }
-		// f.AddFile(file)
-
-		// for _, name := range files {
-		// 	path := filepath.Join(f.root, name)
-		// 	file, err := NewFileRelTo(path, f.root)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	if err := ignore(file, nil); err == SkipThis {
-		// 		continue
-		// 	}
-
-		// 	f.AddFile(file)
-		// }
+		// spew.Dump(f.Dirs())
+		// spew.Dump(f.Map())
 	default: //walk through all directories of {root directory}
 		err := godirwalk.Walk(f.root, &godirwalk.Options{
 			Callback: func(path string, de *godirwalk.Dirent) error {

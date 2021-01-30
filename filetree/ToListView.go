@@ -49,6 +49,11 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 
 	fmt.Fprintln(w, head)
 
+	// paw.Logger.WithFields(logrus.Fields{
+	// 	"fNDirs":  fNDirs,
+	// 	"fNFiles": fNFiles,
+	// }).Info()
+
 	if fNDirs == 0 && fNFiles == 0 {
 		goto END
 	}

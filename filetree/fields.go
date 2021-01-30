@@ -38,6 +38,9 @@ const (
 	PFieldName
 	// PFieldNone uses non-default field
 	PFieldNone
+
+	// PFieldDefault useas default fields
+	PFieldDefault = PFieldPermissions | PFieldSize | PFieldUser | PFieldGroup | PFieldModified | PFieldName
 )
 
 var (
@@ -68,8 +71,8 @@ var (
 		PFieldLinks:       paw.MaxInt(2, len(pfieldsMap[PFieldLinks])),
 		PFieldSize:        paw.MaxInt(4, len(pfieldsMap[PFieldSize])),
 		PFieldBlocks:      paw.MaxInt(6, len(pfieldsMap[PFieldBlocks])),
-		PFieldUser:        paw.MaxInt(paw.StringWidth(urname), len(pfieldsMap[PFieldUser])),
-		PFieldGroup:       paw.MaxInt(paw.StringWidth(gpname), len(pfieldsMap[PFieldGroup])),
+		PFieldUser:        paw.MaxInt(4, len(pfieldsMap[PFieldUser])),
+		PFieldGroup:       paw.MaxInt(5, len(pfieldsMap[PFieldGroup])),
 		PFieldModified:    paw.MaxInt(11, len(pfieldsMap[PFieldModified])),
 		PFieldCreated:     paw.MaxInt(11, len(pfieldsMap[PFieldCreated])),
 		PFieldAccessed:    paw.MaxInt(11, len(pfieldsMap[PFieldAccessed])),

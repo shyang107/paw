@@ -79,10 +79,10 @@ func NewFile(path string) (*File, error) {
 	file := strings.TrimSuffix(basename, ext)
 	size := uint64(stat.Size())
 
-	xattrs, err := getXattr(tpath)
-	if err != nil {
-		return nil, err
-	}
+	xattrs, _ := getXattr(tpath)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// paw.Logger.WithFields(logrus.Fields{
 	// 	"path":     path,
@@ -131,66 +131,24 @@ const (
 // 	If `path` == `root`, then
 // 		f.Dir = "."
 func NewFileRelTo(path, root string) (*File, error) {
-	// path, err := filepath.Abs(path)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// root, err = filepath.Abs(root)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	// paw.Logger.WithField("path", path).Info("input")
-
-	// f, err := NewFile(path)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	stat, err := os.Stat(path)
+	f, err := NewFile(path)
 	if err != nil {
-		paw.Logger.Error(err)
 		return nil, err
 	}
-	dir := filepath.Dir(path)
-	basename := filepath.Base(path)
-	ext := filepath.Ext(path)
-	afile := strings.TrimSuffix(basename, ext)
-	size := uint64(stat.Size())
-	xattrs, _ := getXattr(path)
-	// if err != nil {
-	// 	paw.Logger.Error(err)
-	// }
-
-	// paw.Logger.WithFields(logrus.Fields{
-	// 	"path":     path,
-	// 	"dir":      dir,
-	// 	"file":     afile,
-	// 	"ext":      ext,
-	// 	"BaseName": basename,
-	// 	"size":     size,
-	// 	// "stat":     stat,
-	// }).Info("before")
-
-	f := &File{
-		Path:        path,
-		Dir:         dir,
-		BaseName:    basename,
-		File:        afile,
-		Ext:         ext,
-		Stat:        stat,
-		Size:        size,
-		XAttributes: xattrs,
+	if len(root) == 0 {
+		return f, nil
 	}
-
-	// if f.IsDir() {
-	// 	f.Dir = strings.Replace(f.Path, root, RootMark, 1)
-	// 	return f, nil
-	// }
-
-	if f.Dir != PathSeparator {
-		f.Dir = strings.Replace(f.Dir, root, RootMark, 1)
+	var dir string
+	if path == root {
+		dir = RootMark
+	} else {
+		dir = filepath.Dir(path)
+		if len(root) > 0 {
+			dir = strings.Replace(dir, root, RootMark, 1)
+		}
 	}
-
+	f.Dir = dir
 	return f, nil
 }
 
