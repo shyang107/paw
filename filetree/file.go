@@ -57,29 +57,19 @@ type File struct {
 
 // NewFile will the pointer of instance of `File`, and is a constructor of `File`.
 func NewFile(path string) (*File, error) {
-	// path = strings.TrimSuffix(path, "/")
-	var err error
-	// if strings.HasPrefix(path, "~") {
-	// 	path, err = homedir.Expand(path)
-	// } else {
-	// 	path, err = filepath.Abs(path)
-	// }
-	// if err != nil {
-	// 	return nil, err
-	// }
-	tpath := path
 	// paw.Logger.WithField("path", path).Info("income")
+	var err error
 	stat, err := os.Lstat(path)
 	if err != nil {
 		return nil, err
 	}
-	dir := filepath.Dir(tpath)
+	dir := filepath.Dir(path)
 	basename := stat.Name() // filepath.Base(path)
-	ext := filepath.Ext(tpath)
+	ext := filepath.Ext(path)
 	file := strings.TrimSuffix(basename, ext)
 	size := uint64(stat.Size())
 
-	xattrs, _ := getXattr(tpath)
+	xattrs, _ := getXattr(path)
 	// if err != nil {
 	// 	return nil, err
 	// }

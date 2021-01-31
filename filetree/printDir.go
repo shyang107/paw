@@ -60,8 +60,9 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 FIND:
 	if pdOpt.NPath() > 0 {
 		var (
-			dirs  []string
-			files []string
+			dirs []string
+			// files []string
+			files = pdOpt.Paths
 		)
 		for _, path := range pdOpt.Paths {
 			fi, err := os.Stat(path)
@@ -71,9 +72,10 @@ FIND:
 			}
 			if fi.IsDir() {
 				dirs = append(dirs, path)
-			} else {
-				files = append(files, path)
 			}
+			// else {
+			// 	files = append(files, path)
+			// }
 		}
 		// files
 		if len(files) > 0 {
@@ -99,17 +101,9 @@ FIND:
 		}
 		// dirs
 		if len(dirs) > 0 {
-			for _, path := range dirs {
-				pdOpt.SetRoot(path)
-				fl.SetRoot(path)
-				fl.FindFiles(pdOpt.Depth, pdOpt.Ignore)
-				cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
-				err = switchFileListView(fl, pdOpt.OutOpt, pad)
-				if err != nil {
-					return err, nil
-				}
-				fl.dirs = []string{}
-				fl.store = make(FileMap)
+			err = listDirs(fl, dirs, pad, pdOpt)
+			if err != nil {
+				return err, nil
 			}
 		}
 	} else {
@@ -123,6 +117,22 @@ FIND:
 	}
 
 	return nil, fl
+}
+
+func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) error {
+	for _, path := range dirs {
+		pdOpt.SetRoot(path)
+		f.SetRoot(path)
+		f.FindFiles(pdOpt.Depth, pdOpt.Ignore)
+		cehckAndFiltPrintDirFiltOpt(f, pdOpt.FiltOpt)
+		err := switchFileListView(f, pdOpt.OutOpt, pad)
+		if err != nil {
+			return err
+		}
+		f.dirs = []string{}
+		f.store = make(FileMap)
+	}
+	return nil
 }
 
 func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {

@@ -38,9 +38,9 @@ type FileList struct {
 
 // NewFileList will return the instance of `FileList`
 func NewFileList(root string) *FileList {
-	if len(root) == 0 {
-		return &FileList{}
-	}
+	// if len(root) == 0 {
+	// 	return &FileList{}
+	// }
 	fl := &FileList{
 		root:          root,
 		store:         make(map[string][]*File),
