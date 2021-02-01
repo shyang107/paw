@@ -20,46 +20,63 @@ var (
 // PrintDir will find files using codintion `ignore` func
 func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad string) (error, *FileList) {
 
-	var err error
+	var (
+		err     error
+		root    string
+		sortOpt *PDSortOption
+	)
 
 	// paw.Logger.WithField("root", opt.Root).Info()
 
-	// root := cleanPath(path)
-	// root, err := filepath.Abs(path)
-	root, err := filepath.Abs(opt.Root)
+	// setup root
+	root, err = filepath.Abs(opt.Root)
 	if err != nil {
-		paw.Logger.Fatal(err)
+		paw.Error.Println(err)
+		os.Exit(1)
 	}
 
-	pdOpt = opt
-	checkPrintDirOption(pdOpt)
+	// check opt
+	if opt == nil {
+		pdOpt = NewPrintDirOption()
+	} else {
+		pdOpt = opt
+	}
 
+	// check fields to view
 	checkFieldFlag(pdOpt)
 
-	sortOpt := checkSortOpt(pdOpt.SortOpt)
+	// check sortOpt
+	if pdOpt.SortOpt == nil {
+		sortOpt = &PDSortOption{
+			IsSort:  true,
+			SortWay: PDSortByName,
+		}
+	} else {
+		sortOpt = pdOpt.SortOpt
+	}
 
-	// err := checkAndPrintFile(w, root, pad)
-	// if err != nil {
-	// 	if err == errBreak {
-	// 		return nil, nil
-	// 	}
-	// 	return err, nil
-	// }
+	// check ignore function
+	if opt.Ignore == nil {
+		opt.Ignore = DefaultIgnoreFn
+	}
 
-	setIgnoreFn(pdOpt)
-
+	// get view option
 	pdview = pdOpt.OutOpt
 
+	// setup FileList
 	fl := setFileList(w, root, isGrouped, sortOpt)
 
 	if !fl.IsSort {
 		goto FIND
 	}
 
-	checkPDSortOption(fl, pdOpt, sortOpt)
+	// setup sort options of FileList
+	setupFLSortOption(fl, pdOpt, sortOpt)
 
 FIND:
+	// NPath > 0
 	if pdOpt.NPath() > 0 {
+		// one path or mutiple paths
 		sort.Sort(ByLowerString(pdOpt.Paths))
 		var (
 			dirs []string
@@ -110,7 +127,8 @@ FIND:
 				return err, nil
 			}
 		}
-	} else {
+	} else { // NPath == 0
+		// use root as default
 		fl.SetRoot(root)
 		fl.FindFiles(pdOpt.Depth, pdOpt.Ignore)
 		cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
@@ -254,7 +272,7 @@ func cehckAndFiltPrintDirFiltOpt(fl *FileList, filtOpt *PDFilterOption) {
 	}
 }
 
-func checkPDSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PDSortOption) {
+func setupFLSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PDSortOption) {
 
 	if opt.OutOpt&PTreeView == 0 ||
 		opt.OutOpt&PListTreeView == 0 {
@@ -318,11 +336,11 @@ func setFileList(w io.Writer, root string, isGrouped bool, sortOpt *PDSortOption
 	return fl
 }
 
-func setIgnoreFn(opt *PrintDirOption) {
-	if opt.Ignore == nil {
-		opt.Ignore = DefaultIgnoreFn
-	}
-}
+// func setIgnoreFn(opt *PrintDirOption) {
+// 	if opt.Ignore == nil {
+// 		opt.Ignore = DefaultIgnoreFn
+// 	}
+// }
 
 func checkFieldFlag(opt *PrintDirOption) {
 	if opt.FieldFlag&PFieldINode != 0 {
@@ -366,83 +384,83 @@ func checkFieldFlag(opt *PrintDirOption) {
 	}
 }
 
-func checkPrintDirOption(opt *PrintDirOption) {
-	if opt == nil {
-		opt = NewPrintDirOption()
-		// opt = &PrintDirOption{
-		// 	Depth:  0,
-		// 	OutOpt: PListView,
-		// 	// OutOpt: PListExtendView,
-		// 	// OutOpt: PTreeView,
-		// 	// OutOpt: PListTreeView,
-		// 	// OutOpt: PLevelView,
-		// 	// OutOpt: PTableView,
-		// 	// OutOpt: PClassifyView,
-		// 	FieldFlag: PFieldModified,
-		// 	Ignore:    DefaultIgnoreFn,
-		// }
-	}
-}
+// func checkPrintDirOption(opt *PrintDirOption) {
+// 	if opt == nil {
+// 		opt = NewPrintDirOption()
+// 		// opt = &PrintDirOption{
+// 		// 	Depth:  0,
+// 		// 	OutOpt: PListView,
+// 		// 	// OutOpt: PListExtendView,
+// 		// 	// OutOpt: PTreeView,
+// 		// 	// OutOpt: PListTreeView,
+// 		// 	// OutOpt: PLevelView,
+// 		// 	// OutOpt: PTableView,
+// 		// 	// OutOpt: PClassifyView,
+// 		// 	FieldFlag: PFieldModified,
+// 		// 	Ignore:    DefaultIgnoreFn,
+// 		// }
+// 	}
+// }
 
-func checkSortOpt(sortOpt *PDSortOption) *PDSortOption {
-	if sortOpt == nil {
-		return &PDSortOption{
-			IsSort:  true,
-			SortWay: PDSortByName,
-		}
-	}
-	return sortOpt
-}
+// func checkSortOpt(sortOpt *PDSortOption) *PDSortOption {
+// 	if sortOpt == nil {
+// 		return &PDSortOption{
+// 			IsSort:  true,
+// 			SortWay: PDSortByName,
+// 		}
+// 	}
+// 	return sortOpt
+// }
 
-var errBreak = errors.New("return nil")
+// var errBreak = errors.New("return nil")
 
-func checkAndPrintFile(w io.Writer, path string, pad string) error {
+// func checkAndPrintFile(w io.Writer, path string, pad string) error {
 
-	// paw.Logger.WithField("path", path).Info()
+// 	// paw.Logger.WithField("path", path).Info()
 
-	file, err := NewFile(path)
-	if err != nil {
-		return err
-	}
-	if !file.IsDir() {
-		fmt.Fprintf(w, "%sDirectory: %v \n", pad, GetColorizedDirName(file.Dir, ""))
-		git, _ := GetShortGitStatus(file.Dir)
-		fds := NewFieldSliceFrom(pfieldKeysDefualt, git)
-		fl := NewFileList(file.Dir)
-		fds.ModifyWidth(fl, sttyWidth-2)
-		fds.SetValues(file, git)
-		fmt.Fprintln(w, fds.ColorHeadsString())
-		// fmt.Fprint(w, rowWrapFileName(file, fds, pad, sttyWidth-2))
-		fds.PrintRow(w, pad)
-		return errBreak
-	}
-	return nil
-}
+// 	file, err := NewFile(path)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if !file.IsDir() {
+// 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, GetColorizedDirName(file.Dir, ""))
+// 		git, _ := GetShortGitStatus(file.Dir)
+// 		fds := NewFieldSliceFrom(pfieldKeysDefualt, git)
+// 		fl := NewFileList(file.Dir)
+// 		fds.ModifyWidth(fl, sttyWidth-2)
+// 		fds.SetValues(file, git)
+// 		fmt.Fprintln(w, fds.ColorHeadsString())
+// 		// fmt.Fprint(w, rowWrapFileName(file, fds, pad, sttyWidth-2))
+// 		fds.PrintRow(w, pad)
+// 		return errBreak
+// 	}
+// 	return nil
+// }
 
-func cleanPath(path string) string {
-	paw.Logger.WithField("path", path).Info()
+// func cleanPath(path string) string {
+// 	paw.Logger.WithField("path", path).Info()
 
-	tpath := path
-	// if strings.Contains(tpath, "~") {
-	// 	tpath = strings.ReplaceAll(tpath, "~", paw.GetHomeDir())
-	// }
-	// paw.Logger.WithField("~", tpath).Info()
-	// tpath = filepath.Clean(tpath)
-	// paw.Logger.WithField("clean", tpath).Info()
+// 	tpath := path
+// 	// if strings.Contains(tpath, "~") {
+// 	// 	tpath = strings.ReplaceAll(tpath, "~", paw.GetHomeDir())
+// 	// }
+// 	// paw.Logger.WithField("~", tpath).Info()
+// 	// tpath = filepath.Clean(tpath)
+// 	// paw.Logger.WithField("clean", tpath).Info()
 
-	tpath, err := filepath.Abs(tpath)
-	if err != nil {
-		paw.Logger.Error(err)
-		return tpath
-	}
-	// if !filepath.IsAbs(tpath) {
-	// 	tpath, err := filepath.Abs(tpath)
-	// 	if err != nil {
-	// 		paw.Logger.Error(err)
-	// 		return tpath
-	// 	}
-	// }
-	paw.Logger.WithField("abs", tpath).Info()
+// 	tpath, err := filepath.Abs(tpath)
+// 	if err != nil {
+// 		paw.Logger.Error(err)
+// 		return tpath
+// 	}
+// 	// if !filepath.IsAbs(tpath) {
+// 	// 	tpath, err := filepath.Abs(tpath)
+// 	// 	if err != nil {
+// 	// 		paw.Logger.Error(err)
+// 	// 		return tpath
+// 	// 	}
+// 	// }
+// 	paw.Logger.WithField("abs", tpath).Info()
 
-	return tpath
-}
+// 	return tpath
+// }
