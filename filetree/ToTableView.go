@@ -33,7 +33,8 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		git              = f.GetGitStatus()
 		dirs             = f.dirs  //f.Dirs()
 		fm               = f.store //f.Map()
-		wstty            = sttyWidth - 2 - paw.StringWidth(pad)
+		wpad             = paw.StringWidth(pad)
+		wstty            = sttyWidth - 2 - wpad
 		banner           = strings.Repeat("-", wstty)
 		widthOfName      = 75
 		// xsymb            = paw.XAttrSymbol

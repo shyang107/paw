@@ -423,7 +423,6 @@ func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
 		wdmeta := f.MetaHeadsStringWidth() + 1
 		fd.Width = wdstty - wdmeta
 	}
-
 }
 
 // // HeadWidths will return the int slice from Field.Width of FieldSlie
