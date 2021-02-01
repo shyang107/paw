@@ -187,10 +187,11 @@ func (f *FileList) NTotalDirsAndFile() (ndirs, nfiles int, size uint64) {
 				ndirs++
 			} else {
 				nfiles++
-				// size += file.Size
+				size += file.Size
 			}
 		}
 	}
+	f.totalSize = size
 	return ndirs, nfiles, f.totalSize
 }
 

@@ -404,7 +404,6 @@ func checkAndPrintFile(w io.Writer, path string, pad string) error {
 	if err != nil {
 		return err
 	}
-
 	if !file.IsDir() {
 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, GetColorizedDirName(file.Dir, ""))
 		git, _ := GetShortGitStatus(file.Dir)

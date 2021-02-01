@@ -84,7 +84,6 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 
 		for _, file := range fm[dir][1:] {
 			fds.SetValues(file, git)
-
 			cjstr := ""
 			if file.IsDir() {
 				ndirs++
