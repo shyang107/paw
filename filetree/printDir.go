@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/shyang107/paw"
@@ -59,23 +60,26 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 
 FIND:
 	if pdOpt.NPath() > 0 {
+		sort.Sort(ByLowerString(pdOpt.Paths))
 		var (
 			dirs []string
 			// files []string
 			files = pdOpt.Paths
 		)
-		for _, path := range pdOpt.Paths {
-			fi, err := os.Stat(path)
-			if err != nil {
-				paw.Logger.Error(err)
-				continue
+		if pdOpt.Depth != 0 {
+			for _, path := range pdOpt.Paths {
+				fi, err := os.Stat(path)
+				if err != nil {
+					paw.Logger.Error(err)
+					continue
+				}
+				if fi.IsDir() {
+					dirs = append(dirs, path)
+				}
+				// else {
+				// 	files = append(files, path)
+				// }
 			}
-			if fi.IsDir() {
-				dirs = append(dirs, path)
-			}
-			// else {
-			// 	files = append(files, path)
-			// }
 		}
 		// files
 		if len(files) > 0 {
