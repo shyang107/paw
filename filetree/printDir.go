@@ -6,8 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -77,7 +75,7 @@ FIND:
 	// NPath > 0
 	if pdOpt.NPath() > 0 {
 		// one path or mutiple paths
-		sort.Sort(ByLowerString(pdOpt.Paths))
+		// sort.Sort(ByLowerString(pdOpt.Paths))
 		var (
 			dirs []string
 			// files []string
@@ -109,10 +107,10 @@ FIND:
 				if err := pdOpt.Ignore(file, nil); err == SkipThis {
 					continue
 				}
-				fl.AddFile(file)
+				fl.addFilePD(file)
 			}
 			if fl.IsSort {
-				fl.Sort()
+				fl.Sort0()
 			}
 			cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
 			listFiles(fl, pad, pdOpt)
@@ -187,9 +185,9 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 
 		fds.SetValues(file, git)
 		fdName.Value = file.Path
-		cdir := cdirp.Sprint(file.Dir + "/")
-		cname := file.ColorName()
-		fdName.ValueC = cdir + cname
+		// cdir := cdirp.Sprint(file.Dir + "/")
+		// cname := file.ColorName()
+		fdName.ValueC = GetColorizedPath(file.Path, "") //cdir + cname
 		fds.PrintRow(w, "")
 
 		if isExtended && len(file.XAttributes) > 0 {
@@ -200,14 +198,7 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 	}
 	printBanner(w, "", "=", wdstty)
 
-	cnfiles := csnp.Sprint(len(files))
-	csize := GetColorizedSize(size)
-	summary := pad +
-		cdashp.Sprint("Accumulated ") +
-		cnfiles +
-		cdashp.Sprint(" files, total size ≈ ") +
-		csize + cdashp.Sprint(".")
-	fmt.Fprintln(w, summary)
+	fmt.Fprintln(w, f.TotalSummary())
 
 	str := paw.PaddingString(w.String(), pad)
 	fmt.Fprintln(f.Writer(), str)
@@ -277,48 +268,45 @@ func setupFLSortOption(fl *FileList, opt *PrintDirOption, sortOpt *PDSortOption)
 	if opt.OutOpt&PTreeView == 0 ||
 		opt.OutOpt&PListTreeView == 0 {
 		if sortOpt.IsSort {
-			switch sortOpt.SortWay {
-			case PDSortByMtime:
-				// paw.Info.Println("PDSortByMtime")
-				fl.SetFilesSorter(func(fi, fj *File) bool {
-					return fi.ModifiedTime().Before(fj.ModifiedTime())
-				})
-			case PDSortBySize:
-				// paw.Info.Println("PDSortBySize")
-				fl.SetFilesSorter(func(fi, fj *File) bool {
-					if fl.IsGrouped {
-						if fi.IsDir() && fj.IsDir() {
-							return strings.ToLower(fi.Path) < strings.ToLower(fj.Path)
-						}
-					}
-					return fi.Size < fj.Size
-				})
-			case PDSortByReverseName:
-				// paw.Info.Println("PDSortByReverseName")
-				fl.SetFilesSorter(func(fi, fj *File) bool {
-					return strings.ToLower(fi.Path) > strings.ToLower(fj.Path)
-				})
-			case PDSortByReverseMtime:
-				// paw.Info.Println("PDSortByReverseMtime")
-				fl.SetFilesSorter(func(fi, fj *File) bool {
-					return fi.ModifiedTime().After(fj.ModifiedTime())
-				})
-			case PDSortByReverseSize:
-				// paw.Info.Println("PDSortByReverseSize")
-				fl.SetFilesSorter(func(fi, fj *File) bool {
-					if fl.IsGrouped {
-						if fi.IsDir() && fj.IsDir() {
-							return strings.ToLower(fi.Path) > strings.ToLower(fj.Path)
-						}
-					}
-					return fi.Size > fj.Size
-				})
-			default: //case PDSortByName :
-				// paw.Info.Println("PDSortByName")
-				fl.SetFilesSorter(func(fi, fj *File) bool {
-					return strings.ToLower(fi.Path) < strings.ToLower(fj.Path)
-				})
+			if _, ok := sortByField[sortOpt.SortWay]; ok {
+				fl.SetFilesSorter(sortByField[sortOpt.SortWay])
+			} else {
+				fl.SetFilesSorter(sortByField[PDSortByName])
 			}
+			// 	switch sortOpt.SortWay {
+			// 	case PDSortByINode:
+			// 		fl.SetFilesSorter(byINode)
+			// 	case PDSortByReverseINode:
+			// 		fl.SetFilesSorter(byINodeR)
+			// 	case PDSortByLinks:
+			// 		fl.SetFilesSorter(byLinks)
+			// 	case PDSortByReverseLinks:
+			// 		fl.SetFilesSorter(byLinksR)
+			// 	case PDSortBySize:
+			// 		fl.SetFilesSorter(bySize)
+			// 	case PDSortByReverseSize:
+			// 		fl.SetFilesSorter(bySizeR)
+			// 	case PDSortByBlocks:
+			// 		fl.SetFilesSorter(byBlocks)
+			// 	case PDSortByReverseBlocks:
+			// 		fl.SetFilesSorter(byBlocksR)
+			// 	case PDSortByMTime:
+			// 		fl.SetFilesSorter(byMTime)
+			// 	case PDSortByReverseMTime:
+			// 		fl.SetFilesSorter(byMTimeR)
+			// 	case PDSortByCTime:
+			// 		fl.SetFilesSorter(byCTime)
+			// 	case PDSortByReverseCTime:
+			// 		fl.SetFilesSorter(byCTimeR)
+			// 	case PDSortByATime:
+			// 		fl.SetFilesSorter(byATime)
+			// 	case PDSortByReverseATime:
+			// 		fl.SetFilesSorter(byATimeR)
+			// 	case PDSortByReverseName:
+			// 		fl.SetFilesSorter(byNameR)
+			// 	default: //case PDSortByName :
+			// 		fl.SetFilesSorter(byName)
+			// 	}
 		}
 	}
 }

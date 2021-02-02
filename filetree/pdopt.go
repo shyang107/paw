@@ -109,6 +109,7 @@ const (
 //  increasing sort by lower name of path
 type PDSortOption struct {
 	IsSort  bool
+	Reverse bool
 	SortWay PDSortFlag
 }
 
@@ -117,15 +118,61 @@ type PDSortFlag int
 const (
 	PDSort PDSortFlag = 1 << iota
 	PDSortReverse
-	pdSortKeyName
-	pdSortKeyMTime
+	pdSortKeyINode
+	pdSortKeyLinks
 	pdSortKeySize
-	PDSortByName         = PDSort | pdSortKeyName
-	PDSortByMtime        = PDSort | pdSortKeyMTime
-	PDSortBySize         = PDSort | pdSortKeySize
-	PDSortByReverseName  = PDSortByName | PDSortReverse
-	PDSortByReverseMtime = PDSortByMtime | PDSortReverse
-	PDSortByReverseSize  = PDSortBySize | PDSortReverse
+	pdSortKeyBlocks
+	pdSortKeyMTime
+	pdSortKeyCTime
+	pdSortKeyATime
+	pdSortKeyName
+
+	PDSortByINode  = PDSort | pdSortKeyINode
+	PDSortByINodeR = PDSortByINode | PDSortReverse
+
+	PDSortByLinks  = PDSort | pdSortKeyLinks
+	PDSortByLinksR = PDSortByLinks | PDSortReverse
+
+	PDSortBySize  = PDSort | pdSortKeySize
+	PDSortBySizeR = PDSortBySize | PDSortReverse
+
+	PDSortByBlocks  = PDSort | pdSortKeyBlocks
+	PDSortByBlocksR = PDSortByBlocks | PDSortReverse
+
+	PDSortByMTime  = PDSort | pdSortKeyMTime
+	PDSortByMTimeR = PDSortByMTime | PDSortReverse
+
+	PDSortByCTime  = PDSort | pdSortKeyCTime
+	PDSortByCTimeR = PDSortByCTime | PDSortReverse
+
+	PDSortByATime  = PDSort | pdSortKeyATime
+	PDSortByATimeR = PDSortByATime | PDSortReverse
+
+	PDSortByName  = PDSort | pdSortKeyName
+	PDSortByNameR = PDSortByName | PDSortReverse
+)
+
+var (
+	// sortedFields = []string{"size", "modified", "accessed", "created", "name"}
+
+	sortByField = map[PDSortFlag]FilesBy{
+		PDSortByINode:   byINode,
+		PDSortByINodeR:  byINodeR,
+		PDSortByLinks:   byLinks,
+		PDSortByLinksR:  byLinksR,
+		PDSortBySize:    bySize,
+		PDSortBySizeR:   bySizeR,
+		PDSortByBlocks:  byBlocks,
+		PDSortByBlocksR: byBlocksR,
+		PDSortByMTime:   byMTime,
+		PDSortByMTimeR:  byMTimeR,
+		PDSortByATime:   byATime,
+		PDSortByATimeR:  byATimeR,
+		PDSortByCTime:   byCTime,
+		PDSortByCTimeR:  byCTimeR,
+		PDSortByName:    byName,
+		PDSortByNameR:   byNameR,
+	}
 )
 
 type PDFiltFlag int

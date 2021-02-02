@@ -32,21 +32,24 @@ func (f *FileList) ToListTreeExtendView(pad string) string {
 
 func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	var (
-		w      = new(strings.Builder)
-		fm     = f.store
-		git    = f.GetGitStatus()
-		fds    = NewFieldSliceFrom(pfieldKeys, git)
-		chead  = fds.ColorHeadsString()
-		wmeta  = fds.MetaHeadsStringWidth()
-		wdstty = sttyWidth - 2 - paw.StringWidth(pad)
-		head   = fmt.Sprintf("Root directory: %v, size ≈ %v", GetColorizedDirName(f.root, ""), f.ColorfulTotalByteSize())
+		buf      = f.StringBuilder()
+		w        = f.Writer()
+		fm       = f.store
+		git      = f.GetGitStatus()
+		fds      = NewFieldSliceFrom(pfieldKeys, git)
+		chead    = fds.ColorHeadsString()
+		wmeta    = fds.MetaHeadsStringWidth()
+		wdstty   = sttyWidth - 2 - paw.StringWidth(pad)
+		roothead = getColorizedRootHead("", f.root, f.TotalSize())
+		dfile    *File
 	)
 
-	// buf.Reset()
+	buf.Reset()
+
 	fds.ModifyWidth(f, wdstty)
 
-	fmt.Fprintln(w, head)
-	printBanner(w, "", "=", wdstty)
+	fmt.Fprintln(buf, roothead)
+	printBanner(buf, "", "=", wdstty)
 
 	files := fm[RootMark]
 	nfiles := len(files)
@@ -61,13 +64,13 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	case PListTreeView:
 		chead = fds.ColorHeadsString()
 		wmeta = fds.HeadsStringWidth()
-		fmt.Fprintln(w, chead)
+		fmt.Fprintln(buf, chead)
 		fds.SetValues(file, git)
 		meta = fds.ColorMetaValuesString()
-		fmt.Fprintln(w, meta, cdinf+file.ColorShortDirName(f.Root()))
+		fmt.Fprintln(buf, meta, cdinf+file.ColorShortDirName(f.Root()))
 	case PTreeView:
 		wmeta = 0
-		fmt.Fprintln(w, cdinf+file.ColorShortDirName(f.Root()))
+		fmt.Fprintln(buf, cdinf+file.ColorShortDirName(f.Root()))
 	}
 
 	// print files in the root dir
@@ -83,21 +86,26 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 		}
 
 		fds.SetValues(file, git)
-		printLTFile(w, level, levelsEnded, edge, f, file, fds, isExtended, wmeta, wdstty)
+		if file.IsDir() {
+			dfile = f.Map()[file.subDir()][0]
+			printLTFile(buf, level, levelsEnded, edge, f, dfile, fds, isExtended, wmeta, wdstty)
 
-		if file.IsDir() && len(fm[file.Dir]) > 1 {
-			printLTDir(w, level+1, levelsEnded, edge, f, file, git, fds, isExtended, wmeta, wdstty)
+			if len(fm[file.Dir]) > 1 {
+				printLTDir(buf, level+1, levelsEnded, edge, f, dfile, git, fds, isExtended, wmeta, wdstty)
+			}
+		} else {
+			printLTFile(buf, level, levelsEnded, edge, f, file, fds, isExtended, wmeta, wdstty)
 		}
 	}
 
 	// print end message
-	printBanner(w, "", "=", wdstty)
+	printBanner(buf, "", "=", wdstty)
 
-	fmt.Fprintln(w, f.TotalSummary())
+	fmt.Fprintln(buf, f.TotalSummary())
 
-	s := paw.PaddingString(w.String(), pad)
+	s := paw.PaddingString(buf.String(), pad)
 	s = strings.TrimSpace(s)
-	fmt.Fprintln(f.Writer(), s)
+	fmt.Fprintln(w, s)
 
 	return s // buf.String()
 }
@@ -105,8 +113,13 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	edge EdgeType, fl *FileList, file *File, fds *FieldSlice, isExtended bool, wmeta, wdstty int) {
 
+	// paw.Logger.WithFields(logrus.Fields{
+	// 	"dir":  file.Dir,
+	// 	"name": file.BaseNameToLink(),
+	// }).Info()
+
 	var (
-		sb      = new(strings.Builder)
+		// sb      = new(strings.Builder)
 		padMeta = ""
 		meta    = ""
 	)
@@ -117,7 +130,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 		wmeta = fds.MetaHeadsStringWidth()
 		padMeta = paw.Spaces(wmeta + 1)
 		// 1. print all fields except Name
-		fmt.Fprintf(sb, "%s ", meta)
+		fmt.Fprintf(wr, "%s ", meta)
 	} else {
 		padMeta = paw.Spaces(wmeta)
 	}
@@ -125,30 +138,30 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 	aMeta := ""
 	for i := 0; i < level; i++ {
 		if isEnded(levelsEnded, i) {
-			fmt.Fprintf(sb, "%s", paw.Spaces(IndentSize+1))
+			fmt.Fprintf(wr, "%s", paw.Spaces(IndentSize+1))
 			aMeta += paw.Spaces(IndentSize + 1)
 			wmeta += IndentSize + 1
 			continue
 		}
 		cedge := cdashp.Sprint(EdgeTypeLink)
-		fmt.Fprintf(sb, "%s%s", cedge, SpaceIndentSize)
+		fmt.Fprintf(wr, "%s%s", cedge, SpaceIndentSize)
 		aMeta += fmt.Sprintf("%s%s", cedge, SpaceIndentSize)
 		wmeta += edgeWidth[EdgeTypeLink] + IndentSize
 	}
 	padMeta += aMeta
 
 	// 2. print out Name field
-	fmt.Fprint(sb, wrapFileString(fl, file, edge, padMeta, wmeta, wdstty))
+	fmt.Fprint(wr, wrapLTFileString(fl, file, edge, padMeta, wmeta, wdstty))
 
 	if isExtended && len(file.XAttributes) > 0 {
 		// 3. print out extended attributes
-		fmt.Fprint(sb, xattrLTString(file, edge, padMeta, wmeta, wdstty))
+		fmt.Fprint(wr, xattrLTString(file, edge, padMeta, wmeta, wdstty))
 	}
 
-	fmt.Fprint(wr, sb.String())
+	// fmt.Fprint(wr, sb.String())
 }
 
-func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wmeta, wdstty int) string {
+func wrapLTFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wmeta, wdstty int) string {
 	var (
 		sb           = new(strings.Builder)
 		cdinf, ndinf = "", 0
@@ -157,12 +170,12 @@ func wrapFileString(fl *FileList, file *File, edge EdgeType, padMeta string, wme
 		width        = wdstty - wmeta - edgeWidth[edge] - 2
 		spmeta       = paw.Spaces(wmeta)
 	)
-	if file.IsDir() && fl.depth == -1 {
+	if file.IsDir() {
 		cdinf, ndinf = fl.DirInfo(file)
-		if ndinf > 0 {
-			ndinf++
-		}
+		ndinf++
 	}
+	// fmt.Fprintln(sb, "cdinf =", cdinf, "ndinf =", ndinf)
+
 	if ndinf+wname > width {
 		cedge := cdashp.Sprint(edge)
 		nb := len(paw.Truncate(name, width-ndinf, ""))
@@ -249,13 +262,17 @@ func printLTDir(wr io.Writer, level int, levelsEnded []int,
 	edge EdgeType, fl *FileList, file *File, git GitStatus, fds *FieldSlice, isExtended bool, wmeta, wdstty int) {
 
 	var (
+		subDir = file.Dir //+ PathSeparator + file.BaseName
 		fm     = fl.Map()
-		files  = fm[file.Dir]
+		// files  = fm[file.Dir]
+		files  = fm[subDir]
 		nfiles = len(files)
+		dfile  *File
 	)
 
 	for i := 1; i < nfiles; i++ {
 		file = files[i]
+		// fmt.Fprintln(wr, "dir =", file.Dir, "name =", file.BaseName)
 		edge := EdgeTypeMid
 		if i == nfiles-1 {
 			edge = EdgeTypeEnd
@@ -263,10 +280,16 @@ func printLTDir(wr io.Writer, level int, levelsEnded []int,
 		}
 
 		fds.SetValues(file, git)
-		printLTFile(wr, level, levelsEnded, edge, fl, file, fds, isExtended, wmeta, wdstty)
+		if file.IsDir() {
+			dfile = fl.Map()[file.subDir()][0]
+			printLTFile(wr, level, levelsEnded, edge, fl, dfile, fds, isExtended, wmeta, wdstty)
 
-		if file.IsDir() && len(fm[file.Dir]) > 1 {
-			printLTDir(wr, level+1, levelsEnded, edge, fl, file, git, fds, isExtended, wmeta, wdstty)
+			if len(fm[file.Dir]) > 1 {
+				printLTDir(wr, level+1, levelsEnded, edge, fl, dfile, git, fds, isExtended, wmeta, wdstty)
+			}
+		} else {
+			printLTFile(wr, level, levelsEnded, edge, fl, file, fds, isExtended, wmeta, wdstty)
 		}
+
 	}
 }

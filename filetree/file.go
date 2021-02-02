@@ -68,21 +68,7 @@ func NewFile(path string) (*File, error) {
 	ext := filepath.Ext(path)
 	file := strings.TrimSuffix(basename, ext)
 	size := uint64(stat.Size())
-
 	xattrs, _ := getXattr(path)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// paw.Logger.WithFields(logrus.Fields{
-	// 	"path":     path,
-	// 	"dir":      dir,
-	// 	"file":     file,
-	// 	"ext":      ext,
-	// 	"BaseName": basename,
-	// 	"size":     size,
-	// 	// "stat":     stat,
-	// }).Info("file")
 
 	return &File{
 		Path:        path,
@@ -129,16 +115,11 @@ func NewFileRelTo(path, root string) (*File, error) {
 	if len(root) == 0 {
 		return f, nil
 	}
-	var dir string
 	if path == root {
-		dir = RootMark
+		f.Dir = RootMark
 	} else {
-		dir = filepath.Dir(path)
-		if len(root) > 0 {
-			dir = strings.Replace(dir, root, RootMark, 1)
-		}
+		f.Dir = PathRel(f.Dir, root)
 	}
-	f.Dir = dir
 	return f, nil
 }
 
@@ -173,7 +154,7 @@ func (f *File) LinkPath() string {
 
 // ColorLinkPath return colorized far-end path string of a symbolic link.
 func (f *File) ColorLinkPath() string {
-	return GetColorizedDirName(f.LinkPath(), "")
+	return GetColorizedPath(f.LinkPath(), "")
 }
 
 // BaseNameToLink return colorized name & symlink
@@ -204,7 +185,7 @@ func (f *File) DirSlice() []string {
 
 // ColorDirName will return a colorful string of {{dir of Path}}+{{name of path }} for human-reading like as exa
 func (f *File) ColorDirName() string {
-	return GetColorizedDirName(f.Path, "")
+	return GetColorizedPath(f.Path, "")
 }
 
 // ColorShortDirName will return a colorful string of {{dir of Path}}+{{name of path }} (replace root with '.') for human-reading like as exa
@@ -212,7 +193,7 @@ func (f *File) ColorShortDirName(root string) string {
 	if f.Path == root {
 		return cdip.Sprint(".")
 	}
-	return GetColorizedDirName(f.Path, root)
+	return GetColorizedPath(f.Path, root)
 }
 
 // ColorWrapDirName will return a colorful wrapped string according to width adn seprating with '\n'. If width <= 0, use sttyWidth
@@ -603,6 +584,13 @@ func (f *File) ColorMeta(git GitStatus) (string, int) {
 	fds := NewFieldSliceFrom(pfieldKeys, git)
 	fds.SetValues(f, git)
 	return fds.ColorMetaValuesString(), fds.MetaHeadsStringWidth()
+}
+
+func (f *File) subDir() string {
+	if f.IsDir() {
+		return f.Dir + "/" + f.BaseName
+	}
+	return f.Dir
 }
 
 // func getMeta(file *File, git GitStatus) (string, int) {

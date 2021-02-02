@@ -20,24 +20,25 @@ func (f *FileList) ToClassifyView(pad string) string {
 		dirs     = f.Dirs()
 		fm       = f.Map()
 		wdstty   = sttyWidth - 2 - paw.StringWidth(pad)
-		rootName = GetColorizedDirName(f.root, "")
-		ctdsize  = f.ColorfulTotalByteSize()
-		head     = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, rootName, ctdsize)
+		roothead = getColorizedRootHead("", f.root, f.TotalSize())
 		nitems   = f.NDirs() + f.NFiles()
 	)
 	buf.Reset()
 
 	nsitems := 0
+
 	for i, dir := range dirs {
 		if f.depth != 0 {
 			if dir == RootMark {
-				fmt.Fprintln(w, head)
+				fmt.Fprintln(w, roothead)
 				printBanner(w, "", "=", wdstty)
 			} else {
-				fmt.Fprint(w, fm[dir][0].ColorWrapDirName("", wdstty))
+				dfile := fm[dir][0]
+				cdinf, _ := f.DirInfo(dfile)
+				fmt.Fprint(w, dfile.ColorWrapDirName(cdinf+" ", wdstty))
 			}
 		} else {
-			fmt.Fprintln(w, head)
+			fmt.Fprintln(w, roothead)
 			printBanner(w, "", "=", wdstty)
 		}
 

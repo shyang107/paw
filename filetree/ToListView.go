@@ -40,14 +40,14 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		nItems             = fNDirs + fNFiles
 		ndirs, nfiles      = 0, 0
 		wdstty             = sttyWidth - 2 - paw.StringWidth(pad)
-		head               = fmt.Sprintf("Root directory: %v, size ≈ %v", GetColorizedDirName(f.root, ""), f.ColorfulTotalByteSize())
+		roothead           = getColorizedRootHead("", f.root, f.TotalSize())
 	)
 
 	w.Reset()
 
 	fds.ModifyWidth(f, wdstty)
 
-	fmt.Fprintln(w, head)
+	fmt.Fprintln(w, roothead)
 
 	// paw.Logger.WithFields(logrus.Fields{
 	// 	"fNDirs":  fNDirs,

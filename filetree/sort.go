@@ -5,6 +5,73 @@ import (
 	"strings"
 )
 
+var (
+	byINode FilesBy = func(fi, fj *File) bool {
+		return fi.INode() < fj.INode()
+	}
+	byINodeR FilesBy = func(fi, fj *File) bool {
+		return byINode(fj, fi)
+	}
+
+	byLinks FilesBy = func(fi, fj *File) bool {
+		return fi.NLinks() < fj.NLinks()
+	}
+	byLinksR FilesBy = func(fi, fj *File) bool {
+		return byLinks(fj, fi)
+	}
+
+	byPath FilesBy = func(fi, fj *File) bool {
+		return strings.ToLower(fi.Path) < strings.ToLower(fj.Path)
+	}
+
+	bySize FilesBy = func(fi, fj *File) bool {
+		if fi.IsDir() && fj.IsDir() {
+			return byPath(fi, fj)
+		}
+		return fi.Size < fj.Size
+	}
+	bySizeR FilesBy = func(fi, fj *File) bool {
+		return bySize(fj, fi)
+	}
+
+	byBlocks FilesBy = func(fi, fj *File) bool {
+		if fi.IsDir() && fj.IsDir() {
+			return byPath(fi, fj)
+		}
+		return fi.Blocks() < fj.Blocks()
+	}
+	byBlocksR FilesBy = func(fi, fj *File) bool {
+		return byBlocks(fj, fi)
+	}
+
+	byMTime FilesBy = func(fi, fj *File) bool {
+		return fi.ModifiedTime().Before(fj.ModifiedTime())
+	}
+	byMTimeR FilesBy = func(fi, fj *File) bool {
+		return byMTime(fj, fi)
+	}
+
+	byATime FilesBy = func(fi, fj *File) bool {
+		return fi.AccessedTime().Before(fj.AccessedTime())
+	}
+	byATimeR FilesBy = func(fi, fj *File) bool {
+		return byATime(fj, fi)
+	}
+	byCTime FilesBy = func(fi, fj *File) bool {
+		return fi.CreatedTime().Before(fj.CreatedTime())
+	}
+	byCTimeR FilesBy = func(fi, fj *File) bool {
+		return byCTime(fj, fi)
+	}
+
+	byName FilesBy = func(fi, fj *File) bool {
+		return strings.ToLower(fi.BaseName) < strings.ToLower(fj.BaseName)
+	}
+	byNameR FilesBy = func(fi, fj *File) bool {
+		return byName(fj, fi)
+	}
+)
+
 // FilesBy is the type of a "less" function that defines the ordering of its File arguments.
 //
 // Example:

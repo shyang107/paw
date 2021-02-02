@@ -80,34 +80,59 @@ func isEnded(levelsEnded []int, level int) bool {
 	return false
 }
 
-// GetColorizedDirName will return a colorful string of {{ dir }}/{{ name }}
-func GetColorizedDirName(path string, root string) string {
+// // GetColorizedDirName will return a colorful string of {{ dir }}/{{ name }}
+// func GetColorizedDirName(path string, root string) string {
+// 	return GetColorizedPath(path, root)
+
+// 	if path == PathSeparator {
+// 		return cdip.Sprint(path)
+// 	}
+
+// 	file, err := NewFile(path)
+// 	if err != nil {
+// 		dir, name := filepath.Split(path)
+// 		if len(root) > 0 {
+// 			dir = strings.Replace(dir, root, RootMark, 1)
+// 		}
+// 		name = cdirp.Sprint(dir) + cdip.Sprint(name)
+// 		return name
+// 	}
+// 	name := file.ColorBaseName()
+// 	if file.IsDir() {
+// 		dir, _ := filepath.Split(file.Path)
+// 		if len(root) > 0 {
+// 			// dir = strings.TrimPrefix(dir, root)
+// 			dir = strings.Replace(dir, root, RootMark, 1)
+// 		}
+// 		name = cdirp.Sprint(dir) + name
+// 	}
+// 	if file.IsLink() {
+// 		name += cdashp.Sprint(" -> ") + file.ColorLinkPath()
+// 	}
+// 	return name
+// }
+
+// GetColorizedPath will return a colorful string of {{ dir }}/{{ name }}
+func GetColorizedPath(path string, root string) string {
 	if path == PathSeparator {
 		return cdip.Sprint(path)
 	}
 
-	file, err := NewFile(path)
+	file, err := NewFileRelTo(path, root)
 	if err != nil {
 		dir, name := filepath.Split(path)
-		if len(root) > 0 {
-			dir = strings.Replace(dir, root, RootMark, 1)
-		}
-		name = cdirp.Sprint(dir) + lsdip.Sprint(name)
-		return name
+		dir = PathRel(dir, root)
+		return cdirp.Sprint(dir) + cfip.Sprint(name)
 	}
-	name := file.ColorBaseName()
-	if file.IsDir() {
-		dir, _ := filepath.Split(file.Path)
-		if len(root) > 0 {
-			// dir = strings.TrimPrefix(dir, root)
-			dir = strings.Replace(dir, root, RootMark, 1)
-		}
-		name = cdirp.Sprint(dir) + name
-	}
-	if file.IsLink() {
-		name += cdashp.Sprint(" -> ") + file.ColorLinkPath()
-	}
-	return name
+
+	cdir := cdirp.Sprint(file.Dir)
+	cname := file.ColorBaseNameToLink()
+	return cdir + "/" + cname
+}
+
+func getColorizedRootHead(pad, root string, size uint64) string {
+	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, GetColorizedPath(root, ""), GetColorizedSize(size))
+	return head
 }
 
 // func getDirAndName(path string, root string) (dir, name string) {
@@ -133,18 +158,17 @@ func GetColorizedDirName(path string, root string) string {
 // }
 
 func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
-	nd, nf := 0, 0
-	if file.IsDir() {
-		files := fl.Map()[file.Dir]
-		for _, f := range files {
-			if f.IsDir() {
-				nd++
-			} else {
-				nf++
-			}
-		}
-	} else {
+	if !file.IsDir() {
 		return "", 0
+	}
+	nd, nf := 0, 0
+	files := fl.Map()[file.Dir]
+	for _, f := range files {
+		if f.IsDir() {
+			nd++
+		} else {
+			nf++
+		}
 	}
 	di := fmt.Sprintf("%v dirs", nd-1)
 	fi := fmt.Sprintf("%v files", nf)
@@ -756,6 +780,14 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 		}
 	}
 	return sb.String()
+}
+
+func PathRel(dir, root string) (rdir string) {
+	if !strings.HasPrefix(dir, root) {
+		return dir
+	}
+	rdir = strings.Replace(dir, root, RootMark, 1)
+	return rdir
 }
 
 // func getMaxFileSizeWidth(files []*File) int {

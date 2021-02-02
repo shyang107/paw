@@ -284,6 +284,39 @@ func (f *FileList) AddFile(file *File) {
 	if file.IsFile() {
 		f.totalSize += file.Size
 	}
+	if file.IsDir() && file.Path != f.root {
+		dir = file.Dir + "/" + file.BaseName
+		if _, ok := f.store[dir]; !ok {
+			f.store[dir] = []*File{}
+			f.dirs = append(f.dirs, dir)
+		}
+		dfile, _ := NewFileRelTo(file.Path, f.root)
+		dfile.Dir = dir
+		f.store[dir] = append(f.store[dir], dfile)
+	}
+}
+
+func (f *FileList) addFilePD(file *File) {
+	var dir = file.Dir
+	if _, ok := f.store[dir]; !ok {
+		f.store[dir] = []*File{}
+		f.dirs = append(f.dirs, dir)
+		// f.totalSize += file.Size
+	}
+	f.store[dir] = append(f.store[dir], file)
+	if file.IsFile() {
+		f.totalSize += file.Size
+	}
+	// if file.IsDir() && file.Path != f.root {
+	// 	dir = file.Dir + "/" + file.BaseName
+	// 	if _, ok := f.store[dir]; !ok {
+	// 		f.store[dir] = []*File{}
+	// 		f.dirs = append(f.dirs, dir)
+	// 	}
+	// 	dfile, _ := NewFileRelTo(file.Path, f.root)
+	// 	dfile.Dir = dir
+	// 	f.store[dir] = append(f.store[dir], dfile)
+	// }
 }
 
 // func (f *FileList) AddFile(file *File) {
@@ -401,22 +434,11 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			}
 
 			f.AddFile(file)
-			// paw.Logger.WithFields(logrus.Fields{
-			// 	"path": path,
-			// 	"name": name,
-			// }).Info()
 		}
-		// for i, dir := range f.Dirs() {
-		// 	fmt.Println("i =", i, "dir =", dir)
-		// 	for j, file := range f.Map()[dir] {
-		// 		fmt.Println("\tj =", j, "dir =", file.Dir, "name =", file.BaseName)
-		// 	}
-		// }
-		// spew.Dump(f.Dirs())
-		// spew.Dump(f.Map())
 	default: //walk through all directories of {root directory}
 		err := godirwalk.Walk(f.root, &godirwalk.Options{
 			Callback: func(path string, de *godirwalk.Dirent) error {
+
 				file, err := NewFileRelTo(path, f.root)
 				if err != nil {
 					return err
@@ -455,14 +477,16 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 }
 
 var (
-	DefaultFilesBy FilesBy = func(fi *File, fj *File) bool {
-		if fi.IsDir() && fj.IsFile() {
-			return true
-		} else if fi.IsFile() && fj.IsDir() {
-			return false
-		}
-		return strings.ToLower(fi.Path) < strings.ToLower(fj.Path)
-	}
+	DefaultFilesBy FilesBy = byName
+
+	// DefaultFilesBy FilesBy = func(fi *File, fj *File) bool {
+	// 	if fi.IsDir() && fj.IsFile() {
+	// 		return true
+	// 	} else if fi.IsFile() && fj.IsDir() {
+	// 		return false
+	// 	}
+	// 	return strings.ToLower(fi.Path) < strings.ToLower(fj.Path)
+	// }
 
 	DefaultDirsBy DirsBy = func(di string, dj string) bool {
 		return strings.ToLower(di) < strings.ToLower(dj)
@@ -520,6 +544,87 @@ func (f *FileList) SortBy(dirsBy DirsBy, filesBy FilesBy) {
 						sfiles := []*File{}
 						sdirs := []*File{}
 						for _, v := range f.store[dir][1:] {
+							if v.IsDir() {
+								sdirs = append(sdirs, v)
+							} else {
+								sfiles = append(sfiles, v)
+							}
+						}
+						f.filesBy.Sort(sdirs)
+						f.filesBy.Sort(sfiles)
+						copy(f.store[dir][1:], sdirs)
+						copy(f.store[dir][len(sdirs)+1:], sfiles)
+					}
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	return
+	// for _, dir := range f.dirs {
+	// 	if len(f.store[dir]) > 1 {
+	// 		if !f.IsGrouped {
+	// 			f.filesBy.Sort(f.store[dir][1:])
+	// 		} else {
+	// 			sfiles := []*File{}
+	// 			sdirs := []*File{}
+	// 			for _, v := range f.store[dir][1:] {
+	// 				if v.IsDir() {
+	// 					sdirs = append(sdirs, v)
+	// 				} else {
+	// 					sfiles = append(sfiles, v)
+	// 				}
+	// 			}
+	// 			f.filesBy.Sort(sdirs)
+	// 			f.filesBy.Sort(sfiles)
+	// 			copy(f.store[dir][1:], sdirs)
+	// 			copy(f.store[dir][len(sdirs)+1:], sfiles)
+	// 		}
+	// 	}
+	// }
+}
+
+// Sort0 will sort FileList by sorter of dirsBy and filesBy. (for FileList.Map()[dir][0:])
+//
+// Default:
+// 	Dirs: ToLower(a[i]) < ToLower(a[j])
+// 	Map[dir][]*file: ToLower(a[i].Path) < ToLower(a[j].Path)
+func (f *FileList) Sort0() {
+	f.SortBy0(f.dirsBy, f.filesBy)
+}
+
+// SortBy0 will sort FileList using sorters `dirsBy` and `filesBy`. (for FileList.Map()[dir][0:] )
+func (f *FileList) SortBy0(dirsBy DirsBy, filesBy FilesBy) {
+	f.SetDirsSorter(dirsBy)
+	f.SetFilesSorter(filesBy)
+	if dirsBy == nil {
+		f.SetDirsSorter(DefaultDirsBy)
+	}
+	if filesBy == nil {
+		f.SetFilesSorter(DefaultFilesBy)
+	}
+	f.dirsBy.Sort(f.dirs)
+
+	wg := new(sync.WaitGroup)
+	nCPU := runtime.NumCPU()
+	nDirs := len(f.dirs)
+	// paw.Info.Println("nCPU:", nCPU, "nDirs:", nDirs)
+	for i := 0; i < nCPU; i++ {
+		from := i * nDirs / nCPU
+		to := (i + 1) * nDirs / nCPU
+		wg.Add(1)
+		// go sortParts(f, from, to, wg)
+		go func() {
+			defer wg.Done()
+			for j := from; j < to; j++ {
+				dir := f.dirs[j]
+				if len(f.store[dir]) > 1 {
+					if !f.IsGrouped {
+						f.filesBy.Sort(f.store[dir][:])
+					} else {
+						sfiles := []*File{}
+						sdirs := []*File{}
+						for _, v := range f.store[dir][:] {
 							if v.IsDir() {
 								sdirs = append(sdirs, v)
 							} else {

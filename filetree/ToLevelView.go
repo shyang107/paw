@@ -35,7 +35,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		wdjdx              = paw.MaxInts(wdidx, len(fmt.Sprint(fNFiles)))
 		wNo                = paw.MaxInt(wdidx, wdjdx) + 1
 		wdstty             = sttyWidth - 2 - paw.StringWidth(pad)
-		head               = fmt.Sprintf("Root directory: %v, size ≈ %v", GetColorizedDirName(f.root, ""), f.ColorfulTotalByteSize())
+		roothead           = getColorizedRootHead("", f.root, f.TotalSize())
 		fds                = NewFieldSliceFrom(pfieldKeys, git)
 	)
 
@@ -53,7 +53,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	fds.Insert(0, fdNo)
 	fds.ModifyWidth(f, wdstty)
 
-	fmt.Fprintln(w, head)
+	fmt.Fprintln(w, roothead)
 	printBanner(w, "", "=", wdstty)
 
 	if fNDirs == 0 && fNFiles == 0 {

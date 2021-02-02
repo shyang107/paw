@@ -62,13 +62,15 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			ValueColor: cdashp,
 		}
 
-		spNo = paw.Spaces(fdNo.Width + 1)
-		head = fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, GetColorizedDirName(f.root, ""), GetColorizedSize(f.totalSize))
+		spNo     = paw.Spaces(fdNo.Width + 1)
+		roothead = getColorizedRootHead(pad, f.root, f.TotalSize())
 	)
 
 	buf.Reset()
 
 	fds.Insert(0, fdNo)
+	fds.ModifyWidth(f, wstty)
+	fdName := fds.Get(PFieldName)
 
 	tf := &paw.TableFormat{
 		Fields:            fds.Heads(false),
@@ -80,10 +82,6 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		XAttributeSymbol:  paw.XAttrSymbol,
 		XAttributeSymbol2: paw.XAttrSymbol2,
 	}
-
-	fds.ModifyWidth(f, wstty)
-
-	fdName := fds.Get(PFieldName)
 
 	wdmeta := fds.MetaHeadsStringWidth()
 	if wdmeta > wstty-10 {
@@ -97,7 +95,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	tf.Prepare(w)
 	// tf.SetWrapFields()
 
-	tf.SetBeforeMessage(head)
+	tf.SetBeforeMessage(roothead)
 
 	tf.PrintSart()
 
