@@ -3,6 +3,7 @@ package paw
 import (
 	"fmt"
 	"os"
+
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -85,7 +86,6 @@ var (
 		"in":    {38, 5, 213},    // inode
 		"lk":    {38, 5, 209, 1}, // links
 		"bk":    {38, 5, 189},    // blocks
-
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file
@@ -685,6 +685,61 @@ var (
 		regexp.MustCompile(`zx[0-9]{0,2}$`): {38, 5, 239},
 		regexp.MustCompile(`z[0-9]{0,2}$`):  {38, 5, 239},
 	}
+
+	// Chdp is default color use for head
+	Chdp = NewEXAColor("hd")
+	// Cdirp is default color use for dir part of path
+	Cdirp = NewEXAColor("dir")
+	// Cdip is default color use for directory
+	Cdip = NewEXAColor("di") //
+	// Cfip is default color use for file
+	Cfip = NewEXAColor("fi")
+	// CNop is default color use for serial number
+	CNop = NewEXAColor("-") //
+	// Cinp is default color use for inode field
+	Cinp = NewEXAColor("in")
+	// Cpmp is default color use for permission field
+	Cpmp = NewEXAColor("uw")
+	// Csnp is default color use for number of size
+	Csnp = NewEXAColor("sn")
+	// Csup is default color use for unit of size
+	Csup = NewEXAColor("sn")
+	// Cuup is default color use for user field
+	Cuup = NewEXAColor("uu")
+	// Cgup is default color use for group field
+	Cgup = NewEXAColor("gu")
+	// Cunp is default color use for user field, but user is not you
+	Cunp = NewEXAColor("un")
+	// Cgnp is default color use for group field, but group without you
+	Cgnp = NewEXAColor("gn")
+	// Clkp is default color use for hard link field
+	Clkp = NewEXAColor("lk")
+	// Cbkp is default color use for blocks field
+	Cbkp = NewEXAColor("bk")
+	// Cdap is default color use for date field
+	Cdap = NewEXAColor("da")
+	// Cgitp is default color use for git field
+	Cgitp = NewEXAColor("gm")
+	// Cxap is default color use for extended attributes
+	Cxap = NewEXAColor("xattr")
+	// Cxbp is default color use for symbole of extended attributes
+	Cxbp = NewEXAColor("xsymb")
+	// Cdashp is default color use for dash
+	Cdashp = NewEXAColor("-")
+	// Cnop is default color use for no this file kind
+	Cnop = NewEXAColor("no")
+	// Cbdp is default color use for device
+	Cbdp = NewLSColor("bd")
+	// Cbdp is default color use for chardevice
+	Ccdp = NewLSColor("cd")
+	// Cpip is default color use for named pipe (FIFO)
+	Cpip = NewLSColor("pi")
+	// Csop is default color use for socket
+	Csop = NewLSColor("so")
+	// Clnp is default color use for symlink
+	Clnp = NewEXAColor("ln")
+	// Cexp is default color use for execution file (permission contains 'x')
+	Cexp = NewLSColor("ex")
 )
 
 func init() {

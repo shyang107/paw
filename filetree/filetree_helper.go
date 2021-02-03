@@ -40,28 +40,33 @@ var (
 	now                   = time.Now()
 	thisYear              = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local)
 	SpaceIndentSize       = paw.Spaces(IndentSize)
-	chdp                  = paw.NewEXAColor("hd")    // head
-	cdirp                 = paw.NewEXAColor("dir")   // pre-dir part of path
-	lsdip                 = paw.NewLSColor("di")     // directory
-	cdip                  = paw.NewEXAColor("di")    // directory
-	cfip                  = paw.NewEXAColor("fi")    // file
-	cNop                  = paw.NewEXAColor("-")     // serial number
-	cinp                  = paw.NewEXAColor("in")    // inode
-	cpmp                  = paw.NewEXAColor("uw")    // permission
-	csnp                  = paw.NewEXAColor("sn")    // size number
-	csup                  = paw.NewEXAColor("sn")    // size unit
-	cuup                  = paw.NewEXAColor("uu")    // user
-	cgup                  = paw.NewEXAColor("gu")    // group
-	cunp                  = paw.NewEXAColor("un")    // user is not you
-	cgnp                  = paw.NewEXAColor("gn")    // group without you
-	clkp                  = paw.NewEXAColor("lk")    // symlink
-	cbkp                  = paw.NewEXAColor("bk")    // blocks
-	cdap                  = paw.NewEXAColor("da")    // date
-	cgitp                 = paw.NewEXAColor("gm")    // git
-	cxap                  = paw.NewEXAColor("xattr") // extended attributes
-	cxbp                  = paw.NewEXAColor("xsymb") // extended attributes
-	cdashp                = paw.NewEXAColor("-")
-	cnop                  = paw.NewEXAColor("no") // no this file kind
+	chdp                  = paw.Chdp  // head
+	cdirp                 = paw.Cdirp // pre-dir part of path
+	cdip                  = paw.Cdip  // directory
+	cfip                  = paw.Cfip  // file
+	cNop                  = paw.CNop  // serial number
+	cinp                  = paw.Cinp  // inode
+	cpmp                  = paw.Cpmp  // permission
+	csnp                  = paw.Csnp  // size number
+	csup                  = paw.Csup  // size unit
+	cuup                  = paw.Cuup  // user
+	cgup                  = paw.Cgup  // group
+	cunp                  = paw.Cunp  // user is not you
+	cgnp                  = paw.Cgnp  // group without you
+	clkp                  = paw.Clkp  // symlink
+	cbkp                  = paw.Cbkp  // blocks
+	cdap                  = paw.Cdap  // date
+	cgitp                 = paw.Cgitp // git
+	cxap                  = paw.Cxap  // extended attributes
+	cxbp                  = paw.Cxbp  // extended attributes
+	cdashp                = paw.Cdashp
+	cnop                  = paw.CNop // no this file kind
+	cbdp                  = paw.Cbdp // device
+	ccdp                  = paw.Ccdp // CharDevice
+	cpip                  = paw.Cpip // named pipe
+	csop                  = paw.Csop // socket
+	cexp                  = paw.Cexp // execution
+	clnp                  = paw.Clnp // symlink
 	currentuser, _        = user.Current()
 	urname                = currentuser.Username
 	usergp, _             = user.LookupGroupId(currentuser.Gid)
@@ -370,15 +375,15 @@ func GetColorizePermission(sperm string) string {
 }
 
 var cpmap = map[rune]*color.Color{
-	'L': paw.NewEXAColor("ln"),
-	'l': paw.NewEXAColor("ln"),
-	'd': paw.NewEXAColor("di"),
+	'L': clnp,
+	'l': clnp,
+	'd': cdip,
 	'r': paw.NewEXAColor("ur"),
 	'w': paw.NewEXAColor("uw"),
 	'x': paw.NewEXAColor("ux"),
-	'-': paw.NewEXAColor("-"),  //color.New(color.Concealed),
-	'.': paw.NewEXAColor("."),  //color.New(color.Concealed),
-	' ': paw.NewEXAColor(" "),  //color.New(color.Concealed), //unmodified
+	'-': cdashp,                //color.New(color.Concealed),
+	'.': cdashp,                //color.New(color.Concealed),
+	' ': cdashp,                //color.New(color.Concealed), //unmodified
 	'M': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //modified
 	'A': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //added
 	'D': paw.NewEXAColor("gd"), //color.New(EXAColors["gd"]...), //deleted
@@ -387,7 +392,7 @@ var cpmap = map[rune]*color.Color{
 	'U': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //updated but unmerged
 	'?': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //untracked
 	'N': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //untracked
-	'!': paw.NewEXAColor("-"),  //color.New(EXAColors["-"]...),  //ignored
+	'!': cdashp,                //color.New(EXAColors["-"]...),  //ignored
 }
 
 // GetColorizedSize will return a humman-readable and colorful string of size.
@@ -397,9 +402,7 @@ func GetColorizedSize(size uint64) (csize string) {
 	nss := len(ss)
 	sn := fmt.Sprintf("%s", ss[:nss-1])
 	su := strings.ToLower(ss[nss-1:])
-	cn := paw.NewEXAColor("sn")
-	cu := paw.NewEXAColor("sb")
-	csize = cn.Sprint(sn) + cu.Sprint(su)
+	csize = csnp.Sprint(sn) + csup.Sprint(su)
 	return csize
 }
 
@@ -521,25 +524,25 @@ func GetColorizedTime(date time.Time) string {
 func GetFileLSColor(file *File) *color.Color {
 
 	if file.IsDir() { // os.ModeDir
-		return paw.NewLSColor("di")
+		return cdip
 	}
 
 	if file.IsLink() { // os.ModeSymlink
-		return paw.NewLSColor("ln")
+		return clkp
 	}
 
 	if file.IsDev() { //
-		return paw.NewLSColor("bd")
+		return cbdp
 	}
 
 	if file.IsChardev() { // os.ModeDevice | os.ModeCharDevice
-		return paw.NewLSColor("cd")
+		return ccdp
 	}
 	if file.IsFiFo() { //os.ModeNamedPipe
-		return paw.NewLSColor("pi")
+		return cpip
 	}
 	if file.IsSocket() { //os.ModeSocket
-		return paw.NewLSColor("so")
+		return csop
 	}
 	if file.IsFile() { // 0
 		if _, ok := paw.LSColors[file.BaseName]; ok {
@@ -557,12 +560,12 @@ func GetFileLSColor(file *File) *color.Color {
 		mode := file.Stat.Mode()
 		sperm := fmt.Sprintf("%v", mode)
 		if mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x") {
-			return paw.NewLSColor("ex")
+			return cexp
 		}
 
-		return paw.NewLSColor("fi")
+		return cfip
 	}
-	return paw.NewLSColor("no")
+	return cnop
 }
 
 // FileLSColorString will return the color string of `s` according `fullpath` (xxx.yyy)
