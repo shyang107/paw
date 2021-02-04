@@ -224,7 +224,7 @@ func rowWrapFileName(file *File, fds *FieldSlice, pad string, wdsttylimit int) s
 	var (
 		sb = new(strings.Builder)
 		// wpad   = paw.StringWidth(pad)
-		meta   = fds.MetaCValuesString()
+		meta   = fds.MetaValuesStringC()
 		wmeta  = fds.MetaValuesStringWidth()
 		spmeta = paw.Spaces(wmeta)
 		name   = file.BaseNameToLink()

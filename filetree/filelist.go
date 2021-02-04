@@ -457,8 +457,8 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 				return nil
 			},
 			ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
-				// fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
-				paw.Logger.Errorf("ERROR: %s\n", err)
+				// paw.Logger.Errorf("ERROR: %s\n", err)
+				// paw.Error.Printf("ERROR: %s\n", err)
 
 				// For the purposes of this example, a simple SkipNode will suffice, although in reality perhaps additional logic might be called for.
 				return godirwalk.SkipNode

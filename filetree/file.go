@@ -409,14 +409,14 @@ func (f *File) DevNumber() (uint32, uint32) {
 // DevNumberString returns device number of a Darwin device number.
 func (f *File) DevNumberString() string {
 	major, minor := paw.DevNumber(f.Dev())
-	dev := fmt.Sprintf("%v, %v", major, minor)
+	dev := fmt.Sprintf("%v,%v", major, minor)
 	return dev
 }
 
 // DevNumberStringC returns device number of a Darwin device number.
 func (f *File) DevNumberStringC() string {
 	major, minor := paw.DevNumber(f.Dev())
-	dev := csnp.Sprint(major) + cdap.Sprint(", ") + csnp.Sprint(minor)
+	dev := csnp.Sprint(major) + cdap.Sprint(",") + csnp.Sprint(minor)
 	return dev
 }
 
@@ -443,9 +443,9 @@ func timespecToTime(ts syscall.Timespec) time.Time {
 	return time.Unix(int64(ts.Sec), int64(ts.Nsec))
 }
 
-// ModifyTimeC will return a colorful string of Stat.ModTime() like as exa.
+// ModifiedTimeC will return a colorful string of Stat.ModTime() like as exa.
 // The length of placeholder in terminal is 14.
-func (f *File) ModifyTimeC() string {
+func (f *File) ModifiedTimeC() string {
 	return GetColorizedTime(f.ModifiedTime()) //+ sp
 }
 
@@ -593,7 +593,7 @@ func (f *File) MetaC(git GitStatus) (string, int) {
 
 	fds := NewFieldSliceFrom(pfieldKeys, git)
 	fds.SetValues(f, git)
-	return fds.MetaCValuesString(), fds.MetaHeadsStringWidth()
+	return fds.MetaValuesStringC(), fds.MetaHeadsStringWidth()
 }
 
 func (f *File) subDir() string {
@@ -601,4 +601,52 @@ func (f *File) subDir() string {
 		return f.Dir + "/" + f.BaseName
 	}
 	return f.Dir
+}
+
+func (f *File) widthOfSize() (width, wmajor, wminor int) {
+	sperm := f.Permission()
+	c := string(sperm[0])
+	switch c {
+	case "c", "b":
+		major, minor := f.DevNumber()
+		wmajor = len(fmt.Sprint(major))
+		wminor = len(fmt.Sprint(minor))
+		// width = wmajor + wminor + 1
+		return wmajor + wminor + 1, wmajor, wminor
+	case "d":
+		return 1, 0, 0
+	default:
+		return len(f.ByteSize()), 0, 0
+
+	}
+}
+
+// WidthOf returns width of string of field
+func (f *File) WidthOf(field PDFieldFlag) int {
+	var w int
+	switch field {
+	case PFieldINode:
+		w = len(fmt.Sprint(f.INode()))
+	case PFieldPermissions:
+		w = len(f.Permission())
+	case PFieldLinks:
+		w = len(fmt.Sprint(f.NLinks()))
+	case PFieldSize:
+		w, _, _ = f.widthOfSize()
+	case PFieldBlocks:
+		w = len(fmt.Sprint(f.Blocks()))
+	case PFieldUser:
+		w = paw.StringWidth(f.User())
+	case PFieldGroup:
+		w = paw.StringWidth(f.Group())
+	case PFieldModified:
+		w = len(DateString(f.ModifiedTime()))
+	case PFieldCreated:
+		w = len(DateString(f.CreatedTime()))
+	case PFieldAccessed:
+		w = len(DateString(f.AccessedTime()))
+	default: // name
+		w = 0
+	}
+	return w
 }

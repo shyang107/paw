@@ -66,7 +66,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 		wmeta = fds.HeadsStringWidth()
 		fmt.Fprintln(buf, chead)
 		fds.SetValues(file, git)
-		meta = fds.MetaCValuesString()
+		meta = fds.MetaValuesStringC()
 		fmt.Fprintln(buf, meta, cdinf+file.DirNameShortC(f.Root()))
 	case PTreeView:
 		wmeta = 0
@@ -126,7 +126,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 
 	// fds.SetValues(file, git)
 	if pdview == PListTreeView {
-		meta = fds.MetaCValuesString()
+		meta = fds.MetaValuesStringC()
 		wmeta = fds.MetaHeadsStringWidth()
 		padMeta = paw.Spaces(wmeta + 1)
 		// 1. print all fields except Name

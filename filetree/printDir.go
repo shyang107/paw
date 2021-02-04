@@ -157,31 +157,36 @@ func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) err
 
 func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 	var (
-		w          = f.stringBuilder
-		dirs       = f.Dirs()
-		fm         = f.Map()
-		files      = []*File{}
-		git        = f.GetGitStatus()
-		fds        = NewFieldSliceFrom(pfieldKeys, git)
+		w     = f.stringBuilder
+		dirs  = f.Dirs()
+		fm    = f.Map()
+		files = []*File{}
+		git   = f.GetGitStatus()
+		fds   = NewFieldSliceFrom(pfieldKeys, git)
+		// fdSize     = fds.Get(PFieldSize)
 		fdName     = fds.Get(PFieldName)
 		wdstty     = sttyWidth - 2 - paw.StringWidth(pad)
 		isExtended = isExtendedView(pdOpt.OutOpt)
 	)
 
+	fds.ModifyWidth(f, wdstty)
 	for _, dir := range dirs {
 		for _, file := range fm[dir] {
 			files = append(files, file)
+			// wsize, _, _ := file.widthOfSize()
+			// fdSize.Width = paw.MaxInt(fdSize.Width, wsize)
 		}
 	}
 
 	w.Reset()
-	fds.ModifyWidth(f, wdstty)
 
 	printBanner(w, "", "=", wdstty)
 	fds.PrintHeadRow(w, "")
 	var size uint64
 	for _, file := range files {
-		size += file.Size
+		if !file.IsDir() {
+			size += file.Size
+		}
 
 		fds.SetValues(file, git)
 		fdName.Value = file.Path

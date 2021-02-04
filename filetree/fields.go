@@ -149,6 +149,8 @@ type Field struct {
 	Key        PDFieldFlag
 	Name       string
 	Width      int
+	widthMajor int // use in size field for Dev or CharDev
+	widthMinor int // use in size field for Dev or CharDev
 	Value      interface{}
 	ValueC     interface{}
 	Align      paw.Align
@@ -162,6 +164,8 @@ func NewField(flag PDFieldFlag) *Field {
 		Key:        flag,
 		Name:       pfieldsMap[flag],
 		Width:      pfieldWidthsMap[flag],
+		widthMajor: 0,
+		widthMinor: 0,
 		Value:      nil,
 		ValueC:     nil,
 		ValueColor: pfieldCPMap[flag],

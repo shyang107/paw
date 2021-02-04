@@ -44,9 +44,7 @@ func fdColorizedSize(size uint64, width int) (csize string) {
 	nss := len(ss)
 	sn := fmt.Sprintf("%[1]*[2]s", width-1, ss[:nss-1])
 	su := strings.ToLower(ss[nss-1:])
-	cn := paw.NewEXAColor("sn")
-	cu := paw.NewEXAColor("sb")
-	csize = cn.Sprint(sn) + cu.Sprint(su)
+	csize = csnp.Sprint(sn) + csup.Sprint(su)
 	return csize
 }
 
@@ -90,19 +88,12 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			c := string(sperm[0])
 			switch c {
 			case "c", "b": //file.IsChardev() || file.IsDev()
-				dev := file.DevNumberString()
-				wp := len(dev)
-				sp := ""
-				if wp < fd.Width {
-					sp = paw.Spaces(fd.Width - wp)
-				}
-				fd.SetValue(dev)
-				switch fd.Align {
-				case paw.AlignLeft:
-					fd.SetValueC(file.DevNumberStringC() + sp)
-				default:
-					fd.SetValueC(sp + file.DevNumberStringC())
-				}
+				major, minor := file.DevNumber()
+				csj := csnp.Sprintf("%[1]*[2]v", fd.widthMajor, major)
+				csn := csnp.Sprintf("%[1]*[2]v", fd.widthMinor, minor)
+				cdev := csj + cdirp.Sprint(",") + csn
+				fd.SetValue(file.DevNumberString())
+				fd.SetValueC(cdev)
 			case "d": //file.IsDir()
 				fd.SetValue("-")
 				fd.SetValueC(calign(cdashp, fd.Align, fd.Width, "-"))
@@ -293,76 +284,21 @@ func (f *FieldSlice) Widths() []int {
 
 // ModifyWidth modifies Field.Width according to FileList and wdstty (maximum width on console).
 func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
-	var (
-		wperm   = 0
-		wdinode = 0
-		wdlinks = 0
-		wdsize  = 0
-		wdblock = 0
-		wu      = 0
-		wg      = 0
-	)
-
 	for _, dir := range fl.Dirs() {
 		for _, file := range fl.Map()[dir][:] {
-			ws := len(file.Permission())
-			if wperm < ws {
-				wperm = ws
-			}
-			ws = len(fmt.Sprint(file.INode()))
-			if wdinode < ws {
-				wdinode = ws
-			}
-			ws = len(fmt.Sprint(file.NLinks()))
-			if wdlinks < ws {
-				wdlinks = ws
-			}
-			if !file.IsChardev() {
-				ws = len(file.ByteSize())
-				if wdsize < ws {
-					wdsize = ws
+			for _, field := range pfieldKeys {
+				var fd = f.Get(field)
+				fd.Width = paw.MaxInt(fd.Width, file.WidthOf(field))
+				switch field {
+				case PFieldSize:
+					_, wj, wn := file.widthOfSize()
+					fd.widthMajor = paw.MaxInt(fd.widthMajor, wj)
+					fd.widthMinor = paw.MaxInt(fd.widthMinor, wn)
+					fd.Width = paw.MaxInt(fd.Width, fd.widthMajor+fd.widthMinor+1)
+
 				}
-			} else {
-				ws = len(file.DevNumberString())
-				if wdsize < ws {
-					wdsize = ws
-				}
-			}
-			ws = len(fmt.Sprint(file.Blocks()))
-			if wdblock < ws {
-				wdblock = ws
-			}
-			ws = len(fmt.Sprint(file.User()))
-			if wu < ws {
-				wu = ws
-			}
-			ws = len(fmt.Sprint(file.Group()))
-			if wg < ws {
-				wg = ws
 			}
 		}
-	}
-
-	if fd := f.Get(PFieldPermissions); fd != nil {
-		fd.Width = paw.MaxInt(wperm, fd.Width)
-	}
-	if fd := f.Get(PFieldINode); fd != nil {
-		fd.Width = paw.MaxInt(wdinode, fd.Width)
-	}
-	if fd := f.Get(PFieldLinks); fd != nil {
-		fd.Width = paw.MaxInt(wdlinks, fd.Width)
-	}
-	if fd := f.Get(PFieldSize); fd != nil {
-		fd.Width = paw.MaxInt(wdsize, fd.Width)
-	}
-	if fd := f.Get(PFieldBlocks); fd != nil {
-		fd.Width = paw.MaxInt(wdblock, fd.Width)
-	}
-	if fd := f.Get(PFieldUser); fd != nil {
-		fd.Width = paw.MaxInt(wu, fd.Width)
-	}
-	if fd := f.Get(PFieldGroup); fd != nil {
-		fd.Width = paw.MaxInt(wg, fd.Width)
 	}
 	if fd := f.Get(PFieldName); fd != nil {
 		wdmeta := f.MetaHeadsStringWidth() + 1
@@ -533,8 +469,8 @@ func (f *FieldSlice) MetaValuesStringWidth() int {
 	return paw.StringWidth(s)
 }
 
-// MetaCValues will return string slice of Field.ValueStringC() exclude `PFieldName`
-func (f *FieldSlice) MetaCValues() []string {
+// MetaValuesC will return string slice of Field.ValueStringC() exclude `PFieldName`
+func (f *FieldSlice) MetaValuesC() []string {
 	var vals []string
 	for i := 0; i < f.Count(); i++ {
 		fd := f.fds[i]
@@ -548,9 +484,9 @@ func (f *FieldSlice) MetaCValues() []string {
 	return vals
 }
 
-// ColorHeadsString will return colorful string join by a space of FieldSlice.MetaCValues() exclude `PFieldName`
-func (f *FieldSlice) MetaCValuesString() string {
-	return strings.Join(f.MetaCValues(), " ")
+// MetaValuesStringC will return colorful string join by a space of FieldSlice.MetaValuesC() exclude `PFieldName`
+func (f *FieldSlice) MetaValuesStringC() string {
+	return strings.Join(f.MetaValuesC(), " ")
 }
 
 // PrintHeadRow prints out all Filed.Name to w
@@ -567,16 +503,16 @@ func (f *FieldSlice) PrintRow(w io.Writer, pad string) {
 // PrintRowPrefix prints out all value of Field to w
 func (f *FieldSlice) PrintRowPrefix(w io.Writer, pad, prefix string) {
 	// print meta
-	fmt.Fprint(w, pad+f.MetaCValuesString()+" ")
+	fmt.Fprint(w, pad+f.MetaValuesStringC()+" ")
 	// print Name field
 	var (
 		wpad   = f.MetaHeadsStringWidth()
 		wprf   = paw.StringWidth(paw.StripANSI(prefix))
 		fdName = f.Get(PFieldName)
 		width  = fdName.Width
-		value  = cast.ToString(fdName.Value)
+		value  = fmt.Sprint(fdName.Value)
 		wv     = paw.StringWidth(value)
-		cvalue = cast.ToString(fdName.ValueC)
+		cvalue = fmt.Sprint(fdName.ValueC)
 		c      = fdName.ValueColor
 	)
 	if wprf > 0 {
