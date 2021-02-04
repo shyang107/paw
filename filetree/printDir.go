@@ -186,7 +186,7 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 		fds.SetValues(file, git)
 		fdName.Value = file.Path
 		// cdir := cdirp.Sprint(file.Dir + "/")
-		// cname := file.ColorName()
+		// cname := file.NameC()
 		fdName.ValueC = GetColorizedPath(file.Path, "") //cdir + cname
 		fds.PrintRow(w, "")
 

@@ -36,9 +36,9 @@ func exPrintDir(root string) {
 	// for _, dir := range fl.Dirs() {
 	// 	for _, file := range fl.Map()[dir] {
 	// 		if file.IsDir() {
-	// 			fmt.Println(file.ColorDirName(r))
+	// 			fmt.Println(file.DirNameC(r))
 	// 		} else {
-	// 			fmt.Println(file.ColorBaseName())
+	// 			fmt.Println(file.BaseNameC())
 	// 		}
 	// 		if len(file.XAttributes) > 0 {
 	// 			for _, v := range file.XAttributes {

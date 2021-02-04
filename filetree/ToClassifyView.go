@@ -35,7 +35,7 @@ func (f *FileList) ToClassifyView(pad string) string {
 			} else {
 				dfile := fm[dir][0]
 				cdinf, _ := f.DirInfo(dfile)
-				fmt.Fprint(w, dfile.ColorWrapDirName(cdinf+" ", wdstty))
+				fmt.Fprint(w, dfile.DirNameWrapC(cdinf+" ", wdstty))
 			}
 		} else {
 			fmt.Fprintln(w, roothead)
@@ -101,7 +101,7 @@ func cgGetFileString(file *File, width, wdstty int) string {
 	var (
 		wname = paw.StringWidth(file.BaseName)
 		ns    = width - wname
-		cname = file.ColorBaseName()
+		cname = file.BaseNameC()
 		tail  = ""
 	)
 	if ns < 0 {
@@ -176,7 +176,7 @@ func modifyWidths(wds []int, nFields, maxwd int) (widths []int) {
 func classifyPrintFiles(w io.Writer, files []*File) {
 
 	for _, file := range files {
-		cname := file.ColorBaseName()
+		cname := file.BaseNameC()
 		if file.IsDir() {
 			cname += "/"
 		}

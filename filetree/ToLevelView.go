@@ -71,7 +71,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 					cistr := slevel + cdip.Sprintf("G%-[1]*[2]d", wdidx, i) + " "
 					pipad := ppad + cistr
 
-					fmt.Fprint(w, fm[dir][0].ColorWrapDirName(pipad, wdstty))
+					fmt.Fprint(w, fm[dir][0].DirNameWrapC(pipad, wdstty))
 				}
 			}
 		} else {
@@ -92,7 +92,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 				nfiles++
 				cjstr = cfip.Sprintf("F%-[1]*[2]d", wdjdx, nfiles)
 			}
-			fdNo.SetColorfulValue(cjstr)
+			fdNo.SetValueC(cjstr)
 
 			fds.PrintRow(w, ppad)
 

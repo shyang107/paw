@@ -175,8 +175,8 @@ func (f *Field) SetValue(value interface{}) {
 	f.Value = value
 }
 
-// SetColorfulValue sets up colorful value of Field.Value
-func (f *Field) SetColorfulValue(value interface{}) {
+// SetValueC sets up colorful value of Field.Value
+func (f *Field) SetValueC(value interface{}) {
 	f.ValueC = value
 }
 
@@ -230,8 +230,8 @@ func alignedSring(value interface{}, align paw.Align, width int) string {
 	return s
 }
 
-// ColorValueString will colorful string of Field.Value
-func (f *Field) ColorValueString() string {
+// ValueStringC will colorful string of Field.Value
+func (f *Field) ValueStringC() string {
 	if f.ValueC != nil {
 		// return fmt.Sprintf("%v", f.ValueC)
 		return cast.ToString(f.ValueC)
@@ -242,27 +242,15 @@ func (f *Field) ColorValueString() string {
 		return f.ValueColor.Sprint(s)
 	}
 	return s
-	// if f.ValueC == nil {
-	// 	return ""
-	// }
-	// return fmt.Sprintf("%v", f.ValueC)
 }
 
 // HeadString will return string of Field.Name with width Field.Width
 func (f *Field) HeadString() string {
 	return alignedSring(f.Name, f.Align, f.Width)
-	// s := ""
-	// switch f.Align {
-	// case paw.AlignLeft:
-	// 	s = fmt.Sprintf("%-[1]*[2]v", f.Width, f.Name)
-	// default:
-	// 	s = fmt.Sprintf("%[1]*[2]v", f.Width, f.Name)
-	// }
-	// return s
 }
 
-// ColorHeadString will return colorful string of Field.Name with width Field.Width as see
-func (f *Field) ColorHeadString() string {
+// HeadStringC will return colorful string of Field.Name with width Field.Width as see
+func (f *Field) HeadStringC() string {
 	s := f.HeadString()
 	return f.HeadColor.Sprint(s)
 }

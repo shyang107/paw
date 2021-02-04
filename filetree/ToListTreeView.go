@@ -37,7 +37,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 		fm       = f.store
 		git      = f.GetGitStatus()
 		fds      = NewFieldSliceFrom(pfieldKeys, git)
-		chead    = fds.ColorHeadsString()
+		chead    = fds.HeadsStringC()
 		wmeta    = fds.MetaHeadsStringWidth()
 		wdstty   = sttyWidth - 2 - paw.StringWidth(pad)
 		roothead = getColorizedRootHead("", f.root, f.TotalSize())
@@ -62,15 +62,15 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	cdinf += " "
 	switch pdview {
 	case PListTreeView:
-		chead = fds.ColorHeadsString()
+		chead = fds.HeadsStringC()
 		wmeta = fds.HeadsStringWidth()
 		fmt.Fprintln(buf, chead)
 		fds.SetValues(file, git)
-		meta = fds.ColorMetaValuesString()
-		fmt.Fprintln(buf, meta, cdinf+file.ColorShortDirName(f.Root()))
+		meta = fds.MetaCValuesString()
+		fmt.Fprintln(buf, meta, cdinf+file.DirNameShortC(f.Root()))
 	case PTreeView:
 		wmeta = 0
-		fmt.Fprintln(buf, cdinf+file.ColorShortDirName(f.Root()))
+		fmt.Fprintln(buf, cdinf+file.DirNameShortC(f.Root()))
 	}
 
 	// print files in the root dir
@@ -126,7 +126,7 @@ func printLTFile(wr io.Writer, level int, levelsEnded []int,
 
 	// fds.SetValues(file, git)
 	if pdview == PListTreeView {
-		meta = fds.ColorMetaValuesString()
+		meta = fds.MetaCValuesString()
 		wmeta = fds.MetaHeadsStringWidth()
 		padMeta = paw.Spaces(wmeta + 1)
 		// 1. print all fields except Name
@@ -214,9 +214,9 @@ func wrapLTFileString(fl *FileList, file *File, edge EdgeType, padMeta string, w
 			cname string
 		)
 		if ndinf > 0 {
-			cname = cdinf + " " + file.ColorBaseName()
+			cname = cdinf + " " + file.BaseNameC()
 		} else {
-			cname = file.ColorBaseName()
+			cname = file.BaseNameC()
 		}
 		fmt.Fprintln(sb, cedge, cname)
 	}

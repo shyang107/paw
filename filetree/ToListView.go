@@ -2,7 +2,6 @@ package filetree
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -29,7 +28,6 @@ func (f *FileList) ToListExtendView(pad string) string {
 
 // toListView will return the []byte of FileList in list form (like as `exa --header --long --time-style=iso --group --git`)
 func toListView(f *FileList, pad string, isExtended bool) string {
-
 	var (
 		w                  = f.stringBuilder
 		dirs               = f.Dirs()
@@ -49,27 +47,20 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 
 	fmt.Fprintln(w, roothead)
 
-	// paw.Logger.WithFields(logrus.Fields{
-	// 	"fNDirs":  fNDirs,
-	// 	"fNFiles": fNFiles,
-	// }).Info()
-
 	if fNDirs == 0 && fNFiles == 0 {
 		goto END
 	}
 
 	printBanner(w, "", "=", wdstty)
-
 	for _, dir := range dirs {
-
-		if len(fm[dir]) > 1 {
-			if !strings.EqualFold(dir, RootMark) {
-				if f.depth != 0 {
-					fmt.Fprint(w, fm[dir][0].ColorWrapDirName("", wdstty))
-				}
-			}
-		} else {
+		if len(fm[dir]) <= 1 {
 			continue
+		}
+
+		if dir != RootMark {
+			if f.depth != 0 {
+				fmt.Fprint(w, fm[dir][0].DirNameWrapC("", wdstty))
+			}
 		}
 
 		fds.PrintHeadRow(w, "")
@@ -85,15 +76,12 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 			fds.PrintRow(w, "")
 
 			if isExtended && len(file.XAttributes) > 0 {
-				// sp := paw.Spaces(wdmeta)
-				// fmt.Fprint(w, xattrEdgeString(file, sp, wdmeta, wdstty))
 				fds.PrintRowXattr(w, "", file.XAttributes, "")
 			}
 		}
 
 		if f.depth != 0 {
 			fmt.Fprintln(w, f.DirSummary(dir))
-
 			if ndirs+nfiles < nItems {
 				printBanner(w, "", "-", wdstty)
 			}
@@ -107,6 +95,5 @@ END:
 
 	str := paw.PaddingString(w.String(), pad)
 	fmt.Fprintln(f.Writer(), str)
-
 	return str
 }

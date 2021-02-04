@@ -107,7 +107,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		if len(fm[dir]) > 1 {
 			if !strings.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
-					tf.PrintLine(fm[dir][0].ColorWrapDirName(cidx, wstty-widx))
+					tf.PrintLine(fm[dir][0].DirNameWrapC(cidx, wstty-widx))
 				}
 			}
 		} else {
@@ -133,14 +133,14 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			}
 			fds.SetValues(file, git)
 
-			fdNo.SetColorfulValue(cjdx)
+			fdNo.SetValueC(cjdx)
 			fdNo.Width = wNo
 
 			fdName.SetValueColor(GetFileLSColor(file))
 			fdName.SetValue(file.Name())
 
 			tf.Colors = fds.Colors()
-			tf.FieldsColorString = fds.ColorValueStrings()
+			tf.FieldsColorString = fds.ValueStringCs()
 			values := fds.Values()
 			tf.PrintRow(values...)
 
