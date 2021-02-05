@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/shyang107/paw"
 )
@@ -91,32 +92,33 @@ FIND:
 				if fi.IsDir() {
 					dirs = append(dirs, path)
 				}
-				// else {
-				// 	files = append(files, path)
-				// }
 			}
 		}
 		// files
 		if len(files) > 0 {
-			for _, path := range files {
-				file, err := NewFile(path)
-				if err != nil {
-					paw.Logger.Error(err)
-					continue
+			if len(files) == 1 {
+				listOneFile(fl, files[0], pad)
+			} else {
+				for _, path := range files {
+					file, err := NewFile(path)
+					if err != nil {
+						paw.Error.Println(err)
+						continue
+					}
+					if err := pdOpt.Ignore(file, nil); err == SkipThis {
+						continue
+					}
+					fl.addFilePD(file)
 				}
-				if err := pdOpt.Ignore(file, nil); err == SkipThis {
-					continue
+				if fl.IsSort {
+					fl.Sort0()
 				}
-				fl.addFilePD(file)
-			}
-			if fl.IsSort {
-				fl.Sort0()
-			}
-			cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
-			listFiles(fl, pad, pdOpt)
+				cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
+				listFiles(fl, pad, pdOpt)
 
-			fl.dirs = []string{}
-			fl.store = make(FileMap)
+				fl.dirs = []string{}
+				fl.store = make(FileMap)
+			}
 		}
 		// dirs
 		if len(dirs) > 0 {
@@ -137,6 +139,104 @@ FIND:
 	}
 
 	return nil, fl
+}
+
+func listOneFile(fl *FileList, path string, pad string) {
+	var (
+		w      = new(strings.Builder)
+		wdstty = sttyWidth - 2 - paw.StringWidth(pad)
+		width  = 0
+	)
+	file, err := NewFile(path)
+	if err != nil {
+		paw.Error.Println(err)
+		return
+	}
+
+	head := cpmpt.Sprint("Directory: ") + pmptColorizedPath(file.Dir, "")
+	fmt.Fprintln(w, head)
+	printBanner(w, "", "=", wdstty)
+	for _, field := range pfieldsMap {
+		width = paw.MaxInt(width, len(field))
+	}
+
+	nline := 0
+	fmt.Fprintln(w, rowFile(nline, PFieldName, file.BaseNameToLinkC(), width, wdstty))
+	nline++
+	fmt.Fprintln(w, rowFile(nline, PFieldPermissions, file.PermissionC(), width, wdstty))
+	nline++
+	fmt.Fprintln(w, rowFile(nline, PFieldINode, file.INodeC(), width, wdstty))
+	nline++
+	fmt.Fprintln(w, rowFile(nline, PFieldLinks, file.NLinksC(), width, wdstty))
+	nline++
+	fmt.Fprintln(w, rowFile(nline, PFieldSize, file.SizeC(), width, wdstty))
+	nline++
+	fmt.Fprintln(w, rowFile(nline, PFieldBlocks, file.BlocksC(), width, wdstty))
+	nline++
+	fmt.Fprintln(w, rowFile(nline, PFieldUser, file.UserC(), width, wdstty))
+	nline++
+	fmt.Fprintln(w, rowFile(nline, PFieldGroup, file.GroupC(), width, wdstty))
+	nline++
+	fmt.Fprintln(w, rowFile(nline, PFieldModified, file.ModifiedTimeC(), width, wdstty))
+	nline++
+	fmt.Fprintln(w, rowFile(nline, PFieldCreated, file.CreatedTimeC(), width, wdstty))
+	nline++
+	fmt.Fprintln(w, rowFile(nline, PFieldAccessed, file.AccessedTimeC(), width, wdstty))
+	nline++
+	git, _ := GetShortGitStatus(file.Dir)
+	if !git.NoGit {
+		cgit := file.GitStatusC(git)
+		fmt.Fprintln(w, rowFile(nline, PFieldGit, cgit, width, wdstty))
+		nline++
+	}
+	if len(file.XAttributes) > 0 {
+		xfield := fmt.Sprintf("%[1]*[2]s%s", width, "Extended", " : ")
+		wd := wdstty - width - 3
+		sp := paw.Spaces(width + 3)
+		xsymb := "@"
+		wsymb := paw.StringWidth(xsymb)
+		csymb := cxbp.Sprint(xsymb)
+		cbsp := cxbp.Sprint(paw.Spaces(wsymb))
+		for i, value := range file.XAttributes {
+			wv := paw.StringWidth(value)
+			if wv <= wd {
+				if i == 0 {
+					fmt.Fprintln(w, xfield+csymb, cxap.Sprint(value))
+				} else {
+					fmt.Fprintln(w, sp+csymb, cxap.Sprint(value))
+				}
+			} else {
+				names := paw.WrapToSlice(value, width)
+				if i == 0 {
+					fmt.Fprintln(w, xfield+csymb, cxap.Sprint(names[0]))
+				} else {
+					fmt.Fprintln(w, sp+csymb, cxap.Sprint(names[0]))
+				}
+				for i := 1; i < len(names); i++ {
+					fmt.Fprintln(w, sp+cbsp, cxap.Sprint(names[i]))
+				}
+			}
+		}
+	}
+
+	printBanner(w, "", "=", wdstty)
+
+	str := paw.PaddingString(w.String(), pad)
+	fmt.Fprint(fl.Writer(), str)
+}
+
+func rowFile(nline int, flag PDFieldFlag, valueC string, width, wdstty int) (row string) {
+	wvalueC := paw.StringWidth(paw.StripANSI(valueC))
+	field := pfieldsMap[flag]
+	wfield := paw.StringWidth(field)
+	sp := paw.Spaces(width - wfield)
+	sptail := paw.Spaces(wdstty - width - 3 - wvalueC)
+	if nline%2 == 0 {
+		row = cpmpt.Sprintf("%s%s : %s", sp, field, valueC) + cpmpt.Sprint(sptail)
+	} else {
+		row = fmt.Sprint(sp + field + " : " + valueC + sptail)
+	}
+	return row
 }
 
 func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) error {
