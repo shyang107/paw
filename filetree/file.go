@@ -232,6 +232,11 @@ func (f *File) INode() uint64 {
 	// return inode
 }
 
+// INodeC will return the colorful string of inode number of File
+func (f *File) INodeC() string {
+	return cinp.Sprint(f.INode())
+}
+
 // Permission will return a string of Stat.Mode() like as exa.
 // The length of placeholder in terminal is 11.
 func (f *File) Permission() string {
@@ -285,7 +290,7 @@ func (f *File) NLinks() uint64 {
 
 // NLinksC will return the colorful string of number of hard links of File
 func (f *File) NLinksC() string {
-	return cinp.Sprint(f.NLinks())
+	return clkp.Sprint(f.NLinks())
 }
 
 // // Size will return size of `File`
