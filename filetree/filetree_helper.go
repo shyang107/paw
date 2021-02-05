@@ -432,9 +432,13 @@ func GetColorizedPath(path string, root string) string {
 		return cdirp.Sprint(dir) + cfip.Sprint(name)
 	}
 
-	cdir := cdirp.Sprint(file.Dir)
 	cname := file.BaseNameToLinkC()
-	return cdir + "/" + cname
+	if file.Dir == "/" {
+		return "/" + cname
+	} else {
+		cdir := cdirp.Sprint(file.Dir)
+		return cdir + "/" + cname
+	}
 }
 
 func pmptColorizedPath(path string, root string) string {
@@ -449,9 +453,13 @@ func pmptColorizedPath(path string, root string) string {
 		return cpmpt.Sprint(cdirp.Sprint(dir)) + cpmpt.Sprint(cfip.Sprint(name))
 	}
 
-	cdir := cpmpt.Sprint(cdirp.Sprint(file.Dir))
 	cname := cpmpt.Sprint(file.BaseNameToLinkC())
-	return cdir + cpmpt.Sprint("/") + cname
+	if file.Dir == "/" {
+		return cpmpt.Sprint("/") + cname
+	} else {
+		cdir := cpmpt.Sprint(cdirp.Sprint(file.Dir))
+		return cdir + cpmpt.Sprint("/") + cname
+	}
 }
 
 func getColorizedRootHead(pad, root string, size uint64) string {
