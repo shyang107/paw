@@ -78,7 +78,7 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				sp = paw.Spaces(fd.Width - wp)
 			}
 			fd.SetValueC(file.PermissionC() + sp)
-			fd.SetValueColor(cpmp)
+			fd.SetValueColor(cpms)
 		case PFieldLinks: //"Links",
 			fd.SetValue(file.NLinks())
 			fd.SetValueC(calign(clkp, fd.Align, fd.Width, file.NLinks()))

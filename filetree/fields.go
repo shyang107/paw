@@ -87,7 +87,7 @@ var (
 
 	pfieldCPMap = map[PDFieldFlag]*color.Color{
 		PFieldINode:       cinp,
-		PFieldPermissions: cpmp,
+		PFieldPermissions: cpms,
 		PFieldLinks:       clkp,
 		PFieldSize:        csnp,
 		// PFieldBlocks:      cbkp,

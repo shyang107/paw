@@ -1,10 +1,8 @@
 package paw
 
 import (
-	"fmt"
 	"os"
 
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -81,11 +79,14 @@ var (
 		"gt":  {38, 5, 135},                // git type change
 		"dir": {38, 5, 189},                //addition 'dir'
 		// "xattr": {38, 5, 249, 4}, //addition 'xattr'+ 4-> underline
-		"xattr": {38, 5, 8, 4, 48, 5, 234},
-		"xsymb": {38, 5, 8, 48, 5, 234},
-		"in":    {38, 5, 213},    // inode
-		"lk":    {38, 5, 209, 1}, // links
-		"bk":    {38, 5, 189},    // blocks
+		"xattr":    {38, 5, 8, 4, 48, 5, 234},
+		"xsymb":    {38, 5, 8, 48, 5, 234},
+		"in":       {38, 5, 213},    // inode
+		"lk":       {38, 5, 209, 1}, // links
+		"bk":       {38, 5, 189},    // blocks
+		"prompt":   {38, 5, 251, 48, 5, 236},
+		"promptsn": {38, 5, 156, 1, 48, 5, 236},
+		"promptsu": {38, 5, 156, 48, 5, 236},
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file
@@ -699,7 +700,7 @@ var (
 	// Cinp is default color use for inode field
 	Cinp = NewEXAColor("in")
 	// Cpmp is default color use for permission field
-	Cpmp = NewEXAColor("uw")
+	Cpms = NewEXAColor("uw")
 	// Csnp is default color use for number of size
 	Csnp = NewEXAColor("sn")
 	// Csup is default color use for unit of size
@@ -740,10 +741,25 @@ var (
 	Clnp = NewEXAColor("ln")
 	// Cexp is default color use for execution file (permission contains 'x')
 	Cexp = NewLSColor("ex")
+	// Cprompt is default color use for prompt
+	Cpmpt = NewEXAColor("prompt")
+	// CpmptSn is default color use for number in prompt
+	CpmptSn = NewEXAColor("promptsn")
+	// CpmptSu is default color use for unit in prompt
+	CpmptSu = NewEXAColor("promptsu")
 )
 
 func init() {
 
+}
+
+const ansi = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
+
+var reANSI = regexp.MustCompile(ansi)
+
+// StripANSI returns a string without ESC color code
+func StripANSI(str string) string {
+	return reANSI.ReplaceAllString(str, "")
 }
 
 // SetNoColor will set `true` to `NoColor`
@@ -758,7 +774,8 @@ func DefaultNoColor() {
 	color.NoColor = NoColor
 }
 
-func getcolors() {
+// GetColors get LS_COLORS from env of os
+func GetLSColors() {
 	colorenv := os.Getenv("LS_COLORS")
 	args := strings.Split(colorenv, ":")
 
@@ -784,7 +801,7 @@ func KindLSColorString(kind, s string) string {
 	if !ok {
 		att = LSColors["fi"]
 	}
-	return colorstr(att, s)
+	return color.New(att...).Sprint(s)
 }
 
 func KindEXAColorString(kind, s string) string {
@@ -792,56 +809,56 @@ func KindEXAColorString(kind, s string) string {
 	if !ok {
 		att = EXAColors["fi"]
 	}
-	return colorstr(att, s)
+	return color.New(att...).Sprint(s)
 }
 
-func colorstr(att []color.Attribute, s string) string {
-	cs := color.New(att...)
-	return cs.Sprint(s)
-}
+// func colorstr(att []color.Attribute, s string) string {
+// 	cs := color.New(att...)
+// 	return cs.Sprint(s)
+// }
 
-// getColorExt will return the color key of extention from `fullpath`
-func getColorExt(fullpath string) (file, ext string) {
-	fi, err := os.Lstat(fullpath)
-	if err != nil {
-		return "", "no"
-	}
-	mode := fi.Mode()
-	sperm := fmt.Sprintf("%v", mode)
-	switch {
-	case mode.IsDir(): // d: is a directory 資料夾模式
-		ext = "di" // di = directory
-	case mode&os.ModeSymlink != 0: // L: symbolic link 象徵性的關聯
-		ext = "«link»"
-		// ext = "ln"
-		// link, err := filepath.EvalSymlinks(fullpath)
-		// if err != nil {
-		// 	ext = "or"
-		// } else {
-		// 	_, ext = getColorExt(link)
-		// }
-	// } else { // mi = non-existent file pointed to by a symbolic link (visible when you type ls -l)
-	// 	ext = "mi"
-	// }
-	case mode&os.ModeSocket != 0: // S: Unix domain socket Unix 主機 socket
-		ext = "so" // so = socket file
-	case mode&os.ModeNamedPipe != 0:
-		ext = "pi" //pi = fifo file
-	case mode&os.ModeDevice != 0:
-		ext = "cd"
-	// bd = block (buffered) special file
-	case mode&os.ModeCharDevice != 0:
-		// cd = character (unbuffered) special file
-		ext = "cd"
-	case mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x"):
-		// ex = file which is executable (ie. has 'x' set in permissions)
-		ext = "ex"
-	default: // fi = file
-		ext = filepath.Ext(fullpath)
-	}
+// // getColorExt will return the color key of extention from `fullpath`
+// func getColorExt(fullpath string) (file, ext string) {
+// 	fi, err := os.Lstat(fullpath)
+// 	if err != nil {
+// 		return "", "no"
+// 	}
+// 	mode := fi.Mode()
+// 	sperm := fmt.Sprintf("%v", mode)
+// 	switch {
+// 	case mode.IsDir(): // d: is a directory 資料夾模式
+// 		ext = "di" // di = directory
+// 	case mode&os.ModeSymlink != 0: // L: symbolic link 象徵性的關聯
+// 		ext = "«link»"
+// 		// ext = "ln"
+// 		// link, err := filepath.EvalSymlinks(fullpath)
+// 		// if err != nil {
+// 		// 	ext = "or"
+// 		// } else {
+// 		// 	_, ext = getColorExt(link)
+// 		// }
+// 	// } else { // mi = non-existent file pointed to by a symbolic link (visible when you type ls -l)
+// 	// 	ext = "mi"
+// 	// }
+// 	case mode&os.ModeSocket != 0: // S: Unix domain socket Unix 主機 socket
+// 		ext = "so" // so = socket file
+// 	case mode&os.ModeNamedPipe != 0:
+// 		ext = "pi" //pi = fifo file
+// 	case mode&os.ModeDevice != 0:
+// 		ext = "cd"
+// 	// bd = block (buffered) special file
+// 	case mode&os.ModeCharDevice != 0:
+// 		// cd = character (unbuffered) special file
+// 		ext = "cd"
+// 	case mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x"):
+// 		// ex = file which is executable (ie. has 'x' set in permissions)
+// 		ext = "ex"
+// 	default: // fi = file
+// 		ext = filepath.Ext(fullpath)
+// 	}
 
-	return filepath.Base(fullpath), ext
-}
+// 	return filepath.Base(fullpath), ext
+// }
 
 // NewLSColor will return `*color.Color` using `LSColors[key]`
 func NewLSColor(key string) *color.Color {

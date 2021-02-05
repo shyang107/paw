@@ -46,7 +46,7 @@ var (
 	cfip                  = paw.Cfip  // file
 	cNop                  = paw.CNop  // serial number
 	cinp                  = paw.Cinp  // inode
-	cpmp                  = paw.Cpmp  // permission
+	cpms                  = paw.Cpms  // permission
 	csnp                  = paw.Csnp  // size number
 	csup                  = paw.Csup  // size unit
 	cuup                  = paw.Cuup  // user
@@ -60,13 +60,16 @@ var (
 	cxap                  = paw.Cxap  // extended attributes
 	cxbp                  = paw.Cxbp  // extended attributes
 	cdashp                = paw.Cdashp
-	cnop                  = paw.CNop // no this file kind
-	cbdp                  = paw.Cbdp // device
-	ccdp                  = paw.Ccdp // CharDevice
-	cpip                  = paw.Cpip // named pipe
-	csop                  = paw.Csop // socket
-	cexp                  = paw.Cexp // execution
-	clnp                  = paw.Clnp // symlink
+	cnop                  = paw.CNop    // no this file kind
+	cbdp                  = paw.Cbdp    // device
+	ccdp                  = paw.Ccdp    // CharDevice
+	cpip                  = paw.Cpip    // named pipe
+	csop                  = paw.Csop    // socket
+	cexp                  = paw.Cexp    // execution
+	clnp                  = paw.Clnp    // symlink
+	cpmpt                 = paw.Cpmpt   // prompt
+	cpmptSn               = paw.CpmptSn // number in prompt
+	cpmptSu               = paw.CpmptSu // unit in prompt
 	currentuser, _        = user.Current()
 	urname                = currentuser.Username
 	usergp, _             = user.LookupGroupId(currentuser.Gid)
@@ -434,8 +437,36 @@ func GetColorizedPath(path string, root string) string {
 	return cdir + "/" + cname
 }
 
+func pmptColorizedPath(path string, root string) string {
+	if path == PathSeparator {
+		return cpmpt.Sprint(cdip.Sprint(path))
+	}
+
+	file, err := NewFileRelTo(path, root)
+	if err != nil {
+		dir, name := filepath.Split(path)
+		dir = PathRel(dir, root)
+		return cpmpt.Sprint(cdirp.Sprint(dir)) + cpmpt.Sprint(cfip.Sprint(name))
+	}
+
+	cdir := cpmpt.Sprint(cdirp.Sprint(file.Dir))
+	cname := cpmpt.Sprint(file.BaseNameToLinkC())
+	return cdir + cpmpt.Sprint("/") + cname
+}
+
 func getColorizedRootHead(pad, root string, size uint64) string {
-	head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, GetColorizedPath(root, ""), GetColorizedSize(size))
+	var (
+		ss  = ByteSize(size)
+		nss = len(ss)
+		sn  = fmt.Sprintf("%s", ss[:nss-1])
+		su  = strings.ToLower(ss[nss-1:])
+	)
+	head := cpmpt.Sprintf("%sRoot directory: ", pad)
+	head += pmptColorizedPath(root, "")
+	head += cpmpt.Sprintf(", size ≈ ")
+	head += cpmptSn.Sprint(sn) + cpmptSu.Sprint(su) + cpmpt.Sprint(". ")
+
+	// head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, GetColorizedPath(root, ""), GetColorizedSize(size))
 	return head
 }
 
@@ -460,18 +491,27 @@ func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
 }
 
 func dirSummary(pad string, ndirs int, nfiles int, sumsize uint64) string {
+	// var (
+	// 	cndirs   = csnp.Sprint(ndirs)
+	// 	cnfiles  = csnp.Sprint(nfiles)
+	// 	csumsize = GetColorizedSize(sumsize)
+	// )
 	var (
-		cndirs   = csnp.Sprint(ndirs)
-		cnfiles  = csnp.Sprint(nfiles)
-		csumsize = GetColorizedSize(sumsize)
+		ss  = ByteSize(sumsize)
+		nss = len(ss)
+		sn  = fmt.Sprintf("%s", ss[:nss-1])
+		su  = strings.ToLower(ss[nss-1:])
 	)
+	cndirs := cpmptSn.Sprint(ndirs)
+	cnfiles := cpmptSn.Sprint(nfiles)
+	csumsize := cpmptSn.Sprint(sn) + cpmptSu.Sprint(su)
 	msg := pad +
 		cndirs +
-		cdashp.Sprint(" directories, ") +
+		cpmpt.Sprint(" directories, ") +
 		cnfiles +
-		cdashp.Sprint(" files, size ≈ ") +
+		cpmpt.Sprint(" files, size ≈ ") +
 		csumsize +
-		cdashp.Sprint(".")
+		cpmpt.Sprint(".")
 	// msg := fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return msg
 }
@@ -482,18 +522,24 @@ func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uin
 
 func totalSummary(pad string, ndirs int, nfiles int, sumsize uint64) string {
 	var (
-		cndirs   = csnp.Sprint(ndirs)
-		cnfiles  = csnp.Sprint(nfiles)
-		csumsize = GetColorizedSize(sumsize)
+		ss  = ByteSize(sumsize)
+		nss = len(ss)
+		sn  = fmt.Sprintf("%s", ss[:nss-1])
+		su  = strings.ToLower(ss[nss-1:])
 	)
+	cndirs := cpmptSn.Sprint(ndirs)
+	cnfiles := cpmptSn.Sprint(nfiles)
+	csumsize := cpmptSn.Sprint(sn) + cpmptSu.Sprint(su)
 	summary := pad +
-		cdashp.Sprint("Accumulated ") +
+		cpmpt.Sprint("Accumulated ") +
 		cndirs +
-		cdashp.Sprint(" directories, ") +
+		cpmpt.Sprint(" directories, ") +
 		cnfiles +
-		cdashp.Sprint(" files, total size ≈ ") +
+		cpmpt.Sprint(" files, total size ≈ ") +
 		csumsize +
-		cdashp.Sprint(".")
+		cpmpt.Sprint(".")
+	nsummary := len(paw.StripANSI(summary))
+	summary += cpmpt.Sprint(paw.Spaces(sttyWidth - nsummary))
 	// fmt.Sprintf("%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return summary
 }

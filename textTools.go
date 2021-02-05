@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
-	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -970,14 +969,6 @@ func StringWithWidth(align Align, value string, width int) string {
 		r = value
 	}
 	return r
-}
-
-const ansi = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
-
-var reANSI = regexp.MustCompile(ansi)
-
-func StripANSI(str string) string {
-	return reANSI.ReplaceAllString(str, "")
 }
 
 // // ForEachString higher order function that processes each line of text by callback function.
