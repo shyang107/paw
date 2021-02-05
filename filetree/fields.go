@@ -156,6 +156,7 @@ type Field struct {
 	Align      paw.Align
 	ValueColor *color.Color
 	HeadColor  *color.Color
+	isLink     bool
 }
 
 // NewField will return *Field
@@ -171,12 +172,18 @@ func NewField(flag PDFieldFlag) *Field {
 		ValueColor: pfieldCPMap[flag],
 		Align:      pfieldAlignMap[flag],
 		HeadColor:  chdp,
+		isLink:     false,
 	}
 }
 
 // SetValue sets up Field.Value
 func (f *Field) SetValue(value interface{}) {
 	f.Value = value
+}
+
+// SetIsLink sets up Field.isLink
+func (f *Field) SetIsLink(isLink bool) {
+	f.isLink = isLink
 }
 
 // SetValueC sets up colorful value of Field.Value

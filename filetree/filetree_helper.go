@@ -379,7 +379,7 @@ func GetFileLSColor(file *File) *color.Color {
 	}
 
 	if file.IsLink() { // os.ModeSymlink
-		return clkp
+		return clnp
 	}
 
 	if file.IsDev() { //

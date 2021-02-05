@@ -3,6 +3,7 @@ package filetree
 import (
 	"fmt"
 	"io"
+	"path/filepath"
 	"strings"
 
 	"github.com/thoas/go-funk"
@@ -161,6 +162,7 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			fd.SetValue(file.Name())
 			fd.SetValueC(file.NameC())
 			fd.SetValueColor(file.LSColor())
+			fd.SetIsLink(file.IsLink())
 		}
 	}
 }
@@ -514,6 +516,7 @@ func (f *FieldSlice) PrintRowPrefix(w io.Writer, pad, prefix string) {
 		wv     = paw.StringWidth(value)
 		cvalue = fmt.Sprint(fdName.ValueC)
 		c      = fdName.ValueColor
+		isLink = fdName.isLink
 	)
 	if wprf > 0 {
 		prefix += " "
@@ -526,11 +529,66 @@ func (f *FieldSlice) PrintRowPrefix(w io.Writer, pad, prefix string) {
 			fmt.Fprintln(w, prefix+c.Sprint(value))
 		}
 	} else {
-		names := paw.WrapToSlice(value, width)
-		fmt.Fprintln(w, prefix+c.Sprint(names[0]))
-		sp := pad + paw.Spaces(wpad)
-		for i := 1; i < len(names); i++ {
-			fmt.Fprintln(w, sp, c.Sprint(names[i]))
+		if isLink {
+			values := strings.Split(value, " -> ")
+			name, link := values[0], values[1]
+			cname := c.Sprint(name)
+			wbname := paw.StringWidth(name)
+			carrow := cdashp.Sprint(" -> ")
+			wbname += 4
+			fmt.Fprintln(w, prefix+cname+carrow)
+			dir, name := filepath.Split(link)
+			wd, wn := paw.StringWidth(dir), paw.StringWidth(name)
+			sp := pad + paw.Spaces(wpad)
+			if wd+wn <= width {
+				fmt.Fprintln(w, sp, cdirp.Sprint(dir)+cdip.Sprint(name))
+			} else {
+				if wd <= width {
+					clink := cdirp.Sprint(dir) + cdip.Sprint(name[:width-wd])
+					fmt.Fprintln(w, sp, clink)
+					names := paw.WrapToSlice(name[width-wd:], width)
+					for _, v := range names {
+						clink = cdip.Sprint(v)
+						fmt.Fprintln(w, sp, clink)
+					}
+				} else { // wd > width
+					dirs := paw.WrapToSlice(dir, width)
+					nd := len(dirs)
+					var clink string
+					for i := 0; i < nd-1; i++ {
+						clink = cdirp.Sprint(dirs[i])
+						fmt.Fprintln(w, sp, clink)
+					}
+					clink = cdirp.Sprint(dirs[nd-1])
+					wdLast := paw.StringWidth(dirs[nd-1])
+					if wn <= width-wdLast {
+						clink += cdip.Sprint(name)
+						fmt.Fprintln(w, sp, clink)
+					} else { // wn > wd-width
+						clink += cdip.Sprint(name[:width-wdLast])
+						fmt.Fprintln(w, sp, clink)
+						rname := name[width-wdLast:]
+						wr := paw.StringWidth(rname)
+						if wr <= width {
+							clink = cdip.Sprint(rname)
+							fmt.Fprintln(w, sp, clink)
+						} else { // wr > width
+							names := paw.WrapToSlice(rname, width)
+							for _, v := range names {
+								clink = cdip.Sprint(v)
+								fmt.Fprintln(w, sp, clink)
+							}
+						}
+					}
+				}
+			}
+		} else {
+			names := paw.WrapToSlice(value, width)
+			fmt.Fprintln(w, prefix+c.Sprint(names[0]))
+			sp := pad + paw.Spaces(wpad)
+			for i := 1; i < len(names); i++ {
+				fmt.Fprintln(w, sp, c.Sprint(names[i]))
+			}
 		}
 	}
 }
