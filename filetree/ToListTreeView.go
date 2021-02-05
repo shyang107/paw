@@ -104,8 +104,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	fmt.Fprintln(buf, f.TotalSummary())
 
 	s := paw.PaddingString(buf.String(), pad)
-	s = strings.TrimSpace(s)
-	fmt.Fprintln(w, s)
+	fmt.Fprint(w, s)
 
 	return s // buf.String()
 }

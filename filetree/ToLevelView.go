@@ -115,7 +115,7 @@ END:
 	fmt.Fprintln(w, f.TotalSummary())
 
 	str := paw.PaddingString(w.String(), pad)
-	fmt.Fprintln(f.Writer(), str)
+	fmt.Fprint(f.Writer(), str)
 
 	return str
 }
