@@ -93,6 +93,10 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				csj := csnp.Sprintf("%[1]*[2]v", fd.widthMajor, major)
 				csn := csnp.Sprintf("%[1]*[2]v", fd.widthMinor, minor)
 				cdev := csj + cdirp.Sprint(",") + csn
+				wdev := len(paw.StripANSI(cdev))
+				if wdev < fd.Width {
+					cdev = csj + cdirp.Sprint(",") + paw.Spaces(fd.Width-wdev) + csn
+				}
 				fd.SetValue(file.DevNumberString())
 				fd.SetValueC(cdev)
 			case "d": //file.IsDir()
@@ -536,50 +540,104 @@ func (f *FieldSlice) PrintRowPrefix(w io.Writer, pad, prefix string) {
 			wbname := paw.StringWidth(name)
 			carrow := cdashp.Sprint(" -> ")
 			wbname += 4
-			fmt.Fprintln(w, prefix+cname+carrow)
+			flink, _ := NewFile(link)
+			clk := GetFileLSColor(flink)
+			// L1.0
+			fmt.Fprint(w, prefix+cname+carrow)
 			dir, name := filepath.Split(link)
 			wd, wn := paw.StringWidth(dir), paw.StringWidth(name)
 			sp := pad + paw.Spaces(wpad)
-			if wd+wn <= width {
-				fmt.Fprintln(w, sp, cdirp.Sprint(dir)+cdip.Sprint(name))
+			if wd+wn <= width-wbname {
+				// L1.1End
+				fmt.Fprintln(w, cdirp.Sprint(dir)+clk.Sprint(name))
 			} else {
-				if wd <= width {
-					clink := cdirp.Sprint(dir) + cdip.Sprint(name[:width-wd])
-					fmt.Fprintln(w, sp, clink)
-					names := paw.WrapToSlice(name[width-wd:], width)
+				if wd <= width-wbname {
+					clink := cdirp.Sprint(dir) + clk.Sprint(name[:width-wbname-wd])
+					// L1.1End
+					fmt.Fprintln(w, clink)
+					names := paw.WrapToSlice(name[width-wbname-wd:], width)
 					for _, v := range names {
-						clink = cdip.Sprint(v)
+						clink = clk.Sprint(v)
+						// L2...
 						fmt.Fprintln(w, sp, clink)
 					}
-				} else { // wd > width
-					dirs := paw.WrapToSlice(dir, width)
-					nd := len(dirs)
+				} else { // wd > width-wbname
+					// L1.1End
 					var clink string
-					for i := 0; i < nd-1; i++ {
-						clink = cdirp.Sprint(dirs[i])
-						fmt.Fprintln(w, sp, clink)
-					}
-					clink = cdirp.Sprint(dirs[nd-1])
-					wdLast := paw.StringWidth(dirs[nd-1])
-					if wn <= width-wdLast {
-						clink += cdip.Sprint(name)
-						fmt.Fprintln(w, sp, clink)
-					} else { // wn > wd-width
-						clink += cdip.Sprint(name[:width-wdLast])
-						fmt.Fprintln(w, sp, clink)
-						rname := name[width-wdLast:]
-						wr := paw.StringWidth(rname)
-						if wr <= width {
-							clink = cdip.Sprint(rname)
+					wd1End := width - wbname
+					clink = cdirp.Sprint(dir[:wd1End])
+					fmt.Fprintln(w, clink)
+					wdLast := wd - wd1End
+					if wdLast <= width {
+						// L2.0
+						clink = cdirp.Sprint(dir[wd1End:])
+						// fmt.Fprintln(w, sp, clink)
+						wn2End := width - wdLast
+						// L2
+						if wn2End <= width {
+							cname := clk.Sprint(name)
+							fmt.Fprintln(w, sp, clink+cname)
+						} else {
+							cname := clk.Sprint(name[:wn2End])
+							fmt.Fprintln(w, sp, clink+cname)
+							names := paw.WrapToSlice(name[wn2End:], width)
+							nn := len(names)
+							for i := 0; i < nn; i++ {
+								cname = clk.Sprint(name[i])
+								fmt.Fprintln(w, cname)
+							}
+						}
+					} else {
+						// L2.0
+						dirs := paw.WrapToSlice(dir, width)
+						nd := len(dirs)
+						for i := 0; i < nd-1; i++ {
+							clink = cdirp.Sprint(dirs[i])
 							fmt.Fprintln(w, sp, clink)
-						} else { // wr > width
-							names := paw.WrapToSlice(rname, width)
-							for _, v := range names {
-								clink = cdip.Sprint(v)
-								fmt.Fprintln(w, sp, clink)
+						}
+						wnLast := width - paw.StringWidth(dirs[nd-1])
+						if wn <= wnLast {
+							cname := clk.Sprint(name)
+							fmt.Fprintln(w, cname)
+						} else {
+							cname := clk.Sprint(name[:wnLast])
+							fmt.Fprintln(w, cname)
+							names := paw.WrapToSlice(name[wnLast:], width)
+							nn := len(names)
+							for i := 0; i < nn; i++ {
+								cname = clk.Sprint(name[i])
+								fmt.Fprintln(w, cname)
 							}
 						}
 					}
+					// dirs := paw.WrapToSlice(dir, width)
+					// nd := len(dirs)
+					// var clink string
+					// for i := 0; i < nd-1; i++ {
+					// 	clink = cdirp.Sprint(dirs[i])
+					// 	fmt.Fprintln(w, sp, "4"+clink)
+					// }
+					// clink = cdirp.Sprint(dirs[nd-1])
+					// wdLast := paw.StringWidth(dirs[nd-1])
+					// if wn <= width-wdLast {
+					// 	clink += cdip.Sprint(name)
+					// 	fmt.Fprintln(w, sp, "5"+clink)
+					// } else { // wn > wd-width
+					// 	clink += cdip.Sprint(name[:width-wdLast])
+					// 	fmt.Fprintln(w, sp, "6"+clink)
+					// 	rname := name[width-wdLast:]
+					// 	wr := paw.StringWidth(rname)
+					// 	if wr <= width {
+					// 		clink = cdip.Sprint(rname)
+					// 		fmt.Fprintln(w, sp, "7"+clink)
+					// 	} else { // wr > width
+					// 		names := paw.WrapToSlice(rname, width)
+					// 		for _, v := range names {
+					// 			clink = cdip.Sprint(v)
+					// 			fmt.Fprintln(w, sp, clink)
+					// 		}
+					// 	}
+					// }
 				}
 			}
 		} else {
