@@ -361,7 +361,8 @@ func GetColorizedPath(path string, root string) string {
 	if err != nil {
 		dir, name := filepath.Split(path)
 		dir = PathRel(dir, root)
-		return cdirp.Sprint(dir) + cfip.Sprint(name)
+		c := GetFileLSColor(file)
+		return cdirp.Sprint(dir) + c.Sprint(name)
 	}
 
 	cname := file.BaseNameToLinkC()
