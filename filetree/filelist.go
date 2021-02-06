@@ -5,7 +5,6 @@ import (
 	"io"
 	"path/filepath"
 	"runtime"
-	"sort"
 	"strings"
 	"sync"
 
@@ -307,43 +306,7 @@ func (f *FileList) addFilePD(file *File) {
 	if file.IsFile() {
 		f.totalSize += file.Size
 	}
-	// if file.IsDir() && file.Path != f.root {
-	// 	dir = file.Dir + "/" + file.BaseName
-	// 	if _, ok := f.store[dir]; !ok {
-	// 		f.store[dir] = []*File{}
-	// 		f.dirs = append(f.dirs, dir)
-	// 	}
-	// 	dfile, _ := NewFileRelTo(file.Path, f.root)
-	// 	dfile.Dir = dir
-	// 	f.store[dir] = append(f.store[dir], dfile)
-	// }
 }
-
-// func (f *FileList) AddFile(file *File) {
-// 	var dir string
-// 	if file.Dir == PathSeparator {
-// 		dir = "."
-// 	} else {
-// 		dir = file.Dir
-// 	}
-// 	if _, ok := f.store[dir]; !ok {
-// 		f.store[dir] = []*File{}
-// 		f.dirs = append(f.dirs, dir)
-// 		// f.totalSize += file.Size
-// 	}
-// 	f.store[dir] = append(f.store[dir], file)
-// 	if file.IsDir() {
-// 		if file.Dir != PathSeparator {
-// 			dd := strings.Split(file.Dir, PathSeparator)
-// 			pdir := strings.Join(dd[:len(dd)-1], PathSeparator)
-// 			if !strings.EqualFold(pdir, file.Dir) {
-// 				f.store[pdir] = append(f.store[pdir], file)
-// 			}
-// 		}
-// 	} else {
-// 		f.totalSize += file.Size
-// 	}
-// }
 
 func (f *FileList) DisableColor() {
 	paw.SetNoColor()
@@ -404,14 +367,9 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	f.depth = depth
 	switch depth {
 	case 0: //{root directory}/*
-		// paw.Logger.WithField("root", f.root).Info("root")
 		files, err := godirwalk.ReadDirnames(f.root, nil)
 		if err != nil {
 			return errors.New(f.root + ": " + err.Error())
-		}
-
-		if f.IsSort {
-			sort.Sort(ByLowerString(files))
 		}
 
 		file, err := NewFileRelTo(f.root, f.root)
@@ -425,15 +383,14 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			file, err := NewFileRelTo(path, f.root)
 			if err != nil {
 				// paw.Logger.Error(err)
-				paw.Error.Panicln(err)
+				paw.Error.Printf("accesing path %q, %v\n", path, err)
 				// return err
 				continue
 			}
-			if err := ignore(file, nil); err == SkipThis {
-				continue
+			if err := ignore(file, nil); err != SkipThis {
+				// continue
+				f.AddFile(file)
 			}
-
-			f.AddFile(file)
 		}
 	default: //walk through all directories of {root directory}
 		err := godirwalk.Walk(f.root, &godirwalk.Options{

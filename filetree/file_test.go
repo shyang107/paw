@@ -42,7 +42,7 @@ func TestConstructFile(t *testing.T) {
 				BaseName: basename, //filepath.Base(p),
 				File:     strings.TrimSuffix(filepath.Base(p), filepath.Ext(p)),
 				Ext:      filepath.Ext(p),
-				Stat:     stat[i],
+				Info:     stat[i],
 			},
 		})
 	}

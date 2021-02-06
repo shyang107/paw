@@ -24,8 +24,7 @@ func (f *FileList) ToTableExtendViewBytes(pad string) []byte {
 // 	If `isExtended` is true to involve extend attribute
 func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	var (
-		buf              = f.StringBuilder() //f.Buffer()
-		w                = f.writer          //f.Writer()
+		w                = f.StringBuilder() //f.Buffer()
 		nDirs, nFiles, _ = f.NTotalDirsAndFile()
 		nItems           = nDirs + nFiles
 		wdidx            = len(fmt.Sprint(nDirs))
@@ -34,8 +33,8 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		dirs             = f.dirs  //f.Dirs()
 		fm               = f.store //f.Map()
 		wpad             = paw.StringWidth(pad)
-		wstty            = sttyWidth - 2 - wpad
-		banner           = strings.Repeat("-", wstty)
+		wdstty           = sttyWidth - 2 - wpad
+		banner           = strings.Repeat("-", wdstty)
 		widthOfName      = 75
 		// xsymb            = paw.XAttrSymbol
 		// xsymb2           = paw.XAttrSymbol2
@@ -63,13 +62,13 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		}
 
 		spNo     = paw.Spaces(fdNo.Width + 1)
-		roothead = getColorizedRootHead(pad, f.root, f.TotalSize())
+		roothead = getColorizedRootHead(f.root, f.TotalSize(), wdstty)
 	)
 
-	buf.Reset()
+	w.Reset()
 
 	fds.Insert(0, fdNo)
-	fds.ModifyWidth(f, wstty)
+	fds.ModifyWidth(f, wdstty)
 	fdName := fds.Get(PFieldName)
 
 	tf := &paw.TableFormat{
@@ -84,7 +83,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	}
 
 	wdmeta := fds.MetaHeadsStringWidth()
-	if wdmeta > wstty-10 {
+	if wdmeta > wdstty-10 {
 		paw.Warning.Println("too many fields, use default table view")
 		tf = deftf
 	}
@@ -107,7 +106,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		if len(fm[dir]) > 1 {
 			if !strings.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
-					tf.PrintLine(fm[dir][0].DirNameWrapC(cidx, wstty-widx))
+					tf.PrintLine(fm[dir][0].DirNameWrapC(cidx, wdstty-widx))
 				}
 			}
 		} else {
@@ -182,5 +181,5 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	tf.SetAfterMessage(f.TotalSummary())
 	tf.PrintEnd()
 
-	return buf.String()
+	return w.String()
 }

@@ -15,15 +15,14 @@ func (f *FileList) ToClassifyViewString(pad string) string {
 // ToClassifyView will return the string of FileList to display type indicator by file names (like as `exa -F` or `exa --classify`)
 func (f *FileList) ToClassifyView(pad string) string {
 	var (
-		buf      = f.StringBuilder()
-		w        = f.Writer()
+		w        = f.StringBuilder()
 		dirs     = f.Dirs()
 		fm       = f.Map()
 		wdstty   = sttyWidth - 2 - paw.StringWidth(pad)
-		roothead = getColorizedRootHead("", f.root, f.TotalSize())
+		roothead = getColorizedRootHead(f.root, f.TotalSize(), wdstty)
 		nitems   = f.NDirs() + f.NFiles()
 	)
-	buf.Reset()
+	w.Reset()
 
 	nsitems := 0
 
@@ -68,11 +67,12 @@ func (f *FileList) ToClassifyView(pad string) string {
 	}
 
 	printBanner(w, "", "=", wdstty)
-	printTotalSummary(w, "", f.NDirs(), f.NFiles(), f.totalSize)
+	fmt.Fprint(w, f.TotalSummary())
 
-	b := paw.PaddingString(buf.String(), pad)
+	str := paw.PaddingString(w.String(), pad)
+	fmt.Fprintln(f.Writer(), str)
 
-	return b
+	return str
 }
 
 func classifyGridPrintFiles(w io.Writer, files []*File, lens []int, sumlen int, wdstty int) {

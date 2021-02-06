@@ -40,7 +40,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 		chead    = fds.HeadsStringC()
 		wmeta    = fds.MetaHeadsStringWidth()
 		wdstty   = sttyWidth - 2 - paw.StringWidth(pad)
-		roothead = getColorizedRootHead("", f.root, f.TotalSize())
+		roothead = getColorizedRootHead(f.root, f.TotalSize(), wdstty)
 		dfile    *File
 	)
 
@@ -101,12 +101,12 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	// print end message
 	printBanner(buf, "", "=", wdstty)
 
-	fmt.Fprintln(buf, f.TotalSummary())
+	fmt.Fprint(buf, f.TotalSummary())
 
-	s := paw.PaddingString(buf.String(), pad)
-	fmt.Fprint(w, s)
+	str := paw.PaddingString(buf.String(), pad)
+	fmt.Fprintln(w, str)
 
-	return s // buf.String()
+	return str
 }
 
 func printLTFile(wr io.Writer, level int, levelsEnded []int,

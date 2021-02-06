@@ -48,7 +48,7 @@ type File struct {
 	BaseName    string
 	File        string
 	Ext         string
-	Stat        os.FileInfo
+	Info        os.FileInfo
 	Size        uint64
 	XAttributes []string
 	// User        string
@@ -77,7 +77,7 @@ func NewFile(path string) (*File, error) {
 		BaseName:    basename,
 		File:        file,
 		Ext:         ext,
-		Stat:        stat,
+		Info:        stat,
 		Size:        size,
 		XAttributes: xattrs,
 	}
@@ -221,7 +221,7 @@ func (f *File) DirNameWrapC(pad string, width int) string {
 // INode will return the inode number of File
 func (f *File) INode() uint64 {
 	inode := uint64(0)
-	if sys := f.Stat.Sys(); sys != nil {
+	if sys := f.Info.Sys(); sys != nil {
 		if stat, ok := sys.(*syscall.Stat_t); ok {
 			inode = stat.Ino
 		}
@@ -237,10 +237,10 @@ func (f *File) INodeC() string {
 	return cinp.Sprint(f.INode())
 }
 
-// Permission will return a string of Stat.Mode() like as exa.
+// Permission will return a string of Info.Mode() like as exa.
 // The length of placeholder in terminal is 11.
 func (f *File) Permission() string {
-	sperm := f.Stat.Mode().String() //fmt.Sprint(f.Stat.Mode())
+	sperm := f.Info.Mode().String() //fmt.Sprint(f.Stat.Mode())
 
 	if strings.HasPrefix(sperm, "Dc") {
 		sperm = strings.Replace(sperm, "Dc", "c", 1)
@@ -280,7 +280,7 @@ func (f *File) PermissionC() string {
 // NLinks will return the number of hard links of File
 func (f *File) NLinks() uint64 {
 	nlink := uint64(0)
-	if sys := f.Stat.Sys(); sys != nil {
+	if sys := f.Info.Sys(); sys != nil {
 		if stat, ok := sys.(*syscall.Stat_t); ok {
 			nlink = uint64(stat.Nlink)
 		}
@@ -312,7 +312,7 @@ func (f *File) SizeC() string {
 // Blocks will return number of file system blocks of File
 func (f *File) Blocks() uint64 {
 	blocks := uint64(0)
-	if sys := f.Stat.Sys(); sys != nil {
+	if sys := f.Info.Sys(); sys != nil {
 		if stat, ok := sys.(*syscall.Stat_t); ok {
 			blocks = uint64(stat.Blocks)
 		}
@@ -331,7 +331,7 @@ func (f *File) BlocksC() string {
 // Uid returns user id of File
 func (f *File) Uid() uint32 {
 	id := uint32(0)
-	if sys := f.Stat.Sys(); sys != nil {
+	if sys := f.Info.Sys(); sys != nil {
 		if stat, ok := sys.(*syscall.Stat_t); ok {
 			id = (stat.Uid)
 		}
@@ -363,7 +363,7 @@ func (f *File) UserC() string {
 // Gid returns group id of File
 func (f *File) Gid() uint32 {
 	id := uint32(0)
-	if sys := f.Stat.Sys(); sys != nil {
+	if sys := f.Info.Sys(); sys != nil {
 		if stat, ok := sys.(*syscall.Stat_t); ok {
 			id = (stat.Gid)
 		}
@@ -395,7 +395,7 @@ func (f *File) GroupC() string {
 // Dev will return dev id of File
 func (f *File) Dev() uint64 {
 	dev := uint64(0)
-	if sys := f.Stat.Sys(); sys != nil {
+	if sys := f.Info.Sys(); sys != nil {
 		if stat, ok := sys.(*syscall.Stat_t); ok {
 			dev = uint64(stat.Rdev)
 		}
@@ -427,13 +427,13 @@ func (f *File) DevNumberStringC() string {
 
 // AccessedTime reports the last access time of File.
 func (f *File) AccessedTime() time.Time {
-	statT := f.Stat.Sys().(*syscall.Stat_t)
+	statT := f.Info.Sys().(*syscall.Stat_t)
 	return timespecToTime(statT.Atimespec)
 }
 
 // CreatedTime reports the create time of file.
 func (f *File) CreatedTime() time.Time {
-	statT := f.Stat.Sys().(*syscall.Stat_t)
+	statT := f.Info.Sys().(*syscall.Stat_t)
 	return timespecToTime(statT.Birthtimespec)
 }
 
@@ -441,7 +441,7 @@ func (f *File) CreatedTime() time.Time {
 func (f *File) ModifiedTime() time.Time {
 	// statT := f.Stat.Sys().(*syscall.Stat_t)
 	// return timespecToTime(statT.Mtimespec)
-	return f.Stat.ModTime()
+	return f.Info.ModTime()
 }
 
 func timespecToTime(ts syscall.Timespec) time.Time {
@@ -480,12 +480,12 @@ func (f *File) GitStatusC(git GitStatus) string {
 
 // IsDir reports whether `f` describes a directory. That is, it tests for the ModeDir bit being set in `f`.
 func (f *File) IsDir() bool {
-	return f.Stat.IsDir()
+	return f.Info.IsDir()
 }
 
 // IsLink() report whether File describes a symbolic link.
 func (f *File) IsLink() bool {
-	return nodeTypeFromFileInfo(f.Stat) == kindSymlink
+	return nodeTypeFromFileInfo(f.Info) == kindSymlink
 }
 
 // IsFile reports whether File describes a file (not directory and symbolic link).
@@ -494,32 +494,32 @@ func (f *File) IsFile() bool {
 	// 	return true
 	// }
 	// return false
-	return nodeTypeFromFileInfo(f.Stat) == kindFile //"file"
+	return nodeTypeFromFileInfo(f.Info) == kindFile //"file"
 }
 
 // IsChardev() report whether File describes a chardev.
 func (f *File) IsChardev() bool {
-	return nodeTypeFromFileInfo(f.Stat) == kindChardev
+	return nodeTypeFromFileInfo(f.Info) == kindChardev
 }
 
 // IsDev() report whether File describes a dev.
 func (f *File) IsDev() bool {
-	return nodeTypeFromFileInfo(f.Stat) == kindDev
+	return nodeTypeFromFileInfo(f.Info) == kindDev
 }
 
 // IsFiFo() report whether File describes a named pipe.
 func (f *File) IsFiFo() bool {
-	return nodeTypeFromFileInfo(f.Stat) == kindFIFO
+	return nodeTypeFromFileInfo(f.Info) == kindFIFO
 }
 
 // IsSocket() report whether File describes a socket.
 func (f *File) IsSocket() bool {
-	return nodeTypeFromFileInfo(f.Stat) == kindSocket
+	return nodeTypeFromFileInfo(f.Info) == kindSocket
 }
 
 // IsNotIdentify() report whether File describes a not-identify.
 func (f *File) IsNotIdentify() bool {
-	return nodeTypeFromFileInfo(f.Stat) == kindNotIdentify
+	return nodeTypeFromFileInfo(f.Info) == kindNotIdentify
 }
 
 type kindType int
@@ -557,7 +557,7 @@ func nodeTypeFromFileInfo(fi os.FileInfo) kindType {
 }
 
 func (f *File) TypeString() string {
-	switch nodeTypeFromFileInfo(f.Stat) {
+	switch nodeTypeFromFileInfo(f.Info) {
 	case kindFile:
 		return "file"
 	case kindDir:

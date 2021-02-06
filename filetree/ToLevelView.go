@@ -35,7 +35,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		wdjdx              = paw.MaxInts(wdidx, len(fmt.Sprint(fNFiles)))
 		wNo                = paw.MaxInt(wdidx, wdjdx) + 1
 		wdstty             = sttyWidth - 2 - paw.StringWidth(pad)
-		roothead           = getColorizedRootHead("", f.root, f.TotalSize())
+		roothead           = getColorizedRootHead(f.root, f.TotalSize(), wdstty)
 		fds                = NewFieldSliceFrom(pfieldKeys, git)
 	)
 
@@ -112,10 +112,10 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	printBanner(w, "", "=", wdstty)
 
 END:
-	fmt.Fprintln(w, f.TotalSummary())
+	fmt.Fprint(w, f.TotalSummary())
 
 	str := paw.PaddingString(w.String(), pad)
-	fmt.Fprint(f.Writer(), str)
+	fmt.Fprintln(f.Writer(), str)
 
 	return str
 }

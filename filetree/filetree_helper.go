@@ -79,74 +79,6 @@ var (
 	sttyHeight, sttyWidth = paw.GetTerminalSize()
 )
 
-func isEnded(levelsEnded []int, level int) bool {
-	for _, l := range levelsEnded {
-		if l == level {
-			return true
-		}
-	}
-	return false
-}
-
-func sizes(osDirname string) (uint64, error) {
-	var size int64
-	sizes := newSizesStack()
-	return uint64(size), godirwalk.Walk(osDirname, &godirwalk.Options{
-		Callback: func(osPathname string, de *godirwalk.Dirent) error {
-			if de.IsDir() {
-				sizes.EnterDirectory()
-				return nil
-			}
-
-			st, err := os.Stat(osPathname)
-			if err != nil {
-				return err
-			}
-
-			size = st.Size()
-			sizes.Accumulate(size)
-
-			return nil
-		},
-		ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
-			paw.Logger.Error(err)
-			return godirwalk.SkipNode
-		},
-		PostChildrenCallback: func(osPathname string, de *godirwalk.Dirent) error {
-			size = sizes.LeaveDirectory()
-			sizes.Accumulate(size) // add this directory's size to parent directory.
-			return nil
-		},
-	})
-}
-
-// sizesStack encapsulates operations on stack of directory sizes, with similar
-// but slightly modified LIFO semantics to push and pop on a regular stack.
-type sizesStack struct {
-	sizes []int64 // stack of sizes
-	top   int     // index of top of stack
-}
-
-func newSizesStack() *sizesStack {
-	// Initialize with dummy value at top of stack to eliminate special cases.
-	return &sizesStack{sizes: make([]int64, 1, 32)}
-}
-
-func (s *sizesStack) EnterDirectory() {
-	s.sizes = append(s.sizes, 0)
-	s.top++
-}
-
-func (s *sizesStack) LeaveDirectory() (i int64) {
-	i, s.sizes = s.sizes[s.top], s.sizes[:s.top]
-	s.top--
-	return i
-}
-
-func (s *sizesStack) Accumulate(i int64) {
-	s.sizes[s.top] += i
-}
-
 func rowWrapDirName(dirName, pad string, wdlimit int) string {
 	var (
 		w         = new(strings.Builder)
@@ -408,7 +340,7 @@ func GetFileLSColor(file *File) *color.Color {
 			}
 		}
 
-		mode := file.Stat.Mode()
+		mode := file.Info.Mode()
 		sperm := fmt.Sprintf("%v", mode)
 		if mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x") {
 			return cexp
@@ -462,20 +394,21 @@ func pmptColorizedPath(path string, root string) string {
 	}
 }
 
-func getColorizedRootHead(pad, root string, size uint64) string {
+func getColorizedRootHead(root string, size uint64, wdstty int) string {
 	var (
 		ss  = ByteSize(size)
 		nss = len(ss)
-		sn  = fmt.Sprintf("%s", ss[:nss-1])
+		sn  = ss[:nss-1] // fmt.Sprintf("%s", ss[:nss-1])
 		su  = strings.ToLower(ss[nss-1:])
 	)
-	head := cpmpt.Sprintf("%sRoot directory: ", pad)
-	head += pmptColorizedPath(root, "")
-	head += cpmpt.Sprintf(", size ≈ ")
-	head += cpmptSn.Sprint(sn) + cpmptSu.Sprint(su) + cpmpt.Sprint(". ")
+	chead := cpmpt.Sprint("Root directory: ")
+	chead += pmptColorizedPath(root, "")
+	chead += cpmpt.Sprint(", size ≈ ")
+	chead += cpmptSn.Sprint(sn) + cpmptSu.Sprint(su) + cpmpt.Sprint(". ")
+	// chead += cpmpt.Sprint(paw.Spaces(wdstty - len(paw.StripANSI(chead))))
 
-	// head := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, GetColorizedPath(root, ""), GetColorizedSize(size))
-	return head
+	// chead := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, GetColorizedPath(root, ""), GetColorizedSize(size))
+	return chead
 }
 
 func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
@@ -545,9 +478,9 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize uint64) string {
 		cnfiles +
 		cpmpt.Sprint(" files, total size ≈ ") +
 		csumsize +
-		cpmpt.Sprint(".")
-	nsummary := len(paw.StripANSI(summary))
-	summary += cpmpt.Sprint(paw.Spaces(sttyWidth - nsummary))
+		cpmpt.Sprint(". ")
+	// nsummary := len(paw.StripANSI(summary))
+	// summary += cpmpt.Sprint(paw.Spaces(sttyWidth - nsummary))
 	// fmt.Sprintf("%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return summary
 }
@@ -750,4 +683,73 @@ func getGitStatus(git GitStatus, file *File) string {
 	}
 
 	return " " + sx + sy
+}
+
+func isEnded(levelsEnded []int, level int) bool {
+	for _, l := range levelsEnded {
+		if l == level {
+			return true
+		}
+	}
+	return false
+}
+
+func sizes(osDirname string) (uint64, error) {
+	var size int64
+	sizes := newSizesStack()
+	return uint64(size), godirwalk.Walk(osDirname, &godirwalk.Options{
+		Callback: func(osPathname string, de *godirwalk.Dirent) error {
+			if de.IsDir() {
+				sizes.EnterDirectory()
+				return nil
+			}
+
+			st, err := os.Stat(osPathname)
+			if err != nil {
+				return err
+			}
+
+			size = st.Size()
+			sizes.Accumulate(size)
+
+			return nil
+		},
+		ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
+			paw.Logger.Error(err)
+			// paw.Error.Printf("")
+			return godirwalk.SkipNode
+		},
+		PostChildrenCallback: func(osPathname string, de *godirwalk.Dirent) error {
+			size = sizes.LeaveDirectory()
+			sizes.Accumulate(size) // add this directory's size to parent directory.
+			return nil
+		},
+	})
+}
+
+// sizesStack encapsulates operations on stack of directory sizes, with similar
+// but slightly modified LIFO semantics to push and pop on a regular stack.
+type sizesStack struct {
+	sizes []int64 // stack of sizes
+	top   int     // index of top of stack
+}
+
+func newSizesStack() *sizesStack {
+	// Initialize with dummy value at top of stack to eliminate special cases.
+	return &sizesStack{sizes: make([]int64, 1, 32)}
+}
+
+func (s *sizesStack) EnterDirectory() {
+	s.sizes = append(s.sizes, 0)
+	s.top++
+}
+
+func (s *sizesStack) LeaveDirectory() (i int64) {
+	i, s.sizes = s.sizes[s.top], s.sizes[:s.top]
+	s.top--
+	return i
+}
+
+func (s *sizesStack) Accumulate(i int64) {
+	s.sizes[s.top] += i
 }
