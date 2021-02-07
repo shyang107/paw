@@ -1,6 +1,7 @@
 package filetree
 
 import (
+	"io/ioutil"
 	"path/filepath"
 	"strings"
 
@@ -32,7 +33,47 @@ func (ft *fileListFilter) Filt() {
 	}
 }
 
+func removeEmpty(fl *FileList, noEmptyDir bool) {
+	if noEmptyDir {
+		return
+	}
+	for _, dir := range fl.dirs {
+		var files []*File
+		fm := fl.store[dir]
+		for _, file := range fm[1:] {
+			if file.IsDir() {
+				fis, err := ioutil.ReadDir(file.Path)
+				if err != nil && len(fis) > 0 {
+					files = append(files, file)
+					noEmptyDir = false
+				} else {
+					noEmptyDir = true
+				}
+			} else {
+				files = append(files, file)
+			}
+		}
+		if len(files) > 0 {
+			files = append(files, fm[0])
+			fl.store[dir] = files
+		}
+	}
+	removeEmpty(fl, noEmptyDir)
+}
+
 var (
+	// FiltEmptyDirs Filter = func(fl *FileList) {
+	// 	removeEmpty(fl, false)
+	// 	var dirs []string
+	// 	for dir, files := range fl.store {
+	// 		if len(files) > 1 {
+	// 			dirs = append(dirs, dir)
+	// 		}
+	// 	}
+	// 	sort.Sort(ByLowerString(dirs))
+	// 	fl.dirs = dirs
+	// }
+
 	FiltEmptyDirs Filter = func(fl *FileList) {
 		// paw.Info.Println("FiltEmptyDirs")
 		var emptyDirs []string
@@ -71,18 +112,17 @@ var (
 	}
 
 	FiltJustDirs Filter = func(fl *FileList) {
-		// nd, nf := 0, 0
 		for _, dir := range fl.dirs {
+			var files []*File
 			// var dirs []*File
 			fm := fl.store[dir]
-			for _, f := range fm {
-				j := paw.LastIndexOf(len(fm), func(i int) bool {
-					return !f.IsDir()
-				})
-				if j != -1 {
-					fl.store[dir] = append(fm[:j], fm[j+1:]...)
+			files = append(files, fm[0])
+			for _, f := range fm[1:] {
+				if f.IsDir() {
+					files = append(files, f)
 				}
 			}
+			fl.store[dir] = files
 		}
 	}
 

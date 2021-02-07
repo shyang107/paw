@@ -344,10 +344,13 @@ var DefaultIgnoreFn = func(f *File, err error) error {
 	if err != nil {
 		return err
 	}
-	_, file := filepath.Split(f.Path)
-	if strings.HasPrefix(file, ".") {
+	if strings.HasPrefix(f.BaseName, ".") {
 		return SkipThis
 	}
+	// _, file := filepath.Split(f.Path)
+	// if strings.HasPrefix(file, ".") {
+	// 	return SkipThis
+	// }
 	return nil
 }
 

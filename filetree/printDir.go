@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,6 +60,9 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 		opt.Ignore = DefaultIgnoreFn
 	}
 
+	// check filter
+	checkPDFilter(pdOpt)
+
 	// get view option
 	pdview = pdOpt.OutOpt
 
@@ -113,7 +117,7 @@ FIND:
 				if fl.IsSort {
 					fl.Sort0()
 				}
-				cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
+				// cehckAndFiltPrintDirFiltOpt(fl, pdOpt)
 				listFiles(fl, pad, pdOpt)
 
 				fl.dirs = []string{}
@@ -131,7 +135,7 @@ FIND:
 		// use root as default
 		fl.SetRoot(root)
 		fl.FindFiles(pdOpt.Depth, pdOpt.Ignore)
-		cehckAndFiltPrintDirFiltOpt(fl, pdOpt.FiltOpt)
+		// cehckAndFiltPrintDirFiltOpt(fl, opt)
 		err = switchFileListView(fl, pdOpt.OutOpt, pad)
 		if err != nil {
 			return err, nil
@@ -244,7 +248,7 @@ func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) err
 		pdOpt.SetRoot(path)
 		f.SetRoot(path)
 		f.FindFiles(pdOpt.Depth, pdOpt.Ignore)
-		cehckAndFiltPrintDirFiltOpt(f, pdOpt.FiltOpt)
+		// cehckAndFiltPrintDirFiltOpt(f, pdOpt)
 		err := switchFileListView(f, pdOpt.OutOpt, pad)
 		if err != nil {
 			return err
@@ -349,7 +353,70 @@ func switchFileListView(fl *FileList, outOpt PDViewFlag, pad string) error {
 	return nil
 }
 
-func cehckAndFiltPrintDirFiltOpt(fl *FileList, filtOpt *PDFilterOption) {
+func checkPDFilter(opt *PrintDirOption) {
+	igfunc := opt.Ignore
+	filtOpt := opt.FiltOpt
+	if filtOpt != nil && filtOpt.IsFilt {
+		switch filtOpt.FiltWay {
+		case PDFiltNoEmptyDir: // no empty dir
+			opt.Ignore = func(f *File, err error) error {
+				if errig := igfunc(f, err); errig != nil {
+					return errig
+				}
+				fis, errfilt := ioutil.ReadDir(f.Path)
+				if errfilt != nil {
+					return errfilt
+				}
+				if len(fis) == 0 {
+					return SkipThis
+				}
+				return nil
+			}
+		case PDFiltJustDirs: // no files
+			opt.Ignore = func(f *File, err error) error {
+				if errig := igfunc(f, err); errig != nil {
+					return errig
+				}
+				if !f.IsDir() {
+					return SkipThis
+				}
+				return nil
+			}
+		case PDFiltJustFiles: // PDFiltJustFilesButNoEmptyDir // no dirs
+			opt.Ignore = func(f *File, err error) error {
+				if errig := igfunc(f, err); errig != nil {
+					return errig
+				}
+				if f.IsDir() {
+					return SkipThis
+				}
+				return nil
+			}
+		case PDFiltJustDirsButNoEmpty: // no file and no empty dir
+			opt.Ignore = func(f *File, err error) error {
+				if errig := igfunc(f, err); errig != nil {
+					return errig
+				}
+				fis, errfilt := ioutil.ReadDir(f.Path)
+				if errfilt != nil {
+					return errfilt
+				}
+				if f.IsDir() && len(fis) == 0 {
+					return SkipThis
+				}
+				if !f.IsDir() {
+					return SkipThis
+				}
+
+				return nil
+			}
+		}
+	}
+	opt.FiltOpt.IsFilt = false
+}
+
+func cehckAndFiltPrintDirFiltOpt(fl *FileList, opt *PrintDirOption) {
+	filtOpt := opt.FiltOpt
 	if filtOpt != nil && filtOpt.IsFilt {
 		switch filtOpt.FiltWay {
 		case PDFiltNoEmptyDir: // no empty dir
