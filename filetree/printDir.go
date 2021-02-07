@@ -140,6 +140,29 @@ FIND:
 		if err != nil {
 			return err, nil
 		}
+
+		// for _, dir := range fl.Dirs() {
+		// 	fm := fl.Map()[dir]
+		// 	level := len(fm[0].DirSlice()) - 1
+		// 	sp := paw.Spaces(level * 2)
+		// 	fmt.Printf("%sG%d  dir: %q\n", sp, level, paw.Truncate(dir, 60, "..."))
+		// 	for j, f := range fm[:] {
+		// 		var (
+		// 			pname, pdirname = "x", "x"
+		// 			pdir            *File
+		// 			// pdirName = RootMark
+		// 			fdir, fname = "x", "x"
+		// 		)
+		// 		if f.GetUpDir() != nil {
+		// 			pdir = f.GetUpDir()
+		// 			pname = cdip.Sprint(paw.Truncate(pdir.Dir, 25, "..."))
+		// 			pdirname = paw.Truncate(pdir.Dir, 25, "...")
+		// 			fdir = cdip.Sprint(paw.Truncate(f.Dir, 25, "..."))
+		// 			fname = f.LSColor().Sprint(paw.Truncate(f.Name(), 15, "..."))
+		// 		}
+		// 		fmt.Printf("%s  %2d dir: \"%v\" pdir: \"%v\" %q name: \"%v\"\n", sp, j, fdir, pname, pdirname, fname)
+		// 	}
+		// }
 	}
 
 	return nil, fl
@@ -370,6 +393,18 @@ func checkPDFilter(opt *PrintDirOption) {
 				if len(fis) == 0 {
 					return SkipThis
 				}
+				if f.IsDir() {
+					nfiles := 0
+					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
+						if !info.IsDir() {
+							nfiles++
+						}
+						return nil
+					})
+					if nfiles == 0 {
+						return SkipThis
+					}
+				}
 				return nil
 			}
 		case PDFiltJustDirs: // no files
@@ -397,17 +432,21 @@ func checkPDFilter(opt *PrintDirOption) {
 				if errig := igfunc(f, err); errig != nil {
 					return errig
 				}
-				fis, errfilt := ioutil.ReadDir(f.Path)
-				if errfilt != nil {
-					return errfilt
-				}
-				if f.IsDir() && len(fis) == 0 {
-					return SkipThis
-				}
-				if !f.IsDir() {
-					return SkipThis
-				}
 
+				if f.IsDir() {
+					nfiles := 0
+					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
+						if !info.IsDir() {
+							nfiles++
+						}
+						return nil
+					})
+					if nfiles == 0 {
+						return SkipThis
+					}
+				} else {
+					return SkipThis
+				}
 				return nil
 			}
 		}

@@ -65,13 +65,14 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		if len(fm[dir]) > 1 {
 			if !strings.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
-					level := len(fm[dir][0].DirSlice()) - 1
+					// level := len(fm[dir][0].DirSlice()) - 1
+					thisDir := fm[dir][0]
+					level := len(thisDir.GetUpDir().DirSlice())
 					slevel := cNop.Sprintf("L%d: ", level)
-					ppad += paw.Spaces(4 * level)
+					ppad += paw.Spaces(3 * level)
 					cistr := slevel + cdip.Sprintf("G%-[1]*[2]d", wdidx, i) + " "
 					pipad := ppad + cistr
-
-					fmt.Fprint(w, fm[dir][0].DirNameWrapC(pipad, wdstty))
+					fmt.Fprint(w, thisDir.DirNameWrapC(pipad, wdstty))
 				}
 			}
 		} else {

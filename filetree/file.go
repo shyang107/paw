@@ -53,7 +53,8 @@ type File struct {
 	XAttributes []string
 	// User        string
 	// Group       string
-	cp *color.Color
+	cp    *color.Color
+	UpDir *File
 }
 
 // NewFile will the pointer of instance of `File`, and is a constructor of `File`.
@@ -80,6 +81,7 @@ func NewFile(path string) (*File, error) {
 		Info:        stat,
 		Size:        size,
 		XAttributes: xattrs,
+		UpDir:       nil,
 	}
 	f.cp = GetFileLSColor(f)
 	return f, nil
@@ -143,6 +145,17 @@ func (f *File) LSColorstring(s string) string {
 	return f.LSColor().Sprint(s)
 }
 
+// GetUpDir return the directory file which the File is belong to.
+func (f *File) GetUpDir() *File {
+	return f.UpDir
+}
+
+// SetUpDir return set the directory file to which the File is belong to.
+func (f *File) SetUpDir(up *File) *File {
+	f.UpDir = up
+	return f
+}
+
 // Name return File.BaseNameToLink()
 func (f File) Name() string {
 	return f.BaseNameToLink()
@@ -202,15 +215,21 @@ func (f *File) DirSlice() []string {
 
 // DirNameC will return a colorful string of {{dir of Path}}+{{name of path }} for human-reading like as exa
 func (f *File) DirNameC() string {
-	return GetColorizedPath(f.Path, "")
+	// return GetColorizedPath(f.Path, "")
+	dir, _ := filepath.Split(f.Path)
+	dir, name := filepath.Split(dir)
+	return cdirp.Sprint(dir) + cdip.Sprint(name)
 }
 
 // DirNameShortC will return a colorful string of {{dir of Path}}+{{name of path }} (replace root with '.') for human-reading like as exa
 func (f *File) DirNameShortC(root string) string {
-	if f.Path == root {
-		return cdip.Sprint(".")
-	}
-	return GetColorizedPath(f.Path, root)
+	// if f.Path == root {
+	// 	return cdip.Sprint(".")
+	// }
+	// return GetColorizedPath(f.Path, root)
+	dir, name := filepath.Split(f.Dir)
+	dir = strings.Replace(dir, root, ".", 1)
+	return cdirp.Sprint(dir) + cdip.Sprint(name)
 }
 
 // DirNameWrapC will return a colorful wrapped string according to width adn seprating with '\n'. If width <= 0, use sttyWidth

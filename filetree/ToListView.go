@@ -53,14 +53,12 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 
 	printBanner(w, "", "=", wdstty)
 	for _, dir := range dirs {
-		if len(fm[dir]) <= 1 {
+		if len(fm[dir]) < 2 {
 			continue
 		}
 
-		if dir != RootMark {
-			if f.depth != 0 {
-				fmt.Fprint(w, fm[dir][0].DirNameWrapC("", wdstty))
-			}
+		if dir != RootMark && f.depth != 0 {
+			fmt.Fprint(w, fm[dir][0].DirNameWrapC("", wdstty))
 		}
 
 		fds.PrintHeadRow(w, "")

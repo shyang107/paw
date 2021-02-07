@@ -277,13 +277,24 @@ func (f *FileList) AddFile(file *File) {
 	if _, ok := f.store[dir]; !ok {
 		f.store[dir] = []*File{}
 		f.dirs = append(f.dirs, dir)
-		// f.totalSize += file.Size
 	}
 	f.store[dir] = append(f.store[dir], file)
 	if file.IsFile() {
 		f.totalSize += file.Size
 	}
-	if file.IsDir() && file.Path != f.root {
+
+	var predir string
+	if dir == RootMark {
+		predir = dir
+	} else {
+		dirs := strings.Split(dir, PathSeparator)
+		ndirs := len(dirs)
+		predir = strings.Join(dirs[:ndirs-1], PathSeparator)
+	}
+	var pdir = f.store[predir][0]
+	file.SetUpDir(pdir)
+
+	if file.IsDir() && file.Dir != RootMark {
 		dir = file.Dir + "/" + file.BaseName
 		if _, ok := f.store[dir]; !ok {
 			f.store[dir] = []*File{}
@@ -291,6 +302,7 @@ func (f *FileList) AddFile(file *File) {
 		}
 		dfile, _ := NewFileRelTo(file.Path, f.root)
 		dfile.Dir = dir
+		dfile.SetUpDir(f.store[file.Dir][0])
 		f.store[dir] = append(f.store[dir], dfile)
 	}
 }
@@ -379,8 +391,11 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 		if err != nil {
 			return err
 		}
+
+		file.SetUpDir(nil)
 		f.AddFile(file)
 
+		var pdir = file
 		for _, name := range files {
 			path := filepath.Join(f.root, name)
 			file, err := NewFileRelTo(path, f.root)
@@ -392,6 +407,7 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			}
 			if err := ignore(file, nil); err != SkipThis {
 				// continue
+				file.SetUpDir(pdir)
 				f.AddFile(file)
 			}
 		}
@@ -428,6 +444,16 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 		if err != nil {
 			return errors.New(f.root + ": " + err.Error())
 		}
+		// for _, dir := range f.Dirs() {
+		// 	fm := f.Map()[dir]
+		// 	pdir := fm[0].GetUpDir()
+		// 	if pdir == nil {
+		// 		pdir = fm[0]
+		// 	}
+		// 	for _, f := range fm[1:] {
+		// 		f.SetUpDir(pdir)
+		// 	}
+		// }
 	}
 	if f.IsSort {
 		f.Sort()
