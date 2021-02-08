@@ -18,16 +18,28 @@ var (
 
 	// LSColorsFileKindDesc ...
 	LSColorsFileKindDesc = map[string]string{
+		"ca": "file with capability",
+		"bd": "block (buffered) device, special file",
+		"cd": "character (unbuffered) device, special file",
+		"do": "door",
 		"di": "directory",
+		"ec": "ENDCODE, non-filename text",
+		"ex": "file which is executable (ie. has 'x' set in permissions).",
 		"fi": "file",
+		// "lc":          "LEFTCODE, opening terminal code",
 		"ln": "symbolic link",
-		"pi": "fifo file",
-		"so": "socket file",
-		"bd": "block (buffered) special file",
-		"cd": "character (unbuffered) special file",
-		"or": "symbolic link pointing to a non-existent file (orphan)",
-		"mi": "non-existent file pointed to by a symbolic link (visible when you type ls -l)",
-		"ex": "file which is executable (ie. has 'x' set in permissions)",
+		// "mi":          "non-existent file pointed to by a symbolic link (visible when you type ls -l)",
+		"no":          "normal, global default",
+		"or":          "orphan, symbolic link pointing to a non-existent file (orphan)",
+		"pi":          "fifo file, named pipe",
+		"rc":          "RIGHTCODE, closing terminal code",
+		"sg":          "file that is setgid (g+s)",
+		"so":          "socket file",
+		"st":          "sticky bit set (+t) and not other-writable directory",
+		"su":          "file that is setuid (u+s)",
+		"tw":          "sticky and other-writable (+t,o+w) directory",
+		"ow":          "other-writable (o+w) and not sticky directory",
+		"*.extension": "every file using this extension e.g. *.jpg",
 	}
 	EXAColors = map[string][]color.Attribute{
 		"ca": LSColors["ca"],
@@ -47,6 +59,7 @@ var (
 		"so": LSColors["so"],
 		"st": LSColors["st"],
 		"bd": LSColors["bd"],
+		"rc": LSColors["rc"],
 		// "ur": LSColors["ex"],
 		"ur": {38, 5, 230, 1}, // user +r bit
 		"uw": {38, 5, 209, 1}, // user +w bit

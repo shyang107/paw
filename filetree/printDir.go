@@ -423,7 +423,17 @@ func checkPDFilter(opt *PrintDirOption) {
 					return errig
 				}
 				if f.IsDir() {
-					return SkipThis
+					// return SkipThis
+					nfiles := 0
+					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
+						if !info.IsDir() {
+							nfiles++
+						}
+						return nil
+					})
+					if nfiles == 0 {
+						return SkipThis
+					}
 				}
 				return nil
 			}

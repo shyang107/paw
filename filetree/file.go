@@ -261,15 +261,15 @@ func (f *File) INodeC() string {
 func (f *File) Permission() string {
 	sperm := f.Info.Mode().String() //fmt.Sprint(f.Stat.Mode())
 
-	if strings.HasPrefix(sperm, "Dc") {
-		sperm = strings.Replace(sperm, "Dc", "c", 1)
-	}
-	if strings.HasPrefix(sperm, "D") {
-		sperm = strings.Replace(sperm, "D", "b", 1)
-	}
-	if strings.HasPrefix(sperm, "L") {
-		sperm = strings.Replace(sperm, "L", "l", 1)
-	}
+	// if strings.HasPrefix(sperm, "Dc") {
+	// 	sperm = strings.Replace(sperm, "Dc", "c", 1)
+	// }
+	// if strings.HasPrefix(sperm, "D") {
+	// 	sperm = strings.Replace(sperm, "D", "b", 1)
+	// }
+	// if strings.HasPrefix(sperm, "L") {
+	// 	sperm = strings.Replace(sperm, "L", "l", 1)
+	// }
 
 	if f.XAttributes == nil {
 		sperm += "?"
@@ -286,14 +286,15 @@ func (f *File) Permission() string {
 // PermissionC will return a colorful string of Stat.Mode() like as exa.
 // The length of placeholder in terminal is 11.
 func (f *File) PermissionC() string {
-	sperm := f.Permission()
-	cxmark := " "
-	if strings.HasSuffix(sperm, "@") || strings.HasSuffix(sperm, "?") || strings.HasSuffix(sperm, " ") {
-		cxmark = cdashp.Sprint(string(sperm[len(sperm)-1]))
-		sperm = sperm[:len(sperm)-1]
-	}
-	permission := GetColorizedPermission(sperm) + cxmark
-	return permission
+	// sperm := f.Permission()
+	// cxmark := " "
+	// if strings.HasSuffix(sperm, "@") || strings.HasSuffix(sperm, "?") || strings.HasSuffix(sperm, " ") {
+	// 	cxmark = cdashp.Sprint(string(sperm[len(sperm)-1]))
+	// 	sperm = sperm[:len(sperm)-1]
+	// }
+	// permission := GetColorizedPermission(sperm) + cxmark
+	// return permission
+	return GetColorizedPermission(f.Permission())
 }
 
 // NLinks will return the number of hard links of File
@@ -504,36 +505,83 @@ func (f *File) IsDir() bool {
 
 // IsLink() report whether File describes a symbolic link.
 func (f *File) IsLink() bool {
-	return nodeTypeFromFileInfo(f.Info) == kindSymlink
+	// return nodeTypeFromFileInfo(f.Info) == kindSymlink
+	return f.Info.Mode()&os.ModeSymlink != 0
 }
 
-// IsFile reports whether File describes a file (not directory and symbolic link).
+// IsFile reports whether File describes a regular file.
 func (f *File) IsFile() bool {
 	// if !f.IsDir() && !f.IsLink() {
 	// 	return true
 	// }
 	// return false
-	return nodeTypeFromFileInfo(f.Info) == kindFile //"file"
+	// return nodeTypeFromFileInfo(f.Info) == kindFile //"file"
+	return f.Info.Mode().IsRegular()
 }
 
-// IsChardev() report whether File describes a chardev.
-func (f *File) IsChardev() bool {
-	return nodeTypeFromFileInfo(f.Info) == kindChardev
+// IsCharDev() report whether File describes a Unix character device, when ModeDevice is set.
+func (f *File) IsCharDev() bool {
+	// return nodeTypeFromFileInfo(f.Info) == kindChardev
+	return f.Info.Mode()&os.ModeCharDevice != 0
 }
 
-// IsDev() report whether File describes a dev.
+// IsDev() report whether File describes a device file.
 func (f *File) IsDev() bool {
-	return nodeTypeFromFileInfo(f.Info) == kindDev
+	// return nodeTypeFromFileInfo(f.Info) == kindDev
+	return f.Info.Mode()&os.ModeDevice != 0
 }
 
-// IsFiFo() report whether File describes a named pipe.
-func (f *File) IsFiFo() bool {
-	return nodeTypeFromFileInfo(f.Info) == kindFIFO
+// IsFIFO() report whether File describes a named pipe.
+func (f *File) IsFIFO() bool {
+	// return nodeTypeFromFileInfo(f.Info) == kindFIFO
+	return f.Info.Mode()&os.ModeNamedPipe != 0
 }
 
 // IsSocket() report whether File describes a socket.
 func (f *File) IsSocket() bool {
-	return nodeTypeFromFileInfo(f.Info) == kindSocket
+	// return nodeTypeFromFileInfo(f.Info) == kindSocket
+	return f.Info.Mode()&os.ModeSocket != 0
+}
+
+// IsTemporary() report whether File describes a temporary file; Plan 9 only.
+func (f *File) IsTemporary() bool {
+	// return nodeTypeFromFileInfo(f.Info) == kindSocket
+	return f.Info.Mode()&os.ModeTemporary != 0
+}
+
+// IsExecOwner is to tell if the file is executable by its owner, use bitmask 0100:
+func (f *File) IsExecOwner() bool {
+	mode := f.Info.Mode()
+	return mode&0100 != 0
+}
+
+// IsExecGroup is to tell if the file is executable by the group, use bitmask 0010:
+func (f *File) IsExecGroup() bool {
+	mode := f.Info.Mode()
+	return mode&0010 != 0
+}
+
+// IsExecOther is to tell if the file is executable by others, use bitmask 0001:
+func (f *File) IsExecOther() bool {
+	mode := f.Info.Mode()
+	return mode&0001 != 0
+}
+
+// IsExecAny is to tell if the file is executable by any of its owner, the group and others, use bitmask 0111:
+func (f *File) IsExecAny() bool {
+	mode := f.Info.Mode()
+	return mode&0111 != 0
+}
+
+//IsExecAll is to tell if the file is executable by any of its owner, the group and others, again use bitmask 0111 but check if the result equals to 0111:
+func (f *File) IsExecAll() bool {
+	mode := f.Info.Mode()
+	return mode&0111 == 0111
+}
+
+// IsExecutable is to tell if the file isexecutable.
+func (f *File) IsExecutable() bool {
+	return f.IsExecOwner() || f.IsExecGroup() || f.IsExecOther()
 }
 
 // IsNotIdentify() report whether File describes a not-identify.

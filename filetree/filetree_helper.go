@@ -318,15 +318,20 @@ func GetFileLSColor(file *File) *color.Color {
 		return cbdp
 	}
 
-	if file.IsChardev() { // os.ModeDevice | os.ModeCharDevice
+	if file.IsCharDev() { // os.ModeDevice | os.ModeCharDevice
 		return ccdp
 	}
-	if file.IsFiFo() { //os.ModeNamedPipe
+	if file.IsFIFO() { //os.ModeNamedPipe
 		return cpip
 	}
 	if file.IsSocket() { //os.ModeSocket
 		return csop
 	}
+
+	if file.IsExecutable() && !file.IsDir() {
+		return cexp
+	}
+
 	if file.IsFile() { // 0
 		if _, ok := paw.LSColors[file.BaseName]; ok {
 			return color.New(paw.LSColors[file.BaseName]...)
@@ -340,11 +345,11 @@ func GetFileLSColor(file *File) *color.Color {
 			}
 		}
 
-		mode := file.Info.Mode()
-		sperm := fmt.Sprintf("%v", mode)
-		if mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x") {
-			return cexp
-		}
+		// mode := file.Info.Mode()
+		// sperm := fmt.Sprintf("%v", mode)
+		// if mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x") {
+		// 	return cexp
+		// }
 
 		return cfip
 	}
@@ -507,50 +512,70 @@ func GetColorizedPermission(sperm string) string {
 	// if strings.HasPrefix(sperm, "D") {
 	// 	sperm = strings.Replace(sperm, "D", "b", 1)
 	// }
+	ns := len(sperm)
+	cxmark := cdashp.Sprint(string(sperm[ns-1]))
+	perm := sperm[ns-10 : ns-1]
+	abbr := string(sperm[:ns-10])
+	cabbr := ""
+	for _, a := range abbr {
+		s := string(a)
+		cs := "-"
+		switch s {
+		case "d": // d: is a directory
+			cs = "di"
+		case "a": // a: append-only
+			cs = "ca"
+		// case "l": // l: exclusive use
+		// case "T": // T: temporary file; Plan 9 only
+		case "L": // L: symbolic link
+			cs = "ln"
+		case "D": // D: device file
+			cs = "bd"
+		case "c": // c: Unix character device, when ModeDevice is set
+			cs = "cd"
+		case "p": // p: named pipe (FIFO)
+			cs = "pi"
+		case "S": // S: Unix domain socket
+			cs = "so"
+		case "u": // u: setuid
+			cs = "su"
+		case "g": // g: setgid
+			cs = "sg"
+		case "t": // t: sticky
+			cs = "st"
+		case "?": // ?: non-regular file; nothing else is known about this file
+			cs = "-"
+		case "-":
+			s = "."
+			cs = "-"
+		default:
+			cs = "no"
+		}
+		cabbr += paw.NewEXAColor(cs).Sprint(s)
+	}
 	c := ""
 	// fmt.Println(len(s))
-	for i := 0; i < len(sperm); i++ {
-		s := string(sperm[i])
+	for i := 0; i < len(perm); i++ {
+		s := string(perm[i])
 		cs := s
 		if cs != "-" {
 			switch i {
-			case 0:
-				switch s {
-				case "b": // "D":
-					cs = "bd"
-				case "c":
-					cs = "cd"
-				case "d":
-					cs = "di"
-				case "l": // "L":
-					cs = "ln"
-				case "p":
-					cs = "pi"
-				case "S":
-					cs = "so"
-				}
-			case 1, 2, 3:
-				// switch s {
-				// case "c":
-				// 	cs = "cd"
-				// default:
-				// 	cs = "u" + s
-				// }
+			case 0, 1, 2:
 				cs = "u" + s
-			case 4, 5, 6:
+			case 3, 4, 5:
 				cs = "g" + s
-			case 7, 8, 9:
+			case 6, 7, 8:
 				cs = "t" + s
 			}
 		}
-		if i == 0 && cs == "-" {
-			s = "."
-		}
+		// if i == 0 && cs == "-" {
+		// 	s = "."
+		// }
 		// c += color.New(EXAColors[cs]...).Add(color.Bold).Sprint(s)
 		c += paw.NewEXAColor(cs).Sprint(s)
 	}
 
-	return c
+	return cabbr + c + cxmark
 }
 
 var cpmap = map[rune]*color.Color{
