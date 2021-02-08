@@ -439,7 +439,8 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 				// For the purposes of this example, a simple SkipNode will suffice, although in reality perhaps additional logic might be called for.
 				return godirwalk.SkipNode
 			},
-			Unsorted: true, // set true for faster yet non-deterministic enumeration (see godoc)
+			FollowSymbolicLinks: true,
+			Unsorted:            true, // set true for faster yet non-deterministic enumeration (see godoc)
 		})
 		if err != nil {
 			return errors.New(f.root + ": " + err.Error())
