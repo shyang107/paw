@@ -134,44 +134,21 @@ FIND:
 	} else { // NPath == 0
 		// use root as default
 		fl.SetRoot(root)
-		fl.FindFiles(pdOpt.Depth, pdOpt.Ignore)
+		err := fl.FindFiles(pdOpt.Depth, pdOpt.Ignore)
+		if err != nil {
+			return err, nil
+		}
 		// cehckAndFiltPrintDirFiltOpt(fl, opt)
 		err = switchFileListView(fl, pdOpt.OutOpt, pad)
 		if err != nil {
 			return err, nil
 		}
-		// dump(fl)
+		// fl.dumpAll()
 	}
 
 	return nil, fl
 }
 
-func dump(fl *FileList) {
-	for _, dir := range fl.Dirs() {
-		fm := fl.Map()[dir]
-		level := len(fm[0].DirSlice()) - 1
-		sp := paw.Spaces(level * 2)
-		fmt.Printf("%sG%d  dir: %q\n", sp, level, paw.Truncate(dir, 60, "..."))
-		for j, f := range fm[:] {
-			var (
-				pname, pdirname = "x", "x"
-				pdir            *File
-				// pdirName = RootMark
-				fdir, fname = "x", "x"
-			)
-			if f.GetUpDir() != nil {
-				pdir = f.GetUpDir()
-				pname = cdip.Sprint(paw.Truncate(pdir.Dir, 25, "..."))
-				pdirname = paw.Truncate(pdir.Dir, 25, "...")
-				fdir = cdip.Sprint(paw.Truncate(f.Dir, 25, "..."))
-				fname = f.LSColor().Sprint(paw.FillRight(paw.Truncate(f.Name(), 15, "..."), 15))
-			}
-			fmt.Printf("%s  %2d dir: \"%v\" pdir: \"%v\" %q name: \"%v\"", sp, j, fdir, pname, pdirname, fname)
-			fmt.Printf("  %v Excutable: %s owner: %s group: %s others: %s any: %s all: %s\n", f.PermissionC(),
-				bmark(f.IsExecutable()), bmark(f.IsExecOwner()), bmark(f.IsExecGroup()), bmark(f.IsExecOther()), bmark(f.IsExecAny()), bmark(f.IsExecAll()))
-		}
-	}
-}
 func bmark(b bool) string {
 	if b {
 		return csup.Sprint("✓")
@@ -280,9 +257,12 @@ func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) err
 	for _, path := range dirs {
 		pdOpt.SetRoot(path)
 		f.SetRoot(path)
-		f.FindFiles(pdOpt.Depth, pdOpt.Ignore)
+		err := f.FindFiles(pdOpt.Depth, pdOpt.Ignore)
+		if err != nil {
+			return err
+		}
 		// cehckAndFiltPrintDirFiltOpt(f, pdOpt)
-		err := switchFileListView(f, pdOpt.OutOpt, pad)
+		err = switchFileListView(f, pdOpt.OutOpt, pad)
 		if err != nil {
 			return err
 		}

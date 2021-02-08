@@ -294,6 +294,9 @@ func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
 		for _, file := range fl.Map()[dir][:] {
 			for _, field := range pfieldKeys {
 				var fd = f.Get(field)
+				if fd == nil {
+					continue
+				}
 				fd.Width = paw.MaxInt(fd.Width, file.WidthOf(field))
 				switch field {
 				case PFieldSize:

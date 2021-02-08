@@ -2,8 +2,8 @@ package filetree
 
 import (
 	"errors"
+	"fmt"
 	"io"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -382,35 +382,68 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	f.depth = depth
 	switch depth {
 	case 0: //{root directory}/*
-		files, err := godirwalk.ReadDirnames(f.root, nil)
+		dirScan, err := godirwalk.NewScanner(f.root)
 		if err != nil {
-			return errors.New(f.root + ": " + err.Error())
+			return fmt.Errorf("cannot scan directory: %s", err)
 		}
-
 		file, err := NewFileRelTo(f.root, f.root)
 		if err != nil {
 			return err
 		}
-
-		file.SetUpDir(nil)
+		// file.SetUpDir(nil)
 		f.AddFile(file)
 
 		var pdir = file
-		for _, name := range files {
-			path := filepath.Join(f.root, name)
+		for dirScan.Scan() {
+			dirent, err := dirScan.Dirent()
+			if err != nil {
+				paw.Warning.Printf("cannot get dirent: %s", err)
+				continue
+			}
+			path := f.root + PathSeparator + dirent.Name() //filepath.Join(f.root, dirent.Name())
 			file, err := NewFileRelTo(path, f.root)
 			if err != nil {
-				// paw.Logger.Error(err)
-				paw.Error.Printf("accesing path %q, %v\n", path, err)
-				// return err
+				paw.Error.Printf("cannot get a new File, %s\n", err)
 				continue
 			}
 			if err := ignore(file, nil); err != SkipThis {
-				// continue
 				file.SetUpDir(pdir)
 				f.AddFile(file)
 			}
 		}
+		if err := dirScan.Err(); err != nil {
+			return fmt.Errorf("cannot scan directory: %s", err)
+		}
+
+		// files, err := godirwalk.ReadDirnames(f.root, nil)
+		// if err != nil {
+		// 	return errors.New(f.root + ": " + err.Error())
+		// }
+
+		// file, err := NewFileRelTo(f.root, f.root)
+		// if err != nil {
+		// 	return err
+		// }
+
+		// file.SetUpDir(nil)
+		// f.AddFile(file)
+
+		// var pdir = file
+		// for _, name := range files {
+		// 	path := filepath.Join(f.root, name)
+		// 	file, err := NewFileRelTo(path, f.root)
+		// 	if err != nil {
+		// 		// paw.Logger.Error(err)
+		// 		paw.Error.Printf("accesing path %q, %v\n", path, err)
+		// 		// return err
+		// 		continue
+		// 	}
+		// 	if err := ignore(file, nil); err != SkipThis {
+		// 		// continue
+		// 		file.SetUpDir(pdir)
+		// 		f.AddFile(file)
+		// 	}
+		// }
 	default: //walk through all directories of {root directory}
 		err := godirwalk.Walk(f.root, &godirwalk.Options{
 			Callback: func(path string, de *godirwalk.Dirent) error {
@@ -440,22 +473,14 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 				return godirwalk.SkipNode
 			},
 			FollowSymbolicLinks: true,
+			AllowNonDirectory:   false,
 			Unsorted:            true, // set true for faster yet non-deterministic enumeration (see godoc)
 		})
 		if err != nil {
 			return errors.New(f.root + ": " + err.Error())
 		}
-		// for _, dir := range f.Dirs() {
-		// 	fm := f.Map()[dir]
-		// 	pdir := fm[0].GetUpDir()
-		// 	if pdir == nil {
-		// 		pdir = fm[0]
-		// 	}
-		// 	for _, f := range fm[1:] {
-		// 		f.SetUpDir(pdir)
-		// 	}
-		// }
 	}
+
 	if f.IsSort {
 		f.Sort()
 	}
@@ -650,4 +675,31 @@ func (f *FileList) SortBy0(dirsBy DirsBy, filesBy FilesBy) {
 	// 		}
 	// 	}
 	// }
+}
+
+func (f *FileList) dumpAll() {
+	for _, dir := range f.Dirs() {
+		fm := f.Map()[dir]
+		level := len(fm[0].DirSlice()) - 1
+		sp := paw.Spaces(level * 2)
+		fmt.Printf("%sG%d  dir: %q\n", sp, level, paw.Truncate(dir, 60, "..."))
+		for j, f := range fm[:] {
+			var (
+				pname, pdirname = "x", "x"
+				pdir            *File
+				// pdirName = RootMark
+				fdir, fname = "x", "x"
+			)
+			if f.GetUpDir() != nil {
+				pdir = f.GetUpDir()
+				pname = cdip.Sprint(paw.Truncate(pdir.Dir, 25, "..."))
+				pdirname = paw.Truncate(pdir.Dir, 25, "...")
+				fdir = cdip.Sprint(paw.Truncate(f.Dir, 25, "..."))
+				fname = f.LSColor().Sprint(paw.FillRight(paw.Truncate(f.Name(), 15, "..."), 15))
+			}
+			fmt.Printf("%s  %2d dir: \"%v\" pdir: \"%v\" %q name: \"%v\"", sp, j, fdir, pname, pdirname, fname)
+			fmt.Printf("  %v Excutable: %s owner: %s group: %s others: %s any: %s all: %s\n", f.PermissionC(),
+				bmark(f.IsExecutable()), bmark(f.IsExecOwner()), bmark(f.IsExecGroup()), bmark(f.IsExecOther()), bmark(f.IsExecAny()), bmark(f.IsExecAll()))
+		}
+	}
 }

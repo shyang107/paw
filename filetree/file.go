@@ -59,11 +59,10 @@ type File struct {
 
 // NewFile will the pointer of instance of `File`, and is a constructor of `File`.
 func NewFile(path string) (*File, error) {
-	// paw.Logger.WithField("path", path).Info("income")
 	var err error
 	stat, err := os.Lstat(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot get stat: %s", err)
 	}
 	dir := filepath.Dir(path)
 	basename := stat.Name() // filepath.Base(path)
@@ -718,6 +717,8 @@ func (f *File) WidthOf(field PDFieldFlag) int {
 		w = len(DateString(f.CreatedTime()))
 	case PFieldAccessed:
 		w = len(DateString(f.AccessedTime()))
+	// case PFieldGit:
+	// 	w = 3
 	default: // name
 		w = 0
 	}
