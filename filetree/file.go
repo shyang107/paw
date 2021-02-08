@@ -581,7 +581,8 @@ func (f *File) IsExecAll() bool {
 
 // IsExecutable is to tell if the file isexecutable.
 func (f *File) IsExecutable() bool {
-	return f.IsExecOwner() || f.IsExecGroup() || f.IsExecOther()
+	// return f.IsExecOwner() || f.IsExecGroup() || f.IsExecOther()
+	return f.IsExecAny()
 }
 
 // IsNotIdentify() report whether File describes a not-identify.
