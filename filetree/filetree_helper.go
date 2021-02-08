@@ -296,7 +296,6 @@ func PathRel(dir, root string) (rdir string) {
 
 // FileLSColorString will return the color string of `s` according `fullpath` (xxx.yyy)
 func FileLSColorString(fullpath, s string) (string, error) {
-
 	file, err := NewFile(fullpath)
 	if err != nil {
 		return "", err
@@ -311,6 +310,10 @@ func GetFileLSColor(file *File) *color.Color {
 	}
 
 	if file.IsLink() { // os.ModeSymlink
+		lpath := file.LinkPath()
+		if _, err := os.Lstat(lpath); os.IsNotExist(err) {
+			return paw.NewLSColor("or")
+		}
 		return clnp
 	}
 
@@ -333,24 +336,17 @@ func GetFileLSColor(file *File) *color.Color {
 	}
 
 	if file.IsFile() { // 0
-		if _, ok := paw.LSColors[file.BaseName]; ok {
-			return color.New(paw.LSColors[file.BaseName]...)
+		if att, ok := paw.LSColors[file.BaseName]; ok {
+			return color.New(att...)
 		}
-		if _, ok := paw.LSColors[file.Ext]; ok {
-			return color.New(paw.LSColors[file.Ext]...)
+		if att, ok := paw.LSColors[file.Ext]; ok {
+			return color.New(att...)
 		}
 		for re, att := range paw.ReExtLSColors {
 			if re.MatchString(file.BaseName) {
 				return color.New(att...)
 			}
 		}
-
-		// mode := file.Info.Mode()
-		// sperm := fmt.Sprintf("%v", mode)
-		// if mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x") {
-		// 	return cexp
-		// }
-
 		return cfip
 	}
 	return cnop
@@ -504,14 +500,6 @@ func printBanner(w io.Writer, pad string, mark string, length int) {
 // GetColorizedPermission will return a colorful string of mode
 // The length of placeholder in terminal is 10.
 func GetColorizedPermission(sperm string) string {
-	// sperm := fmt.Sprintf("%v", mode)
-	// func GetColorizePermission(mode os.FileMode) string {
-	// if strings.HasPrefix(sperm, "Dc") {
-	// 	sperm = strings.Replace(sperm, "Dc", "c", 1)
-	// }
-	// if strings.HasPrefix(sperm, "D") {
-	// 	sperm = strings.Replace(sperm, "D", "b", 1)
-	// }
 	ns := len(sperm)
 	cxmark := cdashp.Sprint(string(sperm[ns-1]))
 	perm := sperm[ns-10 : ns-1]
@@ -578,27 +566,6 @@ func GetColorizedPermission(sperm string) string {
 	return cabbr + c + cxmark
 }
 
-var cpmap = map[rune]*color.Color{
-	'L': clnp,
-	'l': clnp,
-	'd': cdip,
-	'r': paw.NewEXAColor("ur"),
-	'w': paw.NewEXAColor("uw"),
-	'x': paw.NewEXAColor("ux"),
-	'-': cdashp,                //color.New(color.Concealed),
-	'.': cdashp,                //color.New(color.Concealed),
-	' ': cdashp,                //color.New(color.Concealed), //unmodified
-	'M': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //modified
-	'A': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //added
-	'D': paw.NewEXAColor("gd"), //color.New(EXAColors["gd"]...), //deleted
-	'R': paw.NewEXAColor("gv"), //color.New(EXAColors["gv"]...), //renamed
-	'C': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //copied
-	'U': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //updated but unmerged
-	'?': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //untracked
-	'N': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //untracked
-	'!': cdashp,                //color.New(EXAColors["-"]...),  //ignored
-}
-
 // GetColorizedSize will return a humman-readable and colorful string of size.
 // The length of placeholder in terminal is 6.
 func GetColorizedSize(size uint64) (csize string) {
@@ -624,17 +591,40 @@ func GetColorizedTime(date time.Time) string {
 	return cdap.Sprint(DateString(date))
 }
 
+var cpmap = map[rune]*color.Color{
+	'L': clnp,
+	'l': clnp,
+	'd': cdip,
+	'r': paw.NewEXAColor("ur"),
+	'w': paw.NewEXAColor("uw"),
+	'x': paw.NewEXAColor("ux"),
+	'-': cdashp,                //color.New(color.Concealed),
+	'.': cdashp,                //color.New(color.Concealed),
+	' ': cdashp,                //color.New(color.Concealed), //unmodified
+	'M': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //modified
+	'A': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //added
+	'D': paw.NewEXAColor("gd"), //color.New(EXAColors["gd"]...), //deleted
+	'R': paw.NewEXAColor("gv"), //color.New(EXAColors["gv"]...), //renamed
+	'C': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //copied
+	'U': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //updated but unmerged
+	'?': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //untracked
+	'N': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //untracked
+	'!': cdashp,                //color.New(EXAColors["-"]...),  //ignored
+}
+
 var ckxy = map[rune]rune{
 	'M': 'M', //modified
-	// "A": "A", //added
-	'A': 'N',
+	'A': 'A', //added
+	// 'A': 'N',
 	'D': 'D', //deleted
 	'R': 'R', //renamed
 	'C': 'C', //copied
 	'U': 'U', //updated but unmerged
-	'?': 'N', //untracked
+	// '?': 'N', //untracked
+	'?': '?', //untracked
 	' ': '-',
-	'!': 'N', //ignore
+	// '!': 'N', //ignore
+	'!': '!', //ignore
 }
 
 // getColorizedGitStatus will return a colorful string of shrot status of git.

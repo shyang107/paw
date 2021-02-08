@@ -140,34 +140,44 @@ FIND:
 		if err != nil {
 			return err, nil
 		}
-
-		// for _, dir := range fl.Dirs() {
-		// 	fm := fl.Map()[dir]
-		// 	level := len(fm[0].DirSlice()) - 1
-		// 	sp := paw.Spaces(level * 2)
-		// 	fmt.Printf("%sG%d  dir: %q\n", sp, level, paw.Truncate(dir, 60, "..."))
-		// 	for j, f := range fm[:] {
-		// 		var (
-		// 			pname, pdirname = "x", "x"
-		// 			pdir            *File
-		// 			// pdirName = RootMark
-		// 			fdir, fname = "x", "x"
-		// 		)
-		// 		if f.GetUpDir() != nil {
-		// 			pdir = f.GetUpDir()
-		// 			pname = cdip.Sprint(paw.Truncate(pdir.Dir, 25, "..."))
-		// 			pdirname = paw.Truncate(pdir.Dir, 25, "...")
-		// 			fdir = cdip.Sprint(paw.Truncate(f.Dir, 25, "..."))
-		// 			fname = f.LSColor().Sprint(paw.Truncate(f.Name(), 15, "..."))
-		// 		}
-		// 		fmt.Printf("%s  %2d dir: \"%v\" pdir: \"%v\" %q name: \"%v\"\n", sp, j, fdir, pname, pdirname, fname)
-		// 	}
-		// }
+		// dump(fl)
 	}
 
 	return nil, fl
 }
 
+func dump(fl *FileList) {
+	for _, dir := range fl.Dirs() {
+		fm := fl.Map()[dir]
+		level := len(fm[0].DirSlice()) - 1
+		sp := paw.Spaces(level * 2)
+		fmt.Printf("%sG%d  dir: %q\n", sp, level, paw.Truncate(dir, 60, "..."))
+		for j, f := range fm[:] {
+			var (
+				pname, pdirname = "x", "x"
+				pdir            *File
+				// pdirName = RootMark
+				fdir, fname = "x", "x"
+			)
+			if f.GetUpDir() != nil {
+				pdir = f.GetUpDir()
+				pname = cdip.Sprint(paw.Truncate(pdir.Dir, 25, "..."))
+				pdirname = paw.Truncate(pdir.Dir, 25, "...")
+				fdir = cdip.Sprint(paw.Truncate(f.Dir, 25, "..."))
+				fname = f.LSColor().Sprint(paw.FillRight(paw.Truncate(f.Name(), 15, "..."), 15))
+			}
+			fmt.Printf("%s  %2d dir: \"%v\" pdir: \"%v\" %q name: \"%v\"", sp, j, fdir, pname, pdirname, fname)
+			fmt.Printf("  %v Excutable: %s owner: %s group: %s others: %s any: %s all: %s\n", f.PermissionC(),
+				bmark(f.IsExecutable()), bmark(f.IsExecOwner()), bmark(f.IsExecGroup()), bmark(f.IsExecOther()), bmark(f.IsExecAny()), bmark(f.IsExecAll()))
+		}
+	}
+}
+func bmark(b bool) string {
+	if b {
+		return csup.Sprint("✓")
+	}
+	return cdashp.Sprint("✗")
+}
 func listOneFile(fl *FileList, path string, pad string) {
 	var (
 		w      = new(strings.Builder)

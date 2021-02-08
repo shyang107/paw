@@ -61,19 +61,19 @@ var (
 		"bd": LSColors["bd"],
 		"rc": LSColors["rc"],
 		// "ur": LSColors["ex"],
-		"ur": {38, 5, 230, 1}, // user +r bit
-		"uw": {38, 5, 209, 1}, // user +w bit
-		"ux": {38, 5, 156, 1}, // user +x bit (files)
-		"ue": {38, 5, 156, 1}, // user +x bit (file types)
-		"gr": {38, 5, 230, 1}, // group +r bit
-		"gw": {38, 5, 209, 1}, // group +w bit
-		"gx": {38, 5, 156, 1}, // group +x bit
-		"tr": {38, 5, 230, 1}, // others +r bit
-		"tw": {38, 5, 209, 1}, // others +w bit
-		"tx": {38, 5, 156, 1}, // others +x bit
-		"sn": {38, 5, 156, 1}, // size number
-		"sb": {38, 5, 156},    // size unit
-		"uu": {38, 5, 229, 1}, // user is you + 1 -> bold
+		"ur": {38, 5, 230, 1},    // user +r bit
+		"uw": {38, 5, 209, 1},    // user +w bit
+		"ux": {38, 5, 156, 1, 4}, // user +x bit (files)
+		"ue": {38, 5, 156, 1},    // user +x bit (file types)
+		"gr": {38, 5, 230, 1},    // group +r bit
+		"gw": {38, 5, 209, 1},    // group +w bit
+		"gx": {38, 5, 156, 1, 4}, // group +x bit
+		"tr": {38, 5, 230, 1},    // others +r bit
+		"tw": {38, 5, 209, 1},    // others +w bit
+		"tx": {38, 5, 156, 1, 4}, // others +x bit
+		"sn": {38, 5, 156, 1},    // size number
+		"sb": {38, 5, 156},       // size unit
+		"uu": {38, 5, 229, 1},    // user is you + 1 -> bold
 		// "un": {38, 5, 214},    // user is not you
 		"un": {38, 5, 251},    // user is not you
 		"gu": {38, 5, 229, 1}, // group with you in it
