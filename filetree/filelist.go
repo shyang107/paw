@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -283,18 +284,22 @@ func (f *FileList) AddFile(file *File) {
 		f.totalSize += file.Size
 	}
 
-	var predir string
+	var (
+		predir string
+		dirs   []string
+	)
 	if dir == RootMark {
 		predir = dir
 	} else {
-		dirs := strings.Split(dir, PathSeparator)
+		dirs = file.DirSlice() //strings.Split(dir, PathSeparator)
 		ndirs := len(dirs)
 		predir = strings.Join(dirs[:ndirs-1], PathSeparator)
 	}
 	var pdir = f.store[predir][0]
 	file.SetUpDir(pdir)
 
-	if file.IsDir() && file.Dir != RootMark {
+	pdir = f.store[file.Dir][0]
+	if file.IsDir() && file.Path != f.root {
 		dir = file.Dir + "/" + file.BaseName
 		if _, ok := f.store[dir]; !ok {
 			f.store[dir] = []*File{}
@@ -302,8 +307,15 @@ func (f *FileList) AddFile(file *File) {
 		}
 		dfile, _ := NewFileRelTo(file.Path, f.root)
 		dfile.Dir = dir
-		dfile.SetUpDir(f.store[file.Dir][0])
+		dfile.SetUpDir(pdir)
 		f.store[dir] = append(f.store[dir], dfile)
+		// paw.Logger.WithFields(logrus.Fields{
+		// 	"dir":   dir,
+		// 	"ddir":  dfile.Dir,
+		// 	"pdir":  pdir.Dir,
+		// 	"ppath": pdir.Path,
+		// 	"path":  dfile.Path,
+		// }).Info("AddFile: dfile updir")
 	}
 }
 
@@ -390,24 +402,22 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 		if err != nil {
 			return err
 		}
-		// file.SetUpDir(nil)
 		f.AddFile(file)
 
-		var pdir = file
+		// var pdir = file
 		for dirScan.Scan() {
 			dirent, err := dirScan.Dirent()
 			if err != nil {
 				paw.Warning.Printf("cannot get dirent: %s", err)
 				continue
 			}
-			path := f.root + PathSeparator + dirent.Name() //filepath.Join(f.root, dirent.Name())
+			path := filepath.Join(f.root, dirent.Name())
 			file, err := NewFileRelTo(path, f.root)
 			if err != nil {
 				paw.Error.Printf("cannot get a new File, %s\n", err)
 				continue
 			}
 			if err := ignore(file, nil); err != SkipThis {
-				file.SetUpDir(pdir)
 				f.AddFile(file)
 			}
 		}
@@ -447,7 +457,6 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 	default: //walk through all directories of {root directory}
 		err := godirwalk.Walk(f.root, &godirwalk.Options{
 			Callback: func(path string, de *godirwalk.Dirent) error {
-
 				file, err := NewFileRelTo(path, f.root)
 				if err != nil {
 					return err
@@ -461,7 +470,6 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 				if err1 := ignore(file, nil); err1 == SkipThis {
 					return godirwalk.SkipThis
 				}
-
 				f.AddFile(file)
 				return nil
 			},
@@ -698,8 +706,9 @@ func (f *FileList) dumpAll() {
 				fname = f.LSColor().Sprint(paw.FillRight(paw.Truncate(f.Name(), 15, "..."), 15))
 			}
 			fmt.Printf("%s  %2d dir: \"%v\" pdir: \"%v\" %q name: \"%v\"", sp, j, fdir, pname, pdirname, fname)
-			fmt.Printf("  %v Excutable: %s owner: %s group: %s others: %s any: %s all: %s\n", f.PermissionC(),
-				bmark(f.IsExecutable()), bmark(f.IsExecOwner()), bmark(f.IsExecGroup()), bmark(f.IsExecOther()), bmark(f.IsExecAny()), bmark(f.IsExecAll()))
+			// fmt.Printf("  %v Excutable: %s owner: %s group: %s others: %s any: %s all: %s", f.PermissionC(),
+			// 	bmark(f.IsExecutable()), bmark(f.IsExecOwner()), bmark(f.IsExecGroup()), bmark(f.IsExecOther()), bmark(f.IsExecAny()), bmark(f.IsExecAll()))
+			fmt.Print("\n")
 		}
 	}
 }

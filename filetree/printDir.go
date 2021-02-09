@@ -361,7 +361,7 @@ func switchFileListView(fl *FileList, outOpt PDViewFlag, pad string) error {
 	case PClassifyView:
 		fl.ToClassifyView(pad)
 	default:
-		return errors.New("No this option of PrintDir")
+		return errors.New("No this view option of PrintDir")
 	}
 	return nil
 }
@@ -429,10 +429,9 @@ func checkPDFilter(opt *PrintDirOption) {
 			}
 		case PDFiltJustDirsButNoEmpty: // no file and no empty dir
 			opt.Ignore = func(f *File, err error) error {
-				if errig := igfunc(f, err); errig != nil {
+				if errig := igfunc(f, nil); errig != nil {
 					return errig
 				}
-
 				if f.IsDir() {
 					nfiles := 0
 					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
@@ -444,10 +443,10 @@ func checkPDFilter(opt *PrintDirOption) {
 					if nfiles == 0 {
 						return SkipThis
 					}
+					return nil
 				} else {
 					return SkipThis
 				}
-				return nil
 			}
 		}
 	}
