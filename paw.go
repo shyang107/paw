@@ -24,7 +24,8 @@ var (
 		Out:          os.Stderr,
 		ReportCaller: true,
 		Formatter:    nestedFormatter,
-		Level:        logrus.InfoLevel,
+		// Level:        logrus.InfoLevel,
+		Level: logrus.WarnLevel,
 	}
 	// NestedFormatter ...
 	nestedFormatter = &nested.Formatter{
@@ -50,10 +51,11 @@ var (
 )
 
 var (
+	Trace   *log.Logger
+	Debug   *log.Logger
 	Info    *log.Logger
 	Warning *log.Logger
 	Error   *log.Logger
-	Debug   *log.Logger
 )
 
 func init() {
@@ -71,38 +73,48 @@ func GologInit(
 	errorHandle io.Writer,
 	isVerbose bool) {
 	if isVerbose {
-		Info = log.New(infoHandle,
-			color.New(color.FgBlue).Add(color.Bold).Sprint("[INFO] "),
-			log.Ldate|log.Ltime|log.Lshortfile)
-
-		Warning = log.New(warnHandle,
-			color.New(color.FgYellow).Add(color.Bold).Sprint("[WARNING] "),
-			log.Ldate|log.Ltime|log.Lshortfile)
-
-		Error = log.New(errorHandle,
-			color.New(color.FgRed).Add(color.Bold).Sprint("[ERROR] "),
+		Trace = log.New(infoHandle,
+			color.New(color.FgCyan).Add(color.Bold).Sprint("[TRACE] "),
 			log.Ldate|log.Ltime|log.Lshortfile)
 
 		Debug = log.New(infoHandle,
-			color.New(color.FgHiMagenta).Add(color.Bold).Sprint("[DEBUG] "),
+			color.New(color.FgMagenta).Add(color.Bold).Sprint("[DEBUG] "),
+			log.Ldate|log.Ltime|log.Lshortfile)
+
+		Info = log.New(infoHandle,
+			color.New(color.FgYellow).Add(color.Bold).Sprint("[INFO] "),
+			log.Ldate|log.Ltime|log.Lshortfile)
+
+		Warning = log.New(warnHandle,
+			color.New(color.FgHiMagenta).Add(color.Bold).Sprint("[WARNING] "),
+			log.Ldate|log.Ltime|log.Lshortfile)
+
+		Error = log.New(errorHandle,
+			color.New(color.FgHiRed).Add(color.Bold).Sprint("[ERROR] "),
 			log.Ldate|log.Ltime|log.Lshortfile)
 		return
 	}
+
+	Trace = log.New(infoHandle,
+		color.New(color.FgCyan).Add(color.Bold).Sprint("[TRAC] "),
+		log.Ldate|log.Ltime|log.Lshortfile)
+
+	Debug = log.New(infoHandle,
+		color.New(color.FgMagenta).Add(color.Bold).Sprint("[DEBU] "),
+		log.Ldate|log.Ltime|log.Lshortfile)
+
 	Info = log.New(infoHandle,
-		color.New(color.FgBlue).Add(color.Bold).Sprint("[INFO] "),
+		color.New(color.FgYellow).Add(color.Bold).Sprint("[INFO] "),
 		log.Ldate|log.Ltime)
 
 	Warning = log.New(warnHandle,
-		color.New(color.FgYellow).Add(color.Bold).Sprint("[WARN] "),
+		color.New(color.FgHiMagenta).Add(color.Bold).Sprint("[WARN] "),
 		log.Ldate|log.Ltime)
 
 	Error = log.New(errorHandle,
-		color.New(color.FgRed).Add(color.Bold).Sprint("[ERRO] "),
+		color.New(color.FgHiRed).Add(color.Bold).Sprint("[ERRO] "),
 		log.Ldate|log.Ltime)
 
-	Debug = log.New(infoHandle,
-		color.New(color.FgHiMagenta).Add(color.Bold).Sprint("[DEBU] "),
-		log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 // SetLoggerFieldsOrder set `nestedFormatter.FieldsOrder`

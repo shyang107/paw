@@ -17,8 +17,9 @@ type PrintDirOption struct {
 	FiltOpt   *PDFilterOption
 	Ignore    IgnoreFunc
 	//
-	Root  string
-	Paths []string
+	Root    string
+	Paths   []string
+	isTrace bool
 }
 
 func (p *PrintDirOption) SetDepth(depth int) {
@@ -63,6 +64,10 @@ func (p *PrintDirOption) NPath() int {
 	return len(p.Paths)
 }
 
+func (p *PrintDirOption) EnableTrace(isTrace bool) {
+	p.isTrace = isTrace
+}
+
 func NewPrintDirOption() *PrintDirOption {
 	return &PrintDirOption{
 		Depth:     0,
@@ -70,9 +75,10 @@ func NewPrintDirOption() *PrintDirOption {
 		FieldFlag: PFieldDefault,
 		// SortOpt:
 		// FiltOpt:,
-		Ignore: DefaultIgnoreFn,
-		Root:   "",
-		Paths:  nil,
+		Ignore:  DefaultIgnoreFn,
+		Root:    "",
+		Paths:   nil,
+		isTrace: false,
 	}
 }
 

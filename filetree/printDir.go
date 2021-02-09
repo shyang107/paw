@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/shyang107/paw"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -25,8 +26,11 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 		root    string
 		sortOpt *PDSortOption
 	)
+	if opt.isTrace {
+		paw.Logger.SetLevel(logrus.TraceLevel)
+	}
 
-	// paw.Logger.WithField("root", opt.Root).Info()
+	paw.Logger.WithField("root", opt.Root).Trace()
 
 	// setup root
 	root, err = filepath.Abs(opt.Root)
