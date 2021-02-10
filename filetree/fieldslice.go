@@ -85,10 +85,7 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			fd.SetValueC(calign(clkp, fd.Align, fd.Width, file.NLinks()))
 			fd.SetValueColor(clkp)
 		case PFieldSize: //"Size",
-			sperm := file.Permission()
-			c := string(sperm[0])
-			switch c {
-			case "c", "b": //file.IsChardev() || file.IsDev()
+			if file.IsCharDev() || file.IsDev() {
 				major, minor := file.DevNumber()
 				csj := csnp.Sprintf("%[1]*[2]v", fd.widthMajor, major)
 				csn := csnp.Sprintf("%[1]*[2]v", fd.widthMinor, minor)
@@ -99,10 +96,10 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				}
 				fd.SetValue(file.DevNumberString())
 				fd.SetValueC(cdev)
-			case "d": //file.IsDir()
+			} else if file.IsDir() {
 				fd.SetValue("-")
 				fd.SetValueC(calign(cdashp, fd.Align, fd.Width, "-"))
-			default:
+			} else {
 				fd.SetValue(file.ByteSize())
 				csize := fdColorizedSize(file.Size, fd.Width)
 				fd.SetValueC(csize)
@@ -297,14 +294,14 @@ func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
 				if fd == nil {
 					continue
 				}
-				fd.Width = paw.MaxInt(fd.Width, file.WidthOf(field))
 				switch field {
 				case PFieldSize:
 					_, wj, wn := file.widthOfSize()
 					fd.widthMajor = paw.MaxInt(fd.widthMajor, wj)
 					fd.widthMinor = paw.MaxInt(fd.widthMinor, wn)
 					fd.Width = paw.MaxInt(fd.Width, fd.widthMajor+fd.widthMinor+1)
-
+				default:
+					fd.Width = paw.MaxInt(fd.Width, file.WidthOf(field))
 				}
 			}
 		}

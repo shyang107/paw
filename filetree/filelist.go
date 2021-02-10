@@ -408,13 +408,19 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 		for dirScan.Scan() {
 			dirent, err := dirScan.Dirent()
 			if err != nil {
-				paw.Warning.Printf("cannot get dirent: %s", err)
+				// paw.Warning.Printf("cannot get dirent: %s", err)
+				if pdOpt.isTrace {
+					paw.Logger.Warnf("cannot get dirent: %s", err)
+				}
 				continue
 			}
 			path := filepath.Join(f.root, dirent.Name())
 			file, err := NewFileRelTo(path, f.root)
 			if err != nil {
-				paw.Error.Printf("cannot get a new File, %s\n", err)
+				// paw.Error.Printf("cannot get a new File, %s\n", err)
+				if pdOpt.isTrace {
+					paw.Logger.Errorf("cannot get a new File, %s", err)
+				}
 				continue
 			}
 			if err := ignore(file, nil); err != SkipThis {
@@ -459,6 +465,9 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			Callback: func(path string, de *godirwalk.Dirent) error {
 				file, err := NewFileRelTo(path, f.root)
 				if err != nil {
+					if pdOpt.isTrace {
+						paw.Logger.WithField("path", path).Error(err)
+					}
 					return err
 				}
 				idepth := len(file.DirSlice()) - 1
@@ -476,7 +485,9 @@ func (f *FileList) FindFiles(depth int, ignore IgnoreFunc) error {
 			ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
 				// paw.Logger.Errorf("ERROR: %s\n", err)
 				// paw.Error.Printf("ERROR: %s\n", err)
-
+				if pdOpt.isTrace {
+					paw.Logger.WithField("path", osPathname).Error(err)
+				}
 				// For the purposes of this example, a simple SkipNode will suffice, although in reality perhaps additional logic might be called for.
 				return godirwalk.SkipNode
 			},

@@ -769,3 +769,11 @@ func (s *sizesStack) LeaveDirectory() (i int64) {
 func (s *sizesStack) Accumulate(i int64) {
 	s.sizes[s.top] += i
 }
+
+func showlogrus() {
+	paw.Logger.Trace("trace")
+	paw.Logger.Debug("debug")
+	paw.Logger.Info("info")
+	paw.Logger.Warn("warn")
+	paw.Logger.Error("error")
+}

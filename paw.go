@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/shyang107/paw/cnested"
 
 	"github.com/sirupsen/logrus"
 	// nested "github.com/antonfisher/nested-logrus-formatter"
-	nested "github.com/antonfisher/nested-logrus-formatter"
 )
 
 var (
@@ -21,14 +21,14 @@ var (
 	// Logger is logrus.Logger
 	// Logger = logrus.New()
 	Logger = &logrus.Logger{
-		Out:          os.Stderr,
+		Out:          os.Stdout, //os.Stderr,
 		ReportCaller: true,
 		Formatter:    nestedFormatter,
 		// Level:        logrus.InfoLevel,
 		Level: logrus.WarnLevel,
 	}
 	// NestedFormatter ...
-	nestedFormatter = &nested.Formatter{
+	nestedFormatter = &cnested.Formatter{
 		HideKeys: false,
 		// FieldsOrder:     []string{"component", "category"},
 		NoColors:       false,
@@ -41,9 +41,8 @@ var (
 			s := strings.Split(f.Function, ".")
 			funcName := s[len(s)-1]
 			name := filepath.Base(f.File)
-			cp := NewLSColor(filepath.Ext(name))
-			cname := cp.Sprint(name)
-			cfuncName := color.New(color.FgHiGreen).Sprint(funcName)
+			cname := NewLSColor(filepath.Ext(name)).Sprint(name)
+			cfuncName := color.New(color.FgHiGreen).Add(color.Bold).Sprint(funcName)
 			cln := NewEXAColor("sn").Sprint(f.Line)
 			return fmt.Sprintf(" [%s:%s][%s]", cname, cln, cfuncName)
 		},

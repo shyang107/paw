@@ -69,7 +69,10 @@ func NewFile(path string) (*File, error) {
 	ext := filepath.Ext(path)
 	file := strings.TrimSuffix(basename, ext)
 	size := uint64(stat.Size())
-	xattrs, _ := getXattr(path)
+	xattrs, err := getXattr(path)
+	if err != nil && pdOpt.isTrace {
+		paw.Logger.Trace(err)
+	}
 
 	f := &File{
 		Path:        path,
@@ -676,20 +679,16 @@ func (f *File) subDir() string {
 }
 
 func (f *File) widthOfSize() (width, wmajor, wminor int) {
-	sperm := f.Permission()
-	c := string(sperm[0])
-	switch c {
-	case "c", "b":
+	if f.IsCharDev() || f.IsDev() {
 		major, minor := f.DevNumber()
 		wmajor = len(fmt.Sprint(major))
 		wminor = len(fmt.Sprint(minor))
 		// width = wmajor + wminor + 1
 		return wmajor + wminor + 1, wmajor, wminor
-	case "d":
+	} else if f.IsDir() {
 		return 1, 0, 0
-	default:
+	} else {
 		return len(f.ByteSize()), 0, 0
-
 	}
 }
 

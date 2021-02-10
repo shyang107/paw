@@ -35,8 +35,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 	// setup root
 	root, err = filepath.Abs(opt.Root)
 	if err != nil {
-		paw.Error.Println(err)
-		os.Exit(1)
+		paw.Logger.Panic(err)
 	}
 
 	// check opt
@@ -147,6 +146,7 @@ FIND:
 		if err != nil {
 			return err, nil
 		}
+		// showlogrus()
 		// fl.dumpAll()
 	}
 
