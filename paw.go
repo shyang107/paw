@@ -34,7 +34,7 @@ var (
 		NoColors:       false,
 		NoFieldsColors: false,
 		// TimestampFormat: "2006-01-02 15:04:05",
-		TimestampFormat: "0102-150405.000",
+		TimestampFormat: "060102-150405.000",
 		TrimMessages:    true,
 		CallerFirst:     true,
 		CustomCallerFormatter: func(f *runtime.Frame) string {
