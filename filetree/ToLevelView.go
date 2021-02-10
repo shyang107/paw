@@ -102,7 +102,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 			}
 		}
 		if f.depth != 0 {
-			fmt.Fprintln(w, ppad+f.DirSummary(dir))
+			fmt.Fprintln(w, ppad+f.DirSummary(dir, wdstty-paw.StringWidth(ppad)))
 
 			if ndirs+nfiles < nItems {
 				printBanner(w, "", "-", wdstty)
@@ -113,7 +113,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 	printBanner(w, "", "=", wdstty)
 
 END:
-	fmt.Fprint(w, f.TotalSummary())
+	fmt.Fprint(w, f.TotalSummary(wdstty))
 
 	str := paw.PaddingString(w.String(), pad)
 	fmt.Fprintln(f.Writer(), str)

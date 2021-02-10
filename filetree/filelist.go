@@ -199,18 +199,21 @@ func (f *FileList) NTotalDirsAndFile() (ndirs, nfiles int, size uint64) {
 //
 // 	Example:
 // 	2 directories, 2 files, size ≈ 0b.
-func (f *FileList) TotalSummary() string {
+func (f *FileList) TotalSummary(wdstty int) string {
 	ndirs, nfiles, sumsize := f.NTotalDirsAndFile()
-	return totalSummary("", ndirs, nfiles, sumsize)
+	if wdstty <= 0 {
+		wdstty = sttyWidth - 2
+	}
+	return totalSummary("", ndirs, nfiles, sumsize, wdstty)
 }
 
 // DirSummary will return information about dir.
 //
 // 	Example:
 // 	2 directories, 2 files, size ≈ 0b.
-func (f *FileList) DirSummary(dir string) string {
+func (f *FileList) DirSummary(dir string, wdstty int) string {
 	ndirs, nfiles, sumsize := f.NSubDirsAndFiles(dir)
-	return dirSummary("", ndirs, nfiles, sumsize)
+	return dirSummary("", ndirs, nfiles, sumsize, wdstty)
 }
 
 // NSubDirs will return number of sub-directories of (key) dir

@@ -406,8 +406,10 @@ func getColorizedRootHead(root string, size uint64, wdstty int) string {
 	chead := cpmpt.Sprint("Root directory: ")
 	chead += pmptColorizedPath(root, "")
 	chead += cpmpt.Sprint(", size ≈ ")
-	chead += cpmptSn.Sprint(sn) + cpmptSu.Sprint(su) + cpmpt.Sprint(". ")
-	// chead += cpmpt.Sprint(paw.Spaces(wdstty - len(paw.StripANSI(chead))))
+	chead += cpmptSn.Sprint(sn) + cpmptSu.Sprint(su)
+	chead += cpmpt.Sprint(".")
+
+	chead += cpmpt.Sprint(paw.Spaces(wdstty + 1 - paw.StringWidth(paw.StripANSI(chead))))
 
 	// chead := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, GetColorizedPath(root, ""), GetColorizedSize(size))
 	return chead
@@ -433,12 +435,7 @@ func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
 	return cdinf, wdinf
 }
 
-func dirSummary(pad string, ndirs int, nfiles int, sumsize uint64) string {
-	// var (
-	// 	cndirs   = csnp.Sprint(ndirs)
-	// 	cnfiles  = csnp.Sprint(nfiles)
-	// 	csumsize = GetColorizedSize(sumsize)
-	// )
+func dirSummary(pad string, ndirs int, nfiles int, sumsize uint64, wdstty int) string {
 	var (
 		ss  = ByteSize(sumsize)
 		nss = len(ss)
@@ -454,16 +451,18 @@ func dirSummary(pad string, ndirs int, nfiles int, sumsize uint64) string {
 		cnfiles +
 		cpmpt.Sprint(" files, size ≈ ") +
 		csumsize +
-		cpmpt.Sprint(".")
+		cpmpt.Sprint(". ")
+	nmsg := paw.StringWidth(paw.StripANSI(msg))
+	msg += cpmpt.Sprint(paw.Spaces(wdstty + 1 - nmsg))
 	// msg := fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return msg
 }
 
-func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
-	fmt.Fprintln(w, dirSummary(pad, ndirs, nfiles, sumsize))
+func printDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64, wdstty int) {
+	fmt.Fprintln(w, dirSummary(pad, ndirs, nfiles, sumsize, wdstty))
 }
 
-func totalSummary(pad string, ndirs int, nfiles int, sumsize uint64) string {
+func totalSummary(pad string, ndirs int, nfiles int, sumsize uint64, wdstty int) string {
 	var (
 		ss  = ByteSize(sumsize)
 		nss = len(ss)
@@ -480,21 +479,21 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize uint64) string {
 		cnfiles +
 		cpmpt.Sprint(" files, total size ≈ ") +
 		csumsize +
-		cpmpt.Sprint(". ")
-	// nsummary := len(paw.StripANSI(summary))
-	// summary += cpmpt.Sprint(paw.Spaces(sttyWidth - nsummary))
+		cpmpt.Sprint(".")
+	nsummary := paw.StringWidth(paw.StripANSI(summary))
+	summary += cpmpt.Sprint(paw.Spaces(wdstty + 1 - nsummary))
 	// fmt.Sprintf("%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return summary
 }
 
-func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64) {
+func printTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize uint64, wdstty int) {
 
-	fmt.Fprintln(w, totalSummary(pad, ndirs, nfiles, sumsize))
+	fmt.Fprintln(w, totalSummary(pad, ndirs, nfiles, sumsize, wdstty))
 }
 
 func printBanner(w io.Writer, pad string, mark string, length int) {
-	banner := fmt.Sprintf("%s%s", pad, strings.Repeat(mark, length))
-	fmt.Fprintln(w, cdashp.Sprint(banner))
+	banner := cdashp.Sprintf("%s%s\n", pad, strings.Repeat(mark, length))
+	fmt.Fprint(w, banner)
 }
 
 // GetColorizedPermission will return a colorful string of mode

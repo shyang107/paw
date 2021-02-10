@@ -328,12 +328,18 @@ WRAPFIELDS:
 					s = t.FieldsColorString[j]
 					sa := StripANSI(s)
 					sp := Spaces(widths[j] - StringWidth(sa))
-					s += t.getDefaultColor(j).Sprint(sp)
+					s += sp
+					// s += t.getDefaultColor(j).Sprint(sp)
 				} else {
 					s = t.Colors[j].Sprint(v)
+					// s = v
 				}
 			} else {
-				s = t.getAlignString(j, aligns[j], widths[j], v)
+				if j == len(wfields)-1 && i > 0 {
+					s = t.Colors[j].Sprint(v) + Spaces(widths[j]-vwidths[j])
+				} else {
+					s = t.getAlignString(j, aligns[j], widths[j], v)
+				}
 			}
 
 			sb.WriteString(s + sep)
@@ -370,13 +376,16 @@ func getColorField(value string, cf, ct *color.Color, align Align, width int) st
 	// fmt.Println("width =", width, "wf =", wf)
 	switch align {
 	case AlignRight:
+		// s = Spaces(width-ws) + cf.Sprint(s)
 		s = ct.Sprint(Spaces(width-ws)) + cf.Sprint(s)
 		// s = ct.Sprint(Repeat("X", width-ws)) + cf.Sprint(s)
 	case AlignCenter:
 		wsl := (width - ws) / 2
 		wsr := width - ws - wsl
-		s = ct.Sprint(Spaces(wsl)) + cf.Sprint(s) + ct.Sprint(Spaces(wsr))
+		s = Spaces(wsl) + cf.Sprint(s) + Spaces(wsr)
+		// s = ct.Sprint(Spaces(wsl)) + cf.Sprint(s) + ct.Sprint(Spaces(wsr))
 	default: //AlignLeft
+		// s = cf.Sprint(s) + Spaces(width-ws)
 		s = cf.Sprint(s) + ct.Sprint(Spaces(width-ws))
 		// s = cf.Sprint(s) + ct.Sprint(Repeat("X", width-ws))
 	}
@@ -394,7 +403,8 @@ func getColorxattr(t *TableFormat, value, xsymb string, cs, cx, r *color.Color, 
 	if xsymb == t.XAttributeSymbol2 {
 		xsymb = tbxSp
 	}
-	return cs.Sprint(xsymb) + cx.Sprint(xattr) + r.Sprint(tail)
+	return cs.Sprint(xsymb) + cx.Sprint(xattr) + tail
+	// return cs.Sprint(xsymb) + cx.Sprint(xattr) + r.Sprint(tail)
 }
 
 func (t *TableFormat) getAlignString(col int, al Align, width int, value string) string {

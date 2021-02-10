@@ -38,7 +38,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		nItems             = fNDirs + fNFiles
 		ndirs, nfiles      = 0, 0
 		wdstty             = sttyWidth - 2 - paw.StringWidth(pad)
-		roothead           = getColorizedRootHead(f.root, f.TotalSize(), sttyWidth)
+		roothead           = getColorizedRootHead(f.root, f.TotalSize(), wdstty)
 	)
 
 	w.Reset()
@@ -79,7 +79,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		}
 
 		if f.depth != 0 {
-			fmt.Fprintln(w, f.DirSummary(dir))
+			fmt.Fprintln(w, f.DirSummary(dir, wdstty))
 			if ndirs+nfiles < nItems {
 				printBanner(w, "", "-", wdstty)
 			}
@@ -89,7 +89,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 	printBanner(w, "", "=", wdstty)
 
 END:
-	fmt.Fprint(w, f.TotalSummary())
+	fmt.Fprint(w, f.TotalSummary(wdstty))
 
 	str := paw.PaddingString(w.String(), pad)
 	fmt.Fprintln(f.Writer(), str)

@@ -101,7 +101,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	// print end message
 	printBanner(buf, "", "=", wdstty)
 
-	fmt.Fprint(buf, f.TotalSummary())
+	fmt.Fprint(buf, f.TotalSummary(wdstty))
 
 	str := paw.PaddingString(buf.String(), pad)
 	fmt.Fprintln(w, str)

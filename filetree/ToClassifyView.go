@@ -67,7 +67,7 @@ func (f *FileList) ToClassifyView(pad string) string {
 	}
 
 	printBanner(w, "", "=", wdstty)
-	fmt.Fprint(w, f.TotalSummary())
+	fmt.Fprint(w, f.TotalSummary(wdstty))
 
 	str := paw.PaddingString(w.String(), pad)
 	fmt.Fprintln(f.Writer(), str)

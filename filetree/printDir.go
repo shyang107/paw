@@ -324,7 +324,7 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 	}
 	printBanner(w, "", "=", wdstty)
 
-	fmt.Fprintln(w, f.TotalSummary())
+	fmt.Fprintln(w, f.TotalSummary(wdstty))
 
 	str := paw.PaddingString(w.String(), pad)
 	fmt.Fprintln(f.Writer(), str)

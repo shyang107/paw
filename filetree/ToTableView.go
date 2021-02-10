@@ -170,7 +170,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			}
 		}
 		if f.depth != 0 {
-			tf.PrintLineln(pad + spNo + f.DirSummary(dir))
+			tf.PrintLineln(cpmpt.Sprint(pad+spNo) + f.DirSummary(dir, wdstty-paw.StringWidth(pad+spNo)))
 
 			if ndirs+nfiles < nItems {
 				tf.PrintLineln(banner)
@@ -178,7 +178,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		}
 	}
 
-	tf.SetAfterMessage(f.TotalSummary())
+	tf.SetAfterMessage(f.TotalSummary(wdstty))
 	tf.PrintEnd()
 
 	return w.String()
