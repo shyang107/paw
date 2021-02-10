@@ -71,7 +71,7 @@ func NewFile(path string) (*File, error) {
 	size := uint64(stat.Size())
 	xattrs, err := getXattr(path)
 	if err != nil && pdOpt.isTrace {
-		paw.Logger.Trace(err)
+		paw.Logger.Warn(err)
 	}
 
 	f := &File{
@@ -136,14 +136,11 @@ func (f File) String() string {
 
 // LSColor will return LS_COLORS color of File
 func (f *File) LSColor() *color.Color {
-	// return GetFileLSColor(f)
 	return f.cp
 }
 
 // LSColorstring will return a color string using LS_COLORS according to `f.Path` of file
 func (f *File) LSColorstring(s string) string {
-	// str, _ := FileLSColorString(f.Path, s)
-	// return str
 	return f.LSColor().Sprint(s)
 }
 

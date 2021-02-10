@@ -214,7 +214,7 @@ func getColorOfLevel(level logrus.Level) (c *color.Color) {
 	case logrus.DebugLevel:
 		c = color.New(color.FgMagenta)
 	case logrus.WarnLevel:
-		c = color.New(color.FgYellow)
+		c = color.New(color.FgHiRed)
 	case logrus.ErrorLevel, logrus.FatalLevel, logrus.PanicLevel:
 		c = color.New([]color.Attribute{38, 5, 220, 1, 48, 5, 160}...) //
 	default:

@@ -771,9 +771,11 @@ func (s *sizesStack) Accumulate(i int64) {
 }
 
 func showlogrus() {
-	paw.Logger.Trace("trace")
-	paw.Logger.Debug("debug")
-	paw.Logger.Info("info")
-	paw.Logger.Warn("warn")
-	paw.Logger.Error("error")
+	if pdOpt.isTrace {
+		paw.Logger.Trace("trace")
+		paw.Logger.Debug("debug")
+		paw.Logger.Info("info")
+		paw.Logger.Warn("warn")
+		paw.Logger.Error("error")
+	}
 }
