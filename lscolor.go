@@ -100,6 +100,13 @@ var (
 		"prompt":   {38, 5, 251, 48, 5, 236},
 		"promptsn": {38, 5, 156, 1, 48, 5, 236},
 		"promptsu": {38, 5, 156, 48, 5, 236},
+		"trace":    {38, 5, color.FgCyan},
+		"debug":    {38, 5, color.FgMagenta},
+		"info":     {38, 5, color.FgBlue},
+		"warn":     {38, 5, color.FgHiRed},
+		"error":    {38, 5, 220, 1, 48, 5, 160},
+		"fatal":    {38, 5, 220, 1, 48, 5, 160},
+		"panic":    {38, 5, 220, 1, 48, 5, 160},
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file
@@ -760,6 +767,13 @@ var (
 	CpmptSn = NewEXAColor("promptsn")
 	// CpmptSu is default color use for unit in prompt
 	CpmptSu = NewEXAColor("promptsu")
+	Ctrace  = NewEXAColor("trace")
+	Cdebug  = NewEXAColor("debug")
+	Cinfo   = NewEXAColor("info")
+	Cwarn   = NewEXAColor("warn")
+	Cerror  = NewEXAColor("error")
+	Cfatal  = NewEXAColor("fatal")
+	Cpanic  = NewEXAColor("panic")
 )
 
 func init() {
