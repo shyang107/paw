@@ -59,20 +59,26 @@ type File struct {
 
 // NewFile will the pointer of instance of `File`, and is a constructor of `File`.
 func NewFile(path string) (*File, error) {
-	var err error
-	stat, err := os.Lstat(path)
+	var (
+		info                     os.FileInfo
+		err                      error
+		dir, basename, ext, file string
+		size                     uint64
+		xattrs                   []string
+	)
+	info, err = os.Lstat(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get stat: %s", err)
 	}
-	dir := filepath.Dir(path)
-	basename := stat.Name() // filepath.Base(path)
-	ext := filepath.Ext(path)
-	file := strings.TrimSuffix(basename, ext)
-	size := uint64(stat.Size())
-	xattrs, err := getXattr(path)
-	if err != nil && pdOpt.isTrace {
-		paw.Logger.Warn(err)
-	}
+	dir = filepath.Dir(path)
+	basename = filepath.Base(path)
+	ext = filepath.Ext(path)
+	file = strings.TrimSuffix(basename, ext)
+	size = uint64(info.Size())
+	xattrs, err = getXattr(path)
+	// if err != nil && pdOpt.isTrace {
+	// 	paw.Logger.Warn(err)
+	// }
 
 	f := &File{
 		Path:        path,
@@ -80,7 +86,7 @@ func NewFile(path string) (*File, error) {
 		BaseName:    basename,
 		File:        file,
 		Ext:         ext,
-		Info:        stat,
+		Info:        info,
 		Size:        size,
 		XAttributes: xattrs,
 		UpDir:       nil,

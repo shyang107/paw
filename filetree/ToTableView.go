@@ -107,6 +107,10 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 			if !strings.EqualFold(dir, RootMark) {
 				if f.depth != 0 {
 					tf.PrintLine(fm[dir][0].DirNameWrapC(cidx, wdstty-widx))
+					errmsg := f.GetErrorString(dir)
+					if len(errmsg) > 0 {
+						tf.PrintLine(errmsg)
+					}
 				}
 			}
 		} else {

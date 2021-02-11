@@ -73,6 +73,12 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 					cistr := slevel + cdip.Sprintf("G%-[1]*[2]d", wdidx, i) + " "
 					pipad := ppad + cistr
 					fmt.Fprint(w, thisDir.DirNameWrapC(pipad, wdstty))
+
+					errmsg := f.GetErrorString(dir)
+					if len(errmsg) > 0 {
+						errmsg = paw.PaddingString(errmsg, ppad)
+						fmt.Fprint(w, errmsg)
+					}
 				}
 			}
 		} else {

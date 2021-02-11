@@ -137,7 +137,8 @@ FIND:
 	} else { // NPath == 0
 		// use root as default
 		fl.SetRoot(root)
-		err := fl.FindFiles(pdOpt.Depth, pdOpt.Ignore)
+		fl.SetIgnoreFunc(pdOpt.Ignore)
+		err := fl.FindFiles(pdOpt.Depth)
 		if err != nil {
 			return err, nil
 		}
@@ -261,7 +262,8 @@ func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) err
 	for _, path := range dirs {
 		pdOpt.SetRoot(path)
 		f.SetRoot(path)
-		err := f.FindFiles(pdOpt.Depth, pdOpt.Ignore)
+		f.SetIgnoreFunc(pdOpt.Ignore)
+		err := f.FindFiles(pdOpt.Depth)
 		if err != nil {
 			return err
 		}
