@@ -28,7 +28,8 @@ func exGitstatus(path string) {
 	}
 
 	fl := filetree.NewFileList(path)
-	fl.FindFiles(0, nil)
+	fl.SetIgnoreFunc(nil)
+	fl.FindFiles(0)
 	fmt.Println(fl.ToListView(""))
 	dirs := fl.Dirs()
 	fm := fl.Map()
