@@ -43,9 +43,9 @@ func NewFieldSliceFrom(keys []PDFieldFlag, git GitStatus) (fds *FieldSlice) {
 func fdColorizedSize(size uint64, width int) (csize string) {
 	ss := ByteSize(size)
 	nss := len(ss)
-	sn := fmt.Sprintf("%[1]*[2]s", width-1, ss[:nss-1])
+	csn := csnp.Sprintf("%[1]*[2]s", width-1, ss[:nss-1])
 	su := strings.ToLower(ss[nss-1:])
-	csize = csnp.Sprint(sn) + csup.Sprint(su)
+	csize = csn + csup.Sprint(su)
 	return csize
 }
 
@@ -296,10 +296,10 @@ func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
 				}
 				switch field {
 				case PFieldSize:
-					_, wj, wn := file.widthOfSize()
+					w, wj, wn := file.widthOfSize()
 					fd.widthMajor = paw.MaxInt(fd.widthMajor, wj)
 					fd.widthMinor = paw.MaxInt(fd.widthMinor, wn)
-					fd.Width = paw.MaxInt(fd.Width, fd.widthMajor+fd.widthMinor+1)
+					fd.Width = paw.MaxInts(fd.Width, w, fd.widthMajor+fd.widthMinor+1)
 				default:
 					fd.Width = paw.MaxInt(fd.Width, file.WidthOf(field))
 				}
