@@ -927,11 +927,13 @@ func PaddingString(s string, pad string) string {
 	r := []rune(s)
 	sb := new(strings.Builder)
 	sb.WriteString(pad)
-	for _, v := range r {
+	for i, v := range r {
 		if v == '\n' {
 			// sb.WriteString("\n")
 			sb.WriteRune('\n')
-			sb.WriteString(pad)
+			if i < len(r)-1 {
+				sb.WriteString(pad)
+			}
 		} else {
 			sb.WriteString(string(v))
 		}
