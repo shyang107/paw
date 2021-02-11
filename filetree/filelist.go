@@ -478,25 +478,23 @@ func (f *FileList) FindFiles(depth int) error {
 
 		// var pdir = file
 		for dirScan.Scan() {
-			dirent, err := dirScan.Dirent()
+			de, err := dirScan.Dirent()
 			if err != nil {
-				// paw.Warning.Printf("cannot get dirent: %s", err)
 				if pdOpt.isTrace {
-					flerr := newFileListError(filepath.Join(f.root, dirent.Name()), err, f.root)
+					flerr := newFileListError(filepath.Join(f.root, de.Name()), err, f.root)
 					paw.Logger.WithFields(logrus.Fields{
 						"path": flerr.path,
 						// "dir":      flerr.dir,
 						// "basename": flerr.basename,
 						// "err":      flerr.err,
 					}).Error(err)
-					f.AddError(filepath.Join(f.root, dirent.Name()), err)
 				}
+				f.AddError(filepath.Join(f.root, de.Name()), err)
 				continue
 			}
-			path := filepath.Join(f.root, dirent.Name())
+			path := filepath.Join(f.root, de.Name())
 			file, err := NewFileRelTo(path, f.root)
 			if err != nil {
-				// paw.Error.Printf("cannot get a new File, %s\n", err)
 				if pdOpt.isTrace {
 					flerr := newFileListError(path, err, f.root)
 					paw.Logger.WithFields(logrus.Fields{
@@ -505,8 +503,8 @@ func (f *FileList) FindFiles(depth int) error {
 						// "basename": flerr.basename,
 						// "err":      flerr.err,
 					}).Error(err)
-					f.AddError(path, err)
 				}
+				f.AddError(path, err)
 				continue
 			}
 			if err := ignore(file, nil); err != SkipThis {
@@ -516,7 +514,7 @@ func (f *FileList) FindFiles(depth int) error {
 		if err := dirScan.Err(); err != nil {
 			return fmt.Errorf("cannot scan directory: %s", err)
 		}
-
+		// ======
 		// files, err := godirwalk.ReadDirnames(f.root, nil)
 		// if err != nil {
 		// 	return errors.New(f.root + ": " + err.Error())
@@ -548,6 +546,19 @@ func (f *FileList) FindFiles(depth int) error {
 		// }
 	default: //walk through all directories of {root directory}
 		paw.Logger.WithField("root", f.root).Trace()
+		file, errr := NewFileRelTo(f.root, f.root)
+		if errr != nil {
+			if pdOpt.isTrace {
+				paw.Logger.Error(errr)
+			}
+			return errr
+		}
+		if file.IsLink() {
+			f.root = file.LinkPath()
+			f.gitstatus, _ = GetShortGitStatus(f.root)
+			f.depth = depth
+		}
+
 		err := filepath.Walk(f.root, func(path string, info os.FileInfo, err error) error {
 			skip := false
 			if err != nil {
@@ -568,6 +579,7 @@ func (f *FileList) FindFiles(depth int) error {
 				if pdOpt.isTrace {
 					paw.Logger.Error(errf)
 				}
+				f.AddError(path, errf)
 				return nil
 			}
 			idepth := len(strings.Split(strings.Replace(path, f.root, ".", 1), PathSeparator)) - 1

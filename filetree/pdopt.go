@@ -20,6 +20,7 @@ type PrintDirOption struct {
 	Root    string
 	Paths   []string
 	isTrace bool
+	File    *File
 }
 
 func (p *PrintDirOption) SetDepth(depth int) {

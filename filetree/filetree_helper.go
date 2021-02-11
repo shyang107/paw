@@ -395,7 +395,19 @@ func pmptColorizedPath(path string, root string) string {
 		return cpmpt.Sprint(cdirp.Sprint(dir)) + cpmpt.Sprint(cfip.Sprint(name))
 	}
 
-	cname := cpmpt.Sprint(file.BaseNameToLinkC())
+	cname := cpmpt.Sprint(file.BaseNameC())
+	if file.IsLink() {
+		lfile, err := NewFileRelTo(file.LinkPath(), "")
+		if err != nil {
+			cname += cpmpt.Sprint(cdashp.Sprint(" -> ")) + pmptColorizedPath(lfile.Path, "")
+		} else {
+			cname += cpmpt.Sprint(cdashp.Sprint(" -> "))
+			dir, name := filepath.Split(file.LinkPath())
+			c := GetFileLSColor(lfile)
+			cname += cpmpt.Sprint(cdirp.Sprint(dir))
+			cname += cpmpt.Sprint(c.Sprint(name))
+		}
+	}
 	if file.Dir == "/" {
 		return cpmpt.Sprint("/") + cname
 	} else {
@@ -411,6 +423,11 @@ func getColorizedRootHead(root string, size uint64, wdstty int) string {
 		sn  = ss[:nss-1] // fmt.Sprintf("%s", ss[:nss-1])
 		su  = strings.ToLower(ss[nss-1:])
 	)
+	if pdOpt != nil && pdOpt.File != nil {
+		if pdOpt.File.IsLink() {
+			root = pdOpt.File.Path
+		}
+	}
 	chead := cpmpt.Sprint("Root directory: ")
 	chead += pmptColorizedPath(root, "")
 	chead += cpmpt.Sprint(", size ≈ ")

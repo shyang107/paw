@@ -44,6 +44,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 	} else {
 		pdOpt = opt
 	}
+	pdOpt.File, _ = NewFileRelTo(root, root)
 
 	// check fields to view
 	checkFieldFlag(pdOpt)
@@ -259,7 +260,7 @@ func rowFile(nline int, flag PDFieldFlag, valueC string, width, wdstty int) (row
 }
 
 func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) error {
-	for _, path := range dirs {
+	for i, path := range dirs {
 		pdOpt.SetRoot(path)
 		f.SetRoot(path)
 		f.SetIgnoreFunc(pdOpt.Ignore)
@@ -271,6 +272,9 @@ func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) err
 		err = switchFileListView(f, pdOpt.OutOpt, pad)
 		if err != nil {
 			return err
+		}
+		if i < len(dirs)-1 {
+			fmt.Fprintln(f.Writer())
 		}
 		f.dirs = []string{}
 		f.store = make(FileMap)
