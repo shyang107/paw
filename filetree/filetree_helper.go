@@ -76,6 +76,13 @@ var (
 	gpname                = usergp.Name
 	curname               = cuup.Sprint(urname)
 	cgpname               = cgup.Sprint(gpname)
+	ctrace                = paw.Ctrace
+	cdebug                = paw.Cdebug
+	cinfo                 = paw.Cinfo
+	cwarn                 = paw.Cwarn
+	cerror                = paw.Cerror
+	cfatal                = paw.Cfatal
+	cpanic                = paw.Cpanic
 	sttyHeight, sttyWidth = paw.GetTerminalSize()
 )
 
@@ -317,13 +324,14 @@ func GetFileLSColor(file *File) *color.Color {
 		return clnp
 	}
 
+	if file.IsCharDev() { // os.ModeDevice | os.ModeCharDevice
+		return ccdp
+	}
+
 	if file.IsDev() { //
 		return cbdp
 	}
 
-	if file.IsCharDev() { // os.ModeDevice | os.ModeCharDevice
-		return ccdp
-	}
 	if file.IsFIFO() { //os.ModeNamedPipe
 		return cpip
 	}
