@@ -10,9 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/karrick/godirwalk"
-	"github.com/sirupsen/logrus"
-
 	"github.com/shyang107/paw"
 	// "github.com/shyang107/paw/treeprint"
 )
@@ -50,6 +47,12 @@ func newFileListError(path string, err error, root string) *flError {
 	dir := filepath.Dir(path)
 	adir := strings.Replace(dir, root, ".", 1)
 	basename := filepath.Base(path)
+	// paw.Logger.WithFields(logrus.Fields{
+	// 	"path": path,
+	// 	"dir":  dir,
+	// 	"adir": adir,
+	// 	"name": basename,
+	// }).Debug()
 	return &flError{
 		path:     path,
 		dir:      adir,
@@ -368,6 +371,8 @@ func (f *FileList) addFilePD(file *File) {
 func (f *FileList) AddError(path string, err error) {
 	f.errors = append(f.errors, newFileListError(path, err, f.root))
 }
+
+// GetErrorString get the error string in `dir` during find files
 func (f FileList) GetErrorString(dir string) string {
 	if len(f.errors) == 0 {
 		return ""
@@ -385,6 +390,7 @@ func (f FileList) GetErrorString(dir string) string {
 	return sb.String()
 }
 
+// GetAllErrorString get the all error string in `dir` during find files
 func (f FileList) GetAllErrorString() string {
 	if len(f.errors) == 0 {
 		return ""
@@ -398,6 +404,28 @@ func (f FileList) GetAllErrorString() string {
 		return ""
 	}
 	return sb.String()
+}
+
+// FprintErrs prints out error string in `dirent` during find files
+func (f *FileList) FprintErrs(w io.Writer, dirent, pad string) {
+	errmsg := f.GetErrorString(dirent)
+	if len(errmsg) > 0 {
+		if len(pad) == 0 {
+			errmsg = paw.PaddingString(errmsg, pad)
+		}
+		fmt.Fprint(w, errmsg)
+	}
+}
+
+// FprintAllErrs prints out all error string during find files
+func (f *FileList) FprintAllErrs(w io.Writer, pad string) {
+	errmsg := f.GetAllErrorString()
+	if len(errmsg) > 0 {
+		if len(pad) == 0 {
+			errmsg = paw.PaddingString(errmsg, pad)
+		}
+		fmt.Fprint(w, errmsg)
+	}
 }
 
 func (f *FileList) DisableColor() {
@@ -446,6 +474,114 @@ var DefaultIgnoreFn = func(f *File, err error) error {
 	return nil
 }
 
+func (f *FileList) readDir(dirPath string) {
+	openDir, err := os.Open(dirPath)
+	if err != nil {
+		if pdOpt.isTrace {
+			paw.Logger.Error(err)
+		}
+		f.AddError(dirPath, err)
+		return
+	}
+	defer openDir.Close()
+
+	names, err := openDir.Readdirnames(-1)
+	if err != nil {
+		if pdOpt.isTrace {
+			paw.Logger.Error(err)
+		}
+		f.AddError(dirPath, err)
+		return
+	}
+	for _, name := range names {
+		path := filepath.Join(f.root, name)
+		file, err := NewFileRelTo(path, f.root)
+		if err != nil {
+			if pdOpt.isTrace {
+				paw.Logger.Error(err)
+			}
+			f.AddError(path, err)
+			continue
+		}
+		if err := f.ignore(file, nil); err != SkipThis {
+			f.AddFile(file)
+		}
+	}
+	// ==== scan
+	// dirScan, err := godirwalk.NewScanner(f.root)
+	// if err != nil {
+	// 	return fmt.Errorf("cannot scan directory: %s", err)
+	// }
+	// // var pdir = file
+	// for dirScan.Scan() {
+	// 	de, err := dirScan.Dirent()
+	// 	if err != nil {
+	// 		if pdOpt.isTrace {
+	// 			flerr := newFileListError(filepath.Join(f.root, de.Name()), err, f.root)
+	// 			paw.Logger.WithFields(logrus.Fields{
+	// 				"path": flerr.path,
+	// 				// "dir":      flerr.dir,
+	// 				// "basename": flerr.basename,
+	// 				// "err":      flerr.err,
+	// 			}).Error(err)
+	// 		}
+	// 		f.AddError(filepath.Join(f.root, de.Name()), err)
+	// 		continue
+	// 	}
+	// 	path := filepath.Join(f.root, de.Name())
+	// 	file, err := NewFileRelTo(path, f.root)
+	// 	if err != nil {
+	// 		if pdOpt.isTrace {
+	// 			flerr := newFileListError(path, err, f.root)
+	// 			paw.Logger.WithFields(logrus.Fields{
+	// 				"path": flerr.path,
+	// 				// "dir":      flerr.dir,
+	// 				// "basename": flerr.basename,
+	// 				// "err":      flerr.err,
+	// 			}).Error(err)
+	// 		}
+	// 		f.AddError(path, err)
+	// 		continue
+	// 	}
+	// 	if err := ignore(file, nil); err != SkipThis {
+	// 		f.AddFile(file)
+	// 	}
+	// }
+	// if err := dirScan.Err(); err != nil {
+	// 	return fmt.Errorf("cannot scan directory: %s", err)
+	// }
+	// ======
+	// files, err := godirwalk.ReadDirnames(f.root, nil)
+	// if err != nil {
+	// 	return errors.New(f.root + ": " + err.Error())
+	// }
+
+	// file, err := NewFileRelTo(f.root, f.root)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// file.SetUpDir(nil)
+	// f.AddFile(file)
+
+	// var pdir = file
+	// for _, name := range files {
+	// 	path := filepath.Join(f.root, name)
+	// 	file, err := NewFileRelTo(path, f.root)
+	// 	if err != nil {
+	// 		// paw.Logger.Error(err)
+	// 		paw.Error.Printf("accesing path %q, %v\n", path, err)
+	// 		// return err
+	// 		continue
+	// 	}
+	// 	if err := ignore(file, nil); err != SkipThis {
+	// 		// continue
+	// 		file.SetUpDir(pdir)
+	// 		f.AddFile(file)
+	// 	}
+	// }
+}
+
 // FindFiles will find files using codintion `ignore` func
 // 	depth : depth of subfolders
 // 		depth < 0 : walk through all directories of {root directory}
@@ -463,10 +599,6 @@ func (f *FileList) FindFiles(depth int) error {
 	f.depth = depth
 	switch depth {
 	case 0: //{root directory}/*
-		dirScan, err := godirwalk.NewScanner(f.root)
-		if err != nil {
-			return fmt.Errorf("cannot scan directory: %s", err)
-		}
 		file, err := NewFileRelTo(f.root, f.root)
 		if err != nil {
 			if pdOpt.isTrace {
@@ -475,105 +607,25 @@ func (f *FileList) FindFiles(depth int) error {
 			return err
 		}
 		f.AddFile(file)
-
-		// var pdir = file
-		for dirScan.Scan() {
-			de, err := dirScan.Dirent()
-			if err != nil {
-				if pdOpt.isTrace {
-					flerr := newFileListError(filepath.Join(f.root, de.Name()), err, f.root)
-					paw.Logger.WithFields(logrus.Fields{
-						"path": flerr.path,
-						// "dir":      flerr.dir,
-						// "basename": flerr.basename,
-						// "err":      flerr.err,
-					}).Error(err)
-				}
-				f.AddError(filepath.Join(f.root, de.Name()), err)
-				continue
-			}
-			path := filepath.Join(f.root, de.Name())
-			file, err := NewFileRelTo(path, f.root)
-			if err != nil {
-				if pdOpt.isTrace {
-					flerr := newFileListError(path, err, f.root)
-					paw.Logger.WithFields(logrus.Fields{
-						"path": flerr.path,
-						// "dir":      flerr.dir,
-						// "basename": flerr.basename,
-						// "err":      flerr.err,
-					}).Error(err)
-				}
-				f.AddError(path, err)
-				continue
-			}
-			if err := ignore(file, nil); err != SkipThis {
-				f.AddFile(file)
-			}
-		}
-		if err := dirScan.Err(); err != nil {
-			return fmt.Errorf("cannot scan directory: %s", err)
-		}
-		// ======
-		// files, err := godirwalk.ReadDirnames(f.root, nil)
-		// if err != nil {
-		// 	return errors.New(f.root + ": " + err.Error())
-		// }
-
-		// file, err := NewFileRelTo(f.root, f.root)
-		// if err != nil {
-		// 	return err
-		// }
-
-		// file.SetUpDir(nil)
-		// f.AddFile(file)
-
-		// var pdir = file
-		// for _, name := range files {
-		// 	path := filepath.Join(f.root, name)
-		// 	file, err := NewFileRelTo(path, f.root)
-		// 	if err != nil {
-		// 		// paw.Logger.Error(err)
-		// 		paw.Error.Printf("accesing path %q, %v\n", path, err)
-		// 		// return err
-		// 		continue
-		// 	}
-		// 	if err := ignore(file, nil); err != SkipThis {
-		// 		// continue
-		// 		file.SetUpDir(pdir)
-		// 		f.AddFile(file)
-		// 	}
-		// }
+		f.readDir(f.root)
 	default: //walk through all directories of {root directory}
 		paw.Logger.WithField("root", f.root).Trace()
-		file, errr := NewFileRelTo(f.root, f.root)
-		if errr != nil {
+		file, errf := NewFileRelTo(f.root, f.root)
+		if errf != nil {
 			if pdOpt.isTrace {
-				paw.Logger.Error(errr)
+				paw.Logger.Error(errf)
 			}
-			return errr
+			f.AddError(f.root, errf)
+			return errf
 		}
+		f.AddFile(file)
 		if file.IsLink() {
 			f.root = file.LinkPath()
 			f.gitstatus, _ = GetShortGitStatus(f.root)
 			f.depth = depth
 		}
-
 		err := filepath.Walk(f.root, func(path string, info os.FileInfo, err error) error {
 			skip := false
-			if err != nil {
-				if pdOpt.isTrace {
-					flerr := newFileListError(path, err, f.root)
-					paw.Logger.WithFields(logrus.Fields{
-						"path": flerr.path,
-						// "dir":      flerr.dir,
-						// "basename": flerr.basename,
-						// "err":      flerr.err,
-					}).Error(err)
-				}
-				f.AddError(path, err)
-				return nil
-			}
 			file, errf := NewFileRelTo(path, f.root)
 			if errf != nil {
 				if pdOpt.isTrace {
@@ -590,6 +642,9 @@ func (f *FileList) FindFiles(depth int) error {
 			}
 			if err1 := ignore(file, errf); err1 == SkipThis {
 				skip = true
+				if file.IsDir() {
+					return filepath.SkipDir
+				}
 			}
 			if !skip {
 				f.AddFile(file)
@@ -599,6 +654,7 @@ func (f *FileList) FindFiles(depth int) error {
 		if err != nil {
 			return errors.New(f.root + ": " + err.Error())
 		}
+		// ==== godirwalk.Walk
 		// 	err := godirwalk.Walk(f.root, &godirwalk.Options{
 		// 		Callback: func(path string, de *godirwalk.Dirent) error {
 		// 			file, errf := NewFileRelTo(path, f.root)

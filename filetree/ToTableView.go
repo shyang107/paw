@@ -93,8 +93,13 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 	// nfds = tf.NFields()
 	tf.Prepare(w)
 	// tf.SetWrapFields()
-
-	tf.SetBeforeMessage(roothead)
+	errmsg := f.GetErrorString(RootMark)
+	if len(errmsg) > 0 {
+		errmsg = strings.TrimSuffix(errmsg, "\n")
+		tf.SetBeforeMessage(fmt.Sprintf("%v\n%v", roothead, errmsg))
+	} else {
+		tf.SetBeforeMessage(roothead)
+	}
 
 	tf.PrintSart()
 

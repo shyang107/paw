@@ -49,10 +49,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 	fds.ModifyWidth(f, wdstty)
 
 	fmt.Fprintln(buf, roothead)
-	errmsg := f.GetAllErrorString()
-	if len(errmsg) > 0 {
-		fmt.Fprint(buf, errmsg)
-	}
+	f.FprintAllErrs(buf, "")
 	printBanner(buf, "", "=", wdstty)
 
 	files := fm[RootMark]

@@ -46,6 +46,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 	fds.ModifyWidth(f, wdstty)
 
 	fmt.Fprintln(w, roothead)
+	f.FprintErrs(w, RootMark, "")
 
 	if fNDirs == 0 && fNFiles == 0 {
 		goto END
@@ -59,10 +60,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 
 		if dir != RootMark && f.depth != 0 {
 			fmt.Fprint(w, fm[dir][0].DirNameWrapC("", wdstty))
-			errmsg := f.GetErrorString(dir)
-			if len(errmsg) > 0 {
-				fmt.Fprint(w, errmsg)
-			}
+			f.FprintErrs(w, dir, "")
 		}
 
 		fds.PrintHeadRow(w, "")

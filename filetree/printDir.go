@@ -94,7 +94,9 @@ FIND:
 			for _, path := range pdOpt.Paths {
 				fi, err := os.Stat(path)
 				if err != nil {
-					paw.Logger.Error(err)
+					if pdOpt.isTrace {
+						paw.Logger.Error(err)
+					}
 					continue
 				}
 				if fi.IsDir() {
@@ -110,7 +112,10 @@ FIND:
 				for _, path := range files {
 					file, err := NewFile(path)
 					if err != nil {
-						paw.Error.Println(err)
+						if pdOpt.isTrace {
+							paw.Logger.Error(err)
+						}
+						fl.AddError(path, err)
 						continue
 					}
 					if err := pdOpt.Ignore(file, nil); err == SkipThis {
@@ -306,7 +311,7 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 	}
 
 	w.Reset()
-
+	f.FprintAllErrs(w, "")
 	printBanner(w, "", "=", wdstty)
 	fds.PrintHeadRow(w, "")
 	var size uint64

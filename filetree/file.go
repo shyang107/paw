@@ -68,7 +68,8 @@ func NewFile(path string) (*File, error) {
 	)
 	info, err = os.Lstat(path)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get stat: %s", err)
+		// return nil, fmt.Errorf("[NewFile] %s", err.Error())
+		return nil, fmt.Errorf("%q: bad file descriptor", path)
 	}
 	dir = filepath.Dir(path)
 	basename = filepath.Base(path)
