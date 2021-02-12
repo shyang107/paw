@@ -163,7 +163,7 @@ func clPath(path string) string {
 	// 		apath += " " + err.Error()
 	// 	}
 	// }
-	paw.SetLoggerFieldsOrder([]string{"path", "home", "clean", "abs"})
+	paw.LoggerSetFieldsOrder([]string{"path", "home", "clean", "abs"})
 	lg.WithFields(logrus.Fields{
 		"path":  path,
 		"home":  hpath,

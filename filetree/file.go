@@ -651,29 +651,29 @@ func (f *File) TypeString() string {
 	}
 }
 
-// Meta will return a string of meta information of File (including Permission, Size, User, Group, Modified, Git and Name of File) and its' length.
-func (f *File) Meta(git GitStatus) (string, int) {
+// // Meta will return a string of meta information of File (including Permission, Size, User, Group, Modified, Git and Name of File) and its' length.
+// func (f *File) Meta(git GitStatus) (string, int) {
 
-	if len(pfieldKeys) == 0 {
-		pfieldKeys = pfieldKeysDefualt
-	}
+// 	if len(pfieldKeys) == 0 {
+// 		pfieldKeys = pfieldKeysDefualt
+// 	}
 
-	fds := NewFieldSliceFrom(pfieldKeys, git)
-	fds.SetValues(f, git)
-	return fds.MetaValuesString(), fds.MetaHeadsStringWidth()
-}
+// 	fds := NewFieldSliceFrom(pfieldKeys, git)
+// 	fds.SetValues(f, git)
+// 	return fds.MetaValuesString(), fds.MetaHeadsStringWidth()
+// }
 
-// MetaC will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File) and its' length.
-func (f *File) MetaC(git GitStatus) (string, int) {
+// // MetaC will return a colorful string of meta information of File (including Permission, Size, User, Group, Data Modified, Git and Name of File) and its' length.
+// func (f *File) MetaC(git GitStatus) (string, int) {
 
-	if len(pfieldKeys) == 0 {
-		pfieldKeys = pfieldKeysDefualt
-	}
+// 	if len(pfieldKeys) == 0 {
+// 		pfieldKeys = pfieldKeysDefualt
+// 	}
 
-	fds := NewFieldSliceFrom(pfieldKeys, git)
-	fds.SetValues(f, git)
-	return fds.MetaValuesStringC(), fds.MetaHeadsStringWidth()
-}
+// 	fds := NewFieldSliceFrom(pfieldKeys, git)
+// 	fds.SetValues(f, git)
+// 	return fds.MetaValuesStringC(), fds.MetaHeadsStringWidth()
+// }
 
 func (f *File) subDir() string {
 	if f.IsDir() {

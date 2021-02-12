@@ -10,7 +10,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/karrick/godirwalk"
 	"github.com/shyang107/paw"
+	"github.com/sirupsen/logrus"
 	// "github.com/shyang107/paw/treeprint"
 )
 
@@ -439,21 +441,23 @@ func (f *FileList) EnableColor() {
 // SkipThis is used as a return value indicate that the regular path
 // (file or directory) named in the Callback is to be skipped.
 // It is not returned as an error by any function.
-var SkipThis = errors.New("skip the path")
+var SkipThis = errors.New("skip this path")
 
 // IgnoreFn is the type of the function called for each file or directory
 // visited by FindFiles. The f argument contains the File argument to FindFiles.
 //
 // If there was a problem walking to the file or directory named by path, the
 // incoming error will describe the problem and the function can decide how
-// to handle that error (and FindFiles will not descend into that directory). In the
-// case of an error, the info argument will be nil. If an error is returned,
-// processing stops. The sole exception is when the function returns the special
-// value ErrSkipDir or ErrSkipFile. If the function returns ErrSkipDir when invoked on a directory,
-// FindFiles skips the directory's contents entirely. If the function returns ErrSkipDir
-// when invoked on a non-directory file, FindFiles skips the remaining files in the
-// containing directory.
-// If the returned error is SkipFile when inviked on a file, FindFiles will skip the file.
+// to handle that error (and FindFiles will not descend into that directory).
+// In the case of an error, the info argument will be nil. If an error is
+// returned, processing stops. The sole exception is when the function returns
+// the special value SkipThis or ErrSkipFile. If the function returns
+// SkipThis when invoked on a directory,
+// FindFiles skips the directory's contents entirely. If the function returns
+// SkipThis when invoked on a non-directory file, FindFiles skips the remaining
+// files in the containing directory.
+// If the returned error is SkipFile when inviked on a file, FindFiles will
+// skip the file.
 type IgnoreFunc func(f *File, err error) error
 
 // DefaultIgnoreFn is default IgnoreFn using in FindFiles
@@ -467,21 +471,17 @@ var DefaultIgnoreFn = func(f *File, err error) error {
 	if strings.HasPrefix(f.BaseName, ".") {
 		return SkipThis
 	}
-	// _, file := filepath.Split(f.Path)
-	// if strings.HasPrefix(file, ".") {
-	// 	return SkipThis
-	// }
 	return nil
 }
 
-func (f *FileList) readDir(dirPath string) {
+func osReadDir(f *FileList, dirPath string) error {
 	openDir, err := os.Open(dirPath)
 	if err != nil {
 		if pdOpt.isTrace {
 			paw.Logger.Error(err)
 		}
 		f.AddError(dirPath, err)
-		return
+		return err
 	}
 	defer openDir.Close()
 
@@ -491,7 +491,7 @@ func (f *FileList) readDir(dirPath string) {
 			paw.Logger.Error(err)
 		}
 		f.AddError(dirPath, err)
-		return
+		return err
 	}
 	for _, name := range names {
 		path := filepath.Join(f.root, name)
@@ -507,79 +507,163 @@ func (f *FileList) readDir(dirPath string) {
 			f.AddFile(file)
 		}
 	}
-	// ==== scan
-	// dirScan, err := godirwalk.NewScanner(f.root)
-	// if err != nil {
-	// 	return fmt.Errorf("cannot scan directory: %s", err)
-	// }
-	// // var pdir = file
-	// for dirScan.Scan() {
-	// 	de, err := dirScan.Dirent()
-	// 	if err != nil {
-	// 		if pdOpt.isTrace {
-	// 			flerr := newFileListError(filepath.Join(f.root, de.Name()), err, f.root)
-	// 			paw.Logger.WithFields(logrus.Fields{
-	// 				"path": flerr.path,
-	// 				// "dir":      flerr.dir,
-	// 				// "basename": flerr.basename,
-	// 				// "err":      flerr.err,
-	// 			}).Error(err)
-	// 		}
-	// 		f.AddError(filepath.Join(f.root, de.Name()), err)
-	// 		continue
-	// 	}
-	// 	path := filepath.Join(f.root, de.Name())
-	// 	file, err := NewFileRelTo(path, f.root)
-	// 	if err != nil {
-	// 		if pdOpt.isTrace {
-	// 			flerr := newFileListError(path, err, f.root)
-	// 			paw.Logger.WithFields(logrus.Fields{
-	// 				"path": flerr.path,
-	// 				// "dir":      flerr.dir,
-	// 				// "basename": flerr.basename,
-	// 				// "err":      flerr.err,
-	// 			}).Error(err)
-	// 		}
-	// 		f.AddError(path, err)
-	// 		continue
-	// 	}
-	// 	if err := ignore(file, nil); err != SkipThis {
-	// 		f.AddFile(file)
-	// 	}
-	// }
-	// if err := dirScan.Err(); err != nil {
-	// 	return fmt.Errorf("cannot scan directory: %s", err)
-	// }
-	// ======
-	// files, err := godirwalk.ReadDirnames(f.root, nil)
-	// if err != nil {
-	// 	return errors.New(f.root + ": " + err.Error())
-	// }
+	return nil
 
-	// file, err := NewFileRelTo(f.root, f.root)
-	// if err != nil {
-	// 	return err
-	// }
+}
 
-	// file.SetUpDir(nil)
-	// f.AddFile(file)
+func gpReadDirnames(f *FileList, dirPath string) error {
+	//  maybe BUGS
+	files, err := godirwalk.ReadDirnames(f.root, nil)
+	if err != nil {
+		return errors.New(f.root + ": " + err.Error())
+	}
 
+	file, err := NewFileRelTo(f.root, f.root)
+	if err != nil {
+		return err
+	}
+
+	f.AddFile(file)
+
+	var pdir = file
+	for _, name := range files {
+		path := filepath.Join(f.root, name)
+		file, err := NewFileRelTo(path, f.root)
+		if err != nil {
+			// paw.Logger.Error(err)
+			paw.Error.Printf("accesing path %q, %v\n", path, err)
+			// return err
+			continue
+		}
+		if err := f.ignore(file, nil); err != SkipThis {
+			// continue
+			file.SetUpDir(pdir)
+			f.AddFile(file)
+		}
+	}
+	return nil
+}
+
+func gpScanDir(f *FileList, dirPath string) error {
+	//  maybe BUGS
+	dirScan, err := godirwalk.NewScanner(f.root)
+	if err != nil {
+		return fmt.Errorf("cannot scan directory: %s", err)
+	}
 	// var pdir = file
-	// for _, name := range files {
-	// 	path := filepath.Join(f.root, name)
-	// 	file, err := NewFileRelTo(path, f.root)
-	// 	if err != nil {
-	// 		// paw.Logger.Error(err)
-	// 		paw.Error.Printf("accesing path %q, %v\n", path, err)
-	// 		// return err
-	// 		continue
-	// 	}
-	// 	if err := ignore(file, nil); err != SkipThis {
-	// 		// continue
-	// 		file.SetUpDir(pdir)
-	// 		f.AddFile(file)
-	// 	}
-	// }
+	for dirScan.Scan() {
+		de, err := dirScan.Dirent()
+		if err != nil {
+			if pdOpt.isTrace {
+				flerr := newFileListError(filepath.Join(f.root, de.Name()), err, f.root)
+				paw.Logger.WithFields(logrus.Fields{
+					"path": flerr.path,
+					// "dir":      flerr.dir,
+					// "basename": flerr.basename,
+					// "err":      flerr.err,
+				}).Error(err)
+			}
+			f.AddError(filepath.Join(f.root, de.Name()), err)
+			continue
+		}
+		path := filepath.Join(f.root, de.Name())
+		file, err := NewFileRelTo(path, f.root)
+		if err != nil {
+			if pdOpt.isTrace {
+				flerr := newFileListError(path, err, f.root)
+				paw.Logger.WithFields(logrus.Fields{
+					"path": flerr.path,
+					// "dir":      flerr.dir,
+					// "basename": flerr.basename,
+					// "err":      flerr.err,
+				}).Error(err)
+			}
+			f.AddError(path, err)
+			continue
+		}
+		if err := f.ignore(file, nil); err != SkipThis {
+			f.AddFile(file)
+		}
+	}
+	return dirScan.Err()
+}
+
+func fpWalk(f *FileList) error {
+	err := filepath.Walk(f.root, func(path string, info os.FileInfo, err error) error {
+		skip := false
+		file, errf := NewFileRelTo(path, f.root)
+		if errf != nil {
+			if pdOpt.isTrace {
+				paw.Logger.Error(errf)
+			}
+			f.AddError(path, errf)
+			return nil
+		}
+		idepth := len(strings.Split(strings.Replace(path, f.root, ".", 1), PathSeparator)) - 1
+		if f.depth > 0 {
+			if idepth > f.depth {
+				skip = true
+			}
+		}
+		if err1 := f.ignore(file, errf); err1 == SkipThis {
+			skip = true
+			if file.IsDir() {
+				return filepath.SkipDir
+			}
+		}
+		if !skip {
+			f.AddFile(file)
+		}
+		return nil
+	})
+	if err != nil {
+		return errors.New(f.root + ": " + err.Error())
+	}
+	return nil
+}
+
+func gdWalk(f *FileList) error {
+	err := godirwalk.Walk(f.root, &godirwalk.Options{
+		Callback: func(path string, de *godirwalk.Dirent) error {
+			file, errf := NewFileRelTo(path, f.root)
+			if errf != nil {
+				if pdOpt.isTrace {
+					paw.Logger.Error(errf)
+				}
+				return godirwalk.SkipThis
+			}
+			skip := false
+			idepth := len(strings.Split(strings.Replace(path, f.root, ".", 1), PathSeparator)) - 1
+			if f.depth > 0 {
+				if idepth > f.depth {
+					skip = true
+				}
+			}
+			if err1 := f.ignore(file, errf); err1 == SkipThis {
+				skip = true
+			}
+			if !skip {
+				f.AddFile(file)
+			}
+			return nil
+		},
+		ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
+			// paw.Logger.Errorf("ERROR: %s\n", err)
+			// paw.Error.Printf("ERROR: %s\n", err)
+			// if pdOpt.isTrace {
+			// 	paw.Logger.WithField("path", osPathname).Error(err)
+			// }
+			// For the purposes of this example, a simple SkipNode will suffice, although in reality perhaps additional logic might be called for.
+			return godirwalk.SkipNode
+		},
+		FollowSymbolicLinks: true,
+		AllowNonDirectory:   false,
+		Unsorted:            true, // set true for faster yet non-deterministic enumeration (see godoc)
+	})
+	if err != nil {
+		return errors.New(f.root + ": " + err.Error())
+	}
+	return nil
 }
 
 // FindFiles will find files using codintion `ignore` func
@@ -607,7 +691,10 @@ func (f *FileList) FindFiles(depth int) error {
 			return err
 		}
 		f.AddFile(file)
-		f.readDir(f.root)
+		err = osReadDir(f, f.root)
+		if err != nil {
+			return fmt.Errorf("find files: %s", err.Error())
+		}
 	default: //walk through all directories of {root directory}
 		paw.Logger.WithField("root", f.root).Trace()
 		file, errf := NewFileRelTo(f.root, f.root)
@@ -618,83 +705,16 @@ func (f *FileList) FindFiles(depth int) error {
 			f.AddError(f.root, errf)
 			return errf
 		}
-		f.AddFile(file)
 		if file.IsLink() {
 			f.root = file.LinkPath()
 			f.gitstatus, _ = GetShortGitStatus(f.root)
 			f.depth = depth
 		}
-		err := filepath.Walk(f.root, func(path string, info os.FileInfo, err error) error {
-			skip := false
-			file, errf := NewFileRelTo(path, f.root)
-			if errf != nil {
-				if pdOpt.isTrace {
-					paw.Logger.Error(errf)
-				}
-				f.AddError(path, errf)
-				return nil
-			}
-			idepth := len(strings.Split(strings.Replace(path, f.root, ".", 1), PathSeparator)) - 1
-			if depth > 0 {
-				if idepth > depth {
-					skip = true
-				}
-			}
-			if err1 := ignore(file, errf); err1 == SkipThis {
-				skip = true
-				if file.IsDir() {
-					return filepath.SkipDir
-				}
-			}
-			if !skip {
-				f.AddFile(file)
-			}
-			return nil
-		})
+
+		err := fpWalk(f)
 		if err != nil {
-			return errors.New(f.root + ": " + err.Error())
+			return fmt.Errorf("find files: %s", err.Error())
 		}
-		// ==== godirwalk.Walk
-		// 	err := godirwalk.Walk(f.root, &godirwalk.Options{
-		// 		Callback: func(path string, de *godirwalk.Dirent) error {
-		// 			file, errf := NewFileRelTo(path, f.root)
-		// 			if errf != nil {
-		// 				if pdOpt.isTrace {
-		// 					paw.Logger.Error(errf)
-		// 				}
-		// 				return godirwalk.SkipThis
-		// 			}
-		// 			skip := false
-		// 			idepth := len(strings.Split(strings.Replace(path, f.root, ".", 1), PathSeparator)) - 1
-		// 			if depth > 0 {
-		// 				if idepth > depth {
-		// 					skip = true
-		// 				}
-		// 			}
-		// 			if err1 := ignore(file, errf); err1 == SkipThis {
-		// 				skip = true
-		// 			}
-		// 			if !skip {
-		// 				f.AddFile(file)
-		// 			}
-		// 			return nil
-		// 		},
-		// 		ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
-		// 			// paw.Logger.Errorf("ERROR: %s\n", err)
-		// 			// paw.Error.Printf("ERROR: %s\n", err)
-		// 			// if pdOpt.isTrace {
-		// 			// 	paw.Logger.WithField("path", osPathname).Error(err)
-		// 			// }
-		// 			// For the purposes of this example, a simple SkipNode will suffice, although in reality perhaps additional logic might be called for.
-		// 			return godirwalk.SkipNode
-		// 		},
-		// 		FollowSymbolicLinks: true,
-		// 		AllowNonDirectory:   false,
-		// 		Unsorted:            true, // set true for faster yet non-deterministic enumeration (see godoc)
-		// 	})
-		// 	if err != nil {
-		// 		return errors.New(f.root + ": " + err.Error())
-		// 	}
 	}
 
 	if f.IsSort {
