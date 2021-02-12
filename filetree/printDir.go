@@ -154,7 +154,7 @@ FIND:
 			return err, nil
 		}
 		// showlogrus()
-		fl.dumpAll()
+		// fl.dumpAll()
 	}
 
 	return nil, fl

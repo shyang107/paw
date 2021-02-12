@@ -85,21 +85,23 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			fd.SetValueC(calign(clkp, fd.Align, fd.Width, file.NLinks()))
 			fd.SetValueColor(clkp)
 		case PFieldSize: //"Size",
-			if file.IsCharDev() || file.IsDev() {
+			kind := nodeTypeFromFileInfo(file.Info)
+			switch kind {
+			case kindChardev, kindDev:
 				major, minor := file.DevNumber()
 				csj := csnp.Sprintf("%[1]*[2]v", fd.widthMajor, major)
 				csn := csnp.Sprintf("%[1]*[2]v", fd.widthMinor, minor)
 				cdev := csj + cdirp.Sprint(",") + csn
-				wdev := len(paw.StripANSI(cdev))
+				wdev := fd.widthMajor + fd.widthMinor + 1 //len(paw.StripANSI(cdev))
 				if wdev < fd.Width {
 					cdev = csj + cdirp.Sprint(",") + paw.Spaces(fd.Width-wdev) + csn
 				}
 				fd.SetValue(file.DevNumberString())
 				fd.SetValueC(cdev)
-			} else if file.IsDir() {
+			case kindDir:
 				fd.SetValue("-")
 				fd.SetValueC(calign(cdashp, fd.Align, fd.Width, "-"))
-			} else {
+			default:
 				fd.SetValue(file.ByteSize())
 				csize := fdColorizedSize(file.Size, fd.Width)
 				fd.SetValueC(csize)
@@ -269,7 +271,8 @@ func (f *FieldSlice) Get(key PDFieldFlag) *Field {
 // Get will return *Field for first matched name (case-insensetive) in FieldSlice
 func (f *FieldSlice) GetByName(name string) *Field {
 	for _, fd := range f.fds {
-		if strings.ToLower(fd.Name) == strings.ToLower(name) {
+		if strings.EqualFold(fd.Name, name) {
+			// if strings.ToLower() == strings.ToLower(name) {
 			return fd
 		}
 	}
@@ -299,7 +302,8 @@ func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
 					w, wj, wn := file.widthOfSize()
 					fd.widthMajor = paw.MaxInt(fd.widthMajor, wj)
 					fd.widthMinor = paw.MaxInt(fd.widthMinor, wn)
-					fd.Width = paw.MaxInts(fd.Width, w, fd.widthMajor+fd.widthMinor+1)
+					wd := fd.widthMajor + fd.widthMinor + 1
+					fd.Width = paw.MaxInts(fd.Width, w, wd)
 				default:
 					fd.Width = paw.MaxInt(fd.Width, file.WidthOf(field))
 				}
@@ -610,34 +614,6 @@ func (f *FieldSlice) PrintRowPrefix(w io.Writer, pad, prefix string) {
 							}
 						}
 					}
-					// dirs := paw.WrapToSlice(dir, width)
-					// nd := len(dirs)
-					// var clink string
-					// for i := 0; i < nd-1; i++ {
-					// 	clink = cdirp.Sprint(dirs[i])
-					// 	fmt.Fprintln(w, sp, "4"+clink)
-					// }
-					// clink = cdirp.Sprint(dirs[nd-1])
-					// wdLast := paw.StringWidth(dirs[nd-1])
-					// if wn <= width-wdLast {
-					// 	clink += cdip.Sprint(name)
-					// 	fmt.Fprintln(w, sp, "5"+clink)
-					// } else { // wn > wd-width
-					// 	clink += cdip.Sprint(name[:width-wdLast])
-					// 	fmt.Fprintln(w, sp, "6"+clink)
-					// 	rname := name[width-wdLast:]
-					// 	wr := paw.StringWidth(rname)
-					// 	if wr <= width {
-					// 		clink = cdip.Sprint(rname)
-					// 		fmt.Fprintln(w, sp, "7"+clink)
-					// 	} else { // wr > width
-					// 		names := paw.WrapToSlice(rname, width)
-					// 		for _, v := range names {
-					// 			clink = cdip.Sprint(v)
-					// 			fmt.Fprintln(w, sp, clink)
-					// 		}
-					// 	}
-					// }
 				}
 			}
 		} else {

@@ -626,7 +626,6 @@ func nodeTypeFromFileInfo(fi os.FileInfo) kindType {
 	case os.ModeSocket:
 		return kindSocket //"socket"
 	}
-
 	return kindNotIdentify
 }
 
@@ -683,15 +682,17 @@ func (f *File) subDir() string {
 }
 
 func (f *File) widthOfSize() (width, wmajor, wminor int) {
-	if f.IsCharDev() || f.IsDev() {
+	kind := nodeTypeFromFileInfo(f.Info)
+	switch kind {
+	case kindChardev, kindDev:
 		major, minor := f.DevNumber()
 		wmajor = len(fmt.Sprint(major))
 		wminor = len(fmt.Sprint(minor))
 		// width = wmajor + wminor + 1
 		return wmajor + wminor + 1, wmajor, wminor
-	} else if f.IsDir() {
+	case kindDir:
 		return 1, 0, 0
-	} else {
+	default:
 		return len(f.ByteSize()), 0, 0
 	}
 }
