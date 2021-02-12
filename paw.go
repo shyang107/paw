@@ -23,12 +23,12 @@ var (
 	Logger = &logrus.Logger{
 		Out:          os.Stdout, //os.Stderr,
 		ReportCaller: true,
-		Formatter:    nestedFormatter,
+		Formatter:    cnestedFMT,
 		// Level:        logrus.InfoLevel,
 		Level: logrus.WarnLevel,
 	}
 	// NestedFormatter ...
-	nestedFormatter = &cnested.Formatter{
+	cnestedFMT = &cnested.Formatter{
 		HideKeys: false,
 		// FieldsOrder:     []string{"component", "category"},
 		NoColors:       false,
@@ -116,8 +116,8 @@ func GologInit(
 
 }
 
-// SetLoggerFieldsOrder set `nestedFormatter.FieldsOrder`
-func SetLoggerFieldsOrder(fields []string) {
-	nestedFormatter.FieldsOrder = fields
-	Logger.SetFormatter(nestedFormatter)
+// LoggerSetFieldsOrder set `nestedFormatter.FieldsOrder`
+func LoggerSetFieldsOrder(fields []string) {
+	cnestedFMT.FieldsOrder = fields
+	Logger.SetFormatter(cnestedFMT)
 }
