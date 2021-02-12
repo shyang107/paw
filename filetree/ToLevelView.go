@@ -36,7 +36,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		wNo                = paw.MaxInt(wdidx, wdjdx) + 1
 		wdstty             = sttyWidth - 2 - paw.StringWidth(pad)
 		roothead           = getColorizedRootHead(f.root, f.TotalSize(), wdstty)
-		fds                = NewFieldSliceFrom(pfieldKeys, git)
+		fds                = NewFieldSliceFrom(pdOpt.FieldKeys(), git)
 	)
 
 	w.Reset()

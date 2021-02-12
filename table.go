@@ -60,12 +60,25 @@ const (
 	XAttrSymbol2 = "-@-"
 	tbxSp        = "   "
 	// AlignLeft align left
-	AlignLeft Align = iota
+	AlignLeft Align = iota + 1
 	// AlignCenter align center
 	AlignCenter
 	// AlignRight align right
 	AlignRight
 )
+
+func (a Align) String() string {
+	switch a {
+	case AlignLeft:
+		return "AlignLeft"
+	case AlignCenter:
+		return "AlignCenter"
+	case AlignRight:
+		return "AlignRight"
+	default:
+		return "Unknown"
+	}
+}
 
 // NewTableFormat return a instance of TableFormat
 func NewTableFormat() *TableFormat {

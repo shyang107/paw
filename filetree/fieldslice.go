@@ -188,17 +188,16 @@ func (f *FieldSlice) Count() int {
 
 // Add will append a Field to FieldSlice by Field ke
 func (f *FieldSlice) Add(key PDFieldFlag) *FieldSlice {
-	field := FieldsMap[key]
-	if _, ok := pfieldAlignMap[key]; !ok {
-		field.Align = paw.AlignLeft
-	}
+	field := key.Field()
 	f.AddByField(field)
 	return f
 }
 
 // AddByField will append a Field to FieldSlice
 func (f *FieldSlice) AddByField(field *Field) *FieldSlice {
-	f.fds = append(f.fds, field)
+	if field != nil {
+		f.fds = append(f.fds, field)
+	}
 	return f
 }
 
@@ -220,7 +219,7 @@ func (f *FieldSlice) Remove(key PDFieldFlag) *FieldSlice {
 func (f *FieldSlice) RemoveByName(name string) *FieldSlice {
 	for i, fd := range f.fds {
 		if fd.Name == name {
-			if i == f.Count() {
+			if i == f.Count()-1 {
 				f.fds = f.fds[:i]
 			} else {
 				f.fds = append(f.fds[:i], f.fds[i+1:]...)
@@ -235,27 +234,16 @@ func (f *FieldSlice) Insert(startIndex int, fds ...*Field) {
 	if len(fds) == 0 {
 		return
 	}
-
-	tmp := make([]*Field, f.Count()+len(fds))
-	if startIndex < 0 || startIndex > len(f.fds)-1 { // append to tail
-		copy(tmp[:f.Count()], f.fds)
-		copy(tmp[f.Count():], fds)
-		f.fds = make([]*Field, f.Count()+len(fds))
-		copy(f.fds, tmp)
-		return
+	switch {
+	case startIndex >= len(f.fds): // append to tail
+		f.fds = append(f.fds, fds...)
+	case startIndex <= 0: // insert to head
+		f.fds = append(fds, f.fds...)
+	default: // insert to middle
+		rear := append([]*Field{}, f.fds[startIndex:]...)
+		f.fds = append(f.fds[0:startIndex], fds...)
+		f.fds = append(f.fds, rear...)
 	}
-	if startIndex == 0 {
-		copy(tmp[:len(fds)], fds)
-		copy(tmp[len(fds):], f.fds)
-		f.fds = make([]*Field, f.Count()+len(fds))
-		copy(f.fds, tmp)
-		return
-	}
-	copy(tmp[:startIndex], f.fds[:startIndex])
-	copy(tmp[startIndex:startIndex+len(fds)], fds)
-	copy(tmp[startIndex+len(fds):], f.fds[startIndex:])
-	f.fds = make([]*Field, f.Count()+len(fds))
-	copy(f.fds, tmp)
 }
 
 // Get will return *Field for first matched key in FieldSlice
@@ -272,7 +260,6 @@ func (f *FieldSlice) Get(key PDFieldFlag) *Field {
 func (f *FieldSlice) GetByName(name string) *Field {
 	for _, fd := range f.fds {
 		if strings.EqualFold(fd.Name, name) {
-			// if strings.ToLower() == strings.ToLower(name) {
 			return fd
 		}
 	}
@@ -292,7 +279,7 @@ func (f *FieldSlice) Widths() []int {
 func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
 	for _, dir := range fl.Dirs() {
 		for _, file := range fl.Map()[dir][:] {
-			for _, field := range pfieldKeys {
+			for _, field := range pdOpt.FieldKeys() {
 				var fd = f.Get(field)
 				if fd == nil {
 					continue

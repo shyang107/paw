@@ -50,7 +50,7 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		}
 
 		// nfds = len(pfields) + 1
-		fds  = NewFieldSliceFrom(pfieldKeys, git)
+		fds  = NewFieldSliceFrom(pdOpt.FieldKeys(), git)
 		wNo  = paw.MaxInt(wdidx, wdjdx) + 1
 		fdNo = &Field{
 			Key:   PFieldNone,

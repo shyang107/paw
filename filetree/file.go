@@ -609,6 +609,27 @@ const (
 	kindNotIdentify
 )
 
+func (f kindType) String() string {
+	switch f {
+	case kindFile:
+		return "file"
+	case kindDir:
+		return "dir"
+	case kindSymlink:
+		return "symlink"
+	case kindChardev:
+		return "chardev"
+	case kindDev:
+		return "dev"
+	case kindFIFO:
+		return "fifo"
+	case kindSocket:
+		return "socket"
+	default: //kindNotIdentify
+		return "unkown"
+	}
+}
+
 func nodeTypeFromFileInfo(fi os.FileInfo) kindType {
 	switch fi.Mode() & (os.ModeType | os.ModeCharDevice) {
 	case 0:
@@ -630,24 +651,7 @@ func nodeTypeFromFileInfo(fi os.FileInfo) kindType {
 }
 
 func (f *File) TypeString() string {
-	switch nodeTypeFromFileInfo(f.Info) {
-	case kindFile:
-		return "file"
-	case kindDir:
-		return "dir"
-	case kindSymlink:
-		return "symlink"
-	case kindChardev:
-		return "chardev"
-	case kindDev:
-		return "dev"
-	case kindFIFO:
-		return "fifo"
-	case kindSocket:
-		return "socket"
-	default: //kindNotIdentify
-		return "not identify"
-	}
+	return nodeTypeFromFileInfo(f.Info).String()
 }
 
 // // Meta will return a string of meta information of File (including Permission, Size, User, Group, Modified, Git and Name of File) and its' length.

@@ -1,5 +1,12 @@
 package filetree
 
+import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
 // PrintDirOption is the option of PrintDir
 //
 // Fields:
@@ -17,10 +24,70 @@ type PrintDirOption struct {
 	FiltOpt   *PDFilterOption
 	Ignore    IgnoreFunc
 	//
-	Root    string
-	Paths   []string
-	isTrace bool
-	File    *File
+	Root        string
+	Paths       []string
+	isTrace     bool
+	File        *File
+	fieldKeys   []PDFieldFlag
+	fields      []string
+	fieldWidths []int
+}
+
+func (p *PrintDirOption) FieldKeys() []PDFieldFlag {
+	return p.fieldKeys
+}
+
+func (p *PrintDirOption) Fields() []string {
+	return p.fields
+}
+
+func (p *PrintDirOption) FieldWidths() []int {
+	return p.fieldWidths
+}
+
+func (p *PrintDirOption) ConfigFields() {
+	p.fieldKeys = []PDFieldFlag{}
+	p.fields = []string{}
+	p.fieldWidths = []int{}
+	if p.FieldFlag&PFieldINode != 0 {
+		p.fieldKeys = append(p.fieldKeys, PFieldINode)
+	}
+
+	p.fieldKeys = append(p.fieldKeys, PFieldPermissions)
+
+	if p.FieldFlag&PFieldLinks != 0 {
+		p.fieldKeys = append(p.fieldKeys, PFieldLinks)
+	}
+
+	p.fieldKeys = append(p.fieldKeys, PFieldSize)
+
+	if p.FieldFlag&PFieldBlocks != 0 {
+		p.fieldKeys = append(p.fieldKeys, PFieldBlocks)
+	}
+
+	p.fieldKeys = append(p.fieldKeys, PFieldUser)
+	p.fieldKeys = append(p.fieldKeys, PFieldGroup)
+
+	if p.FieldFlag&PFieldModified != 0 {
+		p.fieldKeys = append(p.fieldKeys, PFieldModified)
+	}
+	if p.FieldFlag&PFieldCreated != 0 {
+		p.fieldKeys = append(p.fieldKeys, PFieldCreated)
+	}
+	if p.FieldFlag&PFieldAccessed != 0 {
+		p.fieldKeys = append(p.fieldKeys, PFieldAccessed)
+	}
+
+	if p.FieldFlag&PFieldGit != 0 {
+		p.fieldKeys = append(p.fieldKeys, PFieldGit)
+	}
+	// p.fieldKeys = append(p.fieldKeys, PFieldGit)
+	p.fieldKeys = append(p.fieldKeys, PFieldName)
+
+	for _, k := range p.fieldKeys {
+		p.fields = append(p.fields, k.Name())
+		p.fieldWidths = append(p.fieldWidths, k.Width())
+	}
 }
 
 func (p *PrintDirOption) SetDepth(depth int) {
@@ -47,6 +114,101 @@ func (p *PrintDirOption) SetIgnore(f IgnoreFunc) {
 	p.Ignore = f
 }
 
+func (p *PrintDirOption) ConfigFilter() {
+	igfunc := p.Ignore
+	filtOpt := p.FiltOpt
+	if filtOpt != nil && filtOpt.IsFilt {
+		switch filtOpt.FiltWay {
+		case PDFiltNoEmptyDir: // no empty dir
+			p.Ignore = func(f *File, err error) error {
+				if errig := igfunc(f, err); errig != nil {
+					return errig
+				}
+				fis, errfilt := ioutil.ReadDir(f.Path)
+				if errfilt != nil {
+					return errfilt
+				}
+				if len(fis) == 0 {
+					return SkipThis
+				}
+				if f.IsDir() {
+					nfiles := 0
+					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
+						if !info.IsDir() {
+							nfiles++
+						}
+						return nil
+					})
+					if nfiles == 0 {
+						return SkipThis
+					}
+				}
+				return nil
+			}
+		case PDFiltJustDirs: // no files
+			p.Ignore = func(f *File, err error) error {
+				if errig := igfunc(f, err); errig != nil {
+					return errig
+				}
+				if !f.IsDir() {
+					return SkipThis
+				}
+				return nil
+			}
+		case PDFiltJustFiles: // PDFiltJustFilesButNoEmptyDir // no dirs
+			p.Ignore = func(f *File, err error) error {
+				if errig := igfunc(f, err); errig != nil {
+					return errig
+				}
+				if f.IsDir() {
+					if p.Depth == 0 {
+						return SkipThis
+					}
+					nfiles := 0
+					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
+						idepth := len(strings.Split(strings.Replace(path, p.Root, ".", 1), PathSeparator)) - 1
+						if p.Depth > 0 {
+							if idepth > p.Depth {
+								return SkipThis
+							}
+						}
+						if !info.IsDir() {
+							nfiles++
+						}
+						return nil
+					})
+					if nfiles == 0 {
+						return SkipThis
+					}
+				}
+				return nil
+			}
+		case PDFiltJustDirsButNoEmpty: // no file and no empty dir
+			p.Ignore = func(f *File, err error) error {
+				if errig := igfunc(f, nil); errig != nil {
+					return errig
+				}
+				if f.IsDir() {
+					nfiles := 0
+					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
+						if !info.IsDir() {
+							nfiles++
+						}
+						return nil
+					})
+					if nfiles == 0 {
+						return SkipThis
+					}
+					return nil
+				} else {
+					return SkipThis
+				}
+			}
+		}
+	}
+	p.FiltOpt.IsFilt = false
+}
+
 func (p *PrintDirOption) SetRoot(path string) {
 	p.Root = path
 }
@@ -70,7 +232,7 @@ func (p *PrintDirOption) EnableTrace(isTrace bool) {
 }
 
 func NewPrintDirOption() *PrintDirOption {
-	return &PrintDirOption{
+	p := &PrintDirOption{
 		Depth:     0,
 		OutOpt:    PListView,
 		FieldFlag: PFieldDefault,
@@ -81,6 +243,8 @@ func NewPrintDirOption() *PrintDirOption {
 		Paths:   nil,
 		isTrace: false,
 	}
+	p.ConfigFields()
+	return p
 }
 
 type PDViewFlag int
@@ -109,6 +273,35 @@ const (
 	// PListTreeExtendView is the option of combining list & tree view including extend attribute using in PrintDir
 	PListTreeExtendView = PListView | PTreeExtendView
 )
+
+func (v PDViewFlag) String() string {
+	switch v {
+	case PListView:
+		return "List"
+	case PListExtendView:
+		return "Extended List"
+	case PTreeView:
+		return "Tree"
+	case PTreeExtendView:
+		return "Extended Tree"
+	case PLevelView:
+		return "Level"
+	case PLevelExtendView:
+		return "Extended Level"
+	case PTableView:
+		return "Table"
+	case PTableExtendView:
+		return "Extended Table"
+	case PClassifyView:
+		return "Classify"
+	case PListTreeView:
+		return "List-Tree"
+	case PListTreeExtendView:
+		return "Extended List-Tree"
+	default:
+		return "Unknown"
+	}
+}
 
 // PDSortOption defines sorting way view of PrintDir
 //
@@ -159,27 +352,122 @@ const (
 	PDSortByNameR = PDSortByName | PDSortReverse
 )
 
-var (
-	// sortedFields = []string{"size", "modified", "accessed", "created", "name"}
-
-	sortByField = map[PDSortFlag]FilesBy{
-		PDSortByINode:   byINode,
-		PDSortByINodeR:  byINodeR,
-		PDSortByLinks:   byLinks,
-		PDSortByLinksR:  byLinksR,
-		PDSortBySize:    bySize,
-		PDSortBySizeR:   bySizeR,
-		PDSortByBlocks:  byBlocks,
-		PDSortByBlocksR: byBlocksR,
-		PDSortByMTime:   byMTime,
-		PDSortByMTimeR:  byMTimeR,
-		PDSortByATime:   byATime,
-		PDSortByATimeR:  byATimeR,
-		PDSortByCTime:   byCTime,
-		PDSortByCTimeR:  byCTimeR,
-		PDSortByName:    byName,
-		PDSortByNameR:   byNameR,
+func (s PDSortFlag) String() string {
+	switch s {
+	case PDSort:
+		return "Sort"
+	case PDSortReverse:
+		return "Sort reversely"
+	case pdSortKeyINode:
+		return "Sort-Key: inode"
+	case pdSortKeyLinks:
+		return "Sort-Key: Links"
+	case pdSortKeySize:
+		return "Sort-Key: Size"
+	case pdSortKeyBlocks:
+		return "Sort-Key: Blocks"
+	case pdSortKeyMTime:
+		return "Sort-Key: Modified"
+	case pdSortKeyCTime:
+		return "Sort-Key: Created"
+	case pdSortKeyATime:
+		return "Sort-Key: Accessed"
+	case pdSortKeyName:
+		return "Sort-Key: Name"
+	case PDSortByINode: // PDSort | pdSortKeyINode
+		return "Sory by inode"
+	case PDSortByINodeR: // PDSortByINode | PDSortReverse
+		return "Sory by inode reversely"
+	case PDSortByLinks: // PDSort | pdSortKeyLinks
+		return "Sory by Links"
+	case PDSortByLinksR: // PDSortByLinks | PDSortReverse
+		return "Sory by Links reversely"
+	case PDSortBySize: // PDSort | pdSortKeySize
+		return "Sory by Size"
+	case PDSortBySizeR: // PDSortBySize | PDSortReverse
+		return "Sory by Size reversely"
+	case PDSortByBlocks: // PDSort | pdSortKeyBlocks
+		return "Sory by Blocks"
+	case PDSortByBlocksR: // PDSortByBlocks | PDSortReverse
+		return "Sory by Blocks reversely"
+	case PDSortByMTime: // PDSort | pdSortKeyMTime
+		return "Sory by Modified"
+	case PDSortByMTimeR: // PDSortByMTime | PDSortReverse
+		return "Sory by Modified reversely"
+	case PDSortByCTime: // PDSort | pdSortKeyCTime
+		return "Sory by Created"
+	case PDSortByCTimeR: // PDSortByCTime | PDSortReverse
+		return "Sory by Created reversely"
+	case PDSortByATime: // PDSort | pdSortKeyATime
+		return "Sory by Accessed"
+	case PDSortByATimeR: // PDSortByATime | PDSortReverse
+		return "Sory by Accessed reversely"
+	case PDSortByName: // PDSort | pdSortKeyName
+		return "Sory by Name"
+	case PDSortByNameR: // PDSortByName | PDSortReverse
+		return "Sory by Name reversely"
+	default:
+		return "Unknown"
 	}
+}
+func (s PDSortFlag) By() FilesBy {
+	switch s {
+	case PDSortByINode: // PDSort | pdSortKeyINode
+		return byINode
+	case PDSortByINodeR: // PDSortByINode | PDSortReverse
+		return byINodeR
+	case PDSortByLinks: // PDSort | pdSortKeyLinks
+		return byLinks
+	case PDSortByLinksR: // PDSortByLinks | PDSortReverse
+		return byLinksR
+	case PDSortBySize: // PDSort | pdSortKeySize
+		return bySize
+	case PDSortBySizeR: // PDSortBySize | PDSortReverse
+		return bySizeR
+	case PDSortByBlocks: // PDSort | pdSortKeyBlocks
+		return byBlocks
+	case PDSortByBlocksR: // PDSortByBlocks | PDSortReverse
+		return byBlocksR
+	case PDSortByMTime: // PDSort | pdSortKeyMTime
+		return byMTime
+	case PDSortByMTimeR: // PDSortByMTime | PDSortReverse
+		return byMTimeR
+	case PDSortByCTime: // PDSort | pdSortKeyCTime
+		return byCTime
+	case PDSortByCTimeR: // PDSortByCTime | PDSortReverse
+		return byCTimeR
+	case PDSortByATime: // PDSort | pdSortKeyATime
+		return byATime
+	case PDSortByATimeR: // PDSortByATime | PDSortReverse
+		return byATimeR
+	case PDSortByNameR: // PDSortByName | PDSortReverse
+		return byNameR
+	default: // PDSortByName: // PDSort | pdSortKeyName
+		return byName
+	}
+}
+
+var (
+// sortedFields = []string{"size", "modified", "accessed", "created", "name"}
+
+// sortByField = map[PDSortFlag]FilesBy{
+// 	PDSortByINode:   byINode,
+// 	PDSortByINodeR:  byINodeR,
+// 	PDSortByLinks:   byLinks,
+// 	PDSortByLinksR:  byLinksR,
+// 	PDSortBySize:    bySize,
+// 	PDSortBySizeR:   bySizeR,
+// 	PDSortByBlocks:  byBlocks,
+// 	PDSortByBlocksR: byBlocksR,
+// 	PDSortByMTime:   byMTime,
+// 	PDSortByMTimeR:  byMTimeR,
+// 	PDSortByATime:   byATime,
+// 	PDSortByATimeR:  byATimeR,
+// 	PDSortByCTime:   byCTime,
+// 	PDSortByCTimeR:  byCTimeR,
+// 	PDSortByName:    byName,
+// 	PDSortByNameR:   byNameR,
+// }
 )
 
 type PDFiltFlag int
@@ -191,6 +479,21 @@ const (
 	PDFiltJustDirsButNoEmpty     = PDFiltNoEmptyDir | PDFiltJustDirs
 	PDFiltJustFilesButNoEmptyDir = PDFiltJustFiles
 )
+
+func (f PDFiltFlag) String() string {
+	switch f {
+	case PDFiltNoEmptyDir:
+		return "No Empty Directories"
+	case PDFiltJustDirs:
+		return "Just Directories"
+	case PDFiltJustFiles:
+		return "Just Files"
+	case PDFiltJustDirsButNoEmpty:
+		return "Just Directories; but no empty"
+	default:
+		return "Unknown"
+	}
+}
 
 type PDFilterOption struct {
 	IsFilt  bool

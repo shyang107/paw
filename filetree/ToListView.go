@@ -33,7 +33,7 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		dirs               = f.Dirs()
 		fm                 = f.Map()
 		git                = f.GetGitStatus()
-		fds                = NewFieldSliceFrom(pfieldKeys, git)
+		fds                = NewFieldSliceFrom(pdOpt.FieldKeys(), git)
 		fNDirs, fNFiles, _ = f.NTotalDirsAndFile()
 		nItems             = fNDirs + fNFiles
 		ndirs, nfiles      = 0, 0

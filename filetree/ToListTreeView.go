@@ -36,7 +36,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 		w        = f.Writer()
 		fm       = f.store
 		git      = f.GetGitStatus()
-		fds      = NewFieldSliceFrom(pfieldKeys, git)
+		fds      = NewFieldSliceFrom(pdOpt.FieldKeys(), git)
 		chead    = fds.HeadsStringC()
 		wmeta    = fds.MetaHeadsStringWidth()
 		wdstty   = sttyWidth - 2 - paw.StringWidth(pad)
