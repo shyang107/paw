@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
+	"crypto/md5"
+	"encoding/hex"
 	"io"
+	"log"
 	"os"
 	"strings"
 )
@@ -125,4 +128,20 @@ func Mkdev(major, minor uint32) uint64 {
 // DevNumber returns the major and minor component of a Darwin device number.
 func DevNumber(dev uint64) (uint32, uint32) {
 	return Major(dev), Minor(dev)
+}
+
+// GenMd5 will generate md5 string of file (path)
+func GenMd5(fullPath string) string {
+	f, err := os.Open(fullPath)
+	if err != nil {
+		return err.Error()
+	}
+	defer f.Close()
+
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		log.Fatal(err)
+	}
+
+	return hex.EncodeToString(h.Sum(nil))
 }
