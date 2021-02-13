@@ -222,7 +222,9 @@ var (
 
 	// pfieldKeys = []PDFieldFlag{}
 
-	pfieldKeysDefualt = []PDFieldFlag{PFieldPermissions, PFieldSize, PFieldUser, PFieldGroup, PFieldModified, PFieldName}
+	DefaultPDFieldKeys = []PDFieldFlag{PFieldPermissions, PFieldSize, PFieldUser, PFieldGroup, PFieldModified, PFieldName}
+
+	DefaultPDFields = NewFields(DefaultPDFieldKeys...)
 
 	// pfieldCPMap = map[PDFieldFlag]*color.Color{
 	// 	PFieldINode:       cinp,
@@ -313,6 +315,40 @@ func NewField(flag PDFieldFlag) *Field {
 		HeadColor:  chdp,
 		isLink:     false,
 	}
+}
+
+// NewFields will return []*Field
+func NewFields(flags ...PDFieldFlag) []*Field {
+	if len(flags) == 0 {
+		return nil
+	}
+	dFields := make([]*Field, 0, len(flags))
+	for _, f := range flags {
+		dFields = append(dFields, NewField(f))
+	}
+	return dFields
+}
+
+// NewFieldsG will return []*Field w.r.t. git status
+func NewFieldsG(noGit bool, flags ...PDFieldFlag) []*Field {
+	if len(flags) == 0 {
+		return nil
+	}
+	if noGit {
+		irmGit := -1
+		for i, f := range flags {
+			if f == PFieldGit {
+				irmGit = i
+			}
+		}
+		flags = append(flags[:irmGit], flags[irmGit+1:]...)
+	}
+
+	dFields := make([]*Field, 0, len(flags))
+	for _, f := range flags {
+		dFields = append(dFields, NewField(f))
+	}
+	return dFields
 }
 
 // SetValue sets up Field.Value

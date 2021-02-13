@@ -11,13 +11,13 @@ func exPrintDir(root string) {
 	// opt := filetree.NewPrintDirOption()
 	opt := &filetree.PrintDirOption{
 		Depth: 0,
-		// OutOpt: filetree.PListView,
-		// OutOpt: filetree.PListExtendView,
-		// OutOpt: filetree.PTreeView,
-		// OutOpt: filetree.PListTreeView,
-		OutOpt: filetree.PLevelView,
-		// OutOpt: filetree.PTableView,
-		// OutOpt: filetree.PClassifyView,
+		// ViewFlag: filetree.PListView,
+		// ViewFlag: filetree.PListExtendView,
+		// ViewFlag: filetree.PTreeView,
+		// ViewFlag: filetree.PListTreeView,
+		ViewFlag: filetree.PLevelView,
+		// ViewFlag: filetree.PTableView,
+		// ViewFlag: filetree.PClassifyView,
 		Ignore: filetree.DefaultIgnoreFn,
 	}
 

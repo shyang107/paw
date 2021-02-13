@@ -50,15 +50,18 @@ type TableFormat struct {
 	XAttributeSymbol2 string
 }
 
-// Align is id that indicate alignment of head-column
-type Align int
-
 const (
 	space        = " "
 	abbrSymbol   = "»"
 	XAttrSymbol  = " @ "
 	XAttrSymbol2 = "-@-"
 	tbxSp        = "   "
+)
+
+// Align is id that indicate alignment of head-column
+type Align int
+
+const (
 	// AlignLeft align left
 	AlignLeft Align = iota + 1
 	// AlignCenter align center

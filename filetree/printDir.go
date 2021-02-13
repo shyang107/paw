@@ -1,7 +1,6 @@
 package filetree
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -36,45 +35,33 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 		paw.Logger.Panic(err)
 	}
 
-	// check opt
+	// check opt, fields to view
 	if opt == nil {
 		pdOpt = NewPrintDirOption()
 	} else {
 		pdOpt = opt
 		pdOpt.ConfigFields()
 	}
+	pdview = pdOpt.ViewFlag
 	pdOpt.File, _ = NewFileRelTo(root, root)
-
-	// check fields to view
-	// checkFieldFlag(pdOpt)
 
 	// check sortOpt
 	if pdOpt.SortOpt == nil {
 		pdOpt.SortOpt = &PDSortOption{
-			IsSort:  true,
-			SortWay: PDSortByName,
+			IsSort:   true,
+			SortFlag: PDSortByName,
 		}
 	}
 
-	// check filter
-	// check ignore function
+	// check filter and ignore function
 	if opt.Ignore == nil {
 		opt.Ignore = DefaultIgnoreFn
 	}
-	// checkPDFilter(pdOpt)
 	pdOpt.ConfigFilter()
 
 	// setup FileList
 	fl := setFileList(w, root, isGrouped, pdOpt)
 
-	if !fl.IsSort {
-		goto FIND
-	}
-
-	// setup sort options of FileList
-	setupFLSortOption(fl, pdOpt)
-
-FIND:
 	// NPath > 0
 	if pdOpt.NPath() > 0 {
 		// one path or mutiple paths
@@ -120,7 +107,6 @@ FIND:
 				if fl.IsSort {
 					fl.Sort0()
 				}
-				// cehckAndFiltPrintDirFiltOpt(fl, pdOpt)
 				listFiles(fl, pad, pdOpt)
 
 				fl.dirs = []string{}
@@ -142,8 +128,7 @@ FIND:
 		if err != nil {
 			return err, nil
 		}
-		// cehckAndFiltPrintDirFiltOpt(fl, opt)
-		err = switchFileListView(fl, pdOpt.OutOpt, pad)
+		err = fl.DoView(pdOpt.ViewFlag, pad)
 		if err != nil {
 			return err, nil
 		}
@@ -273,8 +258,8 @@ func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) err
 		if err != nil {
 			return err
 		}
-		// cehckAndFiltPrintDirFiltOpt(f, pdOpt)
-		err = switchFileListView(f, pdOpt.OutOpt, pad)
+
+		err = f.DoView(pdOpt.ViewFlag, pad)
 		if err != nil {
 			return err
 		}
@@ -298,15 +283,13 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 		// fdSize     = fds.Get(PFieldSize)
 		fdName     = fds.Get(PFieldName)
 		wdstty     = sttyWidth - 2 - paw.StringWidth(pad)
-		isExtended = isExtendedView(pdOpt.OutOpt)
+		isExtended = isExtendedView(pdOpt.ViewFlag)
 	)
 
 	fds.ModifyWidth(f, wdstty)
 	for _, dir := range dirs {
 		for _, file := range fm[dir] {
 			files = append(files, file)
-			// wsize, _, _ := file.widthOfSize()
-			// fdSize.Width = paw.MaxInt(fdSize.Width, wsize)
 		}
 	}
 
@@ -319,14 +302,12 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 		if !file.IsDir() {
 			size += file.Size
 		}
-
 		fds.SetValues(file, git)
 		fdName.Value = file.Path
 		// cdir := cdirp.Sprint(file.Dir + "/")
 		// cname := file.NameC()
 		fdName.ValueC = GetColorizedPath(file.Path, "") //cdir + cname
 		fds.PrintRow(w, "")
-
 		if isExtended && len(file.XAttributes) > 0 {
 			// sp := paw.Spaces(wdmeta)
 			// fmt.Fprint(w, xattrEdgeString(file, sp, wdmeta, wdstty))
@@ -342,158 +323,12 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 
 }
 
-func isExtendedView(outOpt PDViewFlag) bool {
-	switch outOpt {
+func isExtendedView(viewFlag PDViewFlag) bool {
+	switch viewFlag {
 	case PListExtendView, PTreeExtendView, PListTreeExtendView, PLevelExtendView, PTableExtendView:
 		return true
 	default:
 		return false
-	}
-}
-
-func switchFileListView(fl *FileList, outOpt PDViewFlag, pad string) error {
-	switch outOpt {
-	case PListView:
-		fl.ToListView(pad)
-	case PListExtendView:
-		fl.ToListExtendView(pad)
-	case PTreeView:
-		fl.ToTreeView(pad)
-	case PTreeExtendView:
-		fl.ToTreeExtendView(pad)
-	case PListTreeView:
-		fl.ToListTreeView(pad)
-	case PListTreeExtendView:
-		fl.ToListTreeExtendView(pad)
-	case PLevelView:
-		fl.ToLevelView(pad, false)
-	case PLevelExtendView:
-		fl.ToLevelView(pad, true)
-	case PTableView:
-		fl.ToTableView(pad, false)
-	case PTableExtendView:
-		fl.ToTableView(pad, true)
-	case PClassifyView:
-		fl.ToClassifyView(pad)
-	default:
-		return errors.New("No this view option of PrintDir")
-	}
-	return nil
-}
-
-// func checkPDFilter(opt *PrintDirOption) {
-// 	igfunc := opt.Ignore
-// 	filtOpt := opt.FiltOpt
-// 	if filtOpt != nil && filtOpt.IsFilt {
-// 		switch filtOpt.FiltWay {
-// 		case PDFiltNoEmptyDir: // no empty dir
-// 			opt.Ignore = func(f *File, err error) error {
-// 				if errig := igfunc(f, err); errig != nil {
-// 					return errig
-// 				}
-// 				fis, errfilt := ioutil.ReadDir(f.Path)
-// 				if errfilt != nil {
-// 					return errfilt
-// 				}
-// 				if len(fis) == 0 {
-// 					return SkipThis
-// 				}
-// 				if f.IsDir() {
-// 					nfiles := 0
-// 					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
-// 						if !info.IsDir() {
-// 							nfiles++
-// 						}
-// 						return nil
-// 					})
-// 					if nfiles == 0 {
-// 						return SkipThis
-// 					}
-// 				}
-// 				return nil
-// 			}
-// 		case PDFiltJustDirs: // no files
-// 			opt.Ignore = func(f *File, err error) error {
-// 				if errig := igfunc(f, err); errig != nil {
-// 					return errig
-// 				}
-// 				if !f.IsDir() {
-// 					return SkipThis
-// 				}
-// 				return nil
-// 			}
-// 		case PDFiltJustFiles: // PDFiltJustFilesButNoEmptyDir // no dirs
-// 			opt.Ignore = func(f *File, err error) error {
-// 				if errig := igfunc(f, err); errig != nil {
-// 					return errig
-// 				}
-// 				if f.IsDir() {
-// 					// return SkipThis
-// 					nfiles := 0
-// 					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
-// 						if !info.IsDir() {
-// 							nfiles++
-// 						}
-// 						return nil
-// 					})
-// 					if nfiles == 0 {
-// 						return SkipThis
-// 					}
-// 				}
-// 				return nil
-// 			}
-// 		case PDFiltJustDirsButNoEmpty: // no file and no empty dir
-// 			opt.Ignore = func(f *File, err error) error {
-// 				if errig := igfunc(f, nil); errig != nil {
-// 					return errig
-// 				}
-// 				if f.IsDir() {
-// 					nfiles := 0
-// 					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
-// 						if !info.IsDir() {
-// 							nfiles++
-// 						}
-// 						return nil
-// 					})
-// 					if nfiles == 0 {
-// 						return SkipThis
-// 					}
-// 					return nil
-// 				} else {
-// 					return SkipThis
-// 				}
-// 			}
-// 		}
-// 	}
-// 	opt.FiltOpt.IsFilt = false
-// }
-
-// func cehckAndFiltPrintDirFiltOpt(fl *FileList, opt *PrintDirOption) {
-// 	filtOpt := opt.FiltOpt
-// 	if filtOpt != nil && filtOpt.IsFilt {
-// 		switch filtOpt.FiltWay {
-// 		case PDFiltNoEmptyDir: // no empty dir
-// 			flf := NewFileListFilter(fl, []Filter{FiltEmptyDirs})
-// 			flf.Filt()
-// 		case PDFiltJustDirs: // no files
-// 			flf := NewFileListFilter(fl, []Filter{FiltJustDirs})
-// 			flf.Filt()
-// 		case PDFiltJustFiles: // PDFiltJustFilesButNoEmptyDir // no dirs
-// 			flf := NewFileListFilter(fl, []Filter{FiltJustFiles})
-// 			flf.Filt()
-// 		case PDFiltJustDirsButNoEmpty: // no file and no empty dir
-// 			flf := NewFileListFilter(fl, []Filter{FiltEmptyDirs, FiltJustDirs})
-// 			flf.Filt()
-// 		}
-// 	}
-// }
-
-func setupFLSortOption(fl *FileList, opt *PrintDirOption) {
-	if opt.OutOpt&PTreeView == 0 ||
-		opt.OutOpt&PListTreeView == 0 {
-		if opt.SortOpt.IsSort {
-			fl.SetFilesSorter(opt.SortOpt.SortWay.By())
-		}
 	}
 }
 
@@ -508,14 +343,20 @@ func setFileList(w io.Writer, root string, isGrouped bool, opt *PrintDirOption) 
 	fl.IsSort = opt.SortOpt.IsSort
 
 	// set sorter
-	if opt.OutOpt&PTreeView == 0 ||
-		opt.OutOpt&PListTreeView == 0 {
-		if opt.SortOpt.IsSort {
-			fl.SetFilesSorter(opt.SortOpt.SortWay.By())
-		}
+	if fl.IsSort {
+		setupFLSortOption(fl, pdOpt)
 	}
 
 	return fl
+}
+
+func setupFLSortOption(fl *FileList, opt *PrintDirOption) {
+	if opt.ViewFlag&PTreeView == 0 ||
+		opt.ViewFlag&PListTreeView == 0 {
+		if opt.SortOpt.IsSort {
+			fl.SetFilesSorter(opt.SortOpt.SortFlag.By())
+		}
+	}
 }
 
 // func setIgnoreFn(opt *PrintDirOption) {
@@ -571,13 +412,13 @@ func checkFieldFlag(opt *PrintDirOption) {
 // 		opt = NewPrintDirOption()
 // 		// opt = &PrintDirOption{
 // 		// 	Depth:  0,
-// 		// 	OutOpt: PListView,
-// 		// 	// OutOpt: PListExtendView,
-// 		// 	// OutOpt: PTreeView,
-// 		// 	// OutOpt: PListTreeView,
-// 		// 	// OutOpt: PLevelView,
-// 		// 	// OutOpt: PTableView,
-// 		// 	// OutOpt: PClassifyView,
+// 		// 	ViewFlag: PListView,
+// 		// 	// ViewFlag: PListExtendView,
+// 		// 	// ViewFlag: PTreeView,
+// 		// 	// ViewFlag: PListTreeView,
+// 		// 	// ViewFlag: PLevelView,
+// 		// 	// ViewFlag: PTableView,
+// 		// 	// ViewFlag: PClassifyView,
 // 		// 	FieldFlag: PFieldModified,
 // 		// 	Ignore:    DefaultIgnoreFn,
 // 		// }
@@ -588,7 +429,7 @@ func checkFieldFlag(opt *PrintDirOption) {
 // 	if sortOpt == nil {
 // 		return &PDSortOption{
 // 			IsSort:  true,
-// 			SortWay: PDSortByName,
+// 			SortFlag: PDSortByName,
 // 		}
 // 	}
 // 	return sortOpt
@@ -607,7 +448,7 @@ func checkFieldFlag(opt *PrintDirOption) {
 // 	if !file.IsDir() {
 // 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, GetColorizedDirName(file.Dir, ""))
 // 		git, _ := GetShortGitStatus(file.Dir)
-// 		fds := NewFieldSliceFrom(pfieldKeysDefualt, git)
+// 		fds := NewFieldSliceFrom(DefaultPDFieldKeys, git)
 // 		fl := NewFileList(file.Dir)
 // 		fds.ModifyWidth(fl, sttyWidth-2)
 // 		fds.SetValues(file, git)

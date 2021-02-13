@@ -940,3 +940,34 @@ func (f *FileList) dumpAll() {
 		}
 	}
 }
+
+// DoView will print out FileList according to `out`
+func (fl *FileList) DoView(view PDViewFlag, pad string) error {
+	switch view {
+	case PListView:
+		fl.ToListView(pad)
+	case PListExtendView:
+		fl.ToListExtendView(pad)
+	case PTreeView:
+		fl.ToTreeView(pad)
+	case PTreeExtendView:
+		fl.ToTreeExtendView(pad)
+	case PListTreeView:
+		fl.ToListTreeView(pad)
+	case PListTreeExtendView:
+		fl.ToListTreeExtendView(pad)
+	case PLevelView:
+		fl.ToLevelView(pad, false)
+	case PLevelExtendView:
+		fl.ToLevelView(pad, true)
+	case PTableView:
+		fl.ToTableView(pad, false)
+	case PTableExtendView:
+		fl.ToTableView(pad, true)
+	case PClassifyView:
+		fl.ToClassifyView(pad)
+	default:
+		return errors.New("No this view option of PrintDir")
+	}
+	return nil
+}

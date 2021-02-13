@@ -11,14 +11,14 @@ func main() {
 	root := "." //os.Args[1]
 	// fmt.Printf("%q\n", root)
 	opt := &filetree.PrintDirOption{
-		Depth:  0,
-		OutOpt: filetree.PListView,
-		// OutOpt: filetree.PListExtendView,
-		// OutOpt: filetree.PTreeView,
-		// OutOpt: filetree.PListTreeView,
-		// OutOpt: filetree.PLevelView,
-		// OutOpt: filetree.PTableView,
-		// OutOpt: filetree.PClassifyView,
+		Depth:    0,
+		ViewFlag: filetree.PListView,
+		// ViewFlag: filetree.PListExtendView,
+		// ViewFlag: filetree.PTreeView,
+		// ViewFlag: filetree.PListTreeView,
+		// ViewFlag: filetree.PLevelView,
+		// ViewFlag: filetree.PTableView,
+		// ViewFlag: filetree.PClassifyView,
 		Ignore: filetree.DefaultIgnoreFn,
 	}
 	// sb := &strings.Builder{}

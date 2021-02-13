@@ -26,17 +26,12 @@ func NewFieldSlice() *FieldSlice {
 }
 
 // NewFieldSliceFrom will return *fieldSlice created from []PDFieldFlag and GitStatus
-func NewFieldSliceFrom(keys []PDFieldFlag, git GitStatus) (fds *FieldSlice) {
+func NewFieldSliceFrom(flags []PDFieldFlag, git GitStatus) (fds *FieldSlice) {
 	f := NewFieldSlice()
-	if keys == nil || len(keys) == 0 {
-		keys = pfieldKeysDefualt
+	if len(flags) == 0 {
+		flags = DefaultPDFieldKeys
 	}
-	for _, k := range keys {
-		if k == PFieldGit && git.NoGit {
-			continue
-		}
-		f.Add(k)
-	}
+	f.fds = NewFieldsG(git.NoGit, flags...)
 	return f
 }
 

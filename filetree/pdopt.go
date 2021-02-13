@@ -1,6 +1,7 @@
 package filetree
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,11 +15,11 @@ import (
 // 		Depth < 0 : print all files and directories recursively of argument path of PrintDir.
 // 		Depth = 0 : print files and directories only in argument path of PrintDir.
 // 		Depth > 0 : print files and directories recursively under depth of directory in argument path of PrintDir.
-// OutOpt: the view-option of PrintDir
+// ViewFlag: the view-option of PrintDir
 // Call
 type PrintDirOption struct {
 	Depth     int
-	OutOpt    PDViewFlag
+	ViewFlag  PDViewFlag
 	FieldFlag PDFieldFlag
 	SortOpt   *PDSortOption
 	FiltOpt   *PDFilterOption
@@ -94,20 +95,20 @@ func (p *PrintDirOption) SetDepth(depth int) {
 	p.Depth = depth
 }
 
-func (p *PrintDirOption) SetOutOpt(flag PDViewFlag) {
-	p.OutOpt = flag
+func (p *PrintDirOption) SetViewFlag(viewFlag PDViewFlag) {
+	p.ViewFlag = viewFlag
 }
 
-func (p *PrintDirOption) SetFieldFlag(flag PDFieldFlag) {
-	p.FieldFlag = flag
+func (p *PrintDirOption) SetFieldFlag(fieldFlag PDFieldFlag) {
+	p.FieldFlag = fieldFlag
 }
 
-func (p *PrintDirOption) SetSortOpt(opt *PDSortOption) {
-	p.SortOpt = opt
+func (p *PrintDirOption) SetSortOpt(sortOption *PDSortOption) {
+	p.SortOpt = sortOption
 }
 
-func (p *PrintDirOption) SetFiltOpt(opt *PDFilterOption) {
-	p.FiltOpt = opt
+func (p *PrintDirOption) SetFiltOpt(filterOption *PDFilterOption) {
+	p.FiltOpt = filterOption
 }
 
 func (p *PrintDirOption) SetIgnore(f IgnoreFunc) {
@@ -155,7 +156,7 @@ func (p *PrintDirOption) ConfigFilter() {
 				}
 				return nil
 			}
-		case PDFiltJustFiles: // PDFiltJustFilesButNoEmptyDir // no dirs
+		case PDFiltJustFiles, PDFiltJustFilesButNoEmptyDir: // PDFiltJustFilesButNoEmptyDir // no dirs
 			p.Ignore = func(f *File, err error) error {
 				if errig := igfunc(f, err); errig != nil {
 					return errig
@@ -234,7 +235,7 @@ func (p *PrintDirOption) EnableTrace(isTrace bool) {
 func NewPrintDirOption() *PrintDirOption {
 	p := &PrintDirOption{
 		Depth:     0,
-		OutOpt:    PListView,
+		ViewFlag:  PListView,
 		FieldFlag: PFieldDefault,
 		// SortOpt:
 		// FiltOpt:,
@@ -250,10 +251,16 @@ func NewPrintDirOption() *PrintDirOption {
 type PDViewFlag int
 
 const (
+	// PExtendView is the option to add extended attributes view using in PrintDir
+	PExtendView PDViewFlag = 1 << iota // 1 << 0 which is 00000001
 	// PListView is the option of list view using in PrintDir
-	PListView PDViewFlag = 1 << iota // 1 << 0 which is 00000001
+	PListView
 	// PListExtendView is the option of list view icluding extend attributes using in PrintDir
 	PListExtendView
+	// PListTreeView is the option of combining list & tree view using in PrintDir
+	PListTreeView
+	// PListTreeExtendView is the option of combining list & tree view including extend attribute using in PrintDir
+	PListTreeExtendView
 	// PTreeView is the option of tree view using in PrintDir
 	PTreeView
 	// PTreeExtendView is the option of tree view icluding extend atrribute using in PrintDir
@@ -268,10 +275,6 @@ const (
 	PTableExtendView
 	// PClassifyView display type indicator by file names (like as `exa -F` or `exa --classify`) in PrintDir
 	PClassifyView
-	// PListTreeView is the option of combining list & tree view using in PrintDir
-	PListTreeView = PListView | PTreeView
-	// PListTreeExtendView is the option of combining list & tree view including extend attribute using in PrintDir
-	PListTreeExtendView = PListView | PTreeExtendView
 )
 
 func (v PDViewFlag) String() string {
@@ -303,14 +306,22 @@ func (v PDViewFlag) String() string {
 	}
 }
 
+// Do  will print out FileList
+func (v PDViewFlag) Do(fl *FileList, pad string) error {
+	if fl == nil {
+		return errors.New("not a valid FileList")
+	}
+	return fl.DoView(v, pad)
+}
+
 // PDSortOption defines sorting way view of PrintDir
 //
 // Defaut:
 //  increasing sort by lower name of path
 type PDSortOption struct {
-	IsSort  bool
-	Reverse bool
-	SortWay PDSortFlag
+	IsSort   bool
+	Reverse  bool
+	SortFlag PDSortFlag
 }
 
 type PDSortFlag int
@@ -358,54 +369,54 @@ func (s PDSortFlag) String() string {
 		return "Sort"
 	case PDSortReverse:
 		return "Sort reversely"
-	case pdSortKeyINode:
-		return "Sort-Key: inode"
-	case pdSortKeyLinks:
-		return "Sort-Key: Links"
-	case pdSortKeySize:
-		return "Sort-Key: Size"
-	case pdSortKeyBlocks:
-		return "Sort-Key: Blocks"
-	case pdSortKeyMTime:
-		return "Sort-Key: Modified"
-	case pdSortKeyCTime:
-		return "Sort-Key: Created"
-	case pdSortKeyATime:
-		return "Sort-Key: Accessed"
-	case pdSortKeyName:
-		return "Sort-Key: Name"
-	case PDSortByINode: // PDSort | pdSortKeyINode
-		return "Sory by inode"
+	// case pdSortKeyINode:
+	// 	return "Sort-Key: inode"
+	// case pdSortKeyLinks:
+	// 	return "Sort-Key: Links"
+	// case pdSortKeySize:
+	// 	return "Sort-Key: Size"
+	// case pdSortKeyBlocks:
+	// 	return "Sort-Key: Blocks"
+	// case pdSortKeyMTime:
+	// 	return "Sort-Key: Modified"
+	// case pdSortKeyCTime:
+	// 	return "Sort-Key: Created"
+	// case pdSortKeyATime:
+	// 	return "Sort-Key: Accessed"
+	// case pdSortKeyName:
+	// 	return "Sort-Key: Name"
+	case PDSortByINode, pdSortKeyINode: // PDSort | pdSortKeyINode
+		return "by inode"
 	case PDSortByINodeR: // PDSortByINode | PDSortReverse
-		return "Sory by inode reversely"
-	case PDSortByLinks: // PDSort | pdSortKeyLinks
-		return "Sory by Links"
+		return "by inode reversely"
+	case PDSortByLinks, pdSortKeyLinks: // PDSort | pdSortKeyLinks
+		return "by Links"
 	case PDSortByLinksR: // PDSortByLinks | PDSortReverse
-		return "Sory by Links reversely"
-	case PDSortBySize: // PDSort | pdSortKeySize
-		return "Sory by Size"
+		return "by Links reversely"
+	case PDSortBySize, pdSortKeySize: // PDSort | pdSortKeySize
+		return "by Size"
 	case PDSortBySizeR: // PDSortBySize | PDSortReverse
-		return "Sory by Size reversely"
-	case PDSortByBlocks: // PDSort | pdSortKeyBlocks
-		return "Sory by Blocks"
+		return "by Size reversely"
+	case PDSortByBlocks, pdSortKeyBlocks: // PDSort | pdSortKeyBlocks
+		return "by Blocks"
 	case PDSortByBlocksR: // PDSortByBlocks | PDSortReverse
-		return "Sory by Blocks reversely"
-	case PDSortByMTime: // PDSort | pdSortKeyMTime
-		return "Sory by Modified"
+		return "by Blocks reversely"
+	case PDSortByMTime, pdSortKeyMTime: // PDSort | pdSortKeyMTime
+		return "by Modified"
 	case PDSortByMTimeR: // PDSortByMTime | PDSortReverse
-		return "Sory by Modified reversely"
-	case PDSortByCTime: // PDSort | pdSortKeyCTime
-		return "Sory by Created"
+		return "by Modified reversely"
+	case PDSortByCTime, pdSortKeyCTime: // PDSort | pdSortKeyCTime
+		return "by Created"
 	case PDSortByCTimeR: // PDSortByCTime | PDSortReverse
-		return "Sory by Created reversely"
-	case PDSortByATime: // PDSort | pdSortKeyATime
-		return "Sory by Accessed"
+		return "by Created reversely"
+	case PDSortByATime, pdSortKeyATime: // PDSort | pdSortKeyATime
+		return "by Accessed"
 	case PDSortByATimeR: // PDSortByATime | PDSortReverse
-		return "Sory by Accessed reversely"
-	case PDSortByName: // PDSort | pdSortKeyName
-		return "Sory by Name"
+		return "by Accessed reversely"
+	case PDSortByName, pdSortKeyName: // PDSort | pdSortKeyName
+		return "by Name"
 	case PDSortByNameR: // PDSortByName | PDSortReverse
-		return "Sory by Name reversely"
+		return "by Name reversely"
 	default:
 		return "Unknown"
 	}
@@ -447,28 +458,65 @@ func (s PDSortFlag) By() FilesBy {
 	}
 }
 
-var (
-// sortedFields = []string{"size", "modified", "accessed", "created", "name"}
+func (s PDSortFlag) GetFlag(flag string) PDSortFlag {
+	flag = strings.ToLower(flag)
+	if flag, ok := sortMapFlag[flag]; ok {
+		s = flag
+	} else {
+		s = PDSortByName
+	}
+	return s
+}
 
-// sortByField = map[PDSortFlag]FilesBy{
-// 	PDSortByINode:   byINode,
-// 	PDSortByINodeR:  byINodeR,
-// 	PDSortByLinks:   byLinks,
-// 	PDSortByLinksR:  byLinksR,
-// 	PDSortBySize:    bySize,
-// 	PDSortBySizeR:   bySizeR,
-// 	PDSortByBlocks:  byBlocks,
-// 	PDSortByBlocksR: byBlocksR,
-// 	PDSortByMTime:   byMTime,
-// 	PDSortByMTimeR:  byMTimeR,
-// 	PDSortByATime:   byATime,
-// 	PDSortByATimeR:  byATimeR,
-// 	PDSortByCTime:   byCTime,
-// 	PDSortByCTimeR:  byCTimeR,
-// 	PDSortByName:    byName,
-// 	PDSortByNameR:   byNameR,
-// }
+var (
+	sortMapFlag = map[string]PDSortFlag{
+		"inode":     PDSortByINode,
+		"links":     PDSortByLinks,
+		"size":      PDSortBySize,
+		"blocks":    PDSortByBlocks,
+		"modified":  PDSortByMTime,
+		"mtime":     PDSortByMTime,
+		"accessed":  PDSortByATime,
+		"atime":     PDSortByATime,
+		"created":   PDSortByCTime,
+		"ctime":     PDSortByCTime,
+		"name":      PDSortByName,
+		"inoder":    PDSortByINodeR,
+		"linksr":    PDSortByLinksR,
+		"sizer":     PDSortBySizeR,
+		"blocksr":   PDSortByBlocksR,
+		"modifiedr": PDSortByMTimeR,
+		"mtimer":    PDSortByMTimeR,
+		"accessedr": PDSortByATimeR,
+		"atimer":    PDSortByATimeR,
+		"createdr":  PDSortByCTimeR,
+		"ctimer":    PDSortByCTimeR,
+		"namer":     PDSortByNameR,
+	}
 )
+
+// var (
+// // sortedFields = []string{"size", "modified", "accessed", "created", "name"}
+
+// // sortByField = map[PDSortFlag]FilesBy{
+// // 	PDSortByINode:   byINode,
+// // 	PDSortByINodeR:  byINodeR,
+// // 	PDSortByLinks:   byLinks,
+// // 	PDSortByLinksR:  byLinksR,
+// // 	PDSortBySize:    bySize,
+// // 	PDSortBySizeR:   bySizeR,
+// // 	PDSortByBlocks:  byBlocks,
+// // 	PDSortByBlocksR: byBlocksR,
+// // 	PDSortByMTime:   byMTime,
+// // 	PDSortByMTimeR:  byMTimeR,
+// // 	PDSortByATime:   byATime,
+// // 	PDSortByATimeR:  byATimeR,
+// // 	PDSortByCTime:   byCTime,
+// // 	PDSortByCTimeR:  byCTimeR,
+// // 	PDSortByName:    byName,
+// // 	PDSortByNameR:   byNameR,
+// // }
+// )
 
 type PDFiltFlag int
 
@@ -476,8 +524,8 @@ const (
 	PDFiltNoEmptyDir = 1 << iota
 	PDFiltJustDirs
 	PDFiltJustFiles
-	PDFiltJustDirsButNoEmpty     = PDFiltNoEmptyDir | PDFiltJustDirs
-	PDFiltJustFilesButNoEmptyDir = PDFiltJustFiles
+	PDFiltJustDirsButNoEmpty     //= PDFiltNoEmptyDir | PDFiltJustDirs
+	PDFiltJustFilesButNoEmptyDir //= PDFiltJustFiles
 )
 
 func (f PDFiltFlag) String() string {
@@ -490,6 +538,8 @@ func (f PDFiltFlag) String() string {
 		return "Just Files"
 	case PDFiltJustDirsButNoEmpty:
 		return "Just Directories; but no empty"
+	case PDFiltJustFilesButNoEmptyDir:
+		return "Just Files"
 	default:
 		return "Unknown"
 	}

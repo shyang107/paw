@@ -658,7 +658,7 @@ func (f *File) TypeString() string {
 // func (f *File) Meta(git GitStatus) (string, int) {
 
 // 	if len(pfieldKeys) == 0 {
-// 		pfieldKeys = pfieldKeysDefualt
+// 		pfieldKeys = DefaultPDFieldKeys
 // 	}
 
 // 	fds := NewFieldSliceFrom(pfieldKeys, git)
@@ -670,7 +670,7 @@ func (f *File) TypeString() string {
 // func (f *File) MetaC(git GitStatus) (string, int) {
 
 // 	if len(pfieldKeys) == 0 {
-// 		pfieldKeys = pfieldKeysDefualt
+// 		pfieldKeys = DefaultPDFieldKeys
 // 	}
 
 // 	fds := NewFieldSliceFrom(pfieldKeys, git)
