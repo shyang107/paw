@@ -12,31 +12,31 @@ import (
 type PDFieldFlag int
 
 const (
-	// PFieldINode uses inode field
+	// PFieldINode is inode field
 	PFieldINode PDFieldFlag = 1 << iota
-	// PFieldPermissions uses permission field
+	// PFieldPermissions is permission field
 	PFieldPermissions
-	// PFieldLinks uses hard link field
+	// PFieldLinks is hard link field
 	PFieldLinks
-	// PFieldSize uses size field
+	// PFieldSize is size field
 	PFieldSize
-	// PFieldBlocks uses blocks field
+	// PFieldBlocks is blocks field
 	PFieldBlocks
-	// PFieldUser uses user field
+	// PFieldUser is user field
 	PFieldUser
-	// PFieldGroup uses group field
+	// PFieldGroup is group field
 	PFieldGroup
-	// PFieldModified uses date modified field
+	// PFieldModified is date modified field
 	PFieldModified
-	// PFieldAccessed uses date accessed field
+	// PFieldAccessed is date accessed field
 	PFieldAccessed
-	// PFieldCreated uses date created field
+	// PFieldCreated is date created field
 	PFieldCreated
-	// PFieldGit uses git field
+	// PFieldGit is git field
 	PFieldGit
-	// PFieldName uses name field
+	// PFieldName is name field
 	PFieldName
-	// PFieldNone uses non-default field
+	// PFieldNone is non-default field
 	PFieldNone
 
 	// PFieldDefault useas default fields
@@ -341,7 +341,9 @@ func NewFieldsG(noGit bool, flags ...PDFieldFlag) []*Field {
 				irmGit = i
 			}
 		}
-		flags = append(flags[:irmGit], flags[irmGit+1:]...)
+		if irmGit != -1 {
+			flags = append(flags[:irmGit], flags[irmGit+1:]...)
+		}
 	}
 
 	dFields := make([]*Field, 0, len(flags))
