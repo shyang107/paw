@@ -158,7 +158,7 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			fd.SetValueColor(cp)
 			// fd.SetValueColor(cdap)
 		case PFieldMd5: //"Date Accessed",
-			md5 := file.Md5()
+			md5 := file.GetMd5()
 			fd.SetValue(md5)
 			if md5 == "-" {
 				fd.SetValueC(calign(cdashp, fd.Align, fd.Width, md5))

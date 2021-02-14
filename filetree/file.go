@@ -29,6 +29,7 @@ const (
 
 var (
 	xattrsp = paw.Spaces(paw.StringWidth(XattrSymbol))
+	hasMd5  = false
 )
 
 // File will store information of a file
@@ -50,6 +51,7 @@ type File struct {
 	Ext         string
 	Info        os.FileInfo
 	Size        uint64
+	Md5         string
 	XAttributes []string
 	// User        string
 	// Group       string
@@ -64,6 +66,7 @@ func NewFile(path string) (*File, error) {
 		err                      error
 		dir, basename, ext, file string
 		size                     uint64
+		md5                      string
 		xattrs                   []string
 	)
 	info, err = os.Lstat(path)
@@ -80,7 +83,13 @@ func NewFile(path string) (*File, error) {
 	// if err != nil && pdOpt.isTrace {
 	// 	paw.Logger.Warn(err)
 	// }
-
+	if hasMd5 {
+		if info.IsDir() || !info.Mode().IsRegular() {
+			md5 = "-"
+		} else {
+			md5 = paw.GenMd5(path)
+		}
+	}
 	f := &File{
 		Path:        path,
 		Dir:         dir,
@@ -89,6 +98,7 @@ func NewFile(path string) (*File, error) {
 		Ext:         ext,
 		Info:        info,
 		Size:        size,
+		Md5:         md5,
 		XAttributes: xattrs,
 		UpDir:       nil,
 	}
@@ -504,21 +514,29 @@ func (f *File) GitStatusC(git GitStatus) string {
 	return getColorizedGitStatus(git, f)
 }
 
-// Md5 returns md5 codes of File
-func (f *File) Md5() string {
-	if f.IsDir() || !f.Info.Mode().IsRegular() {
-		return "-"
+// GetMd5 returns md5 codes of File
+func (f *File) GetMd5() string {
+	if len(f.Md5) != 0 {
+		return f.Md5
 	}
-	return paw.GenMd5(f.Path)
+	if f.IsDir() || !f.Info.Mode().IsRegular() {
+		f.Md5 = "-"
+
+	} else {
+		f.Md5 = paw.GenMd5(f.Path)
+	}
+	return f.Md5
 }
 
-// Md5C returns colorful md5 codes of File
-func (f *File) Md5C() string {
-	md5 := f.Md5()
-	if md5 == "-" {
+// GetMd5C returns colorful md5 codes of File
+func (f *File) GetMd5C() string {
+	if len(f.Md5) == 0 {
+		f.GetMd5()
+	}
+	if f.Md5 == "-" {
 		return cdashp.Sprint("-")
 	}
-	return PFieldMd5.Color().Sprint(md5)
+	return PFieldMd5.Color().Sprint(f.Md5)
 }
 
 // IsDir reports whether `f` describes a directory. That is, it tests for the ModeDir bit being set in `f`.
@@ -745,7 +763,7 @@ func (f *File) WidthOf(field PDFieldFlag) int {
 	// case PFieldGit:
 	// 	w = 3
 	case PFieldMd5:
-		w = len(f.Md5())
+		w = len(f.GetMd5())
 	default: // name
 		w = 0
 	}

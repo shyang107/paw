@@ -80,6 +80,7 @@ func (p *PrintDirOption) ConfigFields() {
 	}
 
 	if p.FieldFlag&PFieldMd5 != 0 {
+		hasMd5 = true
 		p.fieldKeys = append(p.fieldKeys, PFieldMd5)
 	}
 

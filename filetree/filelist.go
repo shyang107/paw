@@ -32,9 +32,9 @@ type FileList struct {
 	filesBy   FilesBy
 	dirsBy    DirsBy
 	IsGrouped bool // grouping files and directories separetly
-	// mux       sync.Mutex // 互斥鎖
-	ignore IgnoreFunc
-	errors []*flError
+	ignore    IgnoreFunc
+	errors    []*flError
+	mux       sync.RWMutex // 互斥鎖
 }
 type flError struct {
 	path     string
@@ -84,7 +84,7 @@ func NewFileList(root string) *FileList {
 
 // String ...
 // 	`size` of directory shown in the string, is accumulated size of sub contents
-func (f FileList) String() string {
+func (f *FileList) String() string {
 	// fmt.Printf("%#v\n", f.writer)
 	// oldwr := f.writer
 	// f.SetWriters(paw.NewStringBuilder())
@@ -373,7 +373,7 @@ func (f *FileList) AddError(path string, err error) {
 }
 
 // GetErrorString get the error string in `dir` during find files
-func (f FileList) GetErrorString(dir string) string {
+func (f *FileList) GetErrorString(dir string) string {
 	if len(f.errors) == 0 {
 		return ""
 	}
@@ -391,7 +391,7 @@ func (f FileList) GetErrorString(dir string) string {
 }
 
 // GetAllErrorString get the all error string in `dir` during find files
-func (f FileList) GetAllErrorString() string {
+func (f *FileList) GetAllErrorString() string {
 	if len(f.errors) == 0 {
 		return ""
 	}
@@ -472,14 +472,114 @@ var DefaultIgnoreFn IgnoreFunc = func(f *File, err error) error {
 	return nil
 }
 
-func osReaddirnames(f *FileList, dirPath string) error {
+var (
+	wg = sync.WaitGroup{}
+	// limit goroute number
+	sem = make(chan int, 12)
+)
+
+func wgosReaddirnames(f *FileList, dirPath string) {
+	sem <- 1
+	defer func() {
+		<-sem
+	}()
+	defer wg.Done()
+
+	openDir, err := os.Open(dirPath)
+	if err != nil {
+		if pdOpt.isTrace {
+			paw.Logger.Error(err)
+		}
+		f.mux.Lock()
+		f.AddError(dirPath, err)
+		f.mux.Unlock()
+		return
+	}
+	defer openDir.Close()
+
+	files, err := openDir.Readdirnames(-1)
+	if err != nil {
+		if pdOpt.isTrace {
+			paw.Logger.Error(err)
+		}
+		f.mux.Lock()
+		f.AddError(dirPath, err)
+		f.mux.Unlock()
+		return
+	}
+	if len(files) > 0 {
+		wg.Add(1)
+		go wghandleFiles(f, dirPath, files)
+	}
+
+	return
+}
+
+func wghandleFiles(f *FileList, dirPath string, files []string) {
+	sem <- 1
+	defer func() {
+		<-sem
+	}()
+	defer wg.Done()
+
+	nf := len(files)
+	if nf == 0 {
+		return
+	}
+	// for _, name := range files {
+	if nf == 1 {
+		skip := false
+		name := files[0]
+		path := filepath.Join(dirPath, name)
+		file, err := NewFileRelTo(path, f.root)
+		if err != nil {
+			if pdOpt.isTrace {
+				paw.Logger.Error(err)
+			}
+			f.mux.Lock()
+			f.AddError(path, err)
+			f.mux.Unlock()
+			// continue
+		}
+		if err := f.ignore(file, nil); err == SkipThis {
+			skip = true
+		}
+		idepth := len(file.DirSlice()) - 1
+		if f.depth > 0 {
+			if idepth > f.depth {
+				skip = true
+			}
+		}
+		if !skip {
+			f.mux.Lock()
+			f.AddFile(file)
+			f.mux.Unlock()
+			if f.depth != 0 {
+				if file.IsDir() {
+					if skip {
+						return
+					}
+					wg.Add(1)
+					go wgosReaddirnames(f, path)
+				}
+			}
+		}
+	} else {
+		wg.Add(2)
+		go wghandleFiles(f, dirPath, files[:nf/2])
+		go wghandleFiles(f, dirPath, files[nf/2:])
+	}
+	// }
+}
+
+func osReaddirnames(f *FileList, dirPath string) {
 	openDir, err := os.Open(dirPath)
 	if err != nil {
 		if pdOpt.isTrace {
 			paw.Logger.Error(err)
 		}
 		f.AddError(dirPath, err)
-		return err
+		return
 	}
 	defer openDir.Close()
 
@@ -489,13 +589,13 @@ func osReaddirnames(f *FileList, dirPath string) error {
 			paw.Logger.Error(err)
 		}
 		f.AddError(dirPath, err)
-		return err
+		return
 	}
 	if len(files) > 0 {
 		handleFiles(f, dirPath, files)
 	}
 
-	return nil
+	return
 }
 
 func handleFiles(f *FileList, dirPath string, files []string) {
@@ -566,10 +666,22 @@ func (f *FileList) FindFiles(depth int) error {
 		f.gitstatus, _ = GetShortGitStatus(f.root)
 		f.depth = depth
 	}
-	err = osReaddirnames(f, f.root)
-	if err != nil {
-		return fmt.Errorf("find files: %s", err.Error())
+
+	if hasMd5 {
+		wg.Add(1)
+		go wgosReaddirnames(f, f.root)
+		if pdOpt.isTrace {
+			paw.Logger.Info("finding files starts...")
+		}
+		wg.Wait()
+	} else {
+		osReaddirnames(f, f.root)
 	}
+
+	// if err != nil {
+	// 	return fmt.Errorf("find files: %s", err.Error())
+	// }
+
 	// switch depth {
 	// case 0: //{root directory}/*
 	// 	file, err := NewFileRelTo(f.root, f.root)
