@@ -88,7 +88,8 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 
 		fds.SetValues(file, git)
 		if file.IsDir() {
-			dfile = f.Map()[file.subDir()][0]
+			sdir := file.Dir + "/" + file.BaseName
+			dfile = f.Map()[sdir][0]
 			printLTFile(buf, level, levelsEnded, edge, f, dfile, fds, isExtended, wmeta, wdstty)
 
 			if len(fm[file.Dir]) > 1 {
@@ -262,17 +263,14 @@ func printLTDir(wr io.Writer, level int, levelsEnded []int,
 	edge EdgeType, fl *FileList, file *File, git GitStatus, fds *FieldSlice, isExtended bool, wmeta, wdstty int) {
 
 	var (
-		subDir = file.Dir //+ PathSeparator + file.BaseName
 		fm     = fl.Map()
-		// files  = fm[file.Dir]
-		files  = fm[subDir]
+		files  = fm[file.Dir]
 		nfiles = len(files)
 		dfile  *File
 	)
 
 	for i := 1; i < nfiles; i++ {
 		file = files[i]
-		// fmt.Fprintln(wr, "dir =", file.Dir, "name =", file.BaseName)
 		edge := EdgeTypeMid
 		if i == nfiles-1 {
 			edge = EdgeTypeEnd
@@ -281,7 +279,8 @@ func printLTDir(wr io.Writer, level int, levelsEnded []int,
 
 		fds.SetValues(file, git)
 		if file.IsDir() {
-			dfile = fl.Map()[file.subDir()][0]
+			sdir := file.Dir + "/" + file.BaseName
+			dfile = fl.Map()[sdir][0]
 			printLTFile(wr, level, levelsEnded, edge, fl, dfile, fds, isExtended, wmeta, wdstty)
 
 			if len(fm[file.Dir]) > 1 {

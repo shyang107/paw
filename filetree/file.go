@@ -504,6 +504,23 @@ func (f *File) GitStatusC(git GitStatus) string {
 	return getColorizedGitStatus(git, f)
 }
 
+// Md5 returns md5 codes of File
+func (f *File) Md5() string {
+	if f.IsDir() || !f.Info.Mode().IsRegular() {
+		return "-"
+	}
+	return paw.GenMd5(f.Path)
+}
+
+// Md5C returns colorful md5 codes of File
+func (f *File) Md5C() string {
+	md5 := f.Md5()
+	if md5 == "-" {
+		return cdashp.Sprint("-")
+	}
+	return PFieldMd5.Color().Sprint(md5)
+}
+
 // IsDir reports whether `f` describes a directory. That is, it tests for the ModeDir bit being set in `f`.
 func (f *File) IsDir() bool {
 	return f.Info.IsDir()
@@ -678,12 +695,12 @@ func (f *File) TypeString() string {
 // 	return fds.MetaValuesStringC(), fds.MetaHeadsStringWidth()
 // }
 
-func (f *File) subDir() string {
-	if f.IsDir() {
-		return f.Dir + "/" + f.BaseName
-	}
-	return f.Dir
-}
+// func (f *File) subDir() string {
+// 	if f.IsDir() {
+// 		return f.Dir + "/" + f.BaseName
+// 	}
+// 	return f.Dir
+// }
 
 func (f *File) widthOfSize() (width, wmajor, wminor int) {
 	kind := nodeTypeFromFileInfo(f.Info)
@@ -727,6 +744,8 @@ func (f *File) WidthOf(field PDFieldFlag) int {
 		w = len(DateString(f.AccessedTime()))
 	// case PFieldGit:
 	// 	w = 3
+	case PFieldMd5:
+		w = len(f.Md5())
 	default: // name
 		w = 0
 	}

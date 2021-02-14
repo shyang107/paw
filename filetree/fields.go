@@ -34,6 +34,8 @@ const (
 	PFieldCreated
 	// PFieldGit is git field
 	PFieldGit
+	// PFieldMd5 is md5 field
+	PFieldMd5
 	// PFieldName is name field
 	PFieldName
 	// PFieldNone is non-default field
@@ -67,6 +69,8 @@ func (f PDFieldFlag) String() string {
 		return "Accessed"
 	case PFieldGit:
 		return "Git"
+	case PFieldMd5:
+		return "md5"
 	case PFieldName:
 		return "Name"
 	case PFieldDefault:
@@ -107,6 +111,8 @@ func (f PDFieldFlag) Width() int {
 		return paw.MaxInt(11, wd)
 	case PFieldGit:
 		return paw.MaxInt(2, wd)
+	case PFieldMd5:
+		return paw.MaxInt(32, wd)
 	case PFieldName:
 		return paw.MaxInt(4, wd)
 	default:
@@ -138,8 +144,10 @@ func (f PDFieldFlag) Color() *color.Color {
 		return cdap
 	case PFieldGit:
 		return cgitp
+	case PFieldMd5:
+		return cmd5p
 	case PFieldName:
-		return cfip
+		return cnop
 	default:
 		return cdashp
 	}
@@ -169,6 +177,8 @@ func (f PDFieldFlag) Align() paw.Align {
 		return paw.AlignLeft
 	case PFieldGit:
 		return paw.AlignRight
+	case PFieldMd5:
+		return paw.AlignLeft
 	case PFieldName:
 		return paw.AlignLeft
 	case PFieldNone:
@@ -183,97 +193,9 @@ func (f PDFieldFlag) Field() *Field {
 }
 
 var (
-	// pfields = []string{}
-	// pfieldsMap = map[PDFieldFlag]string{
-	// 	PFieldINode:       "inode",
-	// 	PFieldPermissions: "Permissions",
-	// 	PFieldLinks:       "Links",
-	// 	PFieldSize:        "Size",
-	// 	PFieldBlocks:      "Blocks",
-	// 	PFieldUser:        "User",
-	// 	PFieldGroup:       "Group",
-	// 	PFieldModified:    "Modified",
-	// 	PFieldCreated:     "Created",
-	// 	PFieldAccessed:    "Accessed",
-	// 	// PFieldModified:    "Date Modified",
-	// 	// PFieldCreated:     "Date Created",
-	// 	// PFieldAccessed:    "Date Accessed",
-	// 	PFieldGit:  "Git",
-	// 	PFieldName: "Name",
-	// 	PFieldNone: "",
-	// }
-	// pfieldWidths = []int{}
-	// pfieldWidthsMap = map[PDFieldFlag]int{
-	// 	// PFieldINode:       paw.MaxInt(8, len(pfieldsMap[PFieldINode])),
-	// 	PFieldINode:       paw.MaxInt(5, len(pfieldsMap[PFieldINode])),
-	// 	PFieldPermissions: paw.MaxInt(11, len(pfieldsMap[PFieldPermissions])),
-	// 	PFieldLinks:       paw.MaxInt(2, len(pfieldsMap[PFieldLinks])),
-	// 	PFieldSize:        paw.MaxInt(4, len(pfieldsMap[PFieldSize])),
-	// 	PFieldBlocks:      paw.MaxInt(6, len(pfieldsMap[PFieldBlocks])),
-	// 	PFieldUser:        paw.MaxInt(4, len(pfieldsMap[PFieldUser])),
-	// 	PFieldGroup:       paw.MaxInt(5, len(pfieldsMap[PFieldGroup])),
-	// 	PFieldModified:    paw.MaxInt(11, len(pfieldsMap[PFieldModified])),
-	// 	PFieldCreated:     paw.MaxInt(11, len(pfieldsMap[PFieldCreated])),
-	// 	PFieldAccessed:    paw.MaxInt(11, len(pfieldsMap[PFieldAccessed])),
-	// 	PFieldGit:         paw.MaxInt(2, len(pfieldsMap[PFieldGit])),
-	// 	PFieldName:        paw.MaxInt(4, len(pfieldsMap[PFieldName])),
-	// 	PFieldNone:        0,
-	// }
-
-	// pfieldKeys = []PDFieldFlag{}
-
 	DefaultPDFieldKeys = []PDFieldFlag{PFieldPermissions, PFieldSize, PFieldUser, PFieldGroup, PFieldModified, PFieldName}
 
 	DefaultPDFields = NewFields(DefaultPDFieldKeys...)
-
-	// pfieldCPMap = map[PDFieldFlag]*color.Color{
-	// 	PFieldINode:       cinp,
-	// 	PFieldPermissions: cpms,
-	// 	PFieldLinks:       clkp,
-	// 	PFieldSize:        csnp,
-	// 	// PFieldBlocks:      cbkp,
-	// 	PFieldBlocks:   cbkp,
-	// 	PFieldUser:     cuup,
-	// 	PFieldGroup:    cgup,
-	// 	PFieldModified: cdap,
-	// 	PFieldCreated:  cdap,
-	// 	PFieldAccessed: cdap,
-	// 	PFieldGit:      cgitp,
-	// 	PFieldName:     cfip,
-	// 	PFieldNone:     cdashp,
-	// }
-	// pfieldAlignMap = map[PDFieldFlag]paw.Align{
-	// 	PFieldINode:       paw.AlignRight,
-	// 	PFieldPermissions: paw.AlignLeft,
-	// 	PFieldLinks:       paw.AlignRight,
-	// 	PFieldSize:        paw.AlignRight,
-	// 	PFieldBlocks:      paw.AlignRight,
-	// 	PFieldUser:        paw.AlignLeft,
-	// 	PFieldGroup:       paw.AlignLeft,
-	// 	// PFieldUser:        paw.AlignRight,
-	// 	// PFieldGroup:       paw.AlignRight,
-	// 	PFieldModified: paw.AlignLeft,
-	// 	PFieldCreated:  paw.AlignLeft,
-	// 	PFieldAccessed: paw.AlignLeft,
-	// 	PFieldGit:      paw.AlignRight,
-	// 	PFieldName:     paw.AlignLeft,
-	// 	PFieldNone:     paw.AlignRight,
-	// }
-	// FieldsMap = map[PDFieldFlag]*Field{
-	// 	PFieldINode:       NewField(PFieldINode),
-	// 	PFieldPermissions: NewField(PFieldPermissions),
-	// 	PFieldLinks:       NewField(PFieldLinks),
-	// 	PFieldSize:        NewField(PFieldSize),
-	// 	PFieldBlocks:      NewField(PFieldBlocks),
-	// 	PFieldUser:        NewField(PFieldUser),
-	// 	PFieldGroup:       NewField(PFieldGroup),
-	// 	PFieldModified:    NewField(PFieldModified),
-	// 	PFieldCreated:     NewField(PFieldCreated),
-	// 	PFieldAccessed:    NewField(PFieldAccessed),
-	// 	PFieldGit:         NewField(PFieldGit),
-	// 	PFieldName:        NewField(PFieldName),
-	// 	PFieldNone:        NewField(PFieldNone),
-	// }
 )
 
 // Field stores content of a field
@@ -329,8 +251,8 @@ func NewFields(flags ...PDFieldFlag) []*Field {
 	return dFields
 }
 
-// NewFieldsG will return []*Field w.r.t. git status
-func NewFieldsG(noGit bool, flags ...PDFieldFlag) []*Field {
+// NewFieldsGit will return []*Field w.r.t. git status
+func NewFieldsGit(noGit bool, flags ...PDFieldFlag) []*Field {
 	if len(flags) == 0 {
 		return nil
 	}

@@ -31,7 +31,7 @@ func NewFieldSliceFrom(flags []PDFieldFlag, git GitStatus) (fds *FieldSlice) {
 	if len(flags) == 0 {
 		flags = DefaultPDFieldKeys
 	}
-	f.fds = NewFieldsG(git.NoGit, flags...)
+	f.fds = NewFieldsGit(git.NoGit, flags...)
 	return f
 }
 
@@ -60,11 +60,13 @@ func (f *FieldSlice) EmptyValues() {
 // SetValues sets up values of FieldSlice from File and GitStatus
 func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 	for _, fd := range f.fds {
+		cp := fd.Key.Color()
 		switch fd.Key {
 		case PFieldINode: //"inode",
 			fd.SetValue(file.INode())
 			fd.SetValueC(calign(cinp, fd.Align, fd.Width, file.INode()))
-			fd.SetValueColor(cinp)
+			fd.SetValueColor(cp)
+			// fd.SetValueColor(cinp)
 		case PFieldPermissions: //"Permissions",
 			perm := file.Permission()
 			fd.SetValue(perm)
@@ -74,11 +76,13 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				sp = paw.Spaces(fd.Width - wp)
 			}
 			fd.SetValueC(file.PermissionC() + sp)
-			fd.SetValueColor(cpms)
+			fd.SetValueColor(cp)
+			// fd.SetValueColor(cpms)
 		case PFieldLinks: //"Links",
 			fd.SetValue(file.NLinks())
 			fd.SetValueC(calign(clkp, fd.Align, fd.Width, file.NLinks()))
-			fd.SetValueColor(clkp)
+			fd.SetValueColor(cp)
+			// fd.SetValueColor(clkp)
 		case PFieldSize: //"Size",
 			kind := nodeTypeFromFileInfo(file.Info)
 			switch kind {
@@ -101,7 +105,8 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 				csize := fdColorizedSize(file.Size, fd.Width)
 				fd.SetValueC(csize)
 			}
-			fd.SetValueColor(csnp)
+			fd.SetValueColor(cp)
+			// fd.SetValueColor(csnp)
 		case PFieldBlocks: //"Block",
 			if file.IsDir() {
 				fd.SetValue("-")
@@ -109,7 +114,8 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			} else {
 				fd.SetValue(file.Blocks())
 				fd.SetValueC(calign(cbkp, fd.Align, fd.Width, file.Blocks()))
-				fd.SetValueColor(cbkp)
+				fd.SetValueColor(cp)
+				// fd.SetValueColor(cbkp)
 			}
 		case PFieldUser: //"User",
 			furname := file.User()
@@ -137,24 +143,40 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			sd := DateString(file.ModifiedTime())
 			fd.SetValue(sd)
 			fd.SetValueC(calign(cdap, fd.Align, fd.Width, sd))
-			fd.SetValueColor(cdap)
+			fd.SetValueColor(cp)
+			// fd.SetValueColor(cdap)
 		case PFieldCreated: //"Date Created",
 			sd := DateString(file.CreatedTime())
 			fd.SetValue(sd)
 			fd.SetValueC(calign(cdap, fd.Align, fd.Width, sd))
-			fd.SetValueColor(cdap)
+			fd.SetValueColor(cp)
+			// fd.SetValueColor(cdap)
 		case PFieldAccessed: //"Date Accessed",
 			sd := DateString(file.AccessedTime())
 			fd.SetValue(sd)
 			fd.SetValueC(calign(cdap, fd.Align, fd.Width, sd))
-			fd.SetValueColor(cdap)
+			fd.SetValueColor(cp)
+			// fd.SetValueColor(cdap)
+		case PFieldMd5: //"Date Accessed",
+			md5 := file.Md5()
+			fd.SetValue(md5)
+			if md5 == "-" {
+				fd.SetValueC(calign(cdashp, fd.Align, fd.Width, md5))
+				fd.SetValueColor(cdashp)
+			} else {
+				fd.SetValueC(calign(cp, fd.Align, fd.Width, md5))
+				fd.SetValueColor(cp)
+			}
+			// fd.SetValueC(calign(cmd5p, fd.Align, fd.Width, md5))
+			// fd.SetValueColor(cmd5p)
 		case PFieldGit: //"Gid",
 			if git.NoGit {
 				continue
 			} else {
 				fd.SetValue(file.GitStatus(git))
 				fd.SetValueC(file.GitStatusC(git))
-				fd.SetValueColor(cgitp)
+				fd.SetValueColor(cp)
+				// fd.SetValueColor(cgitp)
 			}
 		case PFieldName: //"Name",
 			fd.SetValue(file.Name())
