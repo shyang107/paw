@@ -79,6 +79,10 @@ func (p *PrintDirOption) ConfigFields() {
 		p.fieldKeys = append(p.fieldKeys, PFieldAccessed)
 	}
 
+	if p.FieldFlag&PFieldMd5 != 0 {
+		p.fieldKeys = append(p.fieldKeys, PFieldMd5)
+	}
+
 	if p.FieldFlag&PFieldGit != 0 {
 		p.fieldKeys = append(p.fieldKeys, PFieldGit)
 	}

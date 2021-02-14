@@ -34,6 +34,8 @@ const (
 	PFieldCreated
 	// PFieldGit is git field
 	PFieldGit
+	// PFieldMd5 is md5 field
+	PFieldMd5
 	// PFieldName is name field
 	PFieldName
 	// PFieldNone is non-default field
@@ -67,6 +69,8 @@ func (f PDFieldFlag) String() string {
 		return "Accessed"
 	case PFieldGit:
 		return "Git"
+	case PFieldMd5:
+		return "md5"
 	case PFieldName:
 		return "Name"
 	case PFieldDefault:
@@ -107,6 +111,8 @@ func (f PDFieldFlag) Width() int {
 		return paw.MaxInt(11, wd)
 	case PFieldGit:
 		return paw.MaxInt(2, wd)
+	case PFieldMd5:
+		return paw.MaxInt(32, wd)
 	case PFieldName:
 		return paw.MaxInt(4, wd)
 	default:
@@ -138,8 +144,10 @@ func (f PDFieldFlag) Color() *color.Color {
 		return cdap
 	case PFieldGit:
 		return cgitp
+	case PFieldMd5:
+		return cmd5p
 	case PFieldName:
-		return cfip
+		return cnop
 	default:
 		return cdashp
 	}
@@ -169,6 +177,8 @@ func (f PDFieldFlag) Align() paw.Align {
 		return paw.AlignLeft
 	case PFieldGit:
 		return paw.AlignRight
+	case PFieldMd5:
+		return paw.AlignLeft
 	case PFieldName:
 		return paw.AlignLeft
 	case PFieldNone:
@@ -329,8 +339,8 @@ func NewFields(flags ...PDFieldFlag) []*Field {
 	return dFields
 }
 
-// NewFieldsG will return []*Field w.r.t. git status
-func NewFieldsG(noGit bool, flags ...PDFieldFlag) []*Field {
+// NewFieldsGit will return []*Field w.r.t. git status
+func NewFieldsGit(noGit bool, flags ...PDFieldFlag) []*Field {
 	if len(flags) == 0 {
 		return nil
 	}

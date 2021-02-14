@@ -199,6 +199,8 @@ func listOneFile(fl *FileList, path string, pad string) {
 		fmt.Fprintln(w, rowFile(nline, PFieldGit, cgit, width, wdstty))
 		nline++
 	}
+	fmt.Fprintln(w, rowFile(nline, PFieldMd5, file.Md5C(), width, wdstty))
+	nline++
 	if len(file.XAttributes) > 0 {
 		xfield := fmt.Sprintf("%[1]*[2]s%s", width, "Extended", " : ")
 		wd := wdstty - width - 3

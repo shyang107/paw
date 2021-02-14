@@ -57,6 +57,7 @@ var (
 	cbkp                  = paw.Cbkp  // blocks
 	cdap                  = paw.Cdap  // date
 	cgitp                 = paw.Cgitp // git
+	cmd5p                 = paw.Cmd5p // md5
 	cxap                  = paw.Cxap  // extended attributes
 	cxbp                  = paw.Cxbp  // extended attributes
 	cdashp                = paw.Cdashp

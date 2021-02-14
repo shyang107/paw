@@ -485,7 +485,7 @@ func osReadDir(f *FileList, dirPath string) error {
 	}
 	defer openDir.Close()
 
-	names, err := openDir.Readdirnames(-1)
+	files, err := openDir.Readdirnames(-1)
 	if err != nil {
 		if pdOpt.isTrace {
 			paw.Logger.Error(err)
@@ -493,8 +493,21 @@ func osReadDir(f *FileList, dirPath string) error {
 		f.AddError(dirPath, err)
 		return err
 	}
-	for _, name := range names {
-		path := filepath.Join(f.root, name)
+	if len(files) > 0 {
+		handleFiles(f, dirPath, files)
+	}
+
+	return nil
+}
+
+func handleFiles(f *FileList, dirPath string, files []string) {
+	nf := len(files)
+	if nf == 0 {
+		return
+	}
+	for _, name := range files {
+		skip := false
+		path := filepath.Join(dirPath, name)
 		file, err := NewFileRelTo(path, f.root)
 		if err != nil {
 			if pdOpt.isTrace {
@@ -503,12 +516,27 @@ func osReadDir(f *FileList, dirPath string) error {
 			f.AddError(path, err)
 			continue
 		}
-		if err := f.ignore(file, nil); err != SkipThis {
+		if err := f.ignore(file, nil); err == SkipThis {
+			skip = true
+		}
+		idepth := len(file.DirSlice()) - 1
+		if f.depth > 0 {
+			if idepth > f.depth {
+				skip = true
+			}
+		}
+		if !skip {
 			f.AddFile(file)
+			if f.depth != 0 {
+				if file.IsDir() {
+					if skip {
+						return
+					}
+					osReadDir(f, path)
+				}
+			}
 		}
 	}
-	return nil
-
 }
 
 func gpReadDirnames(f *FileList, dirPath string) error {
@@ -599,7 +627,7 @@ func fpWalk(f *FileList) error {
 			f.AddError(path, errf)
 			return nil
 		}
-		idepth := len(strings.Split(strings.Replace(path, f.root, ".", 1), PathSeparator)) - 1
+		idepth := len(file.DirSlice()) - 1
 		if f.depth > 0 {
 			if idepth > f.depth {
 				skip = true
@@ -675,47 +703,82 @@ func gdWalk(f *FileList) error {
 // 		ignoring condition of files or directory
 // 		ignore == nil, using DefaultIgnoreFn
 func (f *FileList) FindFiles(depth int) error {
-	ignore := f.ignore
-	if ignore == nil {
-		ignore = DefaultIgnoreFn
+	paw.Logger.WithField("root", f.root).Trace()
+
+	if f.ignore == nil {
+		f.ignore = DefaultIgnoreFn
 	}
 	f.gitstatus, _ = GetShortGitStatus(f.root)
 	f.depth = depth
-	switch depth {
-	case 0: //{root directory}/*
-		file, err := NewFileRelTo(f.root, f.root)
-		if err != nil {
-			if pdOpt.isTrace {
-				paw.Logger.Error(err)
-			}
-			return err
+	file, err := NewFileRelTo(f.root, f.root)
+	if err != nil {
+		if pdOpt.isTrace {
+			paw.Logger.Error(err)
 		}
-		f.AddFile(file)
-		err = osReadDir(f, f.root)
-		if err != nil {
-			return fmt.Errorf("find files: %s", err.Error())
-		}
-	default: //walk through all directories of {root directory}
-		paw.Logger.WithField("root", f.root).Trace()
-		file, errf := NewFileRelTo(f.root, f.root)
-		if errf != nil {
-			if pdOpt.isTrace {
-				paw.Logger.Error(errf)
-			}
-			f.AddError(f.root, errf)
-			return errf
-		}
-		if file.IsLink() {
-			f.root = file.LinkPath()
-			f.gitstatus, _ = GetShortGitStatus(f.root)
-			f.depth = depth
-		}
-
-		err := fpWalk(f)
-		if err != nil {
-			return fmt.Errorf("find files: %s", err.Error())
-		}
+		return err
 	}
+	f.AddFile(file)
+	if file.IsLink() {
+		f.root = file.LinkPath()
+		f.gitstatus, _ = GetShortGitStatus(f.root)
+		f.depth = depth
+	}
+	err = osReadDir(f, f.root)
+	if err != nil {
+		return fmt.Errorf("find files: %s", err.Error())
+	}
+	// switch depth {
+	// case 0: //{root directory}/*
+	// 	file, err := NewFileRelTo(f.root, f.root)
+	// 	if err != nil {
+	// 		if pdOpt.isTrace {
+	// 			paw.Logger.Error(err)
+	// 		}
+	// 		return err
+	// 	}
+	// 	f.AddFile(file)
+	// 	err = osReadDir(f, f.root)
+	// 	if err != nil {
+	// 		return fmt.Errorf("find files: %s", err.Error())
+	// 	}
+	// default: //walk through all directories of {root directory}
+	// 	file, err := NewFileRelTo(f.root, f.root)
+	// 	if err != nil {
+	// 		if pdOpt.isTrace {
+	// 			paw.Logger.Error(err)
+	// 		}
+	// 		return err
+	// 	}
+	// 	f.AddFile(file)
+	// 	if file.IsLink() {
+	// 		f.root = file.LinkPath()
+	// 		f.gitstatus, _ = GetShortGitStatus(f.root)
+	// 		f.depth = depth
+	// 	}
+	// 	err = osReadDir(f, f.root)
+	// 	if err != nil {
+	// 		return fmt.Errorf("find files: %s", err.Error())
+	// 	}
+	// 	// fpWalk
+	// 	// file, errf := NewFileRelTo(f.root, f.root)
+	// 	// if errf != nil {
+	// 	// 	if pdOpt.isTrace {
+	// 	// 		paw.Logger.Error(errf)
+	// 	// 	}
+	// 	// 	f.AddError(f.root, errf)
+	// 	// 	return errf
+	// 	// }
+	// 	// if file.IsLink() {
+	// 	// 	f.root = file.LinkPath()
+	// 	// 	f.gitstatus, _ = GetShortGitStatus(f.root)
+	// 	// 	f.depth = depth
+	// 	// }
+
+	// 	// err := fpWalk(f)
+	// 	// if err != nil {
+	// 	// 	return fmt.Errorf("find files: %s", err.Error())
+	// 	// }
+	// }
 
 	if f.IsSort {
 		f.Sort()

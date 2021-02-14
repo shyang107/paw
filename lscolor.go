@@ -107,6 +107,7 @@ var (
 		"error":    {38, 5, 220, 1, 48, 5, 160},
 		"fatal":    {38, 5, 220, 1, 48, 5, 160},
 		"panic":    {38, 5, 220, 1, 48, 5, 160},
+		"md5":      LSColors["no"], //LSColors[".md5"],
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file
@@ -741,6 +742,8 @@ var (
 	Cdap = NewEXAColor("da")
 	// Cgitp is default color use for git field
 	Cgitp = NewEXAColor("gm")
+	// Cmd5p is default color use for md5 field
+	Cmd5p = NewEXAColor("md5")
 	// Cxap is default color use for extended attributes
 	Cxap = NewEXAColor("xattr")
 	// Cxbp is default color use for symbole of extended attributes
