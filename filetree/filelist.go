@@ -24,7 +24,7 @@ type FileList struct {
 	dirs          []string // keys of `store`
 	depth         int
 	totalSize     uint64
-	gitstatus     GitStatus
+	git           *GitStatus
 	stringBuilder *strings.Builder
 	writer        io.Writer
 	// writers   []io.Writer
@@ -71,6 +71,7 @@ func NewFileList(root string) *FileList {
 		root:          root,
 		store:         make(map[string][]*File),
 		dirs:          []string{},
+		git:           &GitStatus{NoGit: true},
 		stringBuilder: new(strings.Builder),
 		IsSort:        true,
 		filesBy:       nil,
@@ -150,6 +151,172 @@ func (f *FileList) Writer() io.Writer {
 		f.SetWriters(f.stringBuilder)
 	}
 	return f.writer
+}
+
+// ConfigGit sets up the git status of FileList
+func (f *FileList) ConfigGit() {
+	f.git = NewGitStatus(f.root)
+	if f.git.NoGit && len(f.store) < 1 {
+		return
+	}
+
+	// ns := len(fl.Git().GetStatus())
+	// // st := fl.Git().GetStatus()
+	// st := make()
+	gs := f.git.GetStatus()
+	var rfs *GitFileStatus
+	if len(gs) > 0 {
+		_, name := filepath.Split(f.root)
+		rdir := name + "/"
+		rfs = &GitFileStatus{
+			Staging:  GitUnChanged,
+			Worktree: GitChanged,
+			Extra:    name,
+		}
+		gs[rdir] = rfs
+	}
+	// check: if dir is Untracked and subfiles is Unmodified then add Untracked to subfiles
+	for rpath, xy := range gs {
+		if strings.HasSuffix(rpath, "/") {
+			if checkXY(xy, GitUntracked) {
+				dir := strings.TrimSuffix(RootMark+"/"+rpath, "/")
+				// paw.Logger.WithFields(logrus.Fields{
+				// 	"rp":  rpath,
+				// 	"XY":  xy.Staging.String() + xy.Worktree.String(),
+				// 	"dir": dir,
+				// }).Trace(xy.Extra)
+				for _, file := range f.store[dir][:] {
+					if file.IsDir() {
+						continue
+					}
+					// paw.Logger.WithFields(logrus.Fields{
+					// 	"dir":     file.Dir,
+					// 	"RelPath": file.RelPath,
+					// }).Trace(file.NameC())
+					if _, ok := gs[file.RelPath]; !ok {
+						gs[file.RelPath] = &GitFileStatus{
+							Staging:  xy.Staging,
+							Worktree: xy.Worktree,
+							Extra:    file.BaseName,
+						}
+						// paw.Logger.WithFields(logrus.Fields{
+						// 	"rp":    file.RelPath,
+						// 	"XY":    gs[file.RelPath].Staging.String() + gs[file.RelPath].Worktree.String(),
+						// 	"Extra": gs[file.RelPath].Extra,
+						// }).Trace("add xy")
+					}
+				}
+			}
+		}
+	}
+	// if any of subfiles of dir has any cheange of git status, set GitChanged to dir
+	for rpath, xy := range gs {
+		switch xy.Staging {
+		case GitUnChanged, GitUnmodified:
+		default:
+			if rfs.Staging == GitUnChanged {
+				rfs.Staging = GitChanged
+			}
+		}
+		// paw.Logger.WithFields(logrus.Fields{
+		// 	"rp": rpath,
+		// 	"XY": xy.Staging.String() + xy.Worktree.String(),
+		// }).Debug(xy.Extra)
+		rrpath, name := filepath.Split(rpath)
+		if fs, ok := gs[rrpath]; !ok {
+			gs[rrpath] = &GitFileStatus{
+				Staging:  xy.Staging,
+				Worktree: xy.Worktree,
+				Extra:    name + "/",
+			}
+		} else {
+			switch xy.Staging {
+			case GitUnChanged, GitUnmodified, GitIgnored, GitDeleted:
+			default:
+				fs.Staging = GitChanged
+			}
+			switch xy.Worktree {
+			case GitUnChanged, GitUnmodified, GitIgnored, GitDeleted:
+			default:
+				fs.Worktree = GitChanged
+			}
+		}
+	}
+	// f.git.SetStatus(gs)
+}
+
+func checkXY(xy *GitFileStatus, gcode GitStatusCode) bool {
+	return xy.Staging == gcode ||
+		xy.Worktree == gcode
+}
+
+// // ReCheckGit checks the git status of FileList
+// //
+// // if dir is Untracked and subfiles is Unmodified then add Untracked to subfiles
+// func (f *FileList) ReCheckGit() {
+// 	// FIXME
+// 	// f.git = NewGitStatus(f.root)
+// 	if f.git.NoGit && len(f.store) < 1 {
+// 		return
+// 	}
+
+// 	gs := f.git.GetStatus()
+// 	// var rfs *GitFileStatus
+// 	// if len(gs) > 0 {
+// 	// 	_, name := filepath.Split(f.root)
+// 	// 	rdir := name + "/"
+// 	// 	rfs = &GitFileStatus{
+// 	// 		Staging:  GitUnChanged,
+// 	// 		Worktree: GitChanged,
+// 	// 		Extra:    name,
+// 	// 	}
+// 	// 	gs[rdir] = rfs
+// 	// }
+// 	for rpath, xy := range gs {
+// 		if strings.HasSuffix(rpath, "/") {
+// 			if checkXY(xy, GitUntracked) {
+// 				dir := strings.TrimSuffix(RootMark+"/"+rpath, "/")
+// 				// paw.Logger.WithFields(logrus.Fields{
+// 				// 	"rp":  rpath,
+// 				// 	"XY":  xy.Staging.String() + xy.Worktree.String(),
+// 				// 	"dir": dir,
+// 				// }).Trace(xy.Extra)
+// 				for _, file := range f.store[dir][1:] {
+// 					// paw.Logger.WithFields(logrus.Fields{
+// 					// 	"dir":     file.Dir,
+// 					// 	"RelPath": file.RelPath,
+// 					// }).Trace(file.NameC())
+// 					if _, ok := gs[file.RelPath]; !ok {
+// 						gs[file.RelPath] = &GitFileStatus{
+// 							Staging:  xy.Staging,
+// 							Worktree: xy.Worktree,
+// 							Extra:    file.BaseName,
+// 						}
+// 						// paw.Logger.WithFields(logrus.Fields{
+// 						// 	"rp":    file.RelPath,
+// 						// 	"XY":    gs[file.RelPath].Staging.String() + gs[file.RelPath].Worktree.String(),
+// 						// 	"Extra": gs[file.RelPath].Extra,
+// 						// }).Trace("add xy")
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+
+// ConfigGit sets up the git status of FileList
+func (f *FileList) GetGitStatus() *GitStatus {
+	return f.git
+}
+
+// GitXY will retun git XY status of FileList
+func (f *FileList) GitXY(path string) string {
+	return f.GetGitStatus().XYStatus(path)
+}
+
+// GitXY will retun git colorful XY status of FileList
+func (f *FileList) GitXYC(path string) string {
+	return f.GetGitStatus().XYStatusC(path)
 }
 
 // SetIgnoreFunc set ignore function to FieldList.ignore
@@ -295,11 +462,6 @@ func (f *FileList) SubByteSize(dir string) string {
 // DirInfo will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.
 func (f *FileList) DirInfo(file *File) (cdinf string, wdinf int) {
 	return getDirInfo(f, file)
-}
-
-// GetGitStatus will return git short status of `FileList`
-func (f *FileList) GetGitStatus() GitStatus {
-	return f.gitstatus
 }
 
 // // GetHead4Meta will return a colorful string of head line for meta information of File
@@ -651,7 +813,7 @@ func (f *FileList) FindFiles(depth int) error {
 	if f.ignore == nil {
 		f.ignore = DefaultIgnoreFn
 	}
-	f.gitstatus, _ = GetShortGitStatus(f.root)
+	// f.gitstatus, _ = GetShortGitStatus(f.root)
 	f.depth = depth
 	file, err := NewFileRelTo(f.root, f.root)
 	if err != nil {
@@ -663,7 +825,8 @@ func (f *FileList) FindFiles(depth int) error {
 	f.AddFile(file)
 	if file.IsLink() {
 		f.root = file.LinkPath()
-		f.gitstatus, _ = GetShortGitStatus(f.root)
+		// f.gitstatus, _ = GetShortGitStatus(f.root)
+		f.git = NewGitStatus(f.root)
 		f.depth = depth
 	}
 

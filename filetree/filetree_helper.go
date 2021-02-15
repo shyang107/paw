@@ -618,115 +618,115 @@ func GetColorizedTime(date time.Time) string {
 	return cdap.Sprint(DateString(date))
 }
 
-var cpmap = map[rune]*color.Color{
-	'L': clnp,
-	'l': clnp,
-	'd': cdip,
-	'r': paw.NewEXAColor("ur"),
-	'w': paw.NewEXAColor("uw"),
-	'x': paw.NewEXAColor("ux"),
-	'-': cdashp,                //color.New(color.Concealed),
-	'.': cdashp,                //color.New(color.Concealed),
-	' ': cdashp,                //color.New(color.Concealed), //unmodified
-	'M': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //modified
-	'A': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //added
-	'D': paw.NewEXAColor("gd"), //color.New(EXAColors["gd"]...), //deleted
-	'R': paw.NewEXAColor("gv"), //color.New(EXAColors["gv"]...), //renamed
-	'C': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //copied
-	'U': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //updated but unmerged
-	'?': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //untracked
-	'N': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //untracked
-	'!': cdashp,                //color.New(EXAColors["-"]...),  //ignored
-}
+// var cpmap = map[rune]*color.Color{
+// 	'L': clnp,
+// 	'l': clnp,
+// 	'd': cdip,
+// 	'r': paw.NewEXAColor("ur"),
+// 	'w': paw.NewEXAColor("uw"),
+// 	'x': paw.NewEXAColor("ux"),
+// 	'-': cdashp,                //color.New(color.Concealed),
+// 	'.': cdashp,                //color.New(color.Concealed),
+// 	' ': cdashp,                //color.New(color.Concealed), //unmodified
+// 	'M': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //modified
+// 	'A': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //added
+// 	'D': paw.NewEXAColor("gd"), //color.New(EXAColors["gd"]...), //deleted
+// 	'R': paw.NewEXAColor("gv"), //color.New(EXAColors["gv"]...), //renamed
+// 	'C': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //copied
+// 	'U': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //updated but unmerged
+// 	'?': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //untracked
+// 	'N': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //untracked
+// 	'!': cdashp,                //color.New(EXAColors["-"]...),  //ignored
+// }
 
-var ckxy = map[rune]rune{
-	'M': 'M', //modified
-	'A': 'A', //added
-	// 'A': 'N',
-	'D': 'D', //deleted
-	'R': 'R', //renamed
-	'C': 'C', //copied
-	'U': 'U', //updated but unmerged
-	// '?': 'N', //untracked
-	'?': '?', //untracked
-	' ': '-',
-	// '!': 'N', //ignore
-	'!': '!', //ignore
-}
+// var ckxy = map[rune]rune{
+// 	'M': 'M', //modified
+// 	'A': 'A', //added
+// 	// 'A': 'N',
+// 	'D': 'D', //deleted
+// 	'R': 'R', //renamed
+// 	'C': 'C', //copied
+// 	'U': 'U', //updated but unmerged
+// 	// '?': 'N', //untracked
+// 	'?': '?', //untracked
+// 	' ': '-',
+// 	'!': 'I', //ignore
+// 	// '!': '!', //ignore
+// }
 
-// getColorizedGitStatus will return a colorful string of shrot status of git.
-// The length of placeholder in terminal is 3.
-func getColorizedGitStatus(git GitStatus, file *File) string {
-	x, y := '-', '-'
+// // getColorizedGitStatus will return a colorful string of shrot status of git.
+// // The length of placeholder in terminal is 3.
+// func getColorizedGitStatus(git *GitStatus, file *File) string {
+// 	x, y := '-', '-'
 
-	xy, ok := git.FilesStatus[file.Path]
-	if ok {
-		x, y = xy.Split()
-		x, y = ckxy[x], ckxy[y]
-	}
+// 	xy, ok := git.FilesStatus[file.Path]
+// 	if ok {
+// 		x, y = xy.Split()
+// 		x, y = ckxy[x], ckxy[y]
+// 	}
 
-	if file.IsDir() {
-		// gits := getGitSlice(git, file)
-		for k, v := range git.FilesStatus {
-			if strings.HasPrefix(k, file.Path) {
-				vx, vy := v.Split()
-				cx, cy := ckxy[vx], ckxy[vy]
-				if cx != '-' && x != 'N' {
-					x = cx
-				}
-				if cy != '-' && y != 'N' {
-					y = cy
-				}
-			}
-		}
-	}
+// 	if file.IsDir() {
+// 		// gits := getGitSlice(git, file)
+// 		for k, v := range git.FilesStatus {
+// 			if strings.HasPrefix(k, file.Path) {
+// 				vx, vy := v.Split()
+// 				cx, cy := ckxy[vx], ckxy[vy]
+// 				if cx != '-' { //&& x != 'N' {
+// 					x = cx
+// 				}
+// 				if cy != '-' { //&& y != 'N' {
+// 					y = cy
+// 				}
+// 			}
+// 		}
+// 	}
 
-	var sx, sy string
-	if x == 'N' && y == 'N' {
-		sx, sy = "-", "N"
-	} else {
-		sx, sy = string(x), string(y)
-	}
+// 	var sx, sy string
+// 	if x == 'N' && y == 'N' {
+// 		sx, sy = "-", "N"
+// 	} else {
+// 		sx, sy = string(x), string(y)
+// 	}
 
-	return " " + cpmap[x].Sprint(sx) + cpmap[y].Sprint(sy)
-}
+// 	return " " + cpmap[x].Sprint(sx) + cpmap[y].Sprint(sy)
+// }
 
-// getGitStatus will return a  string of shrot status of git.
-// The length of placeholder in terminal is 3.
-func getGitStatus(git GitStatus, file *File) string {
-	x, y := '-', '-'
+// // getGitStatus will return a  string of shrot status of git.
+// // The length of placeholder in terminal is 3.
+// func getGitStatus(git GitStatus, file *File) string {
+// 	x, y := '-', '-'
 
-	xy, ok := git.FilesStatus[file.Path]
-	if ok {
-		x, y = xy.Split()
-		x, y = ckxy[x], ckxy[y]
-	}
+// 	xy, ok := git.FilesStatus[file.Path]
+// 	if ok {
+// 		x, y = xy.Split()
+// 		x, y = ckxy[x], ckxy[y]
+// 	}
 
-	if file.IsDir() {
-		// gits := getGitSlice(git, file)
-		for k, v := range git.FilesStatus {
-			if strings.HasPrefix(k, file.Path) {
-				vx, vy := v.Split()
-				cx, cy := ckxy[vx], ckxy[vy]
-				if cx != '-' && x != 'N' {
-					x = cx
-				}
-				if cy != '-' && y != 'N' {
-					y = cy
-				}
-			}
-		}
-	}
+// 	if file.IsDir() {
+// 		// gits := getGitSlice(git, file)
+// 		for k, v := range git.FilesStatus {
+// 			if strings.HasPrefix(k, file.Path) {
+// 				vx, vy := v.Split()
+// 				cx, cy := ckxy[vx], ckxy[vy]
+// 				if cx != '-' && x != 'N' {
+// 					x = cx
+// 				}
+// 				if cy != '-' && y != 'N' {
+// 					y = cy
+// 				}
+// 			}
+// 		}
+// 	}
 
-	var sx, sy string
-	if x == 'N' && y == 'N' {
-		sx, sy = "-", "N"
-	} else {
-		sx, sy = string(x), string(y)
-	}
+// 	var sx, sy string
+// 	if x == 'N' && y == 'N' {
+// 		sx, sy = "-", "N"
+// 	} else {
+// 		sx, sy = string(x), string(y)
+// 	}
 
-	return " " + sx + sy
-}
+// 	return " " + sx + sy
+// }
 
 func isEnded(levelsEnded []int, level int) bool {
 	for _, l := range levelsEnded {

@@ -46,6 +46,7 @@ var (
 type File struct {
 	Path        string
 	Dir         string
+	RelPath     string
 	BaseName    string
 	File        string
 	Ext         string
@@ -74,6 +75,7 @@ func NewFile(path string) (*File, error) {
 		// return nil, fmt.Errorf("[NewFile] %s", err.Error())
 		return nil, fmt.Errorf("%q: bad file descriptor", path)
 	}
+	relpath, _ := filepath.Split(path)
 	dir = filepath.Dir(path)
 	basename = filepath.Base(path)
 	ext = filepath.Ext(path)
@@ -93,6 +95,7 @@ func NewFile(path string) (*File, error) {
 	f := &File{
 		Path:        path,
 		Dir:         dir,
+		RelPath:     relpath,
 		BaseName:    basename,
 		File:        file,
 		Ext:         ext,
@@ -143,6 +146,10 @@ func NewFileRelTo(path, root string) (*File, error) {
 		f.Dir = RootMark
 	} else {
 		f.Dir = PathRel(f.Dir, root)
+	}
+	f.RelPath = strings.TrimPrefix(f.Dir+"/"+f.BaseName, "./")
+	if f.IsDir() {
+		f.RelPath += "/"
 	}
 	return f, nil
 }
@@ -502,16 +509,18 @@ func (f *File) CreatedTimeC() string {
 	return GetColorizedTime(f.CreatedTime()) //+ sp
 }
 
-// GitStatus will return a string of git status like as exa.
+// GitXY will return a string of git status like as exa.
 // The length of placeholder in terminal is 3.
-func (f *File) GitStatus(git GitStatus) string {
-	return getGitStatus(git, f)
+func (f *File) GitXY(git *GitStatus) string {
+	// relpath := strings.TrimPrefix(f.Dir+"/"+f.BaseName, "./")
+	return git.XYStatus(f.RelPath)
 }
 
-// GitStatusC will return a colorful string of git status like as exa.
+// GitXYC will return a colorful string of git status like as exa.
 // The length of placeholder in terminal is 3.
-func (f *File) GitStatusC(git GitStatus) string {
-	return getColorizedGitStatus(git, f)
+func (f *File) GitXYC(git *GitStatus) string {
+	// relpath := strings.TrimPrefix(f.Dir+"/"+f.BaseName, "./")
+	return git.XYStatusC(f.RelPath)
 }
 
 // GetMd5 returns md5 codes of File

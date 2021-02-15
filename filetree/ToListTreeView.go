@@ -93,7 +93,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 			printLTFile(buf, level, levelsEnded, edge, f, dfile, fds, isExtended, wmeta, wdstty)
 
 			if len(fm[file.Dir]) > 1 {
-				printLTDir(buf, level+1, levelsEnded, edge, f, dfile, git, fds, isExtended, wmeta, wdstty)
+				printLTDir(buf, level+1, levelsEnded, edge, f, dfile, fds, isExtended, wmeta, wdstty)
 			}
 		} else {
 			printLTFile(buf, level, levelsEnded, edge, f, file, fds, isExtended, wmeta, wdstty)
@@ -260,9 +260,10 @@ func xattrLTString(file *File, edge EdgeType, padx string, wmeta, wdstty int) st
 }
 
 func printLTDir(wr io.Writer, level int, levelsEnded []int,
-	edge EdgeType, fl *FileList, file *File, git GitStatus, fds *FieldSlice, isExtended bool, wmeta, wdstty int) {
+	edge EdgeType, fl *FileList, file *File, fds *FieldSlice, isExtended bool, wmeta, wdstty int) {
 
 	var (
+		git    = fl.GetGitStatus()
 		fm     = fl.Map()
 		files  = fm[file.Dir]
 		nfiles = len(files)
@@ -284,7 +285,7 @@ func printLTDir(wr io.Writer, level int, levelsEnded []int,
 			printLTFile(wr, level, levelsEnded, edge, fl, dfile, fds, isExtended, wmeta, wdstty)
 
 			if len(fm[file.Dir]) > 1 {
-				printLTDir(wr, level+1, levelsEnded, edge, fl, dfile, git, fds, isExtended, wmeta, wdstty)
+				printLTDir(wr, level+1, levelsEnded, edge, fl, dfile, fds, isExtended, wmeta, wdstty)
 			}
 		} else {
 			printLTFile(wr, level, levelsEnded, edge, fl, file, fds, isExtended, wmeta, wdstty)

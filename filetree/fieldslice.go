@@ -26,7 +26,7 @@ func NewFieldSlice() *FieldSlice {
 }
 
 // NewFieldSliceFrom will return *fieldSlice created from []PDFieldFlag and GitStatus
-func NewFieldSliceFrom(flags []PDFieldFlag, git GitStatus) (fds *FieldSlice) {
+func NewFieldSliceFrom(flags []PDFieldFlag, git *GitStatus) (fds *FieldSlice) {
 	f := NewFieldSlice()
 	if len(flags) == 0 {
 		flags = DefaultPDFieldKeys
@@ -58,7 +58,7 @@ func (f *FieldSlice) EmptyValues() {
 }
 
 // SetValues sets up values of FieldSlice from File and GitStatus
-func (f *FieldSlice) SetValues(file *File, git GitStatus) {
+func (f *FieldSlice) SetValues(file *File, git *GitStatus) {
 	for _, fd := range f.fds {
 		cp := fd.Key.Color()
 		switch fd.Key {
@@ -173,8 +173,22 @@ func (f *FieldSlice) SetValues(file *File, git GitStatus) {
 			if git.NoGit {
 				continue
 			} else {
-				fd.SetValue(file.GitStatus(git))
-				fd.SetValueC(file.GitStatusC(git))
+				var relpath, xy, xyc string
+				relpath = file.RelPath
+				xy = git.XYStatus(relpath)
+				xyc = git.XYStatusC(relpath)
+				// if xy != GitUnChanged.String()+GitUnChanged.String() {
+				// 	paw.Logger.WithFields(logrus.Fields{
+				// 		"rp": relpath,
+				// 		// "oXY": ,
+				// 		"XY":  xy + "," + xyc,
+				// 		"fXY": file.GitXY(git) + "," + file.GitXYC(git),
+				// 	}).Debug(file.BaseNameC())
+				// }
+				fd.SetValue(" " + xy)
+				fd.SetValueC(" " + xyc)
+				// fd.SetValue(" " + file.GitXY(git))
+				// fd.SetValueC(" " + file.GitXYC(git))
 				fd.SetValueColor(cp)
 				// fd.SetValueColor(cgitp)
 			}

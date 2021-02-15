@@ -32,6 +32,7 @@ type PrintDirOption struct {
 	fieldKeys   []PDFieldFlag
 	fields      []string
 	fieldWidths []int
+	isGit       bool
 }
 
 func (p *PrintDirOption) FieldKeys() []PDFieldFlag {
@@ -86,8 +87,10 @@ func (p *PrintDirOption) ConfigFields() {
 
 	if p.FieldFlag&PFieldGit != 0 {
 		p.fieldKeys = append(p.fieldKeys, PFieldGit)
+		p.isGit = true
 	}
 	// p.fieldKeys = append(p.fieldKeys, PFieldGit)
+
 	p.fieldKeys = append(p.fieldKeys, PFieldName)
 
 	for _, k := range p.fieldKeys {

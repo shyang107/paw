@@ -128,6 +128,11 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 		if err != nil {
 			return err, nil
 		}
+		// BUG
+		if pdOpt.isGit {
+			fl.ConfigGit()
+			// fl.ReCheckGit()
+		}
 		err = fl.DoView(pdOpt.ViewFlag, pad)
 		if err != nil {
 			return err, nil
@@ -193,9 +198,9 @@ func listOneFile(fl *FileList, path string, pad string) {
 	nline++
 	fmt.Fprintln(w, rowFile(nline, PFieldAccessed, file.AccessedTimeC(), width, wdstty))
 	nline++
-	git, _ := GetShortGitStatus(file.Dir)
+	git := fl.GetGitStatus()
 	if !git.NoGit {
-		cgit := file.GitStatusC(git)
+		cgit := file.GitXYC(git)
 		fmt.Fprintln(w, rowFile(nline, PFieldGit, cgit, width, wdstty))
 		nline++
 	}
@@ -280,7 +285,7 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 		dirs  = f.Dirs()
 		fm    = f.Map()
 		files = []*File{}
-		git   = f.GetGitStatus()
+		git   = f.git
 		fds   = NewFieldSliceFrom(pdOpt.FieldKeys(), git)
 		// fdSize     = fds.Get(PFieldSize)
 		fdName     = fds.Get(PFieldName)
@@ -367,47 +372,47 @@ func setupFLSortOption(fl *FileList, opt *PrintDirOption) {
 // 	}
 // }
 
-func checkFieldFlag(opt *PrintDirOption) {
-	if opt.FieldFlag&PFieldINode != 0 {
-		opt.fieldKeys = append(opt.fieldKeys, PFieldINode)
-	}
+// func checkFieldFlag(opt *PrintDirOption) {
+// 	if opt.FieldFlag&PFieldINode != 0 {
+// 		opt.fieldKeys = append(opt.fieldKeys, PFieldINode)
+// 	}
 
-	opt.fieldKeys = append(opt.fieldKeys, PFieldPermissions)
+// 	opt.fieldKeys = append(opt.fieldKeys, PFieldPermissions)
 
-	if opt.FieldFlag&PFieldLinks != 0 {
-		opt.fieldKeys = append(opt.fieldKeys, PFieldLinks)
-	}
+// 	if opt.FieldFlag&PFieldLinks != 0 {
+// 		opt.fieldKeys = append(opt.fieldKeys, PFieldLinks)
+// 	}
 
-	opt.fieldKeys = append(opt.fieldKeys, PFieldSize)
+// 	opt.fieldKeys = append(opt.fieldKeys, PFieldSize)
 
-	if opt.FieldFlag&PFieldBlocks != 0 {
-		opt.fieldKeys = append(opt.fieldKeys, PFieldBlocks)
-	}
+// 	if opt.FieldFlag&PFieldBlocks != 0 {
+// 		opt.fieldKeys = append(opt.fieldKeys, PFieldBlocks)
+// 	}
 
-	opt.fieldKeys = append(opt.fieldKeys, PFieldUser)
-	opt.fieldKeys = append(opt.fieldKeys, PFieldGroup)
+// 	opt.fieldKeys = append(opt.fieldKeys, PFieldUser)
+// 	opt.fieldKeys = append(opt.fieldKeys, PFieldGroup)
 
-	if opt.FieldFlag&PFieldModified != 0 {
-		opt.fieldKeys = append(opt.fieldKeys, PFieldModified)
-	}
-	if opt.FieldFlag&PFieldCreated != 0 {
-		opt.fieldKeys = append(opt.fieldKeys, PFieldCreated)
-	}
-	if opt.FieldFlag&PFieldAccessed != 0 {
-		opt.fieldKeys = append(opt.fieldKeys, PFieldAccessed)
-	}
+// 	if opt.FieldFlag&PFieldModified != 0 {
+// 		opt.fieldKeys = append(opt.fieldKeys, PFieldModified)
+// 	}
+// 	if opt.FieldFlag&PFieldCreated != 0 {
+// 		opt.fieldKeys = append(opt.fieldKeys, PFieldCreated)
+// 	}
+// 	if opt.FieldFlag&PFieldAccessed != 0 {
+// 		opt.fieldKeys = append(opt.fieldKeys, PFieldAccessed)
+// 	}
 
-	if opt.FieldFlag&PFieldGit != 0 {
-		opt.fieldKeys = append(opt.fieldKeys, PFieldGit)
-	}
-	// opt.fieldKeys = append(opt.fieldKeys, PFieldGit)
-	opt.fieldKeys = append(opt.fieldKeys, PFieldName)
+// 	if opt.FieldFlag&PFieldGit != 0 {
+// 		opt.fieldKeys = append(opt.fieldKeys, PFieldGit)
+// 	}
+// 	// opt.fieldKeys = append(opt.fieldKeys, PFieldGit)
+// 	opt.fieldKeys = append(opt.fieldKeys, PFieldName)
 
-	for _, k := range opt.fieldKeys {
-		opt.fields = append(opt.fields, k.Name())
-		opt.fieldWidths = append(opt.fieldWidths, k.Width())
-	}
-}
+// 	for _, k := range opt.fieldKeys {
+// 		opt.fields = append(opt.fields, k.Name())
+// 		opt.fieldWidths = append(opt.fieldWidths, k.Width())
+// 	}
+// }
 
 // func checkPrintDirOption(opt *PrintDirOption) {
 // 	if opt == nil {
