@@ -160,10 +160,9 @@ func (f *FileList) ConfigGit() {
 		return
 	}
 
-	// ns := len(fl.Git().GetStatus())
-	// // st := fl.Git().GetStatus()
-	// st := make()
 	gs := f.git.GetStatus()
+
+	// setup git status of f.root
 	var rfs *GitFileStatus
 	if len(gs) > 0 {
 		_, name := filepath.Split(f.root)
@@ -175,37 +174,20 @@ func (f *FileList) ConfigGit() {
 		}
 		gs[rdir] = rfs
 	}
-	// check: if dir is Untracked and subfiles is Unmodified then add Untracked to subfiles
+	// check: if dir is Untracked or Ignored and subfiles is Unmodified or Ignored then add Untracked to subfiles
 	for rpath, xy := range gs {
 		if strings.HasSuffix(rpath, "/") {
-			if checkXY(xy, GitUntracked) {
+			if checkXY(xy, GitUntracked) ||
+				checkXY(xy, GitIgnored) {
 				dir := strings.TrimSuffix(RootMark+"/"+rpath, "/")
+
 				// paw.Logger.WithFields(logrus.Fields{
 				// 	"rp":  rpath,
 				// 	"XY":  xy.Staging.String() + xy.Worktree.String(),
 				// 	"dir": dir,
 				// }).Trace(xy.Extra)
-				for _, file := range f.store[dir][:] {
-					if file.IsDir() {
-						continue
-					}
-					// paw.Logger.WithFields(logrus.Fields{
-					// 	"dir":     file.Dir,
-					// 	"RelPath": file.RelPath,
-					// }).Trace(file.NameC())
-					if _, ok := gs[file.RelPath]; !ok {
-						gs[file.RelPath] = &GitFileStatus{
-							Staging:  xy.Staging,
-							Worktree: xy.Worktree,
-							Extra:    file.BaseName,
-						}
-						// paw.Logger.WithFields(logrus.Fields{
-						// 	"rp":    file.RelPath,
-						// 	"XY":    gs[file.RelPath].Staging.String() + gs[file.RelPath].Worktree.String(),
-						// 	"Extra": gs[file.RelPath].Extra,
-						// }).Trace("add xy")
-					}
-				}
+
+				f.markFilesGit(dir, gs, xy)
 			}
 		}
 	}
@@ -245,64 +227,38 @@ func (f *FileList) ConfigGit() {
 	// f.git.SetStatus(gs)
 }
 
+func (f *FileList) markFilesGit(dir string, gs GStatus, xy *GitFileStatus) {
+
+	for i, file := range f.store[dir][:] {
+		if i == 0 {
+			continue
+		}
+		// paw.Logger.WithFields(logrus.Fields{
+		// 	"dir":     file.Dir,
+		// 	"RelPath": file.RelPath,
+		// }).Trace(file.NameC())
+		if _, ok := gs[file.RelPath]; !ok {
+			gs[file.RelPath] = &GitFileStatus{
+				Staging:  xy.Staging,
+				Worktree: xy.Worktree,
+				Extra:    file.BaseName,
+			}
+			// paw.Logger.WithFields(logrus.Fields{
+			// 	"rp":    file.RelPath,
+			// 	"XY":    gs[file.RelPath].Staging.String() + gs[file.RelPath].Worktree.String(),
+			// 	"Extra": gs[file.RelPath].Extra,
+			// }).Trace("add xy")
+		}
+		if file.IsDir() {
+			f.markFilesGit(file.Dir+"/"+file.BaseName, gs, xy)
+		}
+	}
+}
+
 func checkXY(xy *GitFileStatus, gcode GitStatusCode) bool {
 	return xy.Staging == gcode ||
 		xy.Worktree == gcode
 }
-
-// // ReCheckGit checks the git status of FileList
-// //
-// // if dir is Untracked and subfiles is Unmodified then add Untracked to subfiles
-// func (f *FileList) ReCheckGit() {
-// 	// FIXME
-// 	// f.git = NewGitStatus(f.root)
-// 	if f.git.NoGit && len(f.store) < 1 {
-// 		return
-// 	}
-
-// 	gs := f.git.GetStatus()
-// 	// var rfs *GitFileStatus
-// 	// if len(gs) > 0 {
-// 	// 	_, name := filepath.Split(f.root)
-// 	// 	rdir := name + "/"
-// 	// 	rfs = &GitFileStatus{
-// 	// 		Staging:  GitUnChanged,
-// 	// 		Worktree: GitChanged,
-// 	// 		Extra:    name,
-// 	// 	}
-// 	// 	gs[rdir] = rfs
-// 	// }
-// 	for rpath, xy := range gs {
-// 		if strings.HasSuffix(rpath, "/") {
-// 			if checkXY(xy, GitUntracked) {
-// 				dir := strings.TrimSuffix(RootMark+"/"+rpath, "/")
-// 				// paw.Logger.WithFields(logrus.Fields{
-// 				// 	"rp":  rpath,
-// 				// 	"XY":  xy.Staging.String() + xy.Worktree.String(),
-// 				// 	"dir": dir,
-// 				// }).Trace(xy.Extra)
-// 				for _, file := range f.store[dir][1:] {
-// 					// paw.Logger.WithFields(logrus.Fields{
-// 					// 	"dir":     file.Dir,
-// 					// 	"RelPath": file.RelPath,
-// 					// }).Trace(file.NameC())
-// 					if _, ok := gs[file.RelPath]; !ok {
-// 						gs[file.RelPath] = &GitFileStatus{
-// 							Staging:  xy.Staging,
-// 							Worktree: xy.Worktree,
-// 							Extra:    file.BaseName,
-// 						}
-// 						// paw.Logger.WithFields(logrus.Fields{
-// 						// 	"rp":    file.RelPath,
-// 						// 	"XY":    gs[file.RelPath].Staging.String() + gs[file.RelPath].Worktree.String(),
-// 						// 	"Extra": gs[file.RelPath].Extra,
-// 						// }).Trace("add xy")
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
-// }
 
 // ConfigGit sets up the git status of FileList
 func (f *FileList) GetGitStatus() *GitStatus {

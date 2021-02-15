@@ -128,15 +128,16 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 		if err != nil {
 			return err, nil
 		}
-		// BUG
+
 		if pdOpt.isGit {
 			fl.ConfigGit()
-			// fl.ReCheckGit()
 		}
+
 		err = fl.DoView(pdOpt.ViewFlag, pad)
 		if err != nil {
 			return err, nil
 		}
+
 		// showlogrus()
 		// fl.dumpAll()
 	}
