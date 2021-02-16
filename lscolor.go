@@ -86,10 +86,10 @@ var (
 		".":   {38, 5, 8},                  // Concealed
 		" ":   {38, 5, 8},                  // Concealed
 		"ga":  {38, 5, 156},                // git new
-		"gm":  {38, 5, 117},                // git modified
-		"gd":  {38, 5, 209},                // git deleted
-		"gv":  {38, 5, 230},                // git renamed
-		"gt":  {38, 5, 135},                // git type change
+		"gm":  {38, 5, 39},                 // git modified
+		"gd":  {38, 5, 196},                // git deleted
+		"gv":  {38, 5, 186},                // git renamed
+		"gt":  {38, 5, 207},                // git type change
 		"dir": {38, 5, 189},                //addition 'dir'
 		// "xattr": {38, 5, 249, 4}, //addition 'xattr'+ 4-> underline
 		"xattr":    {38, 5, 8, 4, 48, 5, 234},

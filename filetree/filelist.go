@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/shyang107/paw"
+	"github.com/sirupsen/logrus"
 	// "github.com/shyang107/paw/treeprint"
 )
 
@@ -155,51 +156,31 @@ func (f *FileList) Writer() io.Writer {
 
 // ConfigGit sets up the git status of FileList
 func (f *FileList) ConfigGit() {
+	paw.Logger.Trace()
+
 	f.git = NewGitStatus(f.root)
 	if f.git.NoGit && len(f.store) < 1 {
 		return
 	}
 
 	gs := f.git.GetStatus()
-
-	// setup git status of f.root
-	var rfs *GitFileStatus
-	if len(gs) > 0 {
-		_, name := filepath.Split(f.root)
-		rdir := name + "/"
-		rfs = &GitFileStatus{
-			Staging:  GitUnChanged,
-			Worktree: GitChanged,
-			Extra:    name,
-		}
-		gs[rdir] = rfs
-	}
 	// check: if dir is Untracked or Ignored and subfiles is Unmodified or Ignored then add Untracked to subfiles
 	for rpath, xy := range gs {
 		if strings.HasSuffix(rpath, "/") {
 			if checkXY(xy, GitUntracked) ||
 				checkXY(xy, GitIgnored) {
 				dir := strings.TrimSuffix(RootMark+"/"+rpath, "/")
-
 				// paw.Logger.WithFields(logrus.Fields{
 				// 	"rp":  rpath,
 				// 	"XY":  xy.Staging.String() + xy.Worktree.String(),
 				// 	"dir": dir,
 				// }).Trace(xy.Extra)
-
 				f.markFilesGit(dir, gs, xy)
 			}
 		}
 	}
 	// if any of subfiles of dir has any cheange of git status, set GitChanged to dir
 	for rpath, xy := range gs {
-		switch xy.Staging {
-		case GitUnChanged, GitUnmodified:
-		default:
-			if rfs.Staging == GitUnChanged {
-				rfs.Staging = GitChanged
-			}
-		}
 		// paw.Logger.WithFields(logrus.Fields{
 		// 	"rp": rpath,
 		// 	"XY": xy.Staging.String() + xy.Worktree.String(),
@@ -271,7 +252,7 @@ func (f *FileList) GitXY(path string) string {
 }
 
 // GitXY will retun git colorful XY status of FileList
-func (f *FileList) GitXYC(path string) string {
+func (f *FileList) GitXYc(path string) string {
 	return f.GetGitStatus().XYStatusC(path)
 }
 
@@ -764,7 +745,7 @@ func handleFiles(f *FileList, dirPath string, files []string) {
 // 		ignoring condition of files or directory
 // 		ignore == nil, using DefaultIgnoreFn
 func (f *FileList) FindFiles(depth int) error {
-	paw.Logger.WithField("root", f.root).Trace()
+	paw.Logger.Tracef("root: %q", f.root)
 
 	if f.ignore == nil {
 		f.ignore = DefaultIgnoreFn
@@ -894,6 +875,7 @@ func (f *FileList) SetDirsSorter(by DirsBy) {
 // 	Dirs: ToLower(a[i]) < ToLower(a[j])
 // 	Map[dir][]*file: ToLower(a[i].Path) < ToLower(a[j].Path)
 func (f *FileList) Sort() {
+	paw.Logger.Trace("sort...")
 	f.SortBy(f.dirsBy, f.filesBy)
 }
 
@@ -1050,7 +1032,10 @@ func (f *FileList) SortBy0(dirsBy DirsBy, filesBy FilesBy) {
 	// }
 }
 
-func (f *FileList) dumpAll() {
+func (f *FileList) dumpAll(loglevel logrus.Level) {
+	if loglevel != logrus.TraceLevel {
+		return
+	}
 	for _, dir := range f.Dirs() {
 		fm := f.Map()[dir]
 		level := len(fm[0].DirSlice()) - 1
@@ -1058,19 +1043,19 @@ func (f *FileList) dumpAll() {
 		fmt.Printf("%sG%d  dir: %q\n", sp, level, paw.Truncate(dir, 60, "..."))
 		for j, f := range fm[:] {
 			var (
-				pname, pdirname = "x", "x"
-				pdir            *File
+				pname = "x"
+				pdir  *File
 				// pdirName = RootMark
 				fdir, fname = "x", "x"
+				rpath       = f.RelPath
 			)
 			if f.GetUpDir() != nil {
 				pdir = f.GetUpDir()
 				pname = cdip.Sprint(paw.Truncate(pdir.Dir, 25, "..."))
-				pdirname = paw.Truncate(pdir.Dir, 25, "...")
 				fdir = cdip.Sprint(paw.Truncate(f.Dir, 25, "..."))
 				fname = f.LSColor().Sprint(paw.FillRight(paw.Truncate(f.Name(), 15, "..."), 15))
 			}
-			fmt.Printf("%s  %2d dir: \"%v\" pdir: \"%v\" %q name: \"%v\"", sp, j, fdir, pname, pdirname, fname)
+			fmt.Printf("%s  %2d dir: \"%v\" pdir: \"%v\" name: \"%v\" rpath: \"%v\"", sp, j, fdir, pname, fname, rpath)
 			// fmt.Printf("  %v Excutable: %s owner: %s group: %s others: %s any: %s all: %s", f.PermissionC(),
 			// 	bmark(f.IsExecutable()), bmark(f.IsExecOwner()), bmark(f.IsExecGroup()), bmark(f.IsExecOther()), bmark(f.IsExecAny()), bmark(f.IsExecAll()))
 			fmt.Print("\n")

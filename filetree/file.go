@@ -509,16 +509,16 @@ func (f *File) CreatedTimeC() string {
 	return GetColorizedTime(f.CreatedTime()) //+ sp
 }
 
-// GitXY will return a string of git status like as exa.
+// GitXYs will return a string of git status like as exa.
 // The length of placeholder in terminal is 3.
-func (f *File) GitXY(git *GitStatus) string {
+func (f *File) GitXYs(git *GitStatus) string {
 	// relpath := strings.TrimPrefix(f.Dir+"/"+f.BaseName, "./")
 	return git.XYStatus(f.RelPath)
 }
 
 // GitXYC will return a colorful string of git status like as exa.
 // The length of placeholder in terminal is 3.
-func (f *File) GitXYC(git *GitStatus) string {
+func (f *File) GitXYc(git *GitStatus) string {
 	// relpath := strings.TrimPrefix(f.Dir+"/"+f.BaseName, "./")
 	return git.XYStatusC(f.RelPath)
 }

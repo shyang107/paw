@@ -173,10 +173,13 @@ func (f *FieldSlice) SetValues(file *File, git *GitStatus) {
 			if git.NoGit {
 				continue
 			} else {
-				var relpath, xy, xyc string
-				relpath = file.RelPath
-				xy = git.XYStatus(relpath)
-				xyc = git.XYStatusC(relpath)
+				var xy, xyc string
+				xy = file.GitXYs(git)
+				xyc = file.GitXYc(git)
+				// var relpath fmt.Stringer
+				// relpath := file.RelPath
+				// xy = git.XYStatus(relpath)
+				// xyc = git.XYStatusC(relpath)
 				// if xy != GitUnChanged.String()+GitUnChanged.String() {
 				// 	paw.Logger.WithFields(logrus.Fields{
 				// 		"rp": relpath,
@@ -308,6 +311,7 @@ func (f *FieldSlice) Widths() []int {
 
 // ModifyWidth modifies Field.Width according to FileList and wdstty (maximum width on console).
 func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
+	paw.Logger.Trace()
 	for _, dir := range fl.Dirs() {
 		for _, file := range fl.Map()[dir][:] {
 			for _, field := range pdOpt.FieldKeys() {

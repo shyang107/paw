@@ -27,7 +27,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 		paw.Logger.SetLevel(logrus.TraceLevel)
 	}
 
-	paw.Logger.WithField("root", opt.Root).Trace()
+	paw.Logger.Tracef("root: %q", opt.Root)
 
 	// setup root
 	root, err = filepath.Abs(opt.Root)
@@ -139,7 +139,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 		}
 
 		// showlogrus()
-		// fl.dumpAll()
+		// fl.dumpAll(paw.Logger.Level)
 	}
 
 	return nil, fl
@@ -151,7 +151,9 @@ func bmark(b bool) string {
 	}
 	return cdashp.Sprint("✗")
 }
+
 func listOneFile(fl *FileList, path string, pad string) {
+	paw.Logger.Trace()
 	var (
 		w      = new(strings.Builder)
 		wdstty = sttyWidth - 2 - paw.StringWidth(pad)
@@ -201,7 +203,7 @@ func listOneFile(fl *FileList, path string, pad string) {
 	nline++
 	git := fl.GetGitStatus()
 	if !git.NoGit {
-		cgit := file.GitXYC(git)
+		cgit := file.GitXYc(git)
 		fmt.Fprintln(w, rowFile(nline, PFieldGit, cgit, width, wdstty))
 		nline++
 	}
@@ -258,6 +260,7 @@ func rowFile(nline int, flag PDFieldFlag, valueC string, width, wdstty int) (row
 }
 
 func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) error {
+	paw.Logger.Trace()
 	for i, path := range dirs {
 		pdOpt.SetRoot(path)
 		f.SetRoot(path)
@@ -281,6 +284,7 @@ func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) err
 }
 
 func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
+	paw.Logger.Trace()
 	var (
 		w     = f.stringBuilder
 		dirs  = f.Dirs()
@@ -341,6 +345,7 @@ func isExtendedView(viewFlag PDViewFlag) bool {
 }
 
 func setFileList(w io.Writer, root string, isGrouped bool, opt *PrintDirOption) *FileList {
+	paw.Logger.Trace()
 	fl := NewFileList(root)
 	// fl.IsSort = false
 	fl.ResetWriters()
@@ -359,6 +364,7 @@ func setFileList(w io.Writer, root string, isGrouped bool, opt *PrintDirOption) 
 }
 
 func setupFLSortOption(fl *FileList, opt *PrintDirOption) {
+	paw.Logger.Trace()
 	if opt.ViewFlag&PTreeView == 0 ||
 		opt.ViewFlag&PListTreeView == 0 {
 		if opt.SortOpt.IsSort {
@@ -366,132 +372,3 @@ func setupFLSortOption(fl *FileList, opt *PrintDirOption) {
 		}
 	}
 }
-
-// func setIgnoreFn(opt *PrintDirOption) {
-// 	if opt.Ignore == nil {
-// 		opt.Ignore = DefaultIgnoreFn
-// 	}
-// }
-
-// func checkFieldFlag(opt *PrintDirOption) {
-// 	if opt.FieldFlag&PFieldINode != 0 {
-// 		opt.fieldKeys = append(opt.fieldKeys, PFieldINode)
-// 	}
-
-// 	opt.fieldKeys = append(opt.fieldKeys, PFieldPermissions)
-
-// 	if opt.FieldFlag&PFieldLinks != 0 {
-// 		opt.fieldKeys = append(opt.fieldKeys, PFieldLinks)
-// 	}
-
-// 	opt.fieldKeys = append(opt.fieldKeys, PFieldSize)
-
-// 	if opt.FieldFlag&PFieldBlocks != 0 {
-// 		opt.fieldKeys = append(opt.fieldKeys, PFieldBlocks)
-// 	}
-
-// 	opt.fieldKeys = append(opt.fieldKeys, PFieldUser)
-// 	opt.fieldKeys = append(opt.fieldKeys, PFieldGroup)
-
-// 	if opt.FieldFlag&PFieldModified != 0 {
-// 		opt.fieldKeys = append(opt.fieldKeys, PFieldModified)
-// 	}
-// 	if opt.FieldFlag&PFieldCreated != 0 {
-// 		opt.fieldKeys = append(opt.fieldKeys, PFieldCreated)
-// 	}
-// 	if opt.FieldFlag&PFieldAccessed != 0 {
-// 		opt.fieldKeys = append(opt.fieldKeys, PFieldAccessed)
-// 	}
-
-// 	if opt.FieldFlag&PFieldGit != 0 {
-// 		opt.fieldKeys = append(opt.fieldKeys, PFieldGit)
-// 	}
-// 	// opt.fieldKeys = append(opt.fieldKeys, PFieldGit)
-// 	opt.fieldKeys = append(opt.fieldKeys, PFieldName)
-
-// 	for _, k := range opt.fieldKeys {
-// 		opt.fields = append(opt.fields, k.Name())
-// 		opt.fieldWidths = append(opt.fieldWidths, k.Width())
-// 	}
-// }
-
-// func checkPrintDirOption(opt *PrintDirOption) {
-// 	if opt == nil {
-// 		opt = NewPrintDirOption()
-// 		// opt = &PrintDirOption{
-// 		// 	Depth:  0,
-// 		// 	ViewFlag: PListView,
-// 		// 	// ViewFlag: PListExtendView,
-// 		// 	// ViewFlag: PTreeView,
-// 		// 	// ViewFlag: PListTreeView,
-// 		// 	// ViewFlag: PLevelView,
-// 		// 	// ViewFlag: PTableView,
-// 		// 	// ViewFlag: PClassifyView,
-// 		// 	FieldFlag: PFieldModified,
-// 		// 	Ignore:    DefaultIgnoreFn,
-// 		// }
-// 	}
-// }
-
-// func checkSortOpt(sortOpt *PDSortOption) *PDSortOption {
-// 	if sortOpt == nil {
-// 		return &PDSortOption{
-// 			IsSort:  true,
-// 			SortFlag: PDSortByName,
-// 		}
-// 	}
-// 	return sortOpt
-// }
-
-// var errBreak = errors.New("return nil")
-
-// func checkAndPrintFile(w io.Writer, path string, pad string) error {
-
-// 	// paw.Logger.WithField("path", path).Info()
-
-// 	file, err := NewFile(path)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if !file.IsDir() {
-// 		fmt.Fprintf(w, "%sDirectory: %v \n", pad, GetColorizedDirName(file.Dir, ""))
-// 		git, _ := GetShortGitStatus(file.Dir)
-// 		fds := NewFieldSliceFrom(DefaultPDFieldKeys, git)
-// 		fl := NewFileList(file.Dir)
-// 		fds.ModifyWidth(fl, sttyWidth-2)
-// 		fds.SetValues(file, git)
-// 		fmt.Fprintln(w, fds.ColorHeadsString())
-// 		// fmt.Fprint(w, rowWrapFileName(file, fds, pad, sttyWidth-2))
-// 		fds.PrintRow(w, pad)
-// 		return errBreak
-// 	}
-// 	return nil
-// }
-
-// func cleanPath(path string) string {
-// 	paw.Logger.WithField("path", path).Info()
-
-// 	tpath := path
-// 	// if strings.Contains(tpath, "~") {
-// 	// 	tpath = strings.ReplaceAll(tpath, "~", paw.GetHomeDir())
-// 	// }
-// 	// paw.Logger.WithField("~", tpath).Info()
-// 	// tpath = filepath.Clean(tpath)
-// 	// paw.Logger.WithField("clean", tpath).Info()
-
-// 	tpath, err := filepath.Abs(tpath)
-// 	if err != nil {
-// 		paw.Logger.Error(err)
-// 		return tpath
-// 	}
-// 	// if !filepath.IsAbs(tpath) {
-// 	// 	tpath, err := filepath.Abs(tpath)
-// 	// 	if err != nil {
-// 	// 		paw.Logger.Error(err)
-// 	// 		return tpath
-// 	// 	}
-// 	// }
-// 	paw.Logger.WithField("abs", tpath).Info()
-
-// 	return tpath
-// }

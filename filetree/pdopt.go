@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/shyang107/paw"
 )
 
 // PrintDirOption is the option of PrintDir
@@ -48,6 +50,7 @@ func (p *PrintDirOption) FieldWidths() []int {
 }
 
 func (p *PrintDirOption) ConfigFields() {
+	paw.Logger.Trace()
 	p.fieldKeys = []PDFieldFlag{}
 	p.fields = []string{}
 	p.fieldWidths = []int{}
@@ -124,6 +127,7 @@ func (p *PrintDirOption) SetIgnore(f IgnoreFunc) {
 }
 
 func (p *PrintDirOption) ConfigFilter() {
+	paw.Logger.Trace()
 	igfunc := p.Ignore
 	filtOpt := p.FiltOpt
 	if filtOpt != nil && filtOpt.IsFilt {

@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+
 	"github.com/shyang107/paw"
+	"github.com/sirupsen/logrus"
 )
 
 // GStatus represents the current status of a Worktree.
@@ -88,7 +90,8 @@ const (
 	GitRenamed            GitStatusCode = 'R'
 	GitCopied             GitStatusCode = 'C'
 	GitUpdatedButUnmerged GitStatusCode = 'U'
-	GitIgnored            GitStatusCode = '!'
+	gitIgnored            GitStatusCode = '!'
+	GitIgnored            GitStatusCode = 'I'
 	GitChanged            GitStatusCode = 'N'
 	GitUnChanged          GitStatusCode = '-' // equl to GitUnmodified
 )
@@ -107,28 +110,17 @@ func (s GitStatusCode) Color() *color.Color {
 }
 
 var cgitmap = map[GitStatusCode]*color.Color{
-	GitModified:           paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //modified
-	GitAdded:              paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //added
-	GitDeleted:            paw.NewEXAColor("gd"), //color.New(EXAColors["gd"]...), //deleted
-	GitRenamed:            paw.NewEXAColor("gv"), //color.New(EXAColors["gv"]...), //renamed
-	GitCopied:             paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //copied
-	GitUpdatedButUnmerged: paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //updated but unmerged
-	GitUntracked:          paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //untracked
-	GitIgnored:            cdashp,                //color.New(EXAColors["-"]...),  //ignored
-	GitUnmodified:         cdashp,                //color.New(EXAColors["-"]...),  //ignored
-	GitChanged:            paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //untracked
-	GitUnChanged:          cdashp,                //color.New(EXAColors["-"]...),  //ignored
-	// 'M': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //modified
-	// 'A': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //added
-	// 'D': paw.NewEXAColor("gd"), //color.New(EXAColors["gd"]...), //deleted
-	// 'R': paw.NewEXAColor("gv"), //color.New(EXAColors["gv"]...), //renamed
-	// 'C': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //copied
-	// 'U': paw.NewEXAColor("gt"), //color.New(EXAColors["gt"]...), //updated but unmerged
-	// '?': paw.NewEXAColor("gm"), //color.New(EXAColors["gm"]...), //untracked
-	// 'N': paw.NewEXAColor("ga"), //color.New(EXAColors["ga"]...), //untracked
-	// '!': cdashp,                //color.New(EXAColors["-"]...),  //ignored
-	// '-': cdashp,                //color.New(EXAColors["-"]...),  //ignored
-	// ' ': cdashp,                //color.New(EXAColors["-"]...),  //ignored
+	GitModified:           paw.NewEXAColor("gm"),
+	GitAdded:              paw.NewEXAColor("ga"),
+	GitDeleted:            paw.NewEXAColor("gd"),
+	GitRenamed:            paw.NewEXAColor("gv"),
+	GitCopied:             paw.NewEXAColor("gv"),
+	GitUpdatedButUnmerged: paw.NewEXAColor("gt"),
+	GitUntracked:          paw.NewEXAColor("gm"),
+	GitIgnored:            cdashp,
+	GitUnmodified:         cdashp,
+	GitChanged:            paw.NewEXAColor("ga"),
+	GitUnChanged:          cdashp,
 }
 
 // GitStatus stores git status of `Branch`
@@ -156,7 +148,7 @@ type GitStatus struct {
 	// worktree *git.Worktree
 	// Status represents the current status of a Worktree. The key of the map is the path of the file.
 	// type Status map[string]*GitFileStatus
-	branch string
+	head   string
 	status GStatus
 	// status git.Status
 }
@@ -168,7 +160,64 @@ func NewGitStatus(repPath string) *GitStatus {
 			NoGit: true,
 		}
 	}
+	// add git status of root
+	addRootGitStatus(gs, repPath)
+	paw.Logger.Trace(gs.head)
+	// gs.Dump()
 	return gs
+}
+
+func addRootGitStatus(gs *GitStatus, repPath string) {
+	if len(gs.status) > 0 { // has git status
+		_, root := filepath.Split(repPath)
+		root += PathSeparator
+		rxy := &GitFileStatus{
+			Staging:  GitUnChanged,
+			Worktree: GitUnChanged,
+			Extra:    root,
+		}
+		isMoreStatusCodeX := false
+		isMoreStatusCodeY := false
+		i := 0
+		var oxy *GitFileStatus
+		for _, xy := range gs.status {
+			if i == 0 {
+				oxy = xy
+			}
+			if i > 0 {
+				if oxy.Staging != xy.Staging {
+					isMoreStatusCodeX = true
+				}
+				if oxy.Worktree != xy.Staging {
+					isMoreStatusCodeY = true
+				}
+				oxy = xy
+			}
+			i++
+		}
+		if isMoreStatusCodeX {
+			rxy.Staging = GitChanged
+		} else {
+			rxy.Staging = oxy.Staging
+		}
+		if isMoreStatusCodeY {
+			rxy.Worktree = GitChanged
+		} else {
+			rxy.Worktree = oxy.Worktree
+		}
+		gs.status[root] = rxy
+	}
+}
+
+func (g *GitStatus) Dump() {
+	// paw.Logger.Trace(g.head)
+	for rp, v := range g.status {
+		paw.Logger.WithFields(logrus.Fields{
+			"X":     v.Staging,
+			"Y":     v.Worktree,
+			"extra": v.Extra,
+		}).Tracef("%q", rp)
+	}
 }
 
 func (g *GitStatus) GetRepositoryPath() string {
@@ -178,11 +227,11 @@ func (g *GitStatus) GetRepositoryPath() string {
 	return g.repPath
 }
 
-func (g *GitStatus) GetBranch() string {
+func (g *GitStatus) GetHead() string {
 	if g.NoGit {
 		return ""
 	}
-	return g.branch
+	return g.head
 }
 
 func (g *GitStatus) GetStatus() GStatus {
@@ -265,6 +314,51 @@ func (g *GitStatus) XYStatusC(relpath string) string {
 	return g.XStagingC(relpath) + g.YWorktreeC(relpath)
 }
 
+// //getShortGitStatus read the git status of the repository located at path
+// // 	if err != nil : no git
+// func getShortGitStatus(repPath string) (gs *GitStatus, err error) {
+// 	var (
+// 		r *git.Repository
+// 		w *git.Worktree
+// 		s git.Status
+// 		h *plumbing.Reference
+// 	)
+
+// 	r, err = git.PlainOpen(repPath)
+// 	if err != nil {
+// 		goto ERR
+// 	}
+// 	h, err = r.Head()
+// 	if err != nil {
+// 		goto ERR
+// 	}
+
+// 	w, err = r.Worktree()
+// 	if err != nil {
+// 		goto ERR
+// 	}
+// 	s, err = w.Status()
+// 	if err != nil {
+// 		goto ERR
+// 	}
+// 	gs = &GitStatus{
+// 		NoGit:   false,
+// 		repPath: repPath,
+// 		head:    h.Name().String(),
+// 		status:  make(GStatus),
+// 	}
+// 	for rp, fs := range s {
+// 		gs.status[rp] = &GitFileStatus{
+// 			Staging:  GitStatusCode(fs.Staging),
+// 			Worktree: GitStatusCode(fs.Worktree),
+// 			Extra:    fs.Extra,
+// 		}
+// 	}
+// 	return gs, err
+// ERR:
+// 	return &GitStatus{NoGit: true}, err
+// }
+
 //getShortGitStatus read the git status of the repository located at path
 // 	if err != nil : no git
 func getShortGitStatus(repPath string) (*GitStatus, error) {
@@ -308,35 +402,61 @@ func parseShort(reppath string, r io.Reader) *GitStatus {
 		}
 		st := s.Text()
 		rfile := st[3:]
-		_, file := filepath.Split(rfile)
+		// _, file := filepath.Split(rfile)
+		rfs := strings.Split(rfile, PathSeparator)
+		nrfs := len(rfs)
+		file := rfs[nrfs-1]
+		if len(file) == 0 {
+			file = rfs[nrfs-2]
+			if strings.HasSuffix(rfile, PathSeparator) {
+				file += PathSeparator
+			}
+		}
+		x := GitStatusCode(st[0])
+		y := GitStatusCode(st[1])
+		if x == gitIgnored {
+			x = GitIgnored
+		}
+		if y == gitIgnored {
+			y = GitIgnored
+		}
 		gs[rfile] = &GitFileStatus{
-			Staging:  GitStatusCode(st[0]),
-			Worktree: GitStatusCode(st[1]),
+			Staging:  x,
+			Worktree: y,
 			Extra:    file,
 		}
 	}
 	return &GitStatus{
 		NoGit:   false,
-		branch:  branch,
+		head:    branch,
 		repPath: reppath,
 		status:  gs,
 	}
 }
 
-func parseBranch(input string) string {
-	s := bufio.NewScanner(strings.NewReader(input))
-	s.Split(bufio.ScanWords)
-
-	//check if input is a status branch line output
-	s.Scan()
-	if s.Text() != "##" {
+func parseBranch(input string) (branch string) {
+	if !strings.HasPrefix(branch, "## ") {
 		return ""
+	} else {
+		return branch[3:]
 	}
+	// s := bufio.NewScanner(strings.NewReader(input))
+	// s.Split(bufio.ScanWords)
 
-	//read next word and return the branch name
-	s.Scan()
-	b := strings.Split(s.Text(), "...")
-	return b[0]
+	// //check if input is a status branch line output
+	// s.Scan()
+	// if s.Text() != "##" {
+	// 	return ""
+	// }
+
+	// //read next word and return the branch name
+	// // branch := strings.Split(s.Text(), "...")
+	// // return branch[0]
+	// for s.Scan() {
+	// 	branch += s.Text() + " "
+	// }
+
+	// return strings.TrimSpace(branch)
 }
 
 // const (
