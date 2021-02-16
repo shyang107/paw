@@ -159,84 +159,90 @@ func (f *FileList) ConfigGit() {
 	paw.Logger.Trace()
 
 	f.git = NewGitStatus(f.root)
-	if f.git.NoGit && len(f.store) < 1 {
+	gs := f.git.GetStatus()
+	if f.git.NoGit || len(f.store) < 1 || gs == nil {
 		return
 	}
 
-	gs := f.git.GetStatus()
-	// check: if dir is Untracked or Ignored and subfiles is Unmodified or Ignored then add Untracked to subfiles
-	for rpath, xy := range gs {
-		if strings.HasSuffix(rpath, "/") {
-			if checkXY(xy, GitUntracked) ||
-				checkXY(xy, GitIgnored) {
-				dir := strings.TrimSuffix(RootMark+"/"+rpath, "/")
-				// paw.Logger.WithFields(logrus.Fields{
-				// 	"rp":  rpath,
-				// 	"XY":  xy.Staging.String() + xy.Worktree.String(),
-				// 	"dir": dir,
-				// }).Trace(xy.Extra)
-				f.markFilesGit(dir, gs, xy)
-			}
-		}
-	}
-	// if any of subfiles of dir has any cheange of git status, set GitChanged to dir
-	for rpath, xy := range gs {
-		// paw.Logger.WithFields(logrus.Fields{
-		// 	"rp": rpath,
-		// 	"XY": xy.Staging.String() + xy.Worktree.String(),
-		// }).Debug(xy.Extra)
-		rrpath, name := filepath.Split(rpath)
-		if fs, ok := gs[rrpath]; !ok {
-			gs[rrpath] = &GitFileStatus{
-				Staging:  xy.Staging,
-				Worktree: xy.Worktree,
-				Extra:    name + "/",
-			}
-		} else {
-			switch xy.Staging {
-			case GitUnChanged, GitUnmodified, GitIgnored, GitDeleted:
-			default:
-				fs.Staging = GitChanged
-			}
-			switch xy.Worktree {
-			case GitUnChanged, GitUnmodified, GitIgnored, GitDeleted:
-			default:
-				fs.Worktree = GitChanged
-			}
-		}
-	}
-	// f.git.SetStatus(gs)
-}
-
-func (f *FileList) markFilesGit(dir string, gs GStatus, xy *GitFileStatus) {
-
-	for i, file := range f.store[dir][:] {
-		if i == 0 {
+	for _, dir := range f.dirs {
+		if len(f.store[dir]) < 2 {
 			continue
 		}
-		// paw.Logger.WithFields(logrus.Fields{
-		// 	"dir":     file.Dir,
-		// 	"RelPath": file.RelPath,
-		// }).Trace(file.NameC())
-		if _, ok := gs[file.RelPath]; !ok {
-			gs[file.RelPath] = &GitFileStatus{
-				Staging:  xy.Staging,
-				Worktree: xy.Worktree,
-				Extra:    file.BaseName,
+		fm := f.store[dir]
+		// 1. check: if dir is GitIgnored, then marks all subfiles with GitIgnored.
+		drp := fm[0].RelPath
+		isMarkIgnored := false
+		if xy, ok := gs[drp]; ok {
+			if isXY(xy, GitIgnored) {
+				isMarkIgnored = true
 			}
-			// paw.Logger.WithFields(logrus.Fields{
-			// 	"rp":    file.RelPath,
-			// 	"XY":    gs[file.RelPath].Staging.String() + gs[file.RelPath].Worktree.String(),
-			// 	"Extra": gs[file.RelPath].Extra,
-			// }).Trace("add xy")
 		}
-		if file.IsDir() {
-			f.markFilesGit(file.Dir+"/"+file.BaseName, gs, xy)
+		xs := []GitStatusCode{}
+		ys := []GitStatusCode{}
+		for _, file := range fm[1:] {
+			rp := file.RelPath
+			if isMarkIgnored {
+				// 1. continue...
+				gs[rp] = &GitFileStatus{
+					Staging:  gs[drp].Staging,
+					Worktree: gs[drp].Worktree,
+					Extra:    file.BaseName,
+				}
+				continue
+			}
+			// 2. if any of subfiles of dir has any change of git status, set GitChanged to dir
+			if xy, ok := gs[rp]; ok {
+				if xy.Staging != GitUnmodified {
+					xs = append(xs, xy.Staging)
+				}
+				if xy.Worktree != GitUnmodified {
+					ys = append(ys, xy.Worktree)
+				}
+			}
+		}
+		// 2. continue...
+		if len(xs) < 1 && len(ys) < 1 {
+			continue
+		}
+		rp := f.store[dir][0].RelPath
+		gs[rp] = &GitFileStatus{
+			Staging:  getSC(xs),
+			Worktree: getSC(ys),
+			Extra:    f.store[dir][0].BaseName + "/",
+		}
+	}
+	// 3. add git status to root
+	addRootGitStatus(f.git, f.root)
+	paw.Logger.Info()
+	f.git.Dump("ConfigGit")
+}
+
+func addRootGitStatus(gs *GitStatus, repPath string) {
+	if len(gs.status) > 0 { // has git status
+		xs, ys := getXYs(gs.status)
+		_, root := filepath.Split(repPath)
+		root += PathSeparator
+		gs.status[root] = &GitFileStatus{
+			Staging:  getSC(xs),
+			Worktree: getSC(ys),
+			Extra:    root,
 		}
 	}
 }
 
-func checkXY(xy *GitFileStatus, gcode GitStatusCode) bool {
+func getXYs(status GStatus) (xs, ys []GitStatusCode) {
+	for _, xy := range status {
+		if xy.Staging != GitUnmodified {
+			xs = append(xs, xy.Staging)
+		}
+		if xy.Worktree != GitUnmodified {
+			ys = append(ys, xy.Worktree)
+		}
+	}
+	return xs, ys
+}
+
+func isXY(xy *GitFileStatus, gcode GitStatusCode) bool {
 	return xy.Staging == gcode ||
 		xy.Worktree == gcode
 }

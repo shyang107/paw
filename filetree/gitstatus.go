@@ -7,6 +7,7 @@ import (
 	"io"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/fatih/color"
@@ -41,8 +42,10 @@ func (s GStatus) IsUntracked(path string) bool {
 // IsClean returns true if all the files are in Unmodified status.
 func (s GStatus) IsClean() bool {
 	for _, status := range s {
-		if status.Worktree != GitUnmodified ||
-			status.Staging != GitUnmodified {
+		if (status.Staging == GitUnmodified &&
+			status.Worktree == GitUnmodified) ||
+			(status.Staging == GitUnChanged &&
+				status.Worktree == GitUnChanged) {
 			return false
 		}
 	}
@@ -51,9 +54,12 @@ func (s GStatus) IsClean() bool {
 }
 
 func (s GStatus) String() string {
-	buf := bytes.NewBuffer(nil)
+	buf := new(strings.Builder)
 	for path, status := range s {
-		if status.Staging == GitUnmodified && status.Worktree == GitUnmodified {
+		if (status.Staging == GitUnmodified &&
+			status.Worktree == GitUnmodified) ||
+			(status.Staging == GitUnChanged &&
+				status.Worktree == GitUnChanged) {
 			continue
 		}
 
@@ -81,7 +87,8 @@ type GitFileStatus struct {
 type GitStatusCode byte
 
 const (
-	GitNo                 GitStatusCode = 'X'
+	GitNo GitStatusCode = 'X'
+	// GitUnmodified in input is replaced with GitUnChanged
 	GitUnmodified         GitStatusCode = ' '
 	GitUntracked          GitStatusCode = '?'
 	GitModified           GitStatusCode = 'M'
@@ -90,10 +97,11 @@ const (
 	GitRenamed            GitStatusCode = 'R'
 	GitCopied             GitStatusCode = 'C'
 	GitUpdatedButUnmerged GitStatusCode = 'U'
-	gitIgnored            GitStatusCode = '!'
-	GitIgnored            GitStatusCode = 'I'
-	GitChanged            GitStatusCode = 'N'
-	GitUnChanged          GitStatusCode = '-' // equl to GitUnmodified
+	// gitIgnored in input is replaced with GitIgnored
+	gitIgnored   GitStatusCode = '!'
+	GitIgnored   GitStatusCode = 'I'
+	GitChanged   GitStatusCode = 'N'
+	GitUnChanged GitStatusCode = '-' // equl to GitUnmodified
 )
 
 func (s GitStatusCode) String() string {
@@ -101,24 +109,24 @@ func (s GitStatusCode) String() string {
 }
 
 func (s GitStatusCode) Color() *color.Color {
-	switch s {
-	case GitUnmodified, GitUntracked, GitModified, GitAdded, GitDeleted, GitRenamed, GitCopied, GitUpdatedButUnmerged, GitIgnored, GitChanged, GitUnChanged:
-		return cgitmap[s]
-	default:
+	if c, ok := cgitmap[s]; !ok {
 		return cdashp
+	} else {
+		return c
 	}
 }
 
 var cgitmap = map[GitStatusCode]*color.Color{
+	GitNo:                 cdashp,
+	GitUnmodified:         cdashp,
+	GitUntracked:          paw.NewEXAColor("gm"),
 	GitModified:           paw.NewEXAColor("gm"),
 	GitAdded:              paw.NewEXAColor("ga"),
 	GitDeleted:            paw.NewEXAColor("gd"),
 	GitRenamed:            paw.NewEXAColor("gv"),
 	GitCopied:             paw.NewEXAColor("gv"),
 	GitUpdatedButUnmerged: paw.NewEXAColor("gt"),
-	GitUntracked:          paw.NewEXAColor("gm"),
 	GitIgnored:            cdashp,
-	GitUnmodified:         cdashp,
 	GitChanged:            paw.NewEXAColor("ga"),
 	GitUnChanged:          cdashp,
 }
@@ -160,63 +168,43 @@ func NewGitStatus(repPath string) *GitStatus {
 			NoGit: true,
 		}
 	}
-	// add git status of root
-	addRootGitStatus(gs, repPath)
-	paw.Logger.Trace(gs.head)
-	// gs.Dump()
+	// paw.Logger.Trace(gs.head)
+	gs.Dump("NewGitStatus")
 	return gs
 }
 
-func addRootGitStatus(gs *GitStatus, repPath string) {
-	if len(gs.status) > 0 { // has git status
-		_, root := filepath.Split(repPath)
-		root += PathSeparator
-		rxy := &GitFileStatus{
-			Staging:  GitUnChanged,
-			Worktree: GitUnChanged,
-			Extra:    root,
-		}
-		isMoreStatusCodeX := false
-		isMoreStatusCodeY := false
-		i := 0
-		var oxy *GitFileStatus
-		for _, xy := range gs.status {
-			if i == 0 {
-				oxy = xy
-			}
-			if i > 0 {
-				if oxy.Staging != xy.Staging {
-					isMoreStatusCodeX = true
-				}
-				if oxy.Worktree != xy.Staging {
-					isMoreStatusCodeY = true
-				}
-				oxy = xy
-			}
-			i++
-		}
-		if isMoreStatusCodeX {
-			rxy.Staging = GitChanged
-		} else {
-			rxy.Staging = oxy.Staging
-		}
-		if isMoreStatusCodeY {
-			rxy.Worktree = GitChanged
-		} else {
-			rxy.Worktree = oxy.Worktree
-		}
-		gs.status[root] = rxy
+func getSC(sc []GitStatusCode) GitStatusCode {
+	if len(sc) == 0 {
+		return GitUnmodified
 	}
+	c := sc[0]
+	for i := 1; i < len(sc); i++ {
+		if c != sc[i] {
+			return GitChanged
+		}
+		c = sc[i]
+	}
+	return c
 }
 
-func (g *GitStatus) Dump() {
-	// paw.Logger.Trace(g.head)
-	for rp, v := range g.status {
+func (g *GitStatus) Dump(msg string) {
+	if len(msg) > 0 {
+		paw.Logger.Trace(msg)
+	}
+	paw.Logger.Trace(g.head)
+	rps := []string{}
+	for rp := range g.status {
+		rps = append(rps, rp)
+	}
+	sort.Sort(ByLowerString(rps))
+	for _, rp := range rps {
+		v := g.status[rp]
 		paw.Logger.WithFields(logrus.Fields{
+			"rp":    fmt.Sprintf("%q", rp),
 			"X":     v.Staging,
 			"Y":     v.Worktree,
-			"extra": v.Extra,
-		}).Tracef("%q", rp)
+			"extra": `"` + v.Extra + `"`,
+		}).Trace()
 	}
 }
 
@@ -260,13 +248,11 @@ func (g *GitStatus) XStaging(relpath string) GitStatusCode {
 	if g.NoGit {
 		return GitNo
 	}
-	var x GitStatusCode
 	if s, ok := g.status[relpath]; !ok {
-		x = GitUnChanged
+		return GitUnChanged
 	} else {
-		x = xy(s.Staging)
+		return xy(s.Staging)
 	}
-	return x
 }
 
 func (g *GitStatus) XStagingS(relpath string) string {
@@ -285,13 +271,11 @@ func (g *GitStatus) YWorktree(relpath string) GitStatusCode {
 	if g.NoGit {
 		return GitStatusCode('0')
 	}
-	var y GitStatusCode
 	if s, ok := g.status[relpath]; !ok {
-		y = GitUnChanged
+		return GitUnChanged
 	} else {
-		y = xy(s.Worktree)
+		return xy(s.Worktree)
 	}
-	return y
 }
 
 func (g *GitStatus) YWorktreeS(relpath string) string {
@@ -391,7 +375,8 @@ func parseShort(reppath string, r io.Reader) *GitStatus {
 			continue
 		}
 
-		branch = parseBranch(s.Text())
+		// branch = parseBranch(s.Text())
+		branch = strings.TrimPrefix(s.Text(), "## ")
 		break
 	}
 
