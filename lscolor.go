@@ -102,7 +102,7 @@ var (
 		"promptsu": {38, 5, 156, 48, 5, 236},
 		"trace":    {38, 5, color.FgCyan},
 		"debug":    {38, 5, color.FgMagenta},
-		"info":     {38, 5, color.FgBlue},
+		"info":     {38, 5, color.FgHiGreen},
 		"warn":     {38, 5, color.FgHiRed},
 		"error":    {38, 5, 220, 1, 48, 5, 160},
 		"fatal":    {38, 5, 220, 1, 48, 5, 160},

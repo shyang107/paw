@@ -58,6 +58,8 @@ const (
 	tbxSp        = "   "
 )
 
+var sb = new(strings.Builder)
+
 // Align is id that indicate alignment of head-column
 type Align int
 
