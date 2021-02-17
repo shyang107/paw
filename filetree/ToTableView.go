@@ -23,7 +23,7 @@ func (f *FileList) ToTableExtendViewBytes(pad string) []byte {
 // 	`size` of directory shown in the returned value, is accumulated size of sub contents
 // 	If `isExtended` is true to involve extend attribute
 func (f *FileList) ToTableView(pad string, isExtended bool) string {
-	paw.Logger.Trace("TableView")
+	paw.Logger.Info("TableView")
 	var (
 		w                = f.StringBuilder() //f.Buffer()
 		nDirs, nFiles, _ = f.NTotalDirsAndFile()

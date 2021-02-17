@@ -31,7 +31,7 @@ func (f *FileList) ToListTreeExtendView(pad string) string {
 }
 
 func toListTreeView(f *FileList, pad string, isExtended bool) string {
-	paw.Logger.Trace("ListTreeView")
+	paw.Logger.Info("ListTreeView")
 	var (
 		buf      = f.StringBuilder()
 		w        = f.Writer()

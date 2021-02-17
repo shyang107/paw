@@ -189,9 +189,11 @@ func getSC(sc []GitStatusCode) GitStatusCode {
 
 func (g *GitStatus) Dump(msg string) {
 	if len(msg) > 0 {
-		paw.Logger.Trace(msg)
+		paw.Logger.Infof("[%v] branch: %v", msg, g.head)
+	} else {
+		paw.Logger.Info(g.head)
 	}
-	paw.Logger.Trace(g.head)
+
 	rps := []string{}
 	for rp := range g.status {
 		rps = append(rps, rp)

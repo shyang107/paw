@@ -154,9 +154,15 @@ func (f *FileList) Writer() io.Writer {
 	return f.writer
 }
 
-// ConfigGit sets up the git status of FileList
+// ConfigGit sets up the git status of FileList. Git status of directory just reflects the git status of all sub-files.
+//
+// Piority:
+// 	1. If dir is marked as GitIgnored, then marks all subfiles with GitIgnored.
+// 	2. If any of subfiles of dir (including root) has any change of git status, set git status to dir.
+// 		2.1 Git status of sub-files are same, the git status of dir is same.
+// 		2.2 Git status of sub-files are mutilple status, the git status of dir is GitChanged.
 func (f *FileList) ConfigGit() {
-	paw.Logger.Trace()
+	paw.Logger.Info()
 
 	f.git = NewGitStatus(f.root)
 	gs := f.git.GetStatus()
@@ -164,34 +170,73 @@ func (f *FileList) ConfigGit() {
 		return
 	}
 
+	// 1. check: if dir is GitIgnored, then marks all subfiles with GitIgnored.
 	for _, dir := range f.dirs {
 		if len(f.store[dir]) < 2 {
 			continue
 		}
 		fm := f.store[dir]
-		// 1. check: if dir is GitIgnored, then marks all subfiles with GitIgnored.
-		drp := fm[0].RelPath
+		fd := fm[0]
+		drp := fd.RelPath
 		isMarkIgnored := false
 		if xy, ok := gs[drp]; ok {
 			if isXY(xy, GitIgnored) {
 				isMarkIgnored = true
 			}
 		}
-		xs := []GitStatusCode{}
-		ys := []GitStatusCode{}
-		for _, file := range fm[1:] {
-			rp := file.RelPath
-			if isMarkIgnored {
+		if isMarkIgnored {
+			for _, file := range fm[1:] {
+				rp := file.RelPath
 				// 1. continue...
 				gs[rp] = &GitFileStatus{
 					Staging:  gs[drp].Staging,
 					Worktree: gs[drp].Worktree,
 					Extra:    file.BaseName,
 				}
-				continue
 			}
-			// 2. if any of subfiles of dir has any change of git status, set GitChanged to dir
-			if xy, ok := gs[rp]; ok {
+		}
+	}
+	// 2. if any of subfiles of dir (including root) has any change of git status, set GitChanged to dir
+	for _, dir := range f.dirs {
+		if len(f.store[dir]) < 2 {
+			continue
+		}
+		fm := f.store[dir]
+		fd := fm[0]
+		xs, ys := f.getSubXYs(fm[1:], gs)
+		if len(xs) > 0 || len(ys) > 0 {
+			rp := fd.RelPath
+			gs[rp] = &GitFileStatus{
+				Staging:  getSC(xs),
+				Worktree: getSC(ys),
+				Extra:    fd.BaseName + "/",
+			}
+		}
+	}
+
+	f.git.Dump("ConfigGit: modified")
+}
+
+// func addRootGitStatus(gs *GitStatus, repPath string) {
+// 	if len(gs.status) > 0 { // has git status
+// 		xs, ys := getXYs(gs.status)
+// 		_, root := filepath.Split(repPath)
+// 		root += PathSeparator
+// 		gs.status[root] = &GitFileStatus{
+// 			Staging:  getSC(xs),
+// 			Worktree: getSC(ys),
+// 			Extra:    root,
+// 		}
+// 	}
+// }
+
+func (f *FileList) getSubXYs(files []*File, status GStatus) (xs, ys []GitStatusCode) {
+	xs = []GitStatusCode{}
+	ys = []GitStatusCode{}
+	for _, file := range files {
+		rp := file.RelPath
+		if !file.IsDir() {
+			if xy, ok := status[rp]; ok {
 				if xy.Staging != GitUnmodified {
 					xs = append(xs, xy.Staging)
 				}
@@ -199,35 +244,13 @@ func (f *FileList) ConfigGit() {
 					ys = append(ys, xy.Worktree)
 				}
 			}
-		}
-		// 2. continue...
-		if len(xs) < 1 && len(ys) < 1 {
-			continue
-		}
-		rp := f.store[dir][0].RelPath
-		gs[rp] = &GitFileStatus{
-			Staging:  getSC(xs),
-			Worktree: getSC(ys),
-			Extra:    f.store[dir][0].BaseName + "/",
+		} else {
+			sxs, sys := f.getSubXYs(f.store[file.Dir+"/"+file.BaseName], status)
+			xs = append(xs, sxs...)
+			ys = append(ys, sys...)
 		}
 	}
-	// 3. add git status to root
-	addRootGitStatus(f.git, f.root)
-	paw.Logger.Info()
-	f.git.Dump("ConfigGit")
-}
-
-func addRootGitStatus(gs *GitStatus, repPath string) {
-	if len(gs.status) > 0 { // has git status
-		xs, ys := getXYs(gs.status)
-		_, root := filepath.Split(repPath)
-		root += PathSeparator
-		gs.status[root] = &GitFileStatus{
-			Staging:  getSC(xs),
-			Worktree: getSC(ys),
-			Extra:    root,
-		}
-	}
+	return xs, ys
 }
 
 func getXYs(status GStatus) (xs, ys []GitStatusCode) {
@@ -881,7 +904,8 @@ func (f *FileList) SetDirsSorter(by DirsBy) {
 // 	Dirs: ToLower(a[i]) < ToLower(a[j])
 // 	Map[dir][]*file: ToLower(a[i].Path) < ToLower(a[j].Path)
 func (f *FileList) Sort() {
-	paw.Logger.Trace("sort...")
+	paw.Logger.Info("sort...")
+
 	f.SortBy(f.dirsBy, f.filesBy)
 }
 

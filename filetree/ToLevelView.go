@@ -23,7 +23,7 @@ func (f *FileList) ToLevelExtendViewBytes(pad string) []byte {
 // 	`size` of directory shown in the returned value, is accumulated size of sub contents
 // 	If `isExtended` is true to involve extend attribute
 func (f *FileList) ToLevelView(pad string, isExtended bool) string {
-	paw.Logger.Trace("LevelView...")
+	paw.Logger.Info("LevelView...")
 	var (
 		w                  = f.StringBuilder()
 		dirs               = f.Dirs()
