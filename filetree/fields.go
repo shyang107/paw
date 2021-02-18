@@ -43,7 +43,73 @@ const (
 
 	// PFieldDefault useas default fields
 	PFieldDefault = PFieldPermissions | PFieldSize | PFieldUser | PFieldGroup | PFieldModified | PFieldName
+
+	PFieldAll = PFieldINode | PFieldPermissions | PFieldLinks | PFieldSize | PFieldBlocks | PFieldUser | PFieldGroup | PFieldModified | PFieldAccessed | PFieldCreated | PFieldGit | PFieldMd5 | PFieldName
 )
+
+func GetFieldFlags(fields PDFieldFlag, isNoGit bool) (flags []PDFieldFlag, names []string, nameWidths []int) {
+
+	flags = []PDFieldFlag{}
+	names = []string{}
+	nameWidths = []int{}
+
+	if fields&PFieldINode != 0 {
+		flags = append(flags, PFieldINode)
+	}
+
+	if fields&PFieldPermissions != 0 {
+		flags = append(flags, PFieldPermissions)
+	}
+
+	if fields&PFieldLinks != 0 {
+		flags = append(flags, PFieldLinks)
+	}
+
+	if fields&PFieldSize != 0 {
+		flags = append(flags, PFieldSize)
+	}
+
+	if fields&PFieldBlocks != 0 {
+		flags = append(flags, PFieldBlocks)
+	}
+
+	if fields&PFieldUser != 0 {
+		flags = append(flags, PFieldUser)
+	}
+
+	if fields&PFieldGroup != 0 {
+		flags = append(flags, PFieldGroup)
+	}
+
+	if fields&PFieldModified != 0 {
+		flags = append(flags, PFieldModified)
+	}
+	if fields&PFieldCreated != 0 {
+		flags = append(flags, PFieldCreated)
+	}
+	if fields&PFieldAccessed != 0 {
+		flags = append(flags, PFieldAccessed)
+	}
+
+	if fields&PFieldMd5 != 0 {
+		hasMd5 = true
+		flags = append(flags, PFieldMd5)
+	}
+
+	if !isNoGit && fields&PFieldGit != 0 {
+		flags = append(flags, PFieldGit)
+	}
+
+	if fields&PFieldName != 0 {
+		flags = append(flags, PFieldName)
+	}
+
+	for _, k := range flags {
+		names = append(names, k.Name())
+		nameWidths = append(nameWidths, k.Width())
+	}
+	return flags, names, nameWidths
+}
 
 func (f PDFieldFlag) String() string {
 	switch f {
@@ -195,6 +261,10 @@ func (f PDFieldFlag) Field() *Field {
 var (
 	DefaultPDFieldKeys = []PDFieldFlag{PFieldPermissions, PFieldSize, PFieldUser, PFieldGroup, PFieldModified, PFieldName}
 
+	PFieldAllKeys = []PDFieldFlag{PFieldINode, PFieldPermissions, PFieldLinks, PFieldSize, PFieldBlocks, PFieldUser, PFieldGroup, PFieldModified, PFieldAccessed, PFieldCreated, PFieldGit, PFieldMd5, PFieldName}
+
+	PFieldAllNoGitKeys = []PDFieldFlag{PFieldINode, PFieldPermissions, PFieldLinks, PFieldSize, PFieldBlocks, PFieldUser, PFieldGroup, PFieldModified, PFieldAccessed, PFieldCreated, PFieldMd5, PFieldName}
+
 	DefaultPDFields = NewFields(DefaultPDFieldKeys...)
 )
 
@@ -244,30 +314,6 @@ func NewFields(flags ...PDFieldFlag) []*Field {
 	if len(flags) == 0 {
 		return nil
 	}
-	dFields := make([]*Field, 0, len(flags))
-	for _, f := range flags {
-		dFields = append(dFields, NewField(f))
-	}
-	return dFields
-}
-
-// NewFieldsGit will return []*Field w.r.t. git status
-func NewFieldsGit(noGit bool, flags ...PDFieldFlag) []*Field {
-	if len(flags) == 0 {
-		return nil
-	}
-	if noGit {
-		irmGit := -1
-		for i, f := range flags {
-			if f == PFieldGit {
-				irmGit = i
-			}
-		}
-		if irmGit != -1 {
-			flags = append(flags[:irmGit], flags[irmGit+1:]...)
-		}
-	}
-
 	dFields := make([]*Field, 0, len(flags))
 	for _, f := range flags {
 		dFields = append(dFields, NewField(f))

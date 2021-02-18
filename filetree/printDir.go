@@ -7,12 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	pdOpt  *PrintDirOption
+	// pdOpt  *PrintDirOption
+	pdOpt  = NewPrintDirOption()
 	pdview PDViewFlag
 )
 
@@ -36,12 +38,11 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 	}
 
 	// check opt, fields to view
-	if opt == nil {
-		pdOpt = NewPrintDirOption()
-	} else {
+	if opt != nil {
 		pdOpt = opt
 		pdOpt.ConfigFields()
 	}
+
 	pdview = pdOpt.ViewFlag
 	pdOpt.File, _ = NewFileRelTo(root, root)
 
@@ -88,7 +89,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 		// files
 		if len(files) > 0 {
 			if len(files) == 1 {
-				listOneFile(fl, files[0], pad)
+				listOneFile(fl.Writer(), files[0], pad)
 			} else {
 				for _, path := range files {
 					file, err := NewFile(path)
@@ -145,20 +146,12 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 	return nil, fl
 }
 
-func bmark(b bool) string {
-	if b {
-		return csup.Sprint("✓")
-	}
-	return cdashp.Sprint("✗")
-}
-
-func listOneFile(fl *FileList, path string, pad string) {
+func listOneFile(wr io.Writer, path string, pad string) {
 	paw.Logger.Info()
 
 	var (
 		w      = new(strings.Builder)
 		wdstty = sttyWidth - 2 - paw.StringWidth(pad)
-		width  = 0
 	)
 	file, err := NewFile(path)
 	if err != nil {
@@ -166,75 +159,48 @@ func listOneFile(fl *FileList, path string, pad string) {
 		return
 	}
 
-	head := cpmpt.Sprint("Directory: ") + pmptColorizedPath(file.Dir, "")
+	head := fmt.Sprintf("Full path: %v", file.PathC())
 	fmt.Fprintln(w, head)
 	printBanner(w, "", "=", wdstty)
-	for _, wd := range pdOpt.fieldWidths {
-		width = paw.MaxInt(width, wd)
-	}
-	// for _, field := range pdOpt.FieldKeys() {
-	// 	width = paw.MaxInt(width, field.Width())
-	// }
-	// for _, field := range pfieldsMap {
-	// 	width = paw.MaxInt(width, len(field))
-	// }
 
-	nline := 0
-	fmt.Fprintln(w, rowFile(nline, PFieldName, file.BaseNameToLinkC(), width, wdstty))
-	nline++
-	fmt.Fprintln(w, rowFile(nline, PFieldPermissions, file.PermissionC(), width, wdstty))
-	nline++
-	fmt.Fprintln(w, rowFile(nline, PFieldINode, file.INodeC(), width, wdstty))
-	nline++
-	fmt.Fprintln(w, rowFile(nline, PFieldLinks, file.NLinksC(), width, wdstty))
-	nline++
-	fmt.Fprintln(w, rowFile(nline, PFieldSize, file.SizeC(), width, wdstty))
-	nline++
-	fmt.Fprintln(w, rowFile(nline, PFieldBlocks, file.BlocksC(), width, wdstty))
-	nline++
-	fmt.Fprintln(w, rowFile(nline, PFieldUser, file.UserC(), width, wdstty))
-	nline++
-	fmt.Fprintln(w, rowFile(nline, PFieldGroup, file.GroupC(), width, wdstty))
-	nline++
-	fmt.Fprintln(w, rowFile(nline, PFieldModified, file.ModifiedTimeC(), width, wdstty))
-	nline++
-	fmt.Fprintln(w, rowFile(nline, PFieldCreated, file.CreatedTimeC(), width, wdstty))
-	nline++
-	fmt.Fprintln(w, rowFile(nline, PFieldAccessed, file.AccessedTimeC(), width, wdstty))
-	nline++
-	git := fl.GetGitStatus()
-	if !git.NoGit {
-		cgit := file.GitXYc(git)
-		fmt.Fprintln(w, rowFile(nline, PFieldGit, cgit, width, wdstty))
-		nline++
+	git := NewGitStatus(file.Dir)
+	fields := PFieldAllKeys
+	// remove name field
+	fields = fields[:len(fields)-1]
+	width := PFieldPermissions.Width()
+	for i, fd := range fields {
+		fmt.Fprintln(w, rowFile(i, fd, file.FieldC(fd, git), width, wdstty))
 	}
-	fmt.Fprintln(w, rowFile(nline, PFieldMd5, file.GetMd5(), width, wdstty))
-	nline++
+
 	if len(file.XAttributes) > 0 {
-		xfield := fmt.Sprintf("%[1]*[2]s%s", width, "Extended", " : ")
+		xfield := fmt.Sprintf("%[1]*[2]s", width, "Extended")
 		wd := wdstty - width - 3
-		sp := paw.Spaces(width + 3)
+		sp := fmt.Sprint(paw.Spaces(width))
 		xsymb := "@"
 		wsymb := paw.StringWidth(xsymb)
 		csymb := cxbp.Sprint(xsymb)
 		cbsp := cxbp.Sprint(paw.Spaces(wsymb))
 		for i, value := range file.XAttributes {
 			wv := paw.StringWidth(value)
+			c := rowColor(i)
 			if wv <= wd {
 				if i == 0 {
-					fmt.Fprintln(w, xfield+csymb, cxap.Sprint(value))
+					c.Fprint(w, xfield+" : ")
 				} else {
-					fmt.Fprintln(w, sp+csymb, cxap.Sprint(value))
+					c.Fprint(w, sp+"   ")
 				}
+				fmt.Fprintln(w, csymb, cxap.Sprint(value))
 			} else {
 				names := paw.WrapToSlice(value, width)
 				if i == 0 {
-					fmt.Fprintln(w, xfield+csymb, cxap.Sprint(names[0]))
+					c.Fprint(w, xfield)
 				} else {
-					fmt.Fprintln(w, sp+csymb, cxap.Sprint(names[0]))
+					c.Fprint(w, sp)
 				}
+				fmt.Fprintln(w, " : "+csymb, cxap.Sprint(names[0]))
 				for i := 1; i < len(names); i++ {
-					fmt.Fprintln(w, sp+cbsp, cxap.Sprint(names[i]))
+					c = rowColor(i)
+					c.Fprintln(w, sp+"   "+cbsp, cxap.Sprint(names[i]))
 				}
 			}
 		}
@@ -243,20 +209,29 @@ func listOneFile(fl *FileList, path string, pad string) {
 	printBanner(w, "", "=", wdstty)
 
 	str := paw.PaddingString(w.String(), pad)
-	fmt.Fprint(fl.Writer(), str)
+	fmt.Fprint(wr, str)
+}
+
+var (
+	chdEven = color.New([]color.Attribute{38, 5, 251, 1, 48, 5, 236}...)
+	chdOdd  = color.New([]color.Attribute{38, 5, 159, 1, 48, 5, 234}...)
+)
+
+func rowColor(row int) *color.Color {
+	var c *color.Color
+	switch row % 2 {
+	case 0:
+		c = chdEven
+	case 1:
+		c = chdOdd
+	}
+	return c
 }
 
 func rowFile(nline int, flag PDFieldFlag, valueC string, width, wdstty int) (row string) {
-	wvalueC := paw.StringWidth(paw.StripANSI(valueC))
 	field := flag.Name() //pfieldsMap[flag]
-	wfield := paw.StringWidth(field)
-	sp := paw.Spaces(width - wfield)
-	sptail := paw.Spaces(wdstty - width - 3 - wvalueC)
-	if nline%2 == 0 {
-		row = cpmpt.Sprintf("%s%s : %s", sp, field, valueC) + cpmpt.Sprint(sptail)
-	} else {
-		row = fmt.Sprint(sp + field + " : " + valueC + sptail)
-	}
+	field = paw.FillLeft(field, width)
+	row = rowColor(nline).Sprintf("%s", field) + " : " + valueC
 	return row
 }
 
@@ -319,13 +294,9 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 		}
 		fds.SetValues(file, git)
 		fdName.Value = file.Path
-		// cdir := cdirp.Sprint(file.Dir + "/")
-		// cname := file.NameC()
-		fdName.ValueC = GetColorizedPath(file.Path, "") //cdir + cname
+		fdName.ValueC = file.PathC()
 		fds.PrintRow(w, "")
 		if isExtended && len(file.XAttributes) > 0 {
-			// sp := paw.Spaces(wdmeta)
-			// fmt.Fprint(w, xattrEdgeString(file, sp, wdmeta, wdstty))
 			fds.PrintRowXattr(w, "", file.XAttributes, "")
 		}
 	}
@@ -351,17 +322,21 @@ func setFileList(w io.Writer, root string, isGrouped bool, opt *PrintDirOption) 
 	paw.Logger.Info()
 
 	fl := NewFileList(root)
-	// fl.IsSort = false
 	fl.ResetWriters()
 	if w != nil {
 		fl.SetWriters(w)
 	}
+
 	fl.IsGrouped = isGrouped
 	fl.IsSort = opt.SortOpt.IsSort
 
 	// set sorter
 	if fl.IsSort {
-		setupFLSortOption(fl, pdOpt)
+		// setupFLSortOption(fl, opt)
+		if opt.ViewFlag&PTreeView == 0 ||
+			opt.ViewFlag&PListTreeView == 0 {
+			fl.SetFilesSorter(opt.SortOpt.SortFlag.By())
+		}
 	}
 
 	return fl

@@ -41,7 +41,6 @@ func toListView(f *FileList, pad string, isExtended bool) string {
 		wdstty             = sttyWidth - 2 - paw.StringWidth(pad)
 		roothead           = getColorizedRootHead(f.root, f.TotalSize(), wdstty)
 	)
-
 	w.Reset()
 
 	fds.ModifyWidth(f, wdstty)

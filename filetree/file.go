@@ -179,6 +179,28 @@ func (f *File) SetUpDir(up *File) *File {
 	return f
 }
 
+// GetUpDir return the directory file which the File is belong to.
+func (f *File) GetSubDir() string {
+	if f.IsDir() {
+		return f.Dir + "/" + f.BaseName
+	}
+	return ""
+}
+
+// PathC returns colorful string of File.Path
+func (f File) PathC() string {
+	if f.Path == PathSeparator {
+		return cdip.Sprint(f.Path)
+	}
+
+	dir, _ := filepath.Split(f.Path)
+	cdir := cdirp.Sprint(dir)
+	cname := f.BaseNameToLinkC()
+	return cdir + cname
+
+	// return GetColorizedPath(f.Path, "")
+}
+
 // Name return File.BaseNameToLink()
 func (f File) Name() string {
 	return f.BaseNameToLink()
@@ -546,6 +568,74 @@ func (f *File) GetMd5C() string {
 		return cdashp.Sprint("-")
 	}
 	return PFieldMd5.Color().Sprint(f.Md5)
+}
+
+// Field returns the specified value of File according to PDFieldFlag
+func (f *File) Field(field PDFieldFlag, git *GitStatus) string {
+	switch field {
+	case PFieldINode:
+		return fmt.Sprint(f.INode())
+	case PFieldPermissions:
+		return f.Permission()
+	case PFieldLinks:
+		return fmt.Sprint(f.NLinks())
+	case PFieldSize:
+		return ByteSize(f.Size)
+	case PFieldBlocks:
+		return fmt.Sprint(f.Blocks())
+	case PFieldUser:
+		return f.User()
+	case PFieldGroup:
+		return f.Group()
+	case PFieldModified:
+		return DateString(f.ModifiedTime())
+	case PFieldCreated:
+		return DateString(f.CreatedTime())
+	case PFieldAccessed:
+		return DateString(f.AccessedTime())
+	case PFieldGit:
+		return f.GitXYs(git)
+	case PFieldMd5:
+		return f.GetMd5()
+	case PFieldName:
+		return f.Name()
+	default:
+		return ""
+	}
+}
+
+// FieldC returns the specified colorful value of File according to PDFieldFlag
+func (f *File) FieldC(field PDFieldFlag, git *GitStatus) string {
+	switch field {
+	case PFieldINode:
+		return f.INodeC()
+	case PFieldPermissions:
+		return f.PermissionC()
+	case PFieldLinks:
+		return f.NLinksC()
+	case PFieldSize:
+		return f.SizeC()
+	case PFieldBlocks:
+		return f.BlocksC()
+	case PFieldUser:
+		return f.UserC()
+	case PFieldGroup:
+		return f.GroupC()
+	case PFieldModified:
+		return f.ModifiedTimeC()
+	case PFieldCreated:
+		return f.CreatedTimeC()
+	case PFieldAccessed:
+		return f.AccessedTimeC()
+	case PFieldGit:
+		return f.GitXYc(git)
+	case PFieldMd5:
+		return f.GetMd5C()
+	case PFieldName:
+		return f.NameC()
+	default:
+		return ""
+	}
 }
 
 // IsDir reports whether `f` describes a directory. That is, it tests for the ModeDir bit being set in `f`.

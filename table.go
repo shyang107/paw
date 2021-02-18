@@ -115,10 +115,10 @@ var (
 	// isPrepare       bool
 	// isPrepareBefore bool
 	// isPrepareAfter  bool
-	tbChdEven  = color.New([]color.Attribute{38, 5, 228, 1, 48, 5, 236}...)
-	tbChdOdd   = color.New([]color.Attribute{38, 5, 156, 1, 48, 5, 234}...)
-	tbCRowEven = color.New([]color.Attribute{38, 5, 253, 48, 5, 236}...)
-	tbCRowOdd  = color.New([]color.Attribute{38, 5, 156, 48, 5, 234}...)
+	tbChdEven  = color.New([]color.Attribute{38, 5, 251, 1, 48, 5, 236}...)
+	tbChdOdd   = color.New([]color.Attribute{38, 5, 159, 1, 48, 5, 234}...)
+	tbCRowEven = color.New([]color.Attribute{38, 5, 251, 48, 5, 236}...)
+	tbCRowOdd  = color.New([]color.Attribute{38, 5, 159, 48, 5, 234}...)
 	// tbCxattrEven = color.New([]color.Attribute{38, 5, 249, 4, 48, 5, 236}...)
 	// tbCxattrOdd  = color.New([]color.Attribute{38, 5, 249, 4, 48, 5, 234}...)
 	// tbCxsymbEven = color.New([]color.Attribute{38, 5, 249, 48, 5, 236}...)

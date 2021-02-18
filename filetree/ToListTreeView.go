@@ -89,7 +89,7 @@ func toListTreeView(f *FileList, pad string, isExtended bool) string {
 
 		fds.SetValues(file, git)
 		if file.IsDir() {
-			sdir := file.Dir + "/" + file.BaseName
+			sdir := file.GetSubDir()
 			dfile = f.Map()[sdir][0]
 			printLTFile(buf, level, levelsEnded, edge, f, dfile, fds, isExtended, wmeta, wdstty)
 

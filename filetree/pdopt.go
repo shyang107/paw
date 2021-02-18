@@ -27,14 +27,14 @@ type PrintDirOption struct {
 	FiltOpt   *PDFilterOption
 	Ignore    IgnoreFunc
 	//
-	Root        string
-	Paths       []string
-	isTrace     bool
-	File        *File
-	fieldKeys   []PDFieldFlag
-	fields      []string
-	fieldWidths []int
-	isGit       bool
+	Root      string
+	Paths     []string
+	isTrace   bool
+	File      *File
+	fieldKeys []PDFieldFlag
+	// fields      []string
+	// fieldWidths []int
+	isGit bool
 }
 
 func (p *PrintDirOption) FieldKeys() []PDFieldFlag {
@@ -42,19 +42,27 @@ func (p *PrintDirOption) FieldKeys() []PDFieldFlag {
 }
 
 func (p *PrintDirOption) Fields() []string {
-	return p.fields
+	names := []string{}
+	for _, v := range p.fieldKeys {
+		names = append(names, v.Name())
+	}
+	return names
 }
 
 func (p *PrintDirOption) FieldWidths() []int {
-	return p.fieldWidths
+	wds := []int{}
+	for _, v := range p.fieldKeys {
+		wds = append(wds, len(v.Name()))
+	}
+	return wds
 }
 
 func (p *PrintDirOption) ConfigFields() {
 	paw.Logger.Info()
 
 	p.fieldKeys = []PDFieldFlag{}
-	p.fields = []string{}
-	p.fieldWidths = []int{}
+	// p.fields = []string{}
+	// p.fieldWidths = []int{}
 	if p.FieldFlag&PFieldINode != 0 {
 		p.fieldKeys = append(p.fieldKeys, PFieldINode)
 	}
@@ -97,10 +105,10 @@ func (p *PrintDirOption) ConfigFields() {
 
 	p.fieldKeys = append(p.fieldKeys, PFieldName)
 
-	for _, k := range p.fieldKeys {
-		p.fields = append(p.fields, k.Name())
-		p.fieldWidths = append(p.fieldWidths, k.Width())
-	}
+	// for _, k := range p.fieldKeys {
+	// 	p.fields = append(p.fields, k.Name())
+	// 	p.fieldWidths = append(p.fieldWidths, k.Width())
+	// }
 }
 
 func (p *PrintDirOption) SetDepth(depth int) {

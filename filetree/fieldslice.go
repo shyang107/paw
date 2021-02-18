@@ -31,7 +31,23 @@ func NewFieldSliceFrom(flags []PDFieldFlag, git *GitStatus) (fds *FieldSlice) {
 	if len(flags) == 0 {
 		flags = DefaultPDFieldKeys
 	}
-	f.fds = NewFieldsGit(git.NoGit, flags...)
+	if git != nil {
+		if git.NoGit {
+			irmGit := -1
+			for i, f := range flags {
+				if f&PFieldGit == PFieldGit {
+					irmGit = i
+					break
+				}
+			}
+			if irmGit != -1 {
+				flags = append(flags[:irmGit], flags[irmGit+1:]...)
+				// FIXME pdOtp arround everywhere
+				pdOpt.fieldKeys = flags
+			}
+		}
+	}
+	f.fds = NewFields(flags...)
 	return f
 }
 
@@ -229,6 +245,9 @@ func (f *FieldSlice) Add(key PDFieldFlag) *FieldSlice {
 
 // AddByField will append a Field to FieldSlice
 func (f *FieldSlice) AddByField(field *Field) *FieldSlice {
+	if f.fds == nil {
+		f.fds = []*Field{}
+	}
 	if field != nil {
 		f.fds = append(f.fds, field)
 	}

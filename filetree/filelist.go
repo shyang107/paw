@@ -198,12 +198,12 @@ func (f *FileList) ConfigGit() {
 	}
 	// 2. if any of subfiles of dir (including root) has any change of git status, set GitChanged to dir
 	for _, dir := range f.dirs {
-		if len(f.store[dir]) < 2 {
+		files := f.GetFiles(dir)
+		if files == nil || len(files) < 2 {
 			continue
 		}
-		fm := f.store[dir]
-		fd := fm[0]
-		xs, ys := f.getSubXYs(fm[1:], gs)
+		fd := files[0]
+		xs, ys := f.getSubXYs(files[1:], gs)
 		if len(xs) > 0 || len(ys) > 0 {
 			rp := fd.RelPath
 			gs[rp] = &GitFileStatus{
@@ -310,6 +310,14 @@ func (f *FileList) Dirs() []string {
 	return f.dirs
 }
 
+// GetFiles will retun subfiles of dir of FileList
+func (f *FileList) GetFiles(dir string) []*File {
+	if files, ok := f.store[dir]; ok {
+		return files[:]
+	}
+	return nil
+}
+
 // TotalSize will retun total size of FileList
 func (f *FileList) TotalSize() uint64 {
 	return f.totalSize
@@ -347,7 +355,8 @@ func (f *FileList) NItems() int {
 // NTotalDirsAndFile will return NDirs, NFiles and TotalSize of FileList
 func (f *FileList) NTotalDirsAndFile() (ndirs, nfiles int, size uint64) {
 	for _, dir := range f.dirs {
-		for _, file := range f.store[dir][1:] {
+		files := f.GetFiles(dir)
+		for _, file := range files[1:] {
 			if file.IsDir() {
 				ndirs++
 			} else {
@@ -395,14 +404,16 @@ func (f *FileList) NSubFiles(dir string) int {
 
 // NSubDirsAndFiles will return NSubDirs, NSubFiles and sum of size of FileList
 func (f *FileList) NSubDirsAndFiles(dir string) (nsDirs, nsFiles int, sumsize uint64) {
-	if files, ok := f.Map()[dir]; ok {
-		for _, file := range files[1:] {
-			if file.IsDir() {
-				nsDirs++
-			} else {
-				nsFiles++
-				sumsize += file.Size
-			}
+	files := f.GetFiles(dir)
+	if files == nil {
+		return 0, 0, 0
+	}
+	for _, file := range files[1:] {
+		if file.IsDir() {
+			nsDirs++
+		} else {
+			nsFiles++
+			sumsize += file.Size
 		}
 	}
 	return nsDirs, nsFiles, sumsize
@@ -463,7 +474,7 @@ func (f *FileList) AddFile(file *File) {
 
 	pdir = f.store[file.Dir][0]
 	if file.IsDir() && file.Path != f.root {
-		dir = file.Dir + "/" + file.BaseName
+		dir = file.GetSubDir()
 		if _, ok := f.store[dir]; !ok {
 			f.store[dir] = []*File{}
 			f.dirs = append(f.dirs, dir)

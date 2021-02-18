@@ -444,11 +444,12 @@ func getColorizedRootHead(root string, size uint64, wdstty int) string {
 }
 
 func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
-	if !file.IsDir() {
+	files := fl.GetFiles(file.Dir) //fl.Map()[file.Dir]
+	if !file.IsDir() || files == nil {
 		return "", 0
 	}
+
 	nd, nf := 0, 0
-	files := fl.Map()[file.Dir]
 	for _, f := range files {
 		if f.IsDir() {
 			nd++
