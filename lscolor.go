@@ -2,6 +2,7 @@ package paw
 
 import (
 	"os"
+	"path/filepath"
 
 	"regexp"
 	"strings"
@@ -898,4 +899,63 @@ func NewLSColor(key string) *color.Color {
 // NewEXAColor will return `*color.Color` using `EXAColors[key]`
 func NewEXAColor(key string) *color.Color {
 	return color.New(EXAColors[key]...)
+}
+
+// FileLSColor returns color of file (fullpath) according to LS_COLORS
+func FileLSColor(fullpath string) *color.Color {
+	fi, err := os.Lstat(fullpath)
+	if err != nil {
+		return Cnop
+	}
+
+	if fi.IsDir() { // os.ModeDir
+		return Cdip
+	}
+
+	if fi.Mode()&os.ModeSymlink != 0 { // os.ModeSymlink
+		_, err := filepath.EvalSymlinks(fullpath)
+		if err != nil {
+			return NewLSColor("or")
+		}
+		return Clnp
+	}
+
+	if fi.Mode()&os.ModeCharDevice != 0 { // os.ModeDevice | os.ModeCharDevice
+		return Ccdp
+	}
+
+	if fi.Mode()&os.ModeDevice != 0 { //
+		return Cbdp
+	}
+
+	if fi.Mode()&os.ModeNamedPipe != 0 { //os.ModeNamedPipe
+		return Cpip
+	}
+	if fi.Mode()&os.ModeSocket != 0 { //os.ModeSocket
+		return Csop
+	}
+
+	// the file is executable by any of its owner, the group and others, use bitmask 0111
+	if fi.Mode()&0111 != 0 && !fi.IsDir() {
+		return Cexp
+	}
+
+	if fi.Mode().IsRegular() { // 0
+		base := filepath.Base(fullpath)
+		if att, ok := LSColors[base]; ok {
+			return color.New(att...)
+		}
+		ext := filepath.Ext(fullpath)
+		if att, ok := LSColors[ext]; ok {
+			return color.New(att...)
+		}
+
+		for re, att := range ReExtLSColors {
+			if re.MatchString(base) {
+				return color.New(att...)
+			}
+		}
+		return Cfip
+	}
+	return Cnop
 }

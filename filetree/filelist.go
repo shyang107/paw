@@ -838,12 +838,12 @@ func (f *FileList) FindFiles(depth int) error {
 
 	// if hasMd5 {
 	if pdOpt.FieldFlag&PFieldMd5 != 0 {
-		paw.Logger.Trace("caller: " + paw.Caller(1) + " finding files starts... (goroutine)")
+		paw.Logger.Trace(" finding files starts... (goroutine)" + paw.Caller(1))
 		wg.Add(1)
 		go wgosReaddirnames(f, f.root)
 		wg.Wait()
 	} else {
-		paw.Logger.Trace("caller: " + paw.Caller(1) + " finding files starts...")
+		paw.Logger.Trace(" finding files starts..." + paw.Caller(1))
 		osReaddirnames(f, f.root)
 	}
 

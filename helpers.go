@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
@@ -13,6 +14,21 @@ import (
 	"github.com/spf13/cast"
 	// log "github.com/sirupsen/logrus"
 )
+
+func Caller(skip int) string {
+	if skip < 0 {
+		skip = 0
+	}
+	_, path, line, ok := runtime.Caller(skip + 1)
+	if ok {
+		c := FileLSColor(path)
+		base := filepath.Base(path)
+		return Cdashp.Sprint(" [caller:") +
+			c.Sprint(base) + Cdashp.Sprint(":") +
+			Csnp.Sprint(line) + Cdashp.Sprint("]")
+	}
+	return fmt.Errorf("Caller(%d) failed, %s", skip, path).Error()
+}
 
 // GetFuncName get the func name
 func GetFuncName(level interface{}) string {
