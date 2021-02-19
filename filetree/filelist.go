@@ -18,6 +18,38 @@ import (
 // FileMap stores directory map to `map[{{ sub-path }}]{{ *File }}`
 type FileMap map[string][]*File
 
+func (f FileMap) Count() int {
+	return len(f)
+}
+
+func (f FileMap) CountDF(dir string) (nd, nf int, size uint64) {
+	if len(dir) > 0 {
+		if _, ok := f[dir]; !ok {
+			return 0, 0, 0
+		}
+		for _, v := range f[dir] {
+			if v.IsDir() {
+				nd++
+			} else {
+				nf++
+				size += v.Size
+			}
+		}
+		return nd, nf, size
+	}
+	for _, files := range f {
+		for _, v := range files[:] {
+			if v.IsDir() {
+				nd++
+			} else {
+				nf++
+				size += v.Size
+			}
+		}
+	}
+	return nd, nf, size
+}
+
 // FileList stores the list information of File
 type FileList struct {
 	root          string   // root directory
@@ -355,15 +387,10 @@ func (f *FileList) NItems() int {
 // NTotalDirsAndFile will return NDirs, NFiles and TotalSize of FileList
 func (f *FileList) NTotalDirsAndFile() (ndirs, nfiles int, size uint64) {
 	for _, dir := range f.dirs {
-		files := f.GetFiles(dir)
-		for _, file := range files[1:] {
-			if file.IsDir() {
-				ndirs++
-			} else {
-				nfiles++
-				size += file.Size
-			}
-		}
+		nd, nf, s := f.store.CountDF(dir)
+		ndirs += nd - 1
+		nfiles += nf
+		size += s
 	}
 	f.totalSize = size
 	return ndirs, nfiles, f.totalSize
@@ -404,18 +431,8 @@ func (f *FileList) NSubFiles(dir string) int {
 
 // NSubDirsAndFiles will return NSubDirs, NSubFiles and sum of size of FileList
 func (f *FileList) NSubDirsAndFiles(dir string) (nsDirs, nsFiles int, sumsize uint64) {
-	files := f.GetFiles(dir)
-	if files == nil {
-		return 0, 0, 0
-	}
-	for _, file := range files[1:] {
-		if file.IsDir() {
-			nsDirs++
-		} else {
-			nsFiles++
-			sumsize += file.Size
-		}
-	}
+	nsDirs, nsFiles, sumsize = f.store.CountDF(dir)
+	nsDirs--
 	return nsDirs, nsFiles, sumsize
 }
 
@@ -438,7 +455,20 @@ func (f *FileList) SubByteSize(dir string) string {
 
 // DirInfo will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.
 func (f *FileList) DirInfo(file *File) (cdinf string, wdinf int) {
-	return getDirInfo(f, file)
+	// return getDirInfo(f, file)
+
+	files := f.GetFiles(file.Dir) //fl.Map()[file.Dir]
+	if !file.IsDir() || files == nil {
+		return "", 0
+	}
+
+	nd, nf, _ := f.store.CountDF(file.Dir)
+	nd--
+	di := fmt.Sprintf("%d dirs", nd)
+	fi := fmt.Sprintf("%d files", nf)
+	wdinf = len(di) + len(fi) + 4
+	cdinf = fmt.Sprintf("[%v, %v]", cdirp.Sprint(di), cdirp.Sprint(fi))
+	return cdinf, wdinf
 }
 
 // // GetHead4Meta will return a colorful string of head line for meta information of File
@@ -785,7 +815,7 @@ func handleFiles(f *FileList, dirPath string, files []string) {
 // 		ignoring condition of files or directory
 // 		ignore == nil, using DefaultIgnoreFn
 func (f *FileList) FindFiles(depth int) error {
-	paw.Logger.Tracef("root: %q", f.root)
+	paw.Logger.Infof("root: %q", f.root)
 
 	if f.ignore == nil {
 		f.ignore = DefaultIgnoreFn
@@ -802,19 +832,18 @@ func (f *FileList) FindFiles(depth int) error {
 	f.AddFile(file)
 	if file.IsLink() {
 		f.root = file.LinkPath()
-		// f.gitstatus, _ = GetShortGitStatus(f.root)
 		f.git = NewGitStatus(f.root)
 		f.depth = depth
 	}
 
-	if hasMd5 {
+	// if hasMd5 {
+	if pdOpt.FieldFlag&PFieldMd5 != 0 {
+		paw.Logger.Trace("caller: " + paw.Caller(1) + " finding files starts... (goroutine)")
 		wg.Add(1)
 		go wgosReaddirnames(f, f.root)
-		if pdOpt.isTrace {
-			paw.Logger.Info("finding files starts...")
-		}
 		wg.Wait()
 	} else {
+		paw.Logger.Trace("caller: " + paw.Caller(1) + " finding files starts...")
 		osReaddirnames(f, f.root)
 	}
 

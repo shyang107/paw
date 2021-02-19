@@ -443,26 +443,28 @@ func getColorizedRootHead(root string, size uint64, wdstty int) string {
 	return chead
 }
 
-func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
-	files := fl.GetFiles(file.Dir) //fl.Map()[file.Dir]
-	if !file.IsDir() || files == nil {
-		return "", 0
-	}
+// func getDirInfo(fl *FileList, file *File) (cdinf string, wdinf int) {
+// 	files := fl.GetFiles(file.Dir) //fl.Map()[file.Dir]
+// 	if !file.IsDir() || files == nil {
+// 		return "", 0
+// 	}
 
-	nd, nf := 0, 0
-	for _, f := range files {
-		if f.IsDir() {
-			nd++
-		} else {
-			nf++
-		}
-	}
-	di := fmt.Sprintf("%v dirs", nd-1)
-	fi := fmt.Sprintf("%v files", nf)
-	wdinf = len(di) + len(fi) + 4
-	cdinf = fmt.Sprintf("[%s, %s]", cdirp.Sprint(di), cdirp.Sprint(fi))
-	return cdinf, wdinf
-}
+// 	nd, nf := fl.Map().CountDF(file.Dir)
+// 	nd--
+// 	// nd, nf := 0, 0
+// 	// for _, f := range files[1:] {
+// 	// 	if f.IsDir() {
+// 	// 		nd++
+// 	// 	} else {
+// 	// 		nf++
+// 	// 	}
+// 	// }
+// 	di := fmt.Sprintf("%v dirs", nd)
+// 	fi := fmt.Sprintf("%v files", nf)
+// 	wdinf = len(di) + len(fi) + 4
+// 	cdinf = fmt.Sprintf("[%s, %s]", cdirp.Sprint(di), cdirp.Sprint(fi))
+// 	return cdinf, wdinf
+// }
 
 func dirSummary(pad string, ndirs int, nfiles int, sumsize uint64, wdstty int) string {
 	var (
