@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -541,6 +542,11 @@ func (f *FileList) AddError(path string, err error) {
 	f.errors = append(f.errors, newFileListError(path, err, f.root))
 }
 
+// SetMd5 will set isMd5 to hasMd5, then will get md5 of File
+func (f *FileList) SetMd5(isMd5 bool) {
+	hasMd5 = isMd5
+}
+
 // GetErrorString get the error string in `dir` during find files
 func (f *FileList) GetErrorString(dir string) string {
 	if len(f.errors) == 0 {
@@ -647,26 +653,26 @@ var (
 	sem = make(chan int, 12)
 )
 
-func wgosReaddirnames(f *FileList, dirPath string) {
+func wgosReadDir(f *FileList, dirPath string) {
 	sem <- 1
 	defer func() {
 		<-sem
 	}()
 	defer wg.Done()
 
-	openDir, err := os.Open(dirPath)
-	if err != nil {
-		if pdOpt.isTrace {
-			paw.Logger.Error(err)
-		}
-		f.mux.Lock()
-		f.AddError(dirPath, err)
-		f.mux.Unlock()
-		return
-	}
-	defer openDir.Close()
+	// openDir, err := os.Open(dirPath)
+	// if err != nil {
+	// 	if pdOpt.isTrace {
+	// 		paw.Logger.Error(err)
+	// 	}
+	// 	f.mux.Lock()
+	// 	f.AddError(dirPath, err)
+	// 	f.mux.Unlock()
+	// 	return
+	// }
+	// defer openDir.Close()
 
-	files, err := openDir.Readdirnames(-1)
+	des, err := os.ReadDir(dirPath) // openDir.Readdirnames(-1)
 	if err != nil {
 		if pdOpt.isTrace {
 			paw.Logger.Error(err)
@@ -674,31 +680,31 @@ func wgosReaddirnames(f *FileList, dirPath string) {
 		f.mux.Lock()
 		f.AddError(dirPath, err)
 		f.mux.Unlock()
-		return
+		// return
 	}
-	if len(files) > 0 {
+	if len(des) > 0 {
 		wg.Add(1)
-		go wghandleFiles(f, dirPath, files)
+		go wgosrdHandleFiles(f, dirPath, des)
 	}
 
 	return
 }
 
-func wghandleFiles(f *FileList, dirPath string, files []string) {
+func wgosrdHandleFiles(f *FileList, dirPath string, des []fs.DirEntry) {
 	sem <- 1
 	defer func() {
 		<-sem
 	}()
 	defer wg.Done()
 
-	nf := len(files)
+	nf := len(des)
 	if nf == 0 {
 		return
 	}
 	// for _, name := range files {
 	if nf == 1 {
 		skip := false
-		name := files[0]
+		name := des[0].Name()
 		path := filepath.Join(dirPath, name)
 		file, err := NewFileRelTo(path, f.root)
 		if err != nil {
@@ -708,7 +714,7 @@ func wghandleFiles(f *FileList, dirPath string, files []string) {
 			f.mux.Lock()
 			f.AddError(path, err)
 			f.mux.Unlock()
-			// continue
+			return
 		}
 		if err := f.ignore(file, nil); err == SkipThis {
 			skip = true
@@ -729,52 +735,42 @@ func wghandleFiles(f *FileList, dirPath string, files []string) {
 						return
 					}
 					wg.Add(1)
-					go wgosReaddirnames(f, path)
+					go wgosReadDir(f, path)
 				}
 			}
 		}
 	} else {
 		wg.Add(2)
-		go wghandleFiles(f, dirPath, files[:nf/2])
-		go wghandleFiles(f, dirPath, files[nf/2:])
+		go wgosrdHandleFiles(f, dirPath, des[:nf/2])
+		go wgosrdHandleFiles(f, dirPath, des[nf/2:])
 	}
 	// }
 }
 
-func osReaddirnames(f *FileList, dirPath string) {
-	openDir, err := os.Open(dirPath)
+func osReadDir(f *FileList, dirPath string) {
+	des, err := os.ReadDir(dirPath) //odir.ReadDir(-1) //odir.Readdirnames(-1)
 	if err != nil {
 		if pdOpt.isTrace {
 			paw.Logger.Error(err)
 		}
 		f.AddError(dirPath, err)
-		return
+		// return
 	}
-	defer openDir.Close()
-
-	files, err := openDir.Readdirnames(-1)
-	if err != nil {
-		if pdOpt.isTrace {
-			paw.Logger.Error(err)
-		}
-		f.AddError(dirPath, err)
-		return
-	}
-	if len(files) > 0 {
-		handleFiles(f, dirPath, files)
+	if len(des) > 0 {
+		osrdHandleFiles(f, dirPath, des)
 	}
 
 	return
 }
 
-func handleFiles(f *FileList, dirPath string, files []string) {
-	nf := len(files)
+func osrdHandleFiles(f *FileList, dirPath string, des []fs.DirEntry) {
+	nf := len(des)
 	if nf == 0 {
 		return
 	}
-	for _, name := range files {
+	for _, de := range des {
 		skip := false
-		path := filepath.Join(dirPath, name)
+		path := filepath.Join(dirPath, de.Name())
 		file, err := NewFileRelTo(path, f.root)
 		if err != nil {
 			if pdOpt.isTrace {
@@ -795,11 +791,11 @@ func handleFiles(f *FileList, dirPath string, files []string) {
 		if !skip {
 			f.AddFile(file)
 			if f.depth != 0 {
-				if file.IsDir() {
+				if de.IsDir() {
 					if skip {
 						return
 					}
-					osReaddirnames(f, path)
+					osReadDir(f, path)
 				}
 			}
 		}
@@ -836,15 +832,15 @@ func (f *FileList) FindFiles(depth int) error {
 		f.depth = depth
 	}
 
-	// if hasMd5 {
-	if pdOpt.FieldFlag&PFieldMd5 != 0 {
+	if hasMd5 {
 		paw.Logger.Trace(" finding files starts... (goroutine)" + paw.Caller(1))
 		wg.Add(1)
-		go wgosReaddirnames(f, f.root)
+		// go wgosReaddirnames(f, f.root)
+		go wgosReadDir(f, f.root)
 		wg.Wait()
 	} else {
 		paw.Logger.Trace(" finding files starts..." + paw.Caller(1))
-		osReaddirnames(f, f.root)
+		osReadDir(f, f.root)
 	}
 
 	// if err != nil {
