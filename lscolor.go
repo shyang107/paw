@@ -765,6 +765,8 @@ var (
 	Clnp = NewEXAColor("ln")
 	// Cexp is default color use for execution file (permission contains 'x')
 	Cexp = NewLSColor("ex")
+	// Corp is default color use for orphan file. "orphan, symbolic link pointing to a non-existent file (orphan)"
+	Corp = NewLSColor("or")
 	// Cprompt is default color use for prompt
 	Cpmpt = NewEXAColor("prompt")
 	// CpmptSn is default color use for number in prompt
@@ -913,9 +915,10 @@ func FileLSColor(fullpath string) *color.Color {
 	}
 
 	if fi.Mode()&os.ModeSymlink != 0 { // os.ModeSymlink
-		_, err := filepath.EvalSymlinks(fullpath)
+		// _, err := filepath.EvalSymlinks(fullpath)
+		_, err := os.Readlink(fullpath)
 		if err != nil {
-			return NewLSColor("or")
+			return Corp //NewLSColor("or")
 		}
 		return Clnp
 	}

@@ -167,7 +167,7 @@ func wrapLTFileString(fl *FileList, file *File, edge EdgeType, padMeta string, w
 	var (
 		sb           = new(strings.Builder)
 		cdinf, ndinf = "", 0
-		name         = file.BaseName
+		name         = file.Name() //file.BaseName
 		wname        = paw.StringWidth(name)
 		width        = wdstty - wmeta - edgeWidth[edge] - 2
 		spmeta       = paw.Spaces(wmeta)
@@ -216,9 +216,9 @@ func wrapLTFileString(fl *FileList, file *File, edge EdgeType, padMeta string, w
 			cname string
 		)
 		if ndinf > 0 {
-			cname = cdinf + " " + file.BaseNameC()
+			cname = cdinf + " " + file.NameC() //file.BaseNameC()
 		} else {
-			cname = file.BaseNameC()
+			cname = file.NameC() //file.BaseNameC()
 		}
 		fmt.Fprintln(sb, cedge, cname)
 	}

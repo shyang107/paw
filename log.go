@@ -39,7 +39,7 @@ var (
 			funcName := s[len(s)-1]
 			name := filepath.Base(f.File)
 			cname := NewLSColor(filepath.Ext(name)).Sprint(name)
-			cfuncName := color.New(color.FgHiGreen).Add(color.Bold).Sprint(funcName)
+			cfuncName := color.New(color.FgYellow).Add(color.Bold).Sprint(funcName)
 			cln := NewEXAColor("sn").Sprint(f.Line)
 			return fmt.Sprintf(" [%s:%s][%s]", cname, cln, cfuncName)
 		},

@@ -292,11 +292,11 @@ func (g *GitStatus) YWorktreeC(relpath string) string {
 	return y.Color().Sprint(y.String())
 }
 
-func (g *GitStatus) XYStatus(relpath string) string {
+func (g *GitStatus) XY(relpath string) string {
 	return g.XStagingS(relpath) + g.YWorktreeS(relpath)
 }
 
-func (g *GitStatus) XYStatusC(relpath string) string {
+func (g *GitStatus) XYc(relpath string) string {
 	return g.XStagingC(relpath) + g.YWorktreeC(relpath)
 }
 

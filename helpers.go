@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cast"
 	// log "github.com/sirupsen/logrus"
 )
@@ -19,20 +20,24 @@ func Caller(skip int) string {
 	if skip < 0 {
 		skip = 0
 	}
-	_, path, line, ok := runtime.Caller(skip + 1)
+	pc, path, line, ok := runtime.Caller(skip + 1)
 	if ok {
+		function := runtime.FuncForPC(pc).Name()
+		s := strings.Split(function, ".")
+		funcName := s[len(s)-1]
 		c := FileLSColor(path)
 		base := filepath.Base(path)
 		return Cdashp.Sprint(" [caller:") +
 			c.Sprint(base) + Cdashp.Sprint(":") +
-			Csnp.Sprint(line) + Cdashp.Sprint("]")
+			Csnp.Sprint(line) + Cdashp.Sprint("(") +
+			color.New(color.FgYellow).Sprint(funcName) + Cdashp.Sprint(")]")
 	}
 	return fmt.Errorf("Caller(%d) failed, %s", skip, path).Error()
 }
 
 // GetFuncName get the func name
-func GetFuncName(level interface{}) string {
-	return runtime.FuncForPC(reflect.ValueOf(level).Pointer()).Name()
+func GetFuncName(f interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }
 
 // GetDate get the current date and return string. For example,

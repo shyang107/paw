@@ -48,7 +48,7 @@ func exPrintDir(root string) {
 	// 	}
 	// }
 
-	// fis, _ := ioutil.ReadDir(r)
+	// fis, _ := os.ReadDir(r)
 	// for _, fi := range fis {
 	// 	path := filepath.Join(root, fi.Name())
 	// 	var list []string

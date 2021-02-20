@@ -46,6 +46,7 @@ var (
 	cdirp                 = paw.Cdirp // pre-dir part of path
 	cdip                  = paw.Cdip  // directory
 	cfip                  = paw.Cfip  // file
+	corp                  = paw.Corp  // orphan file
 	cNop                  = paw.CNop  // serial number
 	cinp                  = paw.Cinp  // inode
 	cpms                  = paw.Cpms  // permission
@@ -297,7 +298,7 @@ func xattrEdgeString(file *File, pad string, wmeta int, wdsttylimit int) string 
 }
 
 func PathRel(dir, root string) (rdir string) {
-	if !strings.HasPrefix(dir, root) {
+	if len(root) == 0 || !strings.HasPrefix(dir, root) {
 		return dir
 	}
 	rdir = strings.Replace(dir, root, RootMark, 1)
@@ -373,8 +374,8 @@ func GetColorizedPath(path string, root string) string {
 	if err != nil {
 		dir, name := filepath.Split(path)
 		dir = PathRel(dir, root)
-		c := GetFileLSColor(file)
-		return cdirp.Sprint(dir) + c.Sprint(name)
+		// c := file.LSColor() //GetFileLSColor(file)
+		return cdirp.Sprint(dir) + corp.Sprint(name)
 	}
 
 	cname := file.BaseNameToLinkC()
@@ -963,4 +964,163 @@ func gdWalk(f *FileList) error {
 		return errors.New(f.root + ": " + err.Error())
 	}
 	return nil
+}
+
+func osReaddirnames(f *FileList, dirPath string) {
+	openDir, err := os.Open(dirPath)
+	if err != nil {
+		if pdOpt.isTrace {
+			paw.Logger.Error(err)
+		}
+		f.AddError(dirPath, err)
+		return
+	}
+	defer openDir.Close()
+
+	files, err := openDir.Readdirnames(-1)
+	if err != nil {
+		if pdOpt.isTrace {
+			paw.Logger.Error(err)
+		}
+		f.AddError(dirPath, err)
+		// return
+	}
+	if len(files) > 0 {
+		handleFiles(f, dirPath, files)
+	}
+
+	return
+}
+
+func handleFiles(f *FileList, dirPath string, files []string) {
+	nf := len(files)
+	if nf == 0 {
+		return
+	}
+	for _, name := range files {
+		skip := false
+		path := filepath.Join(dirPath, name)
+		file, err := NewFileRelTo(path, f.root)
+		if err != nil {
+			if pdOpt.isTrace {
+				paw.Logger.Error(err)
+			}
+			f.AddError(path, err)
+			continue
+		}
+		if err := f.ignore(file, nil); err == SkipThis {
+			skip = true
+		}
+		idepth := len(file.DirSlice()) - 1
+		if f.depth > 0 {
+			if idepth > f.depth {
+				skip = true
+			}
+		}
+		if !skip {
+			f.AddFile(file)
+			if f.depth != 0 {
+				if file.IsDir() {
+					if skip {
+						return
+					}
+					osReaddirnames(f, path)
+				}
+			}
+		}
+	}
+}
+
+func wgosReaddirnames(f *FileList, dirPath string) {
+	sem <- 1
+	defer func() {
+		<-sem
+	}()
+	defer wg.Done()
+
+	openDir, err := os.Open(dirPath)
+	if err != nil {
+		if pdOpt.isTrace {
+			paw.Logger.Error(err)
+		}
+		f.mux.Lock()
+		f.AddError(dirPath, err)
+		f.mux.Unlock()
+		return
+	}
+	defer openDir.Close()
+
+	files, err := openDir.Readdirnames(-1)
+	if err != nil {
+		if pdOpt.isTrace {
+			paw.Logger.Error(err)
+		}
+		f.mux.Lock()
+		f.AddError(dirPath, err)
+		f.mux.Unlock()
+		return
+	}
+	if len(files) > 0 {
+		wg.Add(1)
+		go wghandleFiles(f, dirPath, files)
+	}
+
+	return
+}
+
+func wghandleFiles(f *FileList, dirPath string, files []string) {
+	sem <- 1
+	defer func() {
+		<-sem
+	}()
+	defer wg.Done()
+
+	nf := len(files)
+	if nf == 0 {
+		return
+	}
+	// for _, name := range files {
+	if nf == 1 {
+		skip := false
+		name := files[0]
+		path := filepath.Join(dirPath, name)
+		file, err := NewFileRelTo(path, f.root)
+		if err != nil {
+			if pdOpt.isTrace {
+				paw.Logger.Error(err)
+			}
+			f.mux.Lock()
+			f.AddError(path, err)
+			f.mux.Unlock()
+			// continue
+		}
+		if err := f.ignore(file, nil); err == SkipThis {
+			skip = true
+		}
+		idepth := len(file.DirSlice()) - 1
+		if f.depth > 0 {
+			if idepth > f.depth {
+				skip = true
+			}
+		}
+		if !skip {
+			f.mux.Lock()
+			f.AddFile(file)
+			f.mux.Unlock()
+			if f.depth != 0 {
+				if file.IsDir() {
+					if skip {
+						return
+					}
+					wg.Add(1)
+					go wgosReaddirnames(f, path)
+				}
+			}
+		}
+	} else {
+		wg.Add(2)
+		go wghandleFiles(f, dirPath, files[:nf/2])
+		go wghandleFiles(f, dirPath, files[nf/2:])
+	}
+	// }
 }

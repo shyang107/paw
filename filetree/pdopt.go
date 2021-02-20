@@ -2,7 +2,7 @@ package filetree
 
 import (
 	"errors"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -147,7 +147,7 @@ func (p *PrintDirOption) ConfigFilter() {
 				if errig := igfunc(f, err); errig != nil {
 					return errig
 				}
-				fis, errfilt := ioutil.ReadDir(f.Path)
+				fis, errfilt := os.ReadDir(f.Path)
 				if errfilt != nil {
 					return errfilt
 				}
@@ -156,8 +156,8 @@ func (p *PrintDirOption) ConfigFilter() {
 				}
 				if f.IsDir() {
 					nfiles := 0
-					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
-						if !info.IsDir() {
+					filepath.WalkDir(f.Path, func(path string, de fs.DirEntry, err error) error {
+						if !de.IsDir() {
 							nfiles++
 						}
 						return nil
@@ -188,14 +188,14 @@ func (p *PrintDirOption) ConfigFilter() {
 						return SkipThis
 					}
 					nfiles := 0
-					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
+					filepath.WalkDir(f.Path, func(path string, de fs.DirEntry, err error) error {
 						idepth := len(strings.Split(strings.Replace(path, p.Root, ".", 1), PathSeparator)) - 1
 						if p.Depth > 0 {
 							if idepth > p.Depth {
 								return SkipThis
 							}
 						}
-						if !info.IsDir() {
+						if !de.IsDir() {
 							nfiles++
 						}
 						return nil
@@ -213,8 +213,8 @@ func (p *PrintDirOption) ConfigFilter() {
 				}
 				if f.IsDir() {
 					nfiles := 0
-					filepath.Walk(f.Path, func(path string, info os.FileInfo, err error) error {
-						if !info.IsDir() {
+					filepath.WalkDir(f.Path, func(path string, de fs.DirEntry, err error) error {
+						if !de.IsDir() {
 							nfiles++
 						}
 						return nil

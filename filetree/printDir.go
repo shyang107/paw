@@ -264,7 +264,7 @@ func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
 	paw.Logger.Info()
 
 	var (
-		w     = f.stringBuilder
+		w     = f.StringBuilder()
 		dirs  = f.Dirs()
 		fm    = f.Map()
 		files = []*File{}
@@ -327,6 +327,7 @@ func setFileList(w io.Writer, root string, isGrouped bool, opt *PrintDirOption) 
 		fl.SetWriters(w)
 	}
 
+	fl.SetMd5(opt.FieldFlag&PFieldMd5 != 0)
 	fl.IsGrouped = isGrouped
 	fl.IsSort = opt.SortOpt.IsSort
 

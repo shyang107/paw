@@ -572,6 +572,7 @@ func (f *FieldSlice) PrintRowPrefix(w io.Writer, pad, prefix string) {
 		prefix += " "
 		width -= wprf - 1
 	}
+
 	if wv <= width {
 		if fdName.ValueC != nil {
 			fmt.Fprintln(w, prefix+cvalue)
@@ -586,8 +587,17 @@ func (f *FieldSlice) PrintRowPrefix(w io.Writer, pad, prefix string) {
 			wbname := paw.StringWidth(name)
 			carrow := cdashp.Sprint(" -> ")
 			wbname += 4
-			flink, _ := NewFile(link)
-			clk := GetFileLSColor(flink)
+			if wbname > width {
+				wbname = width
+			}
+			var clk *color.Color
+			flink, err := NewFile(link)
+			if err != nil {
+				paw.Logger.Error(link)
+				clk = corp
+			} else {
+				clk = flink.LSColor() //GetFileLSColor(flink)
+			}
 			// L1.0
 			fmt.Fprint(w, prefix+cname+carrow)
 			dir, name := filepath.Split(link)

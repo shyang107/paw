@@ -30,7 +30,7 @@ func (f *FileList) ToListExtendView(pad string) string {
 func toListView(f *FileList, pad string, isExtended bool) string {
 	paw.Logger.Info("ListView")
 	var (
-		w                  = f.stringBuilder
+		w                  = f.StringBuilder()
 		dirs               = f.Dirs()
 		fm                 = f.Map()
 		git                = f.GetGitStatus()

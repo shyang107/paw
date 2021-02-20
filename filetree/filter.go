@@ -1,7 +1,7 @@
 package filetree
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -42,7 +42,7 @@ func removeEmpty(fl *FileList, noEmptyDir bool) {
 		fm := fl.store[dir]
 		for _, file := range fm[1:] {
 			if file.IsDir() {
-				fis, err := ioutil.ReadDir(file.Path)
+				fis, err := os.ReadDir(file.Path)
 				if err != nil && len(fis) > 0 {
 					files = append(files, file)
 					noEmptyDir = false

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -100,7 +99,7 @@ func greadDir(path string, re *regexp.Regexp) {
 
 func readDir(path string) {
 	lg.WithField("path", path).Info()
-	fis, err := ioutil.ReadDir(path)
+	fis, err := os.ReadDir(path)
 	if err != nil {
 		Error("path[" + path + "]: " + err.Error())
 	}

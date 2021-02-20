@@ -234,9 +234,10 @@ func (f *File) BaseNameToLinkC() string {
 // LinkPath report far-end path of a symbolic link.
 func (f *File) LinkPath() string {
 	if f.IsLink() {
-		alink, err := filepath.EvalSymlinks(f.Path)
+		// alink, err := filepath.EvalSymlinks(f.Path)
+		alink, err := os.Readlink(f.Path)
 		if err != nil {
-			return fmt.Errorf("%s Err: %s", alink, err.Error()).Error()
+			return err.Error()
 		}
 		return alink
 	}
@@ -245,7 +246,17 @@ func (f *File) LinkPath() string {
 
 // LinkPathC return colorized far-end path string of a symbolic link.
 func (f *File) LinkPathC() string {
-	return GetColorizedPath(f.LinkPath(), "")
+	// return GetColorizedPath(f.LinkPath(), "")
+	if f.IsLink() {
+		link := f.LinkPath()
+		lkfile, err := NewFile(link)
+		if err != nil {
+			dir, name := filepath.Split(link)
+			return cdirp.Sprint(dir) + corp.Sprint(name)
+		}
+		return cdirp.Sprint(lkfile.Dir) + lkfile.BaseNameC()
+	}
+	return ""
 }
 
 // PathSlice will split `f.Path` following Spearator, seperating it into a string slice.
@@ -535,14 +546,14 @@ func (f *File) CreatedTimeC() string {
 // The length of placeholder in terminal is 3.
 func (f *File) GitXYs(git *GitStatus) string {
 	// relpath := strings.TrimPrefix(f.Dir+"/"+f.BaseName, "./")
-	return git.XYStatus(f.RelPath)
+	return git.XY(f.RelPath)
 }
 
 // GitXYC will return a colorful string of git status like as exa.
 // The length of placeholder in terminal is 3.
 func (f *File) GitXYc(git *GitStatus) string {
 	// relpath := strings.TrimPrefix(f.Dir+"/"+f.BaseName, "./")
-	return git.XYStatusC(f.RelPath)
+	return git.XYc(f.RelPath)
 }
 
 // GetMd5 returns md5 codes of File

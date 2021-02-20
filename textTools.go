@@ -3,7 +3,7 @@ package paw
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"reflect"
 	"strings"
 	"unicode"
@@ -106,7 +106,7 @@ func ReverseByte(s string) string {
 // GbkToUtf8 decodes GBK to UTF8
 func GbkToUtf8(s []byte) ([]byte, error) {
 	rd := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewDecoder())
-	d, e := ioutil.ReadAll(rd)
+	d, e := io.ReadAll(rd)
 	if e != nil {
 		return nil, e
 	}
@@ -123,7 +123,7 @@ func GbkToUtf8String(s string) (string, error) {
 // Utf8ToGbk encodes UTF8 to GBK
 func Utf8ToGbk(s []byte) ([]byte, error) {
 	rd := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewEncoder())
-	d, e := ioutil.ReadAll(rd)
+	d, e := io.ReadAll(rd)
 	if e != nil {
 		return nil, e
 	}
@@ -140,7 +140,7 @@ func Utf8ToGbkString(s string) (string, error) {
 // Big5ToUtf8 decodes Big5 to UTF8
 func Big5ToUtf8(s []byte) ([]byte, error) {
 	rd := transform.NewReader(bytes.NewReader(s), traditionalchinese.Big5.NewDecoder())
-	d, e := ioutil.ReadAll(rd)
+	d, e := io.ReadAll(rd)
 	if e != nil {
 		return nil, e
 	}
@@ -157,7 +157,7 @@ func Big5ToUtf8String(s string) (string, error) {
 // Utf8ToBig5 encodes UTF8 to Big5
 func Utf8ToBig5(s []byte) ([]byte, error) {
 	rd := transform.NewReader(bytes.NewReader(s), traditionalchinese.Big5.NewEncoder())
-	d, e := ioutil.ReadAll(rd)
+	d, e := io.ReadAll(rd)
 	if e != nil {
 		return nil, e
 	}

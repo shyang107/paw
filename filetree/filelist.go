@@ -53,14 +53,14 @@ func (f FileMap) CountDF(dir string) (nd, nf int, size uint64) {
 
 // FileList stores the list information of File
 type FileList struct {
-	root          string   // root directory
-	store         FileMap  // all files in `root` directory
-	dirs          []string // keys of `store`
-	depth         int
-	totalSize     uint64
-	git           *GitStatus
-	stringBuilder *strings.Builder
-	writer        io.Writer
+	root      string   // root directory
+	store     FileMap  // all files in `root` directory
+	dirs      []string // keys of `store`
+	depth     int
+	totalSize uint64
+	git       *GitStatus
+	sb        *strings.Builder
+	writer    io.Writer
 	// writers   []io.Writer
 	IsSort    bool // increasing order of Lower(path)
 	filesBy   FilesBy
@@ -102,18 +102,18 @@ func NewFileList(root string) *FileList {
 	// 	return &FileList{}
 	// }
 	fl := &FileList{
-		root:          root,
-		store:         make(map[string][]*File),
-		dirs:          []string{},
-		git:           &GitStatus{NoGit: true},
-		stringBuilder: new(strings.Builder),
-		IsSort:        true,
-		filesBy:       nil,
-		dirsBy:        nil,
-		IsGrouped:     false,
-		ignore:        nil,
+		root:      root,
+		store:     make(map[string][]*File),
+		dirs:      []string{},
+		git:       &GitStatus{NoGit: true},
+		sb:        new(strings.Builder),
+		IsSort:    true,
+		filesBy:   nil,
+		dirsBy:    nil,
+		IsGrouped: false,
+		ignore:    nil,
 	}
-	fl.SetWriters(fl.stringBuilder)
+	fl.SetWriters(fl.sb)
 	return fl
 }
 
@@ -158,31 +158,32 @@ func (f *FileList) SetWriters(writers ...io.Writer) {
 
 // ResetWriters will reset default writers... (Buffer of FileList) to writer of FileList
 func (f *FileList) ResetWriters() {
-	f.ResetStringBuilder()
+	// f.ResetStringBuilder()
+	f.sb.Reset()
 	// f.writers = []io.Writer{}
-	f.SetWriters(f.stringBuilder)
+	f.SetWriters(f.sb)
 }
 
-// ResetStringBuilder will reset the buffer of FileList
-func (f *FileList) ResetStringBuilder() {
-	f.stringBuilder.Reset()
-}
+// // ResetStringBuilder will reset the buffer of FileList
+// func (f *FileList) ResetStringBuilder() {
+// 	f.stringBuilder.Reset()
+// }
 
 // StringBuilder will return the *strings.Builder buffer of FileList
 func (f *FileList) StringBuilder() *strings.Builder {
-	return f.stringBuilder
+	return f.sb
 }
 
 // Dump will dump buffer of FileList to a string
 func (f *FileList) Dump() string {
-	return f.stringBuilder.String()
+	return f.sb.String()
 }
 
 // Writer will return the field writer of FileList
 func (f *FileList) Writer() io.Writer {
 	if f.writer == nil {
-		f.ResetStringBuilder()
-		f.SetWriters(f.stringBuilder)
+		f.sb.Reset()
+		f.SetWriters(f.sb)
 	}
 	return f.writer
 }
@@ -309,13 +310,13 @@ func (f *FileList) GetGitStatus() *GitStatus {
 }
 
 // GitXY will retun git XY status of FileList
-func (f *FileList) GitXY(path string) string {
-	return f.GetGitStatus().XYStatus(path)
+func (f *FileList) GitXY(relpath string) string {
+	return f.GetGitStatus().XY(relpath)
 }
 
 // GitXY will retun git colorful XY status of FileList
-func (f *FileList) GitXYc(path string) string {
-	return f.GetGitStatus().XYStatusC(path)
+func (f *FileList) GitXYc(relpath string) string {
+	return f.GetGitStatus().XYc(relpath)
 }
 
 // SetIgnoreFunc set ignore function to FieldList.ignore
@@ -458,8 +459,7 @@ func (f *FileList) SubByteSize(dir string) string {
 func (f *FileList) DirInfo(file *File) (cdinf string, wdinf int) {
 	// return getDirInfo(f, file)
 
-	files := f.GetFiles(file.Dir) //fl.Map()[file.Dir]
-	if !file.IsDir() || files == nil {
+	if !file.IsDir() {
 		return "", 0
 	}
 
@@ -660,18 +660,6 @@ func wgosReadDir(f *FileList, dirPath string) {
 	}()
 	defer wg.Done()
 
-	// openDir, err := os.Open(dirPath)
-	// if err != nil {
-	// 	if pdOpt.isTrace {
-	// 		paw.Logger.Error(err)
-	// 	}
-	// 	f.mux.Lock()
-	// 	f.AddError(dirPath, err)
-	// 	f.mux.Unlock()
-	// 	return
-	// }
-	// defer openDir.Close()
-
 	des, err := os.ReadDir(dirPath) // openDir.Readdirnames(-1)
 	if err != nil {
 		if pdOpt.isTrace {
@@ -701,7 +689,7 @@ func wgosrdHandleFiles(f *FileList, dirPath string, des []fs.DirEntry) {
 	if nf == 0 {
 		return
 	}
-	// for _, name := range files {
+
 	if nf == 1 {
 		skip := false
 		name := des[0].Name()
@@ -744,7 +732,6 @@ func wgosrdHandleFiles(f *FileList, dirPath string, des []fs.DirEntry) {
 		go wgosrdHandleFiles(f, dirPath, des[:nf/2])
 		go wgosrdHandleFiles(f, dirPath, des[nf/2:])
 	}
-	// }
 }
 
 func osReadDir(f *FileList, dirPath string) {
@@ -833,72 +820,15 @@ func (f *FileList) FindFiles(depth int) error {
 	}
 
 	if hasMd5 {
-		paw.Logger.Trace(" finding files starts... (goroutine)" + paw.Caller(1))
+		paw.Logger.Trace("finding files starts... (goroutine)" + paw.Caller(1))
 		wg.Add(1)
 		// go wgosReaddirnames(f, f.root)
 		go wgosReadDir(f, f.root)
 		wg.Wait()
 	} else {
-		paw.Logger.Trace(" finding files starts..." + paw.Caller(1))
+		paw.Logger.Trace("finding files starts..." + paw.Caller(1))
 		osReadDir(f, f.root)
 	}
-
-	// if err != nil {
-	// 	return fmt.Errorf("find files: %s", err.Error())
-	// }
-
-	// switch depth {
-	// case 0: //{root directory}/*
-	// 	file, err := NewFileRelTo(f.root, f.root)
-	// 	if err != nil {
-	// 		if pdOpt.isTrace {
-	// 			paw.Logger.Error(err)
-	// 		}
-	// 		return err
-	// 	}
-	// 	f.AddFile(file)
-	// 	err = osReadDir(f, f.root)
-	// 	if err != nil {
-	// 		return fmt.Errorf("find files: %s", err.Error())
-	// 	}
-	// default: //walk through all directories of {root directory}
-	// 	file, err := NewFileRelTo(f.root, f.root)
-	// 	if err != nil {
-	// 		if pdOpt.isTrace {
-	// 			paw.Logger.Error(err)
-	// 		}
-	// 		return err
-	// 	}
-	// 	f.AddFile(file)
-	// 	if file.IsLink() {
-	// 		f.root = file.LinkPath()
-	// 		f.gitstatus, _ = GetShortGitStatus(f.root)
-	// 		f.depth = depth
-	// 	}
-	// 	err = osReadDir(f, f.root)
-	// 	if err != nil {
-	// 		return fmt.Errorf("find files: %s", err.Error())
-	// 	}
-	// 	// fpWalk
-	// 	// file, errf := NewFileRelTo(f.root, f.root)
-	// 	// if errf != nil {
-	// 	// 	if pdOpt.isTrace {
-	// 	// 		paw.Logger.Error(errf)
-	// 	// 	}
-	// 	// 	f.AddError(f.root, errf)
-	// 	// 	return errf
-	// 	// }
-	// 	// if file.IsLink() {
-	// 	// 	f.root = file.LinkPath()
-	// 	// 	f.gitstatus, _ = GetShortGitStatus(f.root)
-	// 	// 	f.depth = depth
-	// 	// }
-
-	// 	// err := fpWalk(f)
-	// 	// if err != nil {
-	// 	// 	return fmt.Errorf("find files: %s", err.Error())
-	// 	// }
-	// }
 
 	if f.IsSort {
 		f.Sort()

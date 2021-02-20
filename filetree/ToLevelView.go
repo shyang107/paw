@@ -2,9 +2,11 @@ package filetree
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/shyang107/paw"
+	"github.com/sirupsen/logrus"
 )
 
 // ToLevelViewBytes will return the []byte of FileList in table form
@@ -69,11 +71,11 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 				if f.depth != 0 {
 					// level := len(fm[dir][0].DirSlice()) - 1
 					thisDir := fm[dir][0]
-					level := len(thisDir.GetUpDir().DirSlice())
-					slevel := cNop.Sprintf("L%d: ", level)
+					level := len(thisDir.DirSlice()) - 1
 					ppad += paw.Spaces(3 * level)
-					cistr := slevel + cdip.Sprintf("G%-[1]*[2]d", wdidx, i) + " "
-					pipad := ppad + cistr
+					pipad := ppad +
+						cNop.Sprintf("L%d: ", level) +
+						cdip.Sprintf("G%-[1]*[2]d ", wdidx, i)
 					fmt.Fprint(w, thisDir.DirNameWrapC(pipad, wdstty))
 					f.FprintErrs(w, dir, ppad)
 				}
@@ -81,7 +83,7 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		} else {
 			continue
 		}
-
+		checkWidth(fds.MetaHeadsStringWidth(), wdstty-paw.StringWidth(ppad))
 		fds.ModifyWidth(f, wdstty-paw.StringWidth(ppad))
 
 		fds.PrintHeadRow(w, ppad)
@@ -122,4 +124,19 @@ END:
 	fmt.Fprintln(f.Writer(), str)
 
 	return str
+}
+
+func checkWidth(wdMeta, wdstty int) {
+	wdname := wdstty - wdMeta
+	if wdname < 10 {
+		if pdOpt.isTrace {
+			paw.Logger.WithFields(logrus.Fields{
+				"wdname": wdname,
+				"wdMeta": wdMeta,
+				"wdstty": wdstty,
+			}).Errorf("width of Name field is too short.")
+		}
+		paw.Error.Printf("width (%d) of Name field is too short.", wdname)
+		os.Exit(1)
+	}
 }

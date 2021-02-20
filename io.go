@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -144,8 +143,8 @@ func GenMd5(fullPath string) string {
 	if _, err := io.Copy(h, f); err != nil {
 		log.Fatal(err)
 	}
-
-	return hex.EncodeToString(h.Sum(nil))
+	return fmt.Sprintf("%x", h.Sum(nil))
+	// return hex.EncodeToString(h.Sum(nil))
 }
 
 // GenMd5sh will generate md5 string of file (path)
