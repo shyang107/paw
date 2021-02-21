@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -1123,4 +1124,40 @@ func wghandleFiles(f *FileList, dirPath string, files []string) {
 		go wghandleFiles(f, dirPath, files[nf/2:])
 	}
 	// }
+}
+
+func fpWalkDir(f *FileList) {
+	root := f.root
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		skip := false
+		file, errf := NewFileRelTo(path, root)
+		if errf != nil {
+			paw.Logger.Error(errf)
+			f.AddError(path, errf)
+			// return nil
+			skip = true
+		}
+		idepth := len(file.DirSlice()) - 1
+		if !skip && f.depth > 0 {
+			if idepth > f.depth {
+				skip = true
+			}
+		}
+		if err1 := f.ignore(file, errf); !skip && err1 == SkipThis {
+			skip = true
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+		}
+		if !skip {
+			f.AddFile(file)
+		}
+		return nil
+	})
+
+	if err != nil {
+		f.AddError(root, err)
+		paw.Logger.Error(err)
+		paw.Error.Fatal(err)
+	}
 }

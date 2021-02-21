@@ -252,9 +252,10 @@ func (f *File) LinkPathC() string {
 		lkfile, err := NewFile(link)
 		if err != nil {
 			dir, name := filepath.Split(link)
-			return cdirp.Sprint(dir) + corp.Sprint(name)
+			return cdirp.Sprint(dir+"/") + corp.Sprint(name)
 		}
-		return cdirp.Sprint(lkfile.Dir) + lkfile.BaseNameC()
+		return cdirp.Sprint(lkfile.Dir+"/") + lkfile.BaseNameC()
+
 	}
 	return ""
 }
