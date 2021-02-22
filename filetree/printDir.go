@@ -74,7 +74,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 		)
 		if pdOpt.Depth != 0 {
 			for _, path := range pdOpt.Paths {
-				fi, err := os.Stat(path)
+				fi, err := os.Lstat(path)
 				if err != nil {
 					if pdOpt.isTrace {
 						paw.Logger.Error(err)

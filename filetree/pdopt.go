@@ -156,8 +156,8 @@ func (p *PrintDirOption) ConfigFilter() {
 				}
 				if f.IsDir() {
 					nfiles := 0
-					filepath.WalkDir(f.Path, func(path string, de fs.DirEntry, err error) error {
-						if !de.IsDir() {
+					filepath.WalkDir(f.Path, func(path string, d fs.DirEntry, err error) error {
+						if !d.IsDir() {
 							nfiles++
 						}
 						return nil
@@ -188,14 +188,14 @@ func (p *PrintDirOption) ConfigFilter() {
 						return SkipThis
 					}
 					nfiles := 0
-					filepath.WalkDir(f.Path, func(path string, de fs.DirEntry, err error) error {
+					filepath.WalkDir(f.Path, func(path string, d fs.DirEntry, err error) error {
 						idepth := len(strings.Split(strings.Replace(path, p.Root, ".", 1), PathSeparator)) - 1
 						if p.Depth > 0 {
 							if idepth > p.Depth {
 								return SkipThis
 							}
 						}
-						if !de.IsDir() {
+						if !d.IsDir() {
 							nfiles++
 						}
 						return nil
@@ -213,8 +213,8 @@ func (p *PrintDirOption) ConfigFilter() {
 				}
 				if f.IsDir() {
 					nfiles := 0
-					filepath.WalkDir(f.Path, func(path string, de fs.DirEntry, err error) error {
-						if !de.IsDir() {
+					filepath.WalkDir(f.Path, func(path string, d fs.DirEntry, err error) error {
+						if !d.IsDir() {
 							nfiles++
 						}
 						return nil
@@ -445,6 +445,8 @@ func (s PDSortFlag) String() string {
 }
 func (s PDSortFlag) By() FilesBy {
 	switch s {
+	case PDSortReverse:
+		return byNameR
 	case PDSortByINode: // PDSort | pdSortKeyINode
 		return byINode
 	case PDSortByINodeR: // PDSortByINode | PDSortReverse

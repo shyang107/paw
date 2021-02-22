@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -213,12 +214,16 @@ func (f *FileList) ConfigGit() {
 		fd := fm[0]
 		drp := fd.RelPath
 		isMarkIgnored := false
+		isUntracked := false
 		if xy, ok := gs[drp]; ok {
 			if isXY(xy, GitIgnored) {
 				isMarkIgnored = true
 			}
+			if isXY(xy, GitUntracked) {
+				isUntracked = true
+			}
 		}
-		if isMarkIgnored {
+		if isMarkIgnored || isUntracked {
 			for _, file := range fm[1:] {
 				rp := file.RelPath
 				// 1. continue...
@@ -311,12 +316,12 @@ func (f *FileList) GetGitStatus() *GitStatus {
 
 // GitXY will retun git XY status of FileList
 func (f *FileList) GitXY(relpath string) string {
-	return f.GetGitStatus().XY(relpath)
+	return f.git.XY(relpath)
 }
 
 // GitXY will retun git colorful XY status of FileList
 func (f *FileList) GitXYc(relpath string) string {
-	return f.GetGitStatus().XYc(relpath)
+	return f.git.XYc(relpath)
 }
 
 // SetIgnoreFunc set ignore function to FieldList.ignore
@@ -585,7 +590,7 @@ func (f *FileList) GetAllErrorString() string {
 func (f *FileList) FprintErrs(w io.Writer, dirent, pad string) {
 	errmsg := f.GetErrorString(dirent)
 	if len(errmsg) > 0 {
-		if len(pad) == 0 {
+		if len(pad) > 0 {
 			errmsg = paw.PaddingString(errmsg, pad)
 		}
 		fmt.Fprint(w, errmsg)
@@ -614,7 +619,7 @@ func (f *FileList) EnableColor() {
 // SkipThis is used as a return value indicate that the regular path
 // (file or directory) named in the Callback is to be skipped.
 // It is not returned as an error by any function.
-var SkipThis = errors.New("skip this path")
+var SkipThis = errors.New("skip this node")
 
 // IgnoreFn is the type of the function called for each file or directory
 // visited by FindFiles. The f argument contains the File argument to FindFiles.
@@ -662,11 +667,14 @@ func wgosReadDir(f *FileList, dirPath string) {
 
 	des, err := os.ReadDir(dirPath) // openDir.Readdirnames(-1)
 	if err != nil {
-		if pdOpt.isTrace {
-			paw.Logger.Error(err)
+		paw.Logger.Error(err)
+		matchs := repath.FindAllString(err.Error(), -1)
+		path := dirPath
+		if len(matchs) > 0 {
+			path = matchs[0]
 		}
 		f.mux.Lock()
-		f.AddError(dirPath, err)
+		f.AddError(path, err)
 		f.mux.Unlock()
 		// return
 	}
@@ -696,35 +704,41 @@ func wgosrdHandleFiles(f *FileList, dirPath string, des []fs.DirEntry) {
 		path := filepath.Join(dirPath, name)
 		file, err := NewFileRelTo(path, f.root)
 		if err != nil {
-			if pdOpt.isTrace {
-				paw.Logger.Error(err)
-			}
+			paw.Logger.Error(err)
 			f.mux.Lock()
 			f.AddError(path, err)
 			f.mux.Unlock()
 			return
 		}
-		if err := f.ignore(file, nil); err == SkipThis {
+
+		if err := f.ignore(file, nil); !skip && err == SkipThis {
+			if pdOpt.isTrace {
+				f.mux.Lock()
+				f.AddError(file.Path, fmt.Errorf("%s: %q", err, file.Path))
+				f.mux.Unlock()
+			}
 			skip = true
 		}
+
 		idepth := len(file.DirSlice()) - 1
-		if f.depth > 0 {
+		if !skip && f.depth > 0 {
 			if idepth > f.depth {
+				if pdOpt.isTrace {
+					f.mux.Lock()
+					f.AddError(path, fmt.Errorf("The depth (%d) of path > configured depth (%d)  ", f.depth, idepth))
+					f.mux.Unlock()
+				}
 				skip = true
 			}
 		}
+
 		if !skip {
 			f.mux.Lock()
 			f.AddFile(file)
 			f.mux.Unlock()
-			if f.depth != 0 {
-				if file.IsDir() {
-					if skip {
-						return
-					}
-					wg.Add(1)
-					go wgosReadDir(f, path)
-				}
+			if file.IsDir() {
+				wg.Add(1)
+				go wgosReadDir(f, path)
 			}
 		}
 	} else {
@@ -734,13 +748,18 @@ func wgosrdHandleFiles(f *FileList, dirPath string, des []fs.DirEntry) {
 	}
 }
 
+var repath = regexp.MustCompile(`(/.+/[^:]+?)`)
+
 func osReadDir(f *FileList, dirPath string) {
 	des, err := os.ReadDir(dirPath) //odir.ReadDir(-1) //odir.Readdirnames(-1)
 	if err != nil {
-		if pdOpt.isTrace {
-			paw.Logger.Error(err)
+		paw.Logger.Error(err)
+		matchs := repath.FindAllString(err.Error(), -1)
+		path := dirPath
+		if len(matchs) > 0 {
+			path = matchs[0]
 		}
-		f.AddError(dirPath, err)
+		f.AddError(path, err)
 		// return
 	}
 	if len(des) > 0 {
@@ -760,30 +779,32 @@ func osrdHandleFiles(f *FileList, dirPath string, des []fs.DirEntry) {
 		path := filepath.Join(dirPath, de.Name())
 		file, err := NewFileRelTo(path, f.root)
 		if err != nil {
-			if pdOpt.isTrace {
-				paw.Logger.Error(err)
-			}
+			paw.Logger.Error(err)
 			f.AddError(path, err)
 			continue
 		}
+
 		if err := f.ignore(file, nil); err == SkipThis {
+			if pdOpt.isTrace {
+				f.AddError(file.Path, fmt.Errorf("%s: %q", err, file.Path))
+			}
 			skip = true
 		}
+
 		idepth := len(file.DirSlice()) - 1
-		if f.depth > 0 {
+		if !skip && f.depth > 0 {
 			if idepth > f.depth {
+				if pdOpt.isTrace {
+					f.AddError(file.Path, fmt.Errorf("The depth (%d) of path > configured depth (%d)  ", f.depth, idepth))
+				}
 				skip = true
 			}
 		}
+
 		if !skip {
 			f.AddFile(file)
-			if f.depth != 0 {
-				if de.IsDir() {
-					if skip {
-						return
-					}
-					osReadDir(f, path)
-				}
+			if de.IsDir() {
+				osReadDir(f, path)
 			}
 		}
 	}
@@ -807,9 +828,8 @@ func (f *FileList) FindFiles(depth int) error {
 	f.depth = depth
 	file, err := NewFileRelTo(f.root, f.root)
 	if err != nil {
-		if pdOpt.isTrace {
-			paw.Logger.Error(err)
-		}
+		paw.Logger.Error(err)
+		f.AddError(f.root, err)
 		return err
 	}
 	f.AddFile(file)
@@ -827,12 +847,13 @@ func (f *FileList) FindFiles(depth int) error {
 	} else {
 		paw.Logger.Trace("finding files starts..." + paw.Caller(1))
 		osReadDir(f, f.root)
+		// fpWalkDir(f)
+		// gdWalk(f)
 	}
 
 	if f.IsSort {
 		f.Sort()
 	}
-
 	return nil
 }
 

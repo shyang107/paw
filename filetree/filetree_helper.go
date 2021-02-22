@@ -322,8 +322,8 @@ func GetFileLSColor(file *File) *color.Color {
 	}
 
 	if file.IsLink() { // os.ModeSymlink
-		lpath := file.LinkPath()
-		if _, err := os.Lstat(lpath); os.IsNotExist(err) {
+		_, err := os.Readlink(file.Path)
+		if err != nil {
 			return paw.NewLSColor("or")
 		}
 		return clnp
@@ -855,15 +855,13 @@ func gpScanDir(f *FileList, dirPath string) error {
 	for dirScan.Scan() {
 		de, err := dirScan.Dirent()
 		if err != nil {
-			if pdOpt.isTrace {
-				flerr := newFileListError(filepath.Join(f.root, de.Name()), err, f.root)
-				paw.Logger.WithFields(logrus.Fields{
-					"path": flerr.path,
-					// "dir":      flerr.dir,
-					// "basename": flerr.basename,
-					// "err":      flerr.err,
-				}).Error(err)
-			}
+			flerr := newFileListError(filepath.Join(f.root, de.Name()), err, f.root)
+			paw.Logger.WithFields(logrus.Fields{
+				"path": flerr.path,
+				// "dir":      flerr.dir,
+				// "basename": flerr.basename,
+				// "err":      flerr.err,
+			}).Error(err)
 			f.AddError(filepath.Join(f.root, de.Name()), err)
 			continue
 		}
@@ -894,9 +892,7 @@ func fpWalk(f *FileList) error {
 		skip := false
 		file, errf := NewFileRelTo(path, f.root)
 		if errf != nil {
-			if pdOpt.isTrace {
-				paw.Logger.Error(errf)
-			}
+			paw.Logger.Error(errf)
 			f.AddError(path, errf)
 			return nil
 		}
@@ -928,19 +924,20 @@ func gdWalk(f *FileList) error {
 		Callback: func(path string, de *godirwalk.Dirent) error {
 			file, errf := NewFileRelTo(path, f.root)
 			if errf != nil {
-				if pdOpt.isTrace {
-					paw.Logger.Error(errf)
-				}
+				paw.Logger.Error(errf)
+				f.AddError(path, errf)
 				return godirwalk.SkipThis
 			}
 			skip := false
 			idepth := len(strings.Split(strings.Replace(path, f.root, ".", 1), PathSeparator)) - 1
 			if f.depth > 0 {
 				if idepth > f.depth {
+					f.AddError(path, fmt.Errorf("The depth (%d) of path > configured depth (%d)  ", f.depth, idepth))
 					skip = true
 				}
 			}
 			if err1 := f.ignore(file, errf); err1 == SkipThis {
+				f.AddError(path, err1)
 				skip = true
 			}
 			if !skip {
@@ -949,12 +946,7 @@ func gdWalk(f *FileList) error {
 			return nil
 		},
 		ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
-			// paw.Logger.Errorf("ERROR: %s\n", err)
-			// paw.Error.Printf("ERROR: %s\n", err)
-			// if pdOpt.isTrace {
-			// 	paw.Logger.WithField("path", osPathname).Error(err)
-			// }
-			// For the purposes of this example, a simple SkipNode will suffice, although in reality perhaps additional logic might be called for.
+			f.AddError(osPathname, err)
 			return godirwalk.SkipNode
 		},
 		FollowSymbolicLinks: true,
@@ -968,21 +960,17 @@ func gdWalk(f *FileList) error {
 }
 
 func osReaddirnames(f *FileList, dirPath string) {
-	openDir, err := os.Open(dirPath)
+	opdir, err := os.Open(dirPath)
 	if err != nil {
-		if pdOpt.isTrace {
-			paw.Logger.Error(err)
-		}
+		paw.Logger.Error(err)
 		f.AddError(dirPath, err)
-		return
+		// return
 	}
-	defer openDir.Close()
+	defer opdir.Close()
 
-	files, err := openDir.Readdirnames(-1)
+	files, err := opdir.Readdirnames(-1)
 	if err != nil {
-		if pdOpt.isTrace {
-			paw.Logger.Error(err)
-		}
+		paw.Logger.Error(err)
 		f.AddError(dirPath, err)
 		// return
 	}
@@ -1003,30 +991,26 @@ func handleFiles(f *FileList, dirPath string, files []string) {
 		path := filepath.Join(dirPath, name)
 		file, err := NewFileRelTo(path, f.root)
 		if err != nil {
-			if pdOpt.isTrace {
-				paw.Logger.Error(err)
-			}
+			paw.Logger.Error(err)
+			// f.AddError(path, err)
 			f.AddError(path, err)
 			continue
 		}
 		if err := f.ignore(file, nil); err == SkipThis {
+			f.AddError(file.Path, err)
 			skip = true
 		}
 		idepth := len(file.DirSlice()) - 1
 		if f.depth > 0 {
 			if idepth > f.depth {
+				f.AddError(path, fmt.Errorf("The depth (%d) of path > configured depth (%d)  ", f.depth, idepth))
 				skip = true
 			}
 		}
 		if !skip {
 			f.AddFile(file)
-			if f.depth != 0 {
-				if file.IsDir() {
-					if skip {
-						return
-					}
-					osReaddirnames(f, path)
-				}
+			if f.depth != 0 && file.IsDir() {
+				osReaddirnames(f, path)
 			}
 		}
 	}
@@ -1053,9 +1037,7 @@ func wgosReaddirnames(f *FileList, dirPath string) {
 
 	files, err := openDir.Readdirnames(-1)
 	if err != nil {
-		if pdOpt.isTrace {
-			paw.Logger.Error(err)
-		}
+		paw.Logger.Error(err)
 		f.mux.Lock()
 		f.AddError(dirPath, err)
 		f.mux.Unlock()
@@ -1127,10 +1109,21 @@ func wghandleFiles(f *FileList, dirPath string, files []string) {
 }
 
 func fpWalkDir(f *FileList) {
-	root := f.root
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(f.root, func(path string, d fs.DirEntry, err error) error {
 		skip := false
-		file, errf := NewFileRelTo(path, root)
+		if err != nil {
+			paw.Logger.Error(err)
+			if d.IsDir() {
+				f.AddError(path, err)
+				err = nil
+			} else {
+				dir, _ := filepath.Split(path)
+				dir = strings.TrimSuffix(dir, PathSeparator)
+				f.AddError(dir, err)
+				skip = true
+			}
+		}
+		file, errf := NewFileRelTo(path, f.root)
 		if errf != nil {
 			paw.Logger.Error(errf)
 			f.AddError(path, errf)
@@ -1156,7 +1149,7 @@ func fpWalkDir(f *FileList) {
 	})
 
 	if err != nil {
-		f.AddError(root, err)
+		f.AddError(f.root, err)
 		paw.Logger.Error(err)
 		paw.Error.Fatal(err)
 	}
