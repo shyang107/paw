@@ -400,7 +400,7 @@ func (f *File) Blocks() uint64 {
 // BlocksC will return a colorful string of numbe of file system blocks of File
 func (f *File) BlocksC() string {
 	if f.IsDir() {
-		return cdap.Sprint("-")
+		return cdashp.Sprint("-")
 	}
 	return cbkp.Sprint(f.Blocks())
 }
