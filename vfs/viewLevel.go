@@ -26,8 +26,6 @@ func (v *VFS) ViewLevel(w io.Writer, fields []ViewField, hasX bool) {
 	cdir, cname := filepath.Split(cur.Path())
 	cdir = cdirp.Sprint(cdir)
 	cname = cdip.Sprint(cname)
-	fmt.Fprintf(w, "Root: %v\n", cdir+cname)
-	fprintBanner(w, "", "=", sttyWidth-2)
 
 	nd, nf := cur.NItems()
 	wdidx := paw.MaxInt(len(fmt.Sprint(nd)), len(fmt.Sprint(nf)))
@@ -35,22 +33,24 @@ func (v *VFS) ViewLevel(w io.Writer, fields []ViewField, hasX bool) {
 	ViewFieldNo.SetWidth(wdidx + 1)
 	fields = append([]ViewField{ViewFieldNo}, fields...)
 
-	head := getPFHeadS(chdp, fields...)
-
-	size := viewLevel(w, cur, head, wdidx, fields, hasX)
-
-	fprintBanner(w, "", "=", sttyWidth-2)
-	fprintTotalSummary(w, "", nd, nf, size, sttyWidth-2)
+	viewLevel(w, cur, wdidx, fields, hasX)
 }
 
-func viewLevel(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField, hasX bool) (totalsize int64) {
+func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) {
 	var (
-		wdstty   = sttyWidth - 2
-		tnd, tnf = cur.NItems()
-		nitems   = tnd + tnf
-		nd, nf   int
-		wdmeta   = 0
+		wdstty    = sttyWidth - 2
+		tnd, tnf  = cur.NItems()
+		nitems    = tnd + tnf
+		nd, nf    int
+		wdmeta    = 0
+		roothead  = getRootHeadC(cur, wdstty)
+		head      = getPFHeadS(chdp, fields...)
+		totalsize int64
 	)
+
+	fmt.Fprintf(w, "%v\n", roothead)
+	fprintBanner(w, "", "=", wdstty)
+
 	if hasX {
 		for _, fd := range fields {
 			if fd&ViewFieldName == ViewFieldName {
@@ -99,39 +99,25 @@ func viewLevel(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField
 		}
 
 		fmt.Fprintf(w, "%s%v\n", pad, head)
-		for _, child := range des {
-			f, isFile := child.(*File)
-			if isFile {
-				// (*nf)++
+		for _, de := range des {
+			var sidx string
+			if de.IsFile() {
 				nf++
 				curnf++
-				size += f.Size()
-				sidx := fmt.Sprintf("F%-[1]*[2]d", wdidx, nf)
-				ViewFieldNo.SetValue(sidx)
-
-				fmt.Fprintf(w, "%s", pad)
-				for _, field := range fields {
-					fmt.Fprintf(w, "%v ", f.FieldC(field))
-				}
-				fmt.Println()
-				if hasX {
-					fprintXattrs(w, wdpad+wdmeta, f.Xattibutes())
-				}
+				size += de.Size()
 			} else {
 				nd++
 				curnd++
-				d := child.(*Dir)
-				sidx := fmt.Sprintf("D%-[1]*[2]d", wdidx, nd)
-				ViewFieldNo.SetValue(sidx)
-
-				fmt.Fprintf(w, "%s", pad)
-				for _, field := range fields {
-					fmt.Fprintf(w, "%v ", d.FieldC(field))
-				}
-				fmt.Println()
-				if hasX {
-					fprintXattrs(w, wdpad+wdmeta, d.Xattibutes())
-				}
+				sidx = fmt.Sprintf("D%-[1]*[2]d", wdidx, nd)
+			}
+			ViewFieldNo.SetValue(sidx)
+			fmt.Fprintf(w, "%s", pad)
+			for _, field := range fields {
+				fmt.Fprintf(w, "%v ", de.FieldC(field))
+			}
+			fmt.Println()
+			if hasX {
+				fprintXattrs(w, wdpad+wdmeta, de.Xattibutes())
 			}
 		}
 		totalsize += size
@@ -140,51 +126,7 @@ func viewLevel(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField
 			fprintBanner(w, "", "-", wdstty)
 		}
 	}
-	return totalsize
+
+	fprintBanner(w, "", "=", wdstty)
+	fprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
 }
-
-// func levelView(w io.Writer, cur *Dir, root, head string, level, wdidx int, fields []PDFieldFlag, nd, nf *int) {
-// 	des, _ := cur.ReadDir(-1)
-// 	cur.resetIdx()
-// 	if len(des) == 0 {
-// 		return
-// 	}
-// 	pad := paw.Spaces(level * 3)
-
-// 	cdir, cname := filepath.Split(cur.RelPath())
-// 	cdir = cdirp.Sprint(cdir)
-// 	cname = cdip.Sprint(cname)
-// 	fmt.Fprintf(w, "%sL%d: %v\n", pad, level, cdir+cname)
-// 	fmt.Fprintf(w, "%s%#v\n", pad, cur.rdirs)
-
-// 	fmt.Fprintf(w, "%s%v\n", pad, head)
-
-// 	if len(cur.errors) > 0 {
-// 		cur.FprintErrors(os.Stderr, pad)
-// 	}
-// 	for _, child := range des {
-// 		f, isFile := child.(*File)
-// 		if isFile {
-// 			(*nf)++
-// 			sidx := cfip.Sprintf("F%-[1]*[2]d", wdidx, *nf)
-// 			fmt.Fprintf(w, "%s%s ", pad, sidx)
-// 			for _, field := range fields {
-// 				fmt.Fprintf(w, "%v ", f.FieldC(field, nil))
-// 			}
-// 			fmt.Println()
-// 		} else {
-// 			(*nd)++
-// 			sidx := cdip.Sprintf("D%-[1]*[2]d", wdidx, *nd)
-// 			d := child.(*Dir)
-// 			fmt.Fprintf(w, "%s%s ", pad, sidx)
-// 			for _, field := range fields {
-// 				fmt.Fprintf(w, "%v ", d.FieldC(field, nil))
-// 			}
-// 			fmt.Println()
-// 			// ndd, nff := d.NItems()
-// 			if len(cur.rdirs) > 0 {
-// 				levelView(w, d, root, head, level+1, wdidx, fields, nd, nf)
-// 			}
-// 		}
-// 	}
-// }

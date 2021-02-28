@@ -49,6 +49,6 @@ type DirEntryX interface {
 	IsExecAll() bool
 	IsExecutable() bool
 	WidthOf(ViewField) int
-	// Field(ViewField, *GitStatus) string
-	// FieldC(ViewField, *GitStatus)
+	Field(ViewField) string
+	FieldC(ViewField) string
 }

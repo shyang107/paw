@@ -39,48 +39,48 @@ var (
 		EdgeTypeMid:  3,
 		EdgeTypeEnd:  3,
 	}
-	currentuser, _  = user.Current()
-	urname          = currentuser.Username
-	usergp, _       = user.LookupGroupId(currentuser.Gid)
-	gpname          = usergp.Name
-	curname         = cuup.Sprint(urname)
-	cgpname         = cgup.Sprint(gpname)
-	now             = time.Now()
-	thisYear        = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local)
-	SpaceIndentSize = paw.Spaces(IndentSize)
-	chdp            = paw.Chdp  // head
-	cdirp           = paw.Cdirp // pre-dir part of path
-	cdip            = paw.Cdip  // directory
-	cfip            = paw.Cfip  // file
-	corp            = paw.Corp  // orphan file
-	cNop            = paw.CNop  // serial number
-	cinp            = paw.Cinp  // inode
-	cpms            = paw.Cpms  // permission
-	csnp            = paw.Csnp  // size number
-	csup            = paw.Csup  // size unit
-	cuup            = paw.Cuup  // user
-	cgup            = paw.Cgup  // group
-	cunp            = paw.Cunp  // user is not you
-	cgnp            = paw.Cgnp  // group without you
-	clkp            = paw.Clkp  // symlink
-	cbkp            = paw.Cbkp  // blocks
-	cdap            = paw.Cdap  // date
-	cgitp           = paw.Cgitp // git
-	cmd5p           = paw.Cmd5p // md5
-	cxap            = paw.Cxap  // extended attributes
-	cxbp            = paw.Cxbp  // extended attributes
-	cdashp          = paw.Cdashp
-	cnop            = paw.CNop    // no this file kind
-	cbdp            = paw.Cbdp    // device
-	ccdp            = paw.Ccdp    // CharDevice
-	cpip            = paw.Cpip    // named pipe
-	csop            = paw.Csop    // socket
-	cexp            = paw.Cexp    // execution
-	clnp            = paw.Clnp    // symlink
-	cpmpt           = paw.Cpmpt   // prompt
-	cpmptSn         = paw.CpmptSn // number in prompt
-	cpmptSu         = paw.CpmptSu // unit in prompt
-
+	currentuser, _        = user.Current()
+	urname                = currentuser.Username
+	usergp, _             = user.LookupGroupId(currentuser.Gid)
+	gpname                = usergp.Name
+	curname               = cuup.Sprint(urname)
+	cgpname               = cgup.Sprint(gpname)
+	now                   = time.Now()
+	thisYear              = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local)
+	SpaceIndentSize       = paw.Spaces(IndentSize)
+	chdp                  = paw.Chdp  // head
+	cdirp                 = paw.Cdirp // pre-dir part of path
+	cdip                  = paw.Cdip  // directory
+	cfip                  = paw.Cfip  // file
+	corp                  = paw.Corp  // orphan file
+	cNop                  = paw.CNop  // serial number
+	cinp                  = paw.Cinp  // inode
+	cpms                  = paw.Cpms  // permission
+	csnp                  = paw.Csnp  // size number
+	csup                  = paw.Csup  // size unit
+	cuup                  = paw.Cuup  // user
+	cgup                  = paw.Cgup  // group
+	cunp                  = paw.Cunp  // user is not you
+	cgnp                  = paw.Cgnp  // group without you
+	clkp                  = paw.Clkp  // symlink
+	cbkp                  = paw.Cbkp  // blocks
+	cdap                  = paw.Cdap  // date
+	cgitp                 = paw.Cgitp // git
+	cmd5p                 = paw.Cmd5p // md5
+	cxap                  = paw.Cxap  // extended attributes
+	cxbp                  = paw.Cxbp  // extended attributes
+	cdashp                = paw.Cdashp
+	cnop                  = paw.CNop    // no this file kind
+	cbdp                  = paw.Cbdp    // device
+	ccdp                  = paw.Ccdp    // CharDevice
+	cpip                  = paw.Cpip    // named pipe
+	csop                  = paw.Csop    // socket
+	cexp                  = paw.Cexp    // execution
+	clnp                  = paw.Clnp    // symlink
+	cpmpt                 = paw.Cpmpt   // prompt
+	cpmptSn               = paw.CpmptSn // number in prompt
+	cpmptSu               = paw.CpmptSu // unit in prompt
+	bgpmpt                = []color.Attribute{48, 5, 236}
 	ctrace                = paw.Ctrace
 	cdebug                = paw.Cdebug
 	cinfo                 = paw.Cinfo
@@ -95,12 +95,6 @@ var (
 
 func nameC(de DirEntryX) string {
 	return de.LSColor().Sprint(de.Name())
-	// if !de.IsDir() {
-	// 	return f.LSColor().Sprint(f.Name())
-	// }
-
-	// d, _ := de.(*Dir)
-	// return cdip.Sprint(d.Name())
 }
 
 func linkC(de DirEntryX) string {
@@ -115,19 +109,6 @@ func linkC(de DirEntryX) string {
 		return cdirp.Sprint(dir) + paw.FileLSColor(link).Sprint(name)
 	}
 	return ""
-	// f, isFile := de.(*File)
-	// if isFile && f.IsLink() {
-	// 	link := f.LinkPath()
-	// 	_, err := os.Stat(link)
-	// 	if err != nil {
-	// 		dir, name := filepath.Split(link)
-	// 		return cdirp.Sprint(dir+"/") + corp.Sprint(name)
-	// 	}
-	// 	dir, name := filepath.Split(link)
-	// 	return cdirp.Sprint(dir) + paw.FileLSColor(link).Sprint(name)
-
-	// }
-	// return ""
 }
 
 func nameToLinkC(de DirEntryX) string {
@@ -136,24 +117,32 @@ func nameToLinkC(de DirEntryX) string {
 	} else {
 		return nameC(de)
 	}
-	// if !de.IsDir() {
-	// 	if de.IsLink() {
-	// 		return nameC(de) + cdashp.Sprint(" -> ") + linkC(de)
-	// 	} else {
-	// 		return nameC(de)
-	// 	}
-	// }
-	// return cdip.Sprint(de.Name())
+}
 
-	// if !de.IsDir() {
-	// 	f := de.(*File)
-	// 	if f.IsLink() {
-	// 		return nameC(f) + cdashp.Sprint(" -> ") + linkC(f)
-	// 	} else {
-	// 		return nameC(f)
-	// 	}
-	// }
-	// return cdip.Sprint(de.Name())
+func pathToLinkC(de DirEntryX, bgc []color.Attribute) string {
+	if bgc == nil {
+		dir, name := filepath.Split(de.Path())
+		if de.IsLink() {
+			return cdirp.Sprint(dir) + de.LSColor().Sprint(name) + cdashp.Sprint(" -> ") + linkC(de)
+		} else {
+			return cdirp.Sprint(dir) + de.LSColor().Sprint(name)
+		}
+	} else {
+		dir, name := filepath.Split(de.Path())
+		var (
+			ccdirp  = (*cdirp)
+			cnamep  = (*de.LSColor())
+			ccdashp = (*cdashp)
+		)
+		ccdirp.Add(bgc...)
+		cnamep.Add(bgc...)
+		ccdashp.Add(bgc...)
+		if de.IsLink() {
+			return ccdirp.Sprint(dir) + cnamep.Sprint(name) + ccdashp.Sprint(" -> ") + pathToLinkC(de, bgc)
+		} else {
+			return ccdirp.Sprint(dir) + cnamep.Sprint(name)
+		}
+	}
 }
 
 func iNodeC(de DirEntryX) string {
@@ -265,13 +254,6 @@ func sizeS(de DirEntryX) string {
 	} else {
 		return "-"
 	}
-	// f, isFile := de.(*File)
-	// if isFile && f.Mode().IsRegular() {
-	// 	return bytefmt.ByteSize(uint64(f.Size()))
-	// 	// return paw.FillLeft(bytefmt.ByteSize(uint64(f.Size())), 6)
-	// } else {
-	// 	return "-"
-	// }
 }
 
 func sizeC(de DirEntryX) (csize string) {
@@ -379,56 +361,6 @@ func deLSColor(de DirEntryX) *color.Color {
 	}
 
 	return cfip
-	// _, isDir := de.(*Dir)
-	// if isDir {
-	// 	return cdip
-	// }
-
-	// file, _ := de.(*File)
-
-	// if file.IsLink() { // os.ModeSymlink
-	// 	_, err := os.Readlink(file.Path())
-	// 	if err != nil {
-	// 		return paw.NewLSColor("or")
-	// 	}
-	// 	return clnp
-	// }
-
-	// if file.IsCharDev() { // os.ModeDevice | os.ModeCharDevice
-	// 	return ccdp
-	// }
-
-	// if file.IsDev() { //
-	// 	return cbdp
-	// }
-
-	// if file.IsFIFO() { //os.ModeNamedPipe
-	// 	return cpip
-	// }
-	// if file.IsSocket() { //os.ModeSocket
-	// 	return csop
-	// }
-
-	// if file.IsExecutable() && !file.IsDir() {
-	// 	return cexp
-	// }
-
-	// name := file.Name()
-	// if att, ok := paw.LSColors[name]; ok {
-	// 	return color.New(att...)
-	// }
-	// ext := filepath.Ext(name)
-	// if att, ok := paw.LSColors[ext]; ok {
-	// 	return color.New(att...)
-	// }
-
-	// for re, att := range paw.ReExtLSColors {
-	// 	if re.MatchString(name) {
-	// 		return color.New(att...)
-	// 	}
-	// }
-
-	// return cfip
 }
 
 func aligned(field ViewField, value interface{}) string {
@@ -575,8 +507,9 @@ func getRootHeadC(de DirEntryX, wdstty int) string {
 	// 		root = pdOpt.File.Path
 	// 	}
 	// }
+	// "prompt":   {38, 5, 251, 48, 5, 236}
 	chead := cpmpt.Sprint("Root directory: ")
-	chead += nameToLinkC(de)
+	chead += pathToLinkC(de, bgpmpt)
 	chead += cpmpt.Sprint(", size ≈ ")
 	chead += cpmptSn.Sprint(sn) + cpmptSu.Sprint(su)
 	chead += cpmpt.Sprint(".")
