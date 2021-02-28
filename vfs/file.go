@@ -375,7 +375,7 @@ func (f *File) IsExecutable() bool {
 }
 
 // Field returns the specified value of File according to ViewField
-func (f *File) Field(field ViewField, git *GitStatus) string {
+func (f *File) Field(field ViewField) string {
 	switch field {
 	case ViewFieldNo:
 		return fmt.Sprint(field.Value())
@@ -414,11 +414,9 @@ func (f *File) Field(field ViewField, git *GitStatus) string {
 	}
 }
 
-var _value interface{}
-
 // FieldC returns the specified colorful value of File according to ViewField
-func (f *File) FieldC(field ViewField, git *GitStatus) string {
-	value := aligned(field, f.Field(field, git))
+func (f *File) FieldC(field ViewField) string {
+	value := aligned(field, f.Field(field))
 	switch field {
 	case ViewFieldNo:
 		return aligned(field, cfip.Sprint(field.Value()))
@@ -427,14 +425,14 @@ func (f *File) FieldC(field ViewField, git *GitStatus) string {
 	case ViewFieldSize:
 		if f.IsCharDev() || f.IsDev() {
 			major, minor := f.DevNumber()
-			wdmajor := ViewFieldWidths[_ViewFieldMajor]
-			wdminor := ViewFieldWidths[_ViewFieldMinor]
+			wdmajor := _ViewFieldMajor.Width()
+			wdminor := _ViewFieldMinor.Width()
 			csj := csnp.Sprintf("%[1]*[2]v", wdmajor, major)
 			csn := csnp.Sprintf("%[1]*[2]v", wdminor, minor)
 			cdev := csj + cdirp.Sprint(",") + csn
 			wdev := wdmajor + wdminor + 1 //len(paw.StripANSI(cdev))
-			if wdev < ViewFieldWidths[field] {
-				cdev = csj + cdirp.Sprint(",") + paw.Spaces(ViewFieldWidths[field]-wdev) + csn
+			if wdev < field.Width() {
+				cdev = csj + cdirp.Sprint(",") + paw.Spaces(field.Width()-wdev) + csn
 			}
 			return cdev
 		} else {
@@ -462,7 +460,6 @@ func (f *File) FieldC(field ViewField, git *GitStatus) string {
 		return aligned(field, f.git.XYc(f.RelPath()))
 	case ViewFieldName:
 		return nameToLinkC(f)
-		// return f.LSColor().Sprint(f.Name())
 	default:
 		return field.Color().Sprint(value)
 	}
@@ -476,7 +473,7 @@ func (f *File) widthOfSize() (width, wmajor, wminor int) {
 		// width = wmajor + wminor + 1
 		return wmajor + wminor + 1, wmajor, wminor
 	}
-	return len(f.Field(ViewFieldSize, nil)), 0, 0
+	return len(f.Field(ViewFieldSize)), 0, 0
 }
 
 // WidthOf returns width of string of field
@@ -492,7 +489,7 @@ func (f *File) WidthOf(field ViewField) int {
 	case ViewFieldName:
 		w = 0
 	default:
-		w = paw.StringWidth(f.Field(field, nil))
+		w = paw.StringWidth(f.Field(field))
 	}
 	return w
 }

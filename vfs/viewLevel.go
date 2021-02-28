@@ -111,7 +111,7 @@ func viewLevel(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField
 
 				fmt.Fprintf(w, "%s", pad)
 				for _, field := range fields {
-					fmt.Fprintf(w, "%v ", f.FieldC(field, nil))
+					fmt.Fprintf(w, "%v ", f.FieldC(field))
 				}
 				fmt.Println()
 				if hasX {
@@ -126,7 +126,7 @@ func viewLevel(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField
 
 				fmt.Fprintf(w, "%s", pad)
 				for _, field := range fields {
-					fmt.Fprintf(w, "%v ", d.FieldC(field, nil))
+					fmt.Fprintf(w, "%v ", d.FieldC(field))
 				}
 				fmt.Println()
 				if hasX {

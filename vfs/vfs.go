@@ -227,14 +227,16 @@ func (v *VFS) View(w io.Writer, fields []ViewField, viewType ViewType) {
 		v.ViewList(w, fields, true)
 	// case ViewTree:
 	// case ViewTreeX:
+	// case ViewListTree:
+	// case ViewListTreeX:
 	case ViewLevel:
 		v.ViewLevel(w, fields, false)
 	case ViewLevelX:
 		v.ViewLevel(w, fields, true)
-		// case ViewTable:
-		// case ViewTableX:
-		// case ViewListTree:
-		// case ViewListTreeX:
+	case ViewTable:
+		v.ViewTable(w, fields, false)
+	case ViewTableX:
+		v.ViewTable(w, fields, true)
 		// case ViewClassify:
 		// default:
 	}

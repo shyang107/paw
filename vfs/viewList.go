@@ -29,13 +29,10 @@ func (v *VFS) ViewList(w io.Writer, fields []ViewField, hasX bool) {
 	fprintBanner(w, "", "=", sttyWidth-2)
 
 	nd, nf := cur.NItems()
-	wdidx := paw.MaxInt(len(fmt.Sprint(nd)), len(fmt.Sprint(nf)))
-
-	ViewFieldNo.SetWidth(wdidx + 1)
 
 	head := getPFHeadS(chdp, fields...)
 
-	size := viewList(w, cur, head, wdidx, fields, hasX)
+	size := viewList(w, cur, head, 0, fields, hasX)
 
 	fprintBanner(w, "", "=", sttyWidth-2)
 	fprintTotalSummary(w, "", nd, nf, size, sttyWidth-2)
@@ -97,12 +94,8 @@ func viewList(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField,
 				nf++
 				curnf++
 				size += f.Size()
-				sidx := fmt.Sprintf("F%-[1]*[2]d", wdidx, nf)
-				ViewFieldNo.SetValue(sidx)
-
-				// fmt.Fprintf(w, "%s", pad)
 				for _, field := range fields {
-					fmt.Fprintf(w, "%v ", f.FieldC(field, nil))
+					fmt.Fprintf(w, "%v ", f.FieldC(field))
 				}
 				fmt.Println()
 				if hasX {
@@ -112,12 +105,8 @@ func viewList(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField,
 				nd++
 				curnd++
 				d := child.(*Dir)
-				sidx := fmt.Sprintf("D%-[1]*[2]d", wdidx, nd)
-				ViewFieldNo.SetValue(sidx)
-
-				// fmt.Fprintf(w, "%s", pad)
 				for _, field := range fields {
-					fmt.Fprintf(w, "%v ", d.FieldC(field, nil))
+					fmt.Fprintf(w, "%v ", d.FieldC(field))
 				}
 				fmt.Println()
 				if hasX {

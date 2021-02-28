@@ -129,7 +129,7 @@ func (d *Dir) Info() (fs.FileInfo, error) {
 }
 
 // ReadDir 實現 fs.ReadDirFile 接口，方便遍歷目錄
-func (d *Dir) ReadDir(n int) ([]fs.DirEntry, error) {
+func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 	names := make([]string, 0, len(d.children))
 	for name := range d.children {
 		names = append(names, name)
@@ -144,7 +144,7 @@ func (d *Dir) ReadDir(n int) ([]fs.DirEntry, error) {
 		n = totalEntry
 	}
 
-	dirEntries := make([]fs.DirEntry, 0, n)
+	dirEntries := make([]DirEntryX, 0, n)
 	for i := d.idx; i < n && i < totalEntry; i++ {
 		name := names[i]
 		child := d.children[name]
@@ -548,6 +548,12 @@ func (d *Dir) FprintErrors(w io.Writer, pad string) {
 	}
 }
 
+func (d *Dir) Errors(pad string) string {
+	sb := new(strings.Builder)
+	d.FprintErrors(sb, pad)
+	return sb.String()
+}
+
 func (d *Dir) resetIdx() {
 	d.idx = 0
 }
@@ -597,8 +603,25 @@ func (d *Dir) RelDir() string {
 // 	return ""
 // }
 
+func (d *Dir) TotalSize() int64 {
+	return calcSize(d)
+}
+
+func calcSize(cur *Dir) (size int64) {
+	for _, de := range cur.children {
+		f, isFile := de.(*File)
+		if isFile {
+			size += f.Size()
+		} else {
+			next := de.(*Dir)
+			size += calcSize(next)
+		}
+	}
+	return size
+}
+
 // Field returns the specified value of File according to ViewField
-func (d *Dir) Field(field ViewField, git *GitStatus) string {
+func (d *Dir) Field(field ViewField) string {
 	switch field {
 	case ViewFieldNo:
 		return fmt.Sprint(field.Value())
@@ -635,8 +658,8 @@ func (d *Dir) Field(field ViewField, git *GitStatus) string {
 }
 
 // FieldC returns the specified colorful value of File according to ViewField
-func (d *Dir) FieldC(field ViewField, git *GitStatus) string {
-	value := aligned(field, d.Field(field, git))
+func (d *Dir) FieldC(field ViewField) string {
+	value := aligned(field, d.Field(field))
 	switch field {
 	case ViewFieldNo:
 		return aligned(field, cdip.Sprint(field.Value()))
@@ -690,7 +713,7 @@ func (d *Dir) WidthOf(field ViewField) int {
 	case ViewFieldName:
 		w = 0
 	default:
-		w = paw.StringWidth(d.Field(field, nil))
+		w = paw.StringWidth(d.Field(field))
 	}
 	return w
 }

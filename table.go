@@ -272,29 +272,40 @@ func (t *TableFormat) getRowString(fields []string) string {
 		nFields = len(fields)
 		widths  = t.LenFields
 		aligns  = t.Aligns
-		// colors  = t.Colors
+		colors  = t.Colors
 		sep     = t.Sep
 		padding = t.Padding
+		// hasXattr = false
 	)
 
 	if t.IsWrapped {
 		goto WRAPFIELDS
 	}
+	// for _, v := range fields {
+	// 	if strings.HasPrefix(v, t.XAttributeSymbol) ||
+	// 		strings.HasPrefix(v, t.XAttributeSymbol2) {
+	// 		hasXattr = true
+	// 		break
+	// 	}
+	// }
 	for i := 0; i < nFields; i++ {
 		v := fields[i]
 		wd := widths[i]
-		// v = GetAbbrString(v, wd, "»")
 		v = Truncate(v, wd, "»")
-		// v = Wrap(v, wd)
-		// nh, na := CountPlaceHolder(v)
 		al := aligns[i]
 		s := t.getAlignString(i, al, wd, v)
-		// if t.IsColorful && colors != nil {
-		// 	sb.WriteString(colors[i].Sprint(s) + sep)
-		// } else {
-		// 	sb.WriteString(s + sep)
-		// }
-		sb.WriteString(s + sep)
+		if t.IsColorful {
+			if t.FieldsColorString != nil &&
+				len(t.FieldsColorString[i]) > 0 {
+				sb.WriteString(t.FieldsColorString[i] + sep)
+			} else if colors != nil {
+				sb.WriteString(colors[i].Sprint(s) + sep)
+			} else {
+				sb.WriteString(s + sep)
+			}
+		} else {
+			sb.WriteString(s + sep)
+		}
 	}
 	str = sb.String()
 	if !t.isAbbrSymbol {
@@ -333,7 +344,8 @@ WRAPFIELDS:
 				}
 			}
 		}
-		for j, wrapfields := range wfields { // jth field
+		for j, wrapfields := range wfields {
+			// jth field
 			v := ""
 			if idx[j] < nlines[j] {
 				v = wrapfields[idx[j]]
@@ -491,7 +503,7 @@ func (t *TableFormat) PrintSart() error {
 	return nil
 }
 
-// PrintHeads print out head line in `t.Writer`
+// PrintHeads print out head line to `t.Writer`
 func (t *TableFormat) PrintHeads() {
 	fcs := t.FieldsColorString
 	cs := t.Colors
@@ -503,7 +515,7 @@ func (t *TableFormat) PrintHeads() {
 	t.Colors = cs
 }
 
-// PrintRow print row into `t.writer`
+// PrintRow print rows to `t.writer`
 func (t *TableFormat) PrintRow(rows ...interface{}) {
 	sRows := make([]string, len(rows))
 	for i, v := range rows {

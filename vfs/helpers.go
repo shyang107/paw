@@ -104,7 +104,7 @@ func nameC(de DirEntryX) string {
 }
 
 func linkC(de DirEntryX) string {
-	if !de.IsDir() && de.IsLink() {
+	if de.IsLink() {
 		link := de.LinkPath()
 		_, err := os.Stat(link)
 		if err != nil {
@@ -131,14 +131,20 @@ func linkC(de DirEntryX) string {
 }
 
 func nameToLinkC(de DirEntryX) string {
-	if !de.IsDir() {
-		if de.IsLink() {
-			return nameC(de) + cdashp.Sprint(" -> ") + linkC(de)
-		} else {
-			return nameC(de)
-		}
+	if de.IsLink() {
+		return nameC(de) + cdashp.Sprint(" -> ") + linkC(de)
+	} else {
+		return nameC(de)
 	}
-	return cdip.Sprint(de.Name())
+	// if !de.IsDir() {
+	// 	if de.IsLink() {
+	// 		return nameC(de) + cdashp.Sprint(" -> ") + linkC(de)
+	// 	} else {
+	// 		return nameC(de)
+	// 	}
+	// }
+	// return cdip.Sprint(de.Name())
+
 	// if !de.IsDir() {
 	// 	f := de.(*File)
 	// 	if f.IsLink() {
@@ -551,6 +557,34 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) 
 	summary += cpmpt.Sprint(paw.Spaces(wdstty + 1 - nsummary))
 	// fmt.Sprintf("%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return summary
+}
+func getRootHeadC(de DirEntryX, wdstty int) string {
+	var size uint64
+	d, isDir := de.(*Dir)
+	if isDir {
+		size = uint64(d.TotalSize())
+	}
+	var (
+		ss  = bytefmt.ByteSize(size)
+		nss = len(ss)
+		sn  = ss[:nss-1] // fmt.Sprintf("%s", ss[:nss-1])
+		su  = strings.ToLower(ss[nss-1:])
+	)
+	// if pdOpt != nil && pdOpt.File != nil {
+	// 	if pdOpt.File.IsLink() {
+	// 		root = pdOpt.File.Path
+	// 	}
+	// }
+	chead := cpmpt.Sprint("Root directory: ")
+	chead += nameToLinkC(de)
+	chead += cpmpt.Sprint(", size ≈ ")
+	chead += cpmptSn.Sprint(sn) + cpmptSu.Sprint(su)
+	chead += cpmpt.Sprint(".")
+
+	chead += cpmpt.Sprint(paw.Spaces(wdstty + 1 - paw.StringWidth(paw.StripANSI(chead))))
+
+	// chead := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, GetColorizedPath(root, ""), GetColorizedSize(size))
+	return chead
 }
 
 func fprintTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize int64, wdstty int) {
