@@ -471,23 +471,22 @@ func childWidths(d *Dir, fields []ViewField) {
 			for _, fd := range fields {
 				if fd&ViewFieldSize == ViewFieldSize {
 					if f.IsCharDev() || f.IsDev() {
-						fmajor := viewFieldWidths[_ViewFieldMajor]
-						fminor := viewFieldWidths[_ViewFieldMinor]
+						fmajor := ViewFieldWidths[_ViewFieldMajor]
+						fminor := ViewFieldWidths[_ViewFieldMinor]
 						major, minor := f.DevNumber()
 						wdmajor := len(fmt.Sprint(major))
 						wdminor := len(fmt.Sprint(minor))
-						viewFieldWidths[_ViewFieldMajor] = paw.MaxInt(fmajor, wdmajor)
-						viewFieldWidths[_ViewFieldMinor] = paw.MaxInt(fminor, wdminor)
-						wdsize := viewFieldWidths[_ViewFieldMajor] + viewFieldWidths[_ViewFieldMinor] + 1
-						wd := viewFieldWidths[fd]
-						viewFieldWidths[fd] = paw.MaxInt(wd, wdsize)
+						ViewFieldWidths[_ViewFieldMajor] = paw.MaxInt(fmajor, wdmajor)
+						ViewFieldWidths[_ViewFieldMinor] = paw.MaxInt(fminor, wdminor)
+						wdsize := ViewFieldWidths[_ViewFieldMajor] + ViewFieldWidths[_ViewFieldMinor] + 1
+						wd := ViewFieldWidths[fd]
+						ViewFieldWidths[fd] = paw.MaxInt(wd, wdsize)
 					}
 				}
 				wd := f.WidthOf(fd)
 				dwd := fd.Width()
 				width := paw.MaxInt(dwd, wd)
-				viewFieldWidths[fd] = width
-
+				ViewFieldWidths[fd] = width
 			}
 		} else {
 			d := c.(*Dir)
@@ -495,7 +494,7 @@ func childWidths(d *Dir, fields []ViewField) {
 				wd := d.WidthOf(fd)
 				dwd := fd.Width()
 				width := paw.MaxInt(dwd, wd)
-				viewFieldWidths[fd] = width
+				ViewFieldWidths[fd] = width
 			}
 			childWidths(d, fields)
 		}

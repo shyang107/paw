@@ -31,8 +31,11 @@ func (v *VFS) LevelView(w io.Writer, fields []ViewField) {
 
 	nd, nf := cur.NItems()
 	wdidx := paw.MaxInt(len(fmt.Sprint(nd)), len(fmt.Sprint(nf)))
-	head := chdp.Sprintf("%[1]*[2]s", wdidx+1, "No") + " "
-	head += getPFHeadS(chdp, fields...)
+
+	ViewFieldNo.SetWidth(wdidx + 1)
+	fields = append([]ViewField{ViewFieldNo}, fields...)
+	// head := chdp.Sprintf("%[1]*[2]s", wdidx+1, "No") + " "
+	head := getPFHeadS(chdp, fields...)
 
 	size := levelView(w, cur, head, wdidx, fields)
 	// var tnd, tnf int
@@ -100,8 +103,11 @@ func levelView(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField
 				nf++
 				curnf++
 				size += f.Size()
-				sidx := cfip.Sprintf("F%-[1]*[2]d", wdidx, nf)
-				fmt.Fprintf(w, "%s%s ", pad, sidx)
+				sidx := fmt.Sprintf("F%-[1]*[2]d", wdidx, nf)
+				ViewFieldNo.SetValue(sidx)
+				// ViewFieldNo.SetColor(cfip)
+				// fmt.Fprintf(w, "%s%s ", pad, sidx)
+				fmt.Fprintf(w, "%s", pad)
 				for _, field := range fields {
 					fmt.Fprintf(w, "%v ", f.FieldC(field, nil))
 				}
@@ -111,8 +117,11 @@ func levelView(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField
 				nd++
 				curnd++
 				d := child.(*Dir)
-				sidx := cdip.Sprintf("D%-[1]*[2]d", wdidx, nd)
-				fmt.Fprintf(w, "%s%s ", pad, sidx)
+				sidx := fmt.Sprintf("D%-[1]*[2]d", wdidx, nd)
+				ViewFieldNo.SetValue(sidx)
+				// ViewFieldNo.SetColor(cdip)
+				// fmt.Fprintf(w, "%s%s ", pad, sidx)
+				fmt.Fprintf(w, "%s", pad)
 				for _, field := range fields {
 					fmt.Fprintf(w, "%v ", d.FieldC(field, nil))
 				}

@@ -377,6 +377,8 @@ func (f *File) IsExecutable() bool {
 // Field returns the specified value of File according to ViewField
 func (f *File) Field(field ViewField, git *GitStatus) string {
 	switch field {
+	case ViewFieldNo:
+		return fmt.Sprint(field.Value())
 	case ViewFieldINode:
 		return fmt.Sprint(f.INode())
 	case ViewFieldPermissions:
@@ -412,23 +414,27 @@ func (f *File) Field(field ViewField, git *GitStatus) string {
 	}
 }
 
+var _value interface{}
+
 // FieldC returns the specified colorful value of File according to ViewField
 func (f *File) FieldC(field ViewField, git *GitStatus) string {
 	value := aligned(field, f.Field(field, git))
 	switch field {
+	case ViewFieldNo:
+		return aligned(field, cfip.Sprint(field.Value()))
 	case ViewFieldPermissions:
 		return aligned(field, permissionC(f))
 	case ViewFieldSize:
 		if f.IsCharDev() || f.IsDev() {
 			major, minor := f.DevNumber()
-			wdmajor := viewFieldWidths[_ViewFieldMajor]
-			wdminor := viewFieldWidths[_ViewFieldMinor]
+			wdmajor := ViewFieldWidths[_ViewFieldMajor]
+			wdminor := ViewFieldWidths[_ViewFieldMinor]
 			csj := csnp.Sprintf("%[1]*[2]v", wdmajor, major)
 			csn := csnp.Sprintf("%[1]*[2]v", wdminor, minor)
 			cdev := csj + cdirp.Sprint(",") + csn
 			wdev := wdmajor + wdminor + 1 //len(paw.StripANSI(cdev))
-			if wdev < viewFieldWidths[field] {
-				cdev = csj + cdirp.Sprint(",") + paw.Spaces(viewFieldWidths[field]-wdev) + csn
+			if wdev < ViewFieldWidths[field] {
+				cdev = csj + cdirp.Sprint(",") + paw.Spaces(ViewFieldWidths[field]-wdev) + csn
 			}
 			return cdev
 		} else {
@@ -486,7 +492,7 @@ func (f *File) WidthOf(field ViewField) int {
 	case ViewFieldName:
 		w = 0
 	default:
-		w = len(f.Field(field, nil))
+		w = paw.StringWidth(f.Field(field, nil))
 	}
 	return w
 }

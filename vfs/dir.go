@@ -600,6 +600,8 @@ func (d *Dir) RelDir() string {
 // Field returns the specified value of File according to ViewField
 func (d *Dir) Field(field ViewField, git *GitStatus) string {
 	switch field {
+	case ViewFieldNo:
+		return fmt.Sprint(field.Value())
 	case ViewFieldINode:
 		return fmt.Sprint(d.INode())
 	case ViewFieldPermissions:
@@ -636,6 +638,8 @@ func (d *Dir) Field(field ViewField, git *GitStatus) string {
 func (d *Dir) FieldC(field ViewField, git *GitStatus) string {
 	value := aligned(field, d.Field(field, git))
 	switch field {
+	case ViewFieldNo:
+		return aligned(field, cdip.Sprint(field.Value()))
 	case ViewFieldPermissions:
 		return aligned(field, permissionC(d))
 	case ViewFieldSize:
@@ -686,7 +690,7 @@ func (d *Dir) WidthOf(field ViewField) int {
 	case ViewFieldName:
 		w = 0
 	default:
-		w = len(d.Field(field, nil))
+		w = paw.StringWidth(d.Field(field, nil))
 	}
 	return w
 }

@@ -38,8 +38,8 @@ const (
 	ViewFieldMd5
 	// ViewFieldName is name field
 	ViewFieldName
-	// ViewFieldNone is non-default field
-	ViewFieldNone
+	// ViewFieldNo is No. field
+	ViewFieldNo
 
 	// ViewFieldDefault useas default fields
 	ViewFieldDefault = ViewFieldPermissions | ViewFieldSize | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldName
@@ -56,32 +56,293 @@ const (
 var (
 	DefaultViewFields = ViewFieldDefault.Fields()
 
-	AllViewFields = ViewFieldAll.Fields()
+	DefaultViewFieldsAll = ViewFieldAll.Fields()
 
-	AllViewFieldsNoGit = ViewFieldAllNoGit.Fields()
+	DefaultViewFieldAllNoGit = ViewFieldAllNoGit.Fields()
 
-	AllViewFieldsNoMd5 = ViewFieldAllNoMd5.Fields()
+	DefaultViewFieldAllNoMd5 = ViewFieldAllNoMd5.Fields()
 
-	AllViewFieldsNoGitMd5 = ViewFieldAllNoGitMd5.Fields()
+	DefaultViewFieldAllNoGitMd5 = ViewFieldAllNoGitMd5.Fields()
 
-	viewFieldWidths = map[ViewField]int{
+	ViewFieldNames = map[ViewField]string{
+		ViewFieldNo:          "No.",
+		ViewFieldINode:       "inode",
+		ViewFieldPermissions: "Permissions",
+		ViewFieldLinks:       "Links",
+		ViewFieldSize:        "Size",
+		ViewFieldBlocks:      "Blocks",
+		ViewFieldUser:        "User",
+		ViewFieldGroup:       "Group",
+		ViewFieldModified:    "Modified",
+		ViewFieldCreated:     "Created",
+		ViewFieldAccessed:    "Accessed",
+		ViewFieldGit:         "Git",
+		ViewFieldMd5:         "md5",
+		ViewFieldName:        "Name",
+	}
+
+	ViewFieldWidths = map[ViewField]int{
+		ViewFieldNo:          3,
 		ViewFieldINode:       5,
 		ViewFieldPermissions: 11,
 		ViewFieldLinks:       2,
 		ViewFieldSize:        4,
-		// ViewFieldMajor:       0,
-		// ViewFieldMinor:       0,
-		ViewFieldBlocks:   6,
-		ViewFieldUser:     4,
-		ViewFieldGroup:    5,
-		ViewFieldModified: 11,
-		ViewFieldAccessed: 11,
-		ViewFieldCreated:  11,
-		ViewFieldGit:      3,
-		ViewFieldMd5:      32,
-		ViewFieldName:     4,
+		_ViewFieldMajor:      0,
+		_ViewFieldMinor:      0,
+		ViewFieldBlocks:      6,
+		ViewFieldUser:        4,
+		ViewFieldGroup:       5,
+		ViewFieldModified:    11,
+		ViewFieldAccessed:    11,
+		ViewFieldCreated:     11,
+		ViewFieldGit:         3,
+		ViewFieldMd5:         32,
+		ViewFieldName:        4,
+	}
+
+	ViewFieldColors = map[ViewField]*color.Color{
+		ViewFieldNo:          cnop,
+		ViewFieldINode:       cinp,
+		ViewFieldPermissions: cpms,
+		ViewFieldLinks:       clkp,
+		ViewFieldSize:        csnp,
+		ViewFieldBlocks:      cbkp,
+		ViewFieldUser:        cuup,
+		ViewFieldGroup:       cgup,
+		ViewFieldModified:    cdap,
+		ViewFieldCreated:     cdap,
+		ViewFieldAccessed:    cdap,
+		ViewFieldGit:         cgitp,
+		ViewFieldMd5:         cmd5p,
+		ViewFieldName:        cnop,
+	}
+
+	ViewFieldAligns = map[ViewField]paw.Align{
+		ViewFieldNo:          paw.AlignLeft,
+		ViewFieldINode:       paw.AlignRight,
+		ViewFieldPermissions: paw.AlignLeft,
+		ViewFieldLinks:       paw.AlignRight,
+		ViewFieldSize:        paw.AlignRight,
+		ViewFieldBlocks:      paw.AlignRight,
+		ViewFieldUser:        paw.AlignLeft,
+		ViewFieldGroup:       paw.AlignLeft,
+		ViewFieldModified:    paw.AlignLeft,
+		ViewFieldCreated:     paw.AlignLeft,
+		ViewFieldAccessed:    paw.AlignLeft,
+		ViewFieldGit:         paw.AlignRight,
+		ViewFieldMd5:         paw.AlignLeft,
+		ViewFieldName:        paw.AlignLeft,
+	}
+
+	ViewFieldValues = map[ViewField]interface{}{
+		ViewFieldNo:          "",
+		ViewFieldINode:       "",
+		ViewFieldPermissions: "",
+		ViewFieldLinks:       "",
+		ViewFieldSize:        "",
+		ViewFieldBlocks:      "",
+		ViewFieldUser:        "",
+		ViewFieldGroup:       "",
+		ViewFieldModified:    "",
+		ViewFieldCreated:     "",
+		ViewFieldAccessed:    "",
+		ViewFieldGit:         "",
+		ViewFieldMd5:         "",
+		ViewFieldName:        "",
 	}
 )
+
+func (f ViewField) String() string {
+	if name, ok := ViewFieldNames[f]; ok {
+		return name
+	} else {
+		names := f.Names()
+		return strings.Join(names, ", ")
+	}
+	// switch f {
+	// case ViewFieldNo:
+	// 	return "No"
+	// case ViewFieldINode:
+	// 	return "inode"
+	// case ViewFieldPermissions:
+	// 	return "Permissions"
+	// case ViewFieldLinks:
+	// 	return "Links"
+	// case ViewFieldSize:
+	// 	return "Size"
+	// case ViewFieldBlocks:
+	// 	return "Blocks"
+	// case ViewFieldUser:
+	// 	return "User"
+	// case ViewFieldGroup:
+	// 	return "Group"
+	// case ViewFieldModified:
+	// 	return "Modified"
+	// case ViewFieldCreated:
+	// 	return "Created"
+	// case ViewFieldAccessed:
+	// 	return "Accessed"
+	// case ViewFieldGit:
+	// 	return "Git"
+	// case ViewFieldMd5:
+	// 	return "md5"
+	// case ViewFieldName:
+	// 	return "Name"
+	// default:
+	// 	names := f.Names()
+	// 	return strings.Join(names, ", ")
+	// }
+}
+
+func (f ViewField) SetName(name string) {
+	ViewFieldNames[f] = name
+}
+
+func (f ViewField) Name() string {
+	return f.String()
+}
+
+func (f ViewField) SetWidth(wd int) {
+	ViewFieldWidths[f] = wd
+}
+
+func (f ViewField) Width() int {
+	wd := paw.StringWidth(f.String())
+	if dwd, ok := ViewFieldWidths[f]; ok {
+		return paw.MaxInt(dwd, wd)
+	} else {
+		return wd
+	}
+	// switch f {
+	// case ViewFieldINode:
+	// 	return paw.MaxInt(5, wd)
+	// case ViewFieldPermissions:
+	// 	return paw.MaxInt(11, wd)
+	// case ViewFieldLinks:
+	// 	return paw.MaxInt(2, wd)
+	// case ViewFieldSize:
+	// 	return paw.MaxInt(4, wd)
+	// case ViewFieldBlocks:
+	// 	return paw.MaxInt(6, wd)
+	// case ViewFieldUser:
+	// 	return paw.MaxInt(4, wd)
+	// case ViewFieldGroup:
+	// 	return paw.MaxInt(5, wd)
+	// case ViewFieldModified:
+	// 	return paw.MaxInt(11, wd)
+	// case ViewFieldCreated:
+	// 	return paw.MaxInt(11, wd)
+	// case ViewFieldAccessed:
+	// 	return paw.MaxInt(11, wd)
+	// case ViewFieldGit:
+	// 	return paw.MaxInt(2, wd)
+	// case ViewFieldMd5:
+	// 	return paw.MaxInt(32, wd)
+	// case ViewFieldName:
+	// 	return paw.MaxInt(4, wd)
+	// default:
+	// 	return 0
+	// }
+}
+
+func (f ViewField) SetAlign(align paw.Align) {
+	ViewFieldAligns[f] = align
+}
+
+func (f ViewField) Align() paw.Align {
+	if a, ok := ViewFieldAligns[f]; ok {
+		return a
+	} else {
+		return paw.AlignLeft
+	}
+	// switch f {
+	// case ViewFieldNo:
+	// 	return paw.AlignLeft
+	// case ViewFieldINode:
+	// 	return paw.AlignRight
+	// case ViewFieldPermissions:
+	// 	return paw.AlignLeft
+	// case ViewFieldLinks:
+	// 	return paw.AlignRight
+	// case ViewFieldSize:
+	// 	return paw.AlignRight
+	// case ViewFieldBlocks:
+	// 	return paw.AlignRight
+	// case ViewFieldUser:
+	// 	return paw.AlignLeft
+	// case ViewFieldGroup:
+	// 	return paw.AlignLeft
+	// case ViewFieldModified:
+	// 	return paw.AlignLeft
+	// case ViewFieldCreated:
+	// 	return paw.AlignLeft
+	// case ViewFieldAccessed:
+	// 	return paw.AlignLeft
+	// case ViewFieldGit:
+	// 	return paw.AlignRight
+	// case ViewFieldMd5:
+	// 	return paw.AlignLeft
+	// case ViewFieldName:
+	// 	return paw.AlignLeft
+	// default:
+	// 	return paw.AlignLeft
+	// }
+}
+
+func (f ViewField) SetColor(color *color.Color) {
+	ViewFieldColors[f] = color
+}
+
+func (f ViewField) Color() *color.Color {
+	if c, ok := ViewFieldColors[f]; ok {
+		return c
+	} else {
+		return cdashp
+	}
+	// switch f {
+	// case ViewFieldINode:
+	// 	return cinp
+	// case ViewFieldPermissions:
+	// 	return cpms
+	// case ViewFieldLinks:
+	// 	return clkp
+	// case ViewFieldSize:
+	// 	return csnp
+	// case ViewFieldBlocks:
+	// 	return cbkp
+	// case ViewFieldUser:
+	// 	return cuup
+	// case ViewFieldGroup:
+	// 	return cgup
+	// case ViewFieldModified:
+	// 	return cdap
+	// case ViewFieldCreated:
+	// 	return cdap
+	// case ViewFieldAccessed:
+	// 	return cdap
+	// case ViewFieldGit:
+	// 	return cgitp
+	// case ViewFieldMd5:
+	// 	return cmd5p
+	// case ViewFieldName:
+	// 	return cnop
+	// default:
+	// 	return cdashp
+	// }
+}
+
+func (f ViewField) SetValue(value interface{}) {
+	ViewFieldValues[f] = value
+}
+
+func (f ViewField) Value() interface{} {
+	return ViewFieldValues[f]
+	// if v, ok := ViewFieldValues[f]; ok {
+	// 	return v
+	// } else {
+	// 	return nil
+	// }
+}
 
 func (f ViewField) Slice() (fields []ViewField, names []string, nameWidths []int) {
 
@@ -160,152 +421,6 @@ func (f ViewField) Names() (names []string) {
 func (f ViewField) Widths() (widths []int) {
 	_, _, widths = f.Slice()
 	return widths
-}
-
-func (f ViewField) String() string {
-	switch f {
-	case ViewFieldINode:
-		return "inode"
-	case ViewFieldPermissions:
-		return "Permissions"
-	case ViewFieldLinks:
-		return "Links"
-	case ViewFieldSize:
-		return "Size"
-	case ViewFieldBlocks:
-		return "Blocks"
-	case ViewFieldUser:
-		return "User"
-	case ViewFieldGroup:
-		return "Group"
-	case ViewFieldModified:
-		return "Modified"
-	case ViewFieldCreated:
-		return "Created"
-	case ViewFieldAccessed:
-		return "Accessed"
-	case ViewFieldGit:
-		return "Git"
-	case ViewFieldMd5:
-		return "md5"
-	case ViewFieldName:
-		return "Name"
-	default:
-		names := f.Names()
-		return strings.Join(names, ", ")
-	}
-}
-
-func (f ViewField) Name() string {
-	return f.String()
-}
-
-func (f ViewField) Width() int {
-	wd := paw.StringWidth(f.String())
-	if dwd, ok := viewFieldWidths[f]; ok {
-		return paw.MaxInt(dwd, wd)
-	} else {
-		return wd
-	}
-
-	// switch f {
-	// case ViewFieldINode:
-	// 	return paw.MaxInt(5, wd)
-	// case ViewFieldPermissions:
-	// 	return paw.MaxInt(11, wd)
-	// case ViewFieldLinks:
-	// 	return paw.MaxInt(2, wd)
-	// case ViewFieldSize:
-	// 	return paw.MaxInt(4, wd)
-	// case ViewFieldBlocks:
-	// 	return paw.MaxInt(6, wd)
-	// case ViewFieldUser:
-	// 	return paw.MaxInt(4, wd)
-	// case ViewFieldGroup:
-	// 	return paw.MaxInt(5, wd)
-	// case ViewFieldModified:
-	// 	return paw.MaxInt(11, wd)
-	// case ViewFieldCreated:
-	// 	return paw.MaxInt(11, wd)
-	// case ViewFieldAccessed:
-	// 	return paw.MaxInt(11, wd)
-	// case ViewFieldGit:
-	// 	return paw.MaxInt(2, wd)
-	// case ViewFieldMd5:
-	// 	return paw.MaxInt(32, wd)
-	// case ViewFieldName:
-	// 	return paw.MaxInt(4, wd)
-	// default:
-	// 	return 0
-	// }
-}
-
-func (f ViewField) Color() *color.Color {
-	switch f {
-	case ViewFieldINode:
-		return cinp
-	case ViewFieldPermissions:
-		return cpms
-	case ViewFieldLinks:
-		return clkp
-	case ViewFieldSize:
-		return csnp
-	case ViewFieldBlocks:
-		return cbkp
-	case ViewFieldUser:
-		return cuup
-	case ViewFieldGroup:
-		return cgup
-	case ViewFieldModified:
-		return cdap
-	case ViewFieldCreated:
-		return cdap
-	case ViewFieldAccessed:
-		return cdap
-	case ViewFieldGit:
-		return cgitp
-	case ViewFieldMd5:
-		return cmd5p
-	case ViewFieldName:
-		return cnop
-	default:
-		return cdashp
-	}
-}
-
-func (f ViewField) Align() paw.Align {
-	switch f {
-	case ViewFieldINode:
-		return paw.AlignRight
-	case ViewFieldPermissions:
-		return paw.AlignLeft
-	case ViewFieldLinks:
-		return paw.AlignRight
-	case ViewFieldSize:
-		return paw.AlignRight
-	case ViewFieldBlocks:
-		return paw.AlignRight
-	case ViewFieldUser:
-		return paw.AlignLeft
-	case ViewFieldGroup:
-		return paw.AlignLeft
-	case ViewFieldModified:
-		return paw.AlignLeft
-	case ViewFieldCreated:
-		return paw.AlignLeft
-	case ViewFieldAccessed:
-		return paw.AlignLeft
-	case ViewFieldGit:
-		return paw.AlignRight
-	case ViewFieldMd5:
-		return paw.AlignLeft
-	case ViewFieldName:
-		return paw.AlignLeft
-	case ViewFieldNone:
-		return paw.AlignRight
-	default:
-		return paw.AlignLeft
-	}
 }
 
 func getPFHeadS(c *color.Color, fields ...ViewField) string {
