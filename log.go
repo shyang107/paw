@@ -1,13 +1,9 @@
 package paw
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw/cnested"
@@ -25,25 +21,26 @@ var (
 		Level: logrus.WarnLevel,
 	}
 	// NestedFormatter ...
-	cnestedFMT = &cnested.Formatter{
-		HideKeys: false,
-		// FieldsOrder:     []string{"component", "category"},
-		NoColors:       false,
-		NoFieldsColors: false,
-		// TimestampFormat: "2006-01-02 15:04:05",
-		TimestampFormat: "060102-150405.000",
-		TrimMessages:    true,
-		CallerFirst:     true,
-		CustomCallerFormatter: func(f *runtime.Frame) string {
-			s := strings.Split(f.Function, ".")
-			funcName := s[len(s)-1]
-			name := filepath.Base(f.File)
-			cname := NewLSColor(filepath.Ext(name)).Sprint(name)
-			cfuncName := color.New(color.FgYellow).Add(color.Bold).Sprint(funcName)
-			cln := NewEXAColor("sn").Sprint(f.Line)
-			return fmt.Sprintf(" [%s:%s][%s]", cname, cln, cfuncName)
-		},
-	}
+	cnestedFMT = cnested.DefaultFormat
+	// cnestedFMT = &cnested.Formatter{
+	// 	HideKeys: false,
+	// 	// FieldsOrder:     []string{"component", "category"},
+	// 	NoColors:       false,
+	// 	NoFieldsColors: false,
+	// 	// TimestampFormat: "2006-01-02 15:04:05",
+	// 	TimestampFormat: "060102-150405.000",
+	// 	TrimMessages:    true,
+	// 	CallerFirst:     true,
+	// 	CustomCallerFormatter: func(f *runtime.Frame) string {
+	// 		s := strings.Split(f.Function, ".")
+	// 		funcName := s[len(s)-1]
+	// 		name := filepath.Base(f.File)
+	// 		cname := NewLSColor(filepath.Ext(name)).Sprint(name)
+	// 		cfuncName := color.New(color.FgYellow).Add(color.Bold).Sprint(funcName)
+	// 		cln := NewEXAColor("sn").Sprint(f.Line)
+	// 		return fmt.Sprintf(" [%s:%s][%s]", cname, cln, cfuncName)
+	// 	},
+	// }
 )
 
 var (

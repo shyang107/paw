@@ -374,67 +374,67 @@ func (f *File) IsExecutable() bool {
 	return f.IsExecAny()
 }
 
-// Field returns the specified value of File according to PDFieldFlag
-func (f *File) Field(field PDFieldFlag, git *GitStatus) string {
+// Field returns the specified value of File according to ViewField
+func (f *File) Field(field ViewField, git *GitStatus) string {
 	switch field {
-	case PFieldINode:
+	case ViewFieldINode:
 		return fmt.Sprint(f.INode())
-	case PFieldPermissions:
+	case ViewFieldPermissions:
 		return permissionS(f)
-	case PFieldLinks:
+	case ViewFieldLinks:
 		return fmt.Sprint(f.HDLinks())
-	case PFieldSize:
+	case ViewFieldSize:
 		if f.IsCharDev() || f.IsDev() {
 			return f.DevNumberS()
 		} else {
 			return bytefmt.ByteSize(uint64(f.Size()))
 		}
-	case PFieldBlocks:
+	case ViewFieldBlocks:
 		return fmt.Sprint(f.Blocks())
-	case PFieldUser:
+	case ViewFieldUser:
 		return f.User()
-	case PFieldGroup:
+	case ViewFieldGroup:
 		return f.Group()
-	case PFieldModified:
+	case ViewFieldModified:
 		return dateS(f.ModifiedTime())
-	case PFieldCreated:
+	case ViewFieldCreated:
 		return dateS(f.CreatedTime())
-	case PFieldAccessed:
+	case ViewFieldAccessed:
 		return dateS(f.AccessedTime())
-	case PFieldGit:
+	case ViewFieldGit:
 		return f.XY()
-	case PFieldMd5:
+	case ViewFieldMd5:
 		return f.Md5()
-	case PFieldName:
+	case ViewFieldName:
 		return f.NameToLink() //f.Name()
 	default:
 		return ""
 	}
 }
 
-// FieldC returns the specified colorful value of File according to PDFieldFlag
-func (f *File) FieldC(field PDFieldFlag, git *GitStatus) string {
+// FieldC returns the specified colorful value of File according to ViewField
+func (f *File) FieldC(field ViewField, git *GitStatus) string {
 	value := aligned(field, f.Field(field, git))
 	switch field {
-	case PFieldPermissions:
+	case ViewFieldPermissions:
 		return aligned(field, permissionC(f))
-	case PFieldSize:
+	case ViewFieldSize:
 		if f.IsCharDev() || f.IsDev() {
 			major, minor := f.DevNumber()
-			wdmajor := pdfWidths[pfieldMajor]
-			wdminor := pdfWidths[pfieldMinor]
+			wdmajor := viewFieldWidths[_ViewFieldMajor]
+			wdminor := viewFieldWidths[_ViewFieldMinor]
 			csj := csnp.Sprintf("%[1]*[2]v", wdmajor, major)
 			csn := csnp.Sprintf("%[1]*[2]v", wdminor, minor)
 			cdev := csj + cdirp.Sprint(",") + csn
 			wdev := wdmajor + wdminor + 1 //len(paw.StripANSI(cdev))
-			if wdev < pdfWidths[field] {
-				cdev = csj + cdirp.Sprint(",") + paw.Spaces(pdfWidths[field]-wdev) + csn
+			if wdev < viewFieldWidths[field] {
+				cdev = csj + cdirp.Sprint(",") + paw.Spaces(viewFieldWidths[field]-wdev) + csn
 			}
 			return cdev
 		} else {
 			return sizeCaligned(f)
 		}
-	case PFieldUser: //"User",
+	case ViewFieldUser: //"User",
 		furname := f.User()
 		var c *color.Color
 		if furname != urname {
@@ -443,7 +443,7 @@ func (f *File) FieldC(field PDFieldFlag, git *GitStatus) string {
 			c = cuup
 		}
 		return aligned(field, c.Sprint(furname))
-	case PFieldGroup: //"Group",
+	case ViewFieldGroup: //"Group",
 		fgpname := f.Group()
 		var c *color.Color
 		if fgpname != gpname {
@@ -452,9 +452,9 @@ func (f *File) FieldC(field PDFieldFlag, git *GitStatus) string {
 			c = cgup
 		}
 		return aligned(field, c.Sprint(fgpname))
-	case PFieldGit:
+	case ViewFieldGit:
 		return aligned(field, f.git.XYc(f.RelPath()))
-	case PFieldName:
+	case ViewFieldName:
 		return nameToLinkC(f)
 		// return f.LSColor().Sprint(f.Name())
 	default:
@@ -470,20 +470,20 @@ func (f *File) widthOfSize() (width, wmajor, wminor int) {
 		// width = wmajor + wminor + 1
 		return wmajor + wminor + 1, wmajor, wminor
 	}
-	return len(f.Field(PFieldSize, nil)), 0, 0
+	return len(f.Field(ViewFieldSize, nil)), 0, 0
 }
 
 // WidthOf returns width of string of field
-func (f *File) WidthOf(field PDFieldFlag) int {
+func (f *File) WidthOf(field ViewField) int {
 	var w int
 	switch field {
-	case PFieldSize:
+	case ViewFieldSize:
 		w, _, _ = f.widthOfSize()
 		// case PFieldGit:
 		// 	w = 3
-	case PFieldMd5:
+	case ViewFieldMd5:
 		w = len(f.Md5())
-	case PFieldName:
+	case ViewFieldName:
 		w = 0
 	default:
 		w = len(f.Field(field, nil))

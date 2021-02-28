@@ -11,15 +11,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (v *VFS) LevelView(w io.Writer, cur *Dir, fields []PDFieldFlag) {
+func (v *VFS) LevelView(w io.Writer, fields []ViewField) {
 	paw.Logger.Info("[vfs] LevelView...")
 
-	if cur == nil {
-		cur = v.RootDir()
-	}
+	cur := v.RootDir()
 
 	if fields == nil {
-		fields = DefaultPDFieldKeys
+		fields = DefaultViewFields
 	}
 	fields = checkFieldsHasGit(fields, cur.git.NoGit)
 
@@ -35,6 +33,7 @@ func (v *VFS) LevelView(w io.Writer, cur *Dir, fields []PDFieldFlag) {
 	wdidx := paw.MaxInt(len(fmt.Sprint(nd)), len(fmt.Sprint(nf)))
 	head := chdp.Sprintf("%[1]*[2]s", wdidx+1, "No") + " "
 	head += getPFHeadS(chdp, fields...)
+
 	size := levelView(w, cur, head, wdidx, fields)
 	// var tnd, tnf int
 	// size := levelView(w, cur, cur.path, head, wdidx, fields, &tnd, &tnf)
@@ -43,7 +42,7 @@ func (v *VFS) LevelView(w io.Writer, cur *Dir, fields []PDFieldFlag) {
 	fprintTotalSummary(w, "", nd, nf, size, sttyWidth-2)
 }
 
-func levelView(w io.Writer, cur *Dir, head string, wdidx int, fields []PDFieldFlag) (totalsize int64) {
+func levelView(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField) (totalsize int64) {
 	// func levelView(w io.Writer, cur *Dir, root, head string, wdidx int, fields []PDFieldFlag, nd, nf *int) (totalsize int64) {
 	var (
 		wdstty   = sttyWidth - 2

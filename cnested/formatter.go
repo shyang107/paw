@@ -5,6 +5,7 @@ package cnested
 //
 import (
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
@@ -48,6 +49,27 @@ type Formatter struct {
 
 	// CustomCallerFormatter - set custom formatter for caller info
 	CustomCallerFormatter func(*runtime.Frame) string
+}
+
+var DefaultFormat = &Formatter{
+	HideKeys: false,
+	// FieldsOrder:     []string{"component", "category"},
+	NoColors:       false,
+	NoFieldsColors: false,
+	// TimestampFormat: "2006-01-02 15:04:05",
+	TimestampFormat: "060102-150405.000",
+	TrimMessages:    true,
+	CallerFirst:     true,
+	CustomCallerFormatter: func(f *runtime.Frame) string {
+		s := strings.Split(f.Function, ".")
+		funcName := s[len(s)-1]
+		name := filepath.Base(f.File)
+		// cname := paw.NewLSColor(filepath.Ext(name)).Sprint(name)
+		cname := color.New([]color.Attribute{38, 5, 159}...).Sprint(name)
+		cfuncName := color.New([]color.Attribute{38, 5, 230}...).Add(color.Bold).Sprint(funcName)
+		cln := color.New(color.FgGreen).Sprint(f.Line)
+		return fmt.Sprintf(" [%s:%s][%s]", cname, cln, cfuncName)
+	},
 }
 
 // Format an log entry

@@ -293,7 +293,7 @@ func sizeCaligned(de DirEntryX) (csize string) {
 		csize = csnp.Sprint(sn) + csup.Sprint(su)
 	}
 	var (
-		width = paw.MaxInt(nss, PFieldSize.Width())
+		width = paw.MaxInt(nss, ViewFieldSize.Width())
 		sp    = paw.Spaces(width - nss)
 	)
 	return sp + csize
@@ -306,7 +306,7 @@ func blocksCaligned(de DirEntryX) (cb string) {
 	)
 	cb = cdashp.Sprint(ss)
 	var (
-		width = paw.MaxInt(nss, PFieldBlocks.Width())
+		width = paw.MaxInt(nss, ViewFieldBlocks.Width())
 		sp    = paw.Spaces(width - nss)
 	)
 	return sp + cb
@@ -425,7 +425,7 @@ func deLSColor(de DirEntryX) *color.Color {
 	// return cfip
 }
 
-func aligned(field PDFieldFlag, value interface{}) string {
+func aligned(field ViewField, value interface{}) string {
 	var (
 		align = field.Align()
 		s     = fmt.Sprintf("%v", value)
@@ -434,7 +434,7 @@ func aligned(field PDFieldFlag, value interface{}) string {
 		sp    = paw.Spaces(width - wd)
 	)
 
-	if field == PFieldName {
+	if field&ViewFieldName == ViewFieldName {
 		return s
 	}
 
@@ -446,10 +446,10 @@ func aligned(field PDFieldFlag, value interface{}) string {
 	}
 }
 
-func checkFieldsHasGit(fields []PDFieldFlag, isNoGit bool) []PDFieldFlag {
-	fds := []PDFieldFlag{}
+func checkFieldsHasGit(fields []ViewField, isNoGit bool) []ViewField {
+	fds := []ViewField{}
 	for _, fd := range fields {
-		if fd == PFieldGit && isNoGit {
+		if fd&ViewFieldGit == ViewFieldGit && isNoGit {
 			continue
 		}
 		fds = append(fds, fd)
@@ -457,36 +457,36 @@ func checkFieldsHasGit(fields []PDFieldFlag, isNoGit bool) []PDFieldFlag {
 	return fds
 }
 
-func modFieldWidths(v *VFS, fields []PDFieldFlag) {
+func modFieldWidths(v *VFS, fields []ViewField) {
 	rd := v.rootDir
 	childWidths(rd, fields)
 }
 
-func childWidths(d *Dir, fields []PDFieldFlag) {
+func childWidths(d *Dir, fields []ViewField) {
 	ds, _ := d.ReadDir(-1)
 	d.resetIdx()
 	for _, c := range ds {
 		f, isFile := c.(*File)
 		if isFile {
 			for _, fd := range fields {
-				if fd == PFieldSize {
+				if fd&ViewFieldSize == ViewFieldSize {
 					if f.IsCharDev() || f.IsDev() {
-						fmajor := pdfWidths[pfieldMajor]
-						fminor := pdfWidths[pfieldMinor]
+						fmajor := viewFieldWidths[_ViewFieldMajor]
+						fminor := viewFieldWidths[_ViewFieldMinor]
 						major, minor := f.DevNumber()
 						wdmajor := len(fmt.Sprint(major))
 						wdminor := len(fmt.Sprint(minor))
-						pdfWidths[pfieldMajor] = paw.MaxInt(fmajor, wdmajor)
-						pdfWidths[pfieldMinor] = paw.MaxInt(fminor, wdminor)
-						wdsize := pdfWidths[pfieldMajor] + pdfWidths[pfieldMinor] + 1
-						wd := pdfWidths[fd]
-						pdfWidths[fd] = paw.MaxInt(wd, wdsize)
+						viewFieldWidths[_ViewFieldMajor] = paw.MaxInt(fmajor, wdmajor)
+						viewFieldWidths[_ViewFieldMinor] = paw.MaxInt(fminor, wdminor)
+						wdsize := viewFieldWidths[_ViewFieldMajor] + viewFieldWidths[_ViewFieldMinor] + 1
+						wd := viewFieldWidths[fd]
+						viewFieldWidths[fd] = paw.MaxInt(wd, wdsize)
 					}
 				}
 				wd := f.WidthOf(fd)
 				dwd := fd.Width()
 				width := paw.MaxInt(dwd, wd)
-				pdfWidths[fd] = width
+				viewFieldWidths[fd] = width
 
 			}
 		} else {
@@ -495,7 +495,7 @@ func childWidths(d *Dir, fields []PDFieldFlag) {
 				wd := d.WidthOf(fd)
 				dwd := fd.Width()
 				width := paw.MaxInt(dwd, wd)
-				pdfWidths[fd] = width
+				viewFieldWidths[fd] = width
 			}
 			childWidths(d, fields)
 		}

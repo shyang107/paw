@@ -220,9 +220,27 @@ func buildFS(cur *Dir, root string, level int, skipcond *SkipConds) {
 	}
 }
 
-func (v *VFS) DumpFS(w io.Writer, fields []PDFieldFlag) {
+func (v *VFS) View(w io.Writer, fields []ViewField, viewType ViewType) {
+	switch viewType {
+	// case ViewList:
+	// case ViewListX:
+	// case ViewTree:
+	// case ViewTreeX:
+	case ViewLevel:
+		v.LevelView(w, fields)
+		// case ViewLevelX:
+		// case ViewTable:
+		// case ViewTableX:
+		// case ViewListTree:
+		// case ViewListTreeX:
+		// case ViewClassify:
+		// default:
+	}
+}
+
+func (v *VFS) DumpFS(w io.Writer) {
 	// color.NoColor = true
-	v.LevelView(w, v.rootDir, fields)
+	v.LevelView(w, DefaultViewFields)
 	// color.NoColor = paw.NoColor
 
 }

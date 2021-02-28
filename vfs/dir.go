@@ -597,52 +597,52 @@ func (d *Dir) RelDir() string {
 // 	return ""
 // }
 
-// Field returns the specified value of File according to PDFieldFlag
-func (d *Dir) Field(field PDFieldFlag, git *GitStatus) string {
+// Field returns the specified value of File according to ViewField
+func (d *Dir) Field(field ViewField, git *GitStatus) string {
 	switch field {
-	case PFieldINode:
+	case ViewFieldINode:
 		return fmt.Sprint(d.INode())
-	case PFieldPermissions:
+	case ViewFieldPermissions:
 		return permissionS(d)
-	case PFieldLinks:
+	case ViewFieldLinks:
 		return fmt.Sprint(d.HDLinks())
-	case PFieldSize, PFieldBlocks:
+	case ViewFieldSize, ViewFieldBlocks:
 		// return bytefmt.ByteSize(uint64(d.Size()))
 		return "-"
-	// case PFieldBlocks:
+	// case ViewFieldBlocks:
 	// 	return "-"
-	case PFieldUser:
+	case ViewFieldUser:
 		return d.User()
-	case PFieldGroup:
+	case ViewFieldGroup:
 		return d.Group()
-	case PFieldModified:
+	case ViewFieldModified:
 		return dateS(d.ModifiedTime())
-	case PFieldCreated:
+	case ViewFieldCreated:
 		return dateS(d.CreatedTime())
-	case PFieldAccessed:
+	case ViewFieldAccessed:
 		return dateS(d.AccessedTime())
-	case PFieldGit:
+	case ViewFieldGit:
 		return d.XY()
-	case PFieldMd5:
+	case ViewFieldMd5:
 		return d.Md5()
-	case PFieldName:
+	case ViewFieldName:
 		return d.Name()
 	default:
 		return ""
 	}
 }
 
-// FieldC returns the specified colorful value of File according to PDFieldFlag
-func (d *Dir) FieldC(field PDFieldFlag, git *GitStatus) string {
+// FieldC returns the specified colorful value of File according to ViewField
+func (d *Dir) FieldC(field ViewField, git *GitStatus) string {
 	value := aligned(field, d.Field(field, git))
 	switch field {
-	case PFieldPermissions:
+	case ViewFieldPermissions:
 		return aligned(field, permissionC(d))
-	case PFieldSize:
+	case ViewFieldSize:
 		return sizeCaligned(d)
-	case PFieldBlocks:
+	case ViewFieldBlocks:
 		return blocksCaligned(d)
-	case PFieldUser: //"User",
+	case ViewFieldUser: //"User",
 		furname := d.User()
 		var c *color.Color
 		if furname != urname {
@@ -651,7 +651,7 @@ func (d *Dir) FieldC(field PDFieldFlag, git *GitStatus) string {
 			c = cuup
 		}
 		return aligned(field, c.Sprint(furname))
-	case PFieldGroup: //"Group",
+	case ViewFieldGroup: //"Group",
 		fgpname := d.Group()
 		var c *color.Color
 		if fgpname != gpname {
@@ -660,9 +660,9 @@ func (d *Dir) FieldC(field PDFieldFlag, git *GitStatus) string {
 			c = cgup
 		}
 		return aligned(field, c.Sprint(fgpname))
-	case PFieldGit:
+	case ViewFieldGit:
 		return aligned(field, d.git.XYc(d.RelPath()+"/"))
-	case PFieldName:
+	case ViewFieldName:
 		return cdip.Sprint(d.Name())
 	default:
 		return field.Color().Sprint(value)
@@ -674,16 +674,16 @@ func (d *Dir) widthOfSize() (width, wmajor, wminor int) {
 }
 
 // WidthOf returns width of string of field
-func (d *Dir) WidthOf(field PDFieldFlag) int {
+func (d *Dir) WidthOf(field ViewField) int {
 	var w int
 	switch field {
-	case PFieldSize, PFieldBlocks:
+	case ViewFieldSize, ViewFieldBlocks:
 		w = 1
 		// case PFieldGit:
 		// 	w = 3
-	case PFieldMd5:
+	case ViewFieldMd5:
 		w = len(d.Md5())
-	case PFieldName:
+	case ViewFieldName:
 		w = 0
 	default:
 		w = len(d.Field(field, nil))

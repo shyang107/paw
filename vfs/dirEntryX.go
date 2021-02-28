@@ -48,7 +48,7 @@ type DirEntryX interface {
 	IsExecAny() bool
 	IsExecAll() bool
 	IsExecutable() bool
-	WidthOf(PDFieldFlag) int
-	// Field(PDFieldFlag, *GitStatus) string
-	// FieldC(PDFieldFlag, *GitStatus)
+	WidthOf(ViewField) int
+	// Field(ViewField, *GitStatus) string
+	// FieldC(ViewField, *GitStatus)
 }

@@ -1,305 +1,314 @@
 package vfs
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
-	"github.com/spf13/cast"
 )
 
-type PDFieldFlag int
+type ViewField int
 
 const (
-	// PFieldINode is inode field
-	PFieldINode PDFieldFlag = 1 << iota
-	// PFieldPermissions is permission field
-	PFieldPermissions
-	// PFieldLinks is hard link field
-	PFieldLinks
-	// PFieldSize is size field
-	PFieldSize
-	pfieldMajor
-	pfieldMinor
-	// PFieldBlocks is blocks field
-	PFieldBlocks
-	// PFieldUser is user field
-	PFieldUser
-	// PFieldGroup is group field
-	PFieldGroup
-	// PFieldModified is date modified field
-	PFieldModified
-	// PFieldAccessed is date accessed field
-	PFieldAccessed
-	// PFieldCreated is date created field
-	PFieldCreated
-	// PFieldGit is git field
-	PFieldGit
-	// PFieldMd5 is md5 field
-	PFieldMd5
-	// PFieldName is name field
-	PFieldName
-	// PFieldNone is non-default field
-	PFieldNone
+	// ViewFieldINode is inode field
+	ViewFieldINode ViewField = 1 << iota
+	// ViewFieldPermissions is permission field
+	ViewFieldPermissions
+	// ViewFieldLinks is hard link field
+	ViewFieldLinks
+	// ViewFieldSize is size field
+	ViewFieldSize
+	_ViewFieldMajor
+	_ViewFieldMinor
+	// ViewFieldBlocks is blocks field
+	ViewFieldBlocks
+	// ViewFieldUser is user field
+	ViewFieldUser
+	// ViewFieldGroup is group field
+	ViewFieldGroup
+	// ViewFieldModified is date modified field
+	ViewFieldModified
+	// ViewFieldAccessed is date accessed field
+	ViewFieldAccessed
+	// ViewFieldCreated is date created field
+	ViewFieldCreated
+	// ViewFieldGit is git field
+	ViewFieldGit
+	// ViewFieldMd5 is md5 field
+	ViewFieldMd5
+	// ViewFieldName is name field
+	ViewFieldName
+	// ViewFieldNone is non-default field
+	ViewFieldNone
 
-	// PFieldDefault useas default fields
-	PFieldDefault = PFieldPermissions | PFieldSize | PFieldUser | PFieldGroup | PFieldModified | PFieldName
+	// ViewFieldDefault useas default fields
+	ViewFieldDefault = ViewFieldPermissions | ViewFieldSize | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldName
 
-	PFieldAll = PFieldINode | PFieldPermissions | PFieldLinks | PFieldSize | PFieldBlocks | PFieldUser | PFieldGroup | PFieldModified | PFieldAccessed | PFieldCreated | PFieldGit | PFieldMd5 | PFieldName
+	ViewFieldAll = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldGit | ViewFieldMd5 | ViewFieldName
+
+	ViewFieldAllNoGit = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldMd5 | ViewFieldName
+
+	ViewFieldAllNoMd5 = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldGit | ViewFieldName
+
+	ViewFieldAllNoGitMd5 = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldName
 )
 
-func (f PDFieldFlag) ToFlags(isNoGit bool) (flags []PDFieldFlag, names []string, nameWidths []int) {
+var (
+	DefaultViewFields = ViewFieldDefault.Fields()
 
-	fields := f
-	flags = []PDFieldFlag{}
+	AllViewFields = ViewFieldAll.Fields()
+
+	AllViewFieldsNoGit = ViewFieldAllNoGit.Fields()
+
+	AllViewFieldsNoMd5 = ViewFieldAllNoMd5.Fields()
+
+	AllViewFieldsNoGitMd5 = ViewFieldAllNoGitMd5.Fields()
+
+	viewFieldWidths = map[ViewField]int{
+		ViewFieldINode:       5,
+		ViewFieldPermissions: 11,
+		ViewFieldLinks:       2,
+		ViewFieldSize:        4,
+		// ViewFieldMajor:       0,
+		// ViewFieldMinor:       0,
+		ViewFieldBlocks:   6,
+		ViewFieldUser:     4,
+		ViewFieldGroup:    5,
+		ViewFieldModified: 11,
+		ViewFieldAccessed: 11,
+		ViewFieldCreated:  11,
+		ViewFieldGit:      3,
+		ViewFieldMd5:      32,
+		ViewFieldName:     4,
+	}
+)
+
+func (f ViewField) Slice() (fields []ViewField, names []string, nameWidths []int) {
+
+	fields = []ViewField{}
 	names = []string{}
 	nameWidths = []int{}
 
-	if fields&PFieldINode != 0 {
-		flags = append(flags, PFieldINode)
+	if f&ViewFieldINode != 0 {
+		fields = append(fields, ViewFieldINode)
 	}
 
-	if fields&PFieldPermissions != 0 {
-		flags = append(flags, PFieldPermissions)
+	if f&ViewFieldPermissions != 0 {
+		fields = append(fields, ViewFieldPermissions)
 	}
 
-	if fields&PFieldLinks != 0 {
-		flags = append(flags, PFieldLinks)
+	if f&ViewFieldLinks != 0 {
+		fields = append(fields, ViewFieldLinks)
 	}
 
-	if fields&PFieldSize != 0 {
-		flags = append(flags, PFieldSize)
+	if f&ViewFieldSize != 0 {
+		fields = append(fields, ViewFieldSize)
 	}
 
-	if fields&PFieldBlocks != 0 {
-		flags = append(flags, PFieldBlocks)
+	if f&ViewFieldBlocks != 0 {
+		fields = append(fields, ViewFieldBlocks)
 	}
 
-	if fields&PFieldUser != 0 {
-		flags = append(flags, PFieldUser)
+	if f&ViewFieldUser != 0 {
+		fields = append(fields, ViewFieldUser)
 	}
 
-	if fields&PFieldGroup != 0 {
-		flags = append(flags, PFieldGroup)
+	if f&ViewFieldGroup != 0 {
+		fields = append(fields, ViewFieldGroup)
 	}
 
-	if fields&PFieldModified != 0 {
-		flags = append(flags, PFieldModified)
+	if f&ViewFieldModified != 0 {
+		fields = append(fields, ViewFieldModified)
 	}
-	if fields&PFieldCreated != 0 {
-		flags = append(flags, PFieldCreated)
+	if f&ViewFieldCreated != 0 {
+		fields = append(fields, ViewFieldCreated)
 	}
-	if fields&PFieldAccessed != 0 {
-		flags = append(flags, PFieldAccessed)
+	if f&ViewFieldAccessed != 0 {
+		fields = append(fields, ViewFieldAccessed)
 	}
 
-	if fields&PFieldMd5 != 0 {
+	if f&ViewFieldMd5 != 0 {
 		hasMd5 = true
-		flags = append(flags, PFieldMd5)
+		fields = append(fields, ViewFieldMd5)
 	}
 
-	if !isNoGit && fields&PFieldGit != 0 {
-		flags = append(flags, PFieldGit)
+	if f&ViewFieldGit != 0 {
+		fields = append(fields, ViewFieldGit)
 	}
 
-	if fields&PFieldName != 0 {
-		flags = append(flags, PFieldName)
+	if f&ViewFieldName != 0 {
+		fields = append(fields, ViewFieldName)
 	}
 
-	for _, k := range flags {
+	for _, k := range fields {
 		names = append(names, k.Name())
 		nameWidths = append(nameWidths, k.Width())
 	}
-	return flags, names, nameWidths
+	return fields, names, nameWidths
 }
 
-func (f PDFieldFlag) String() string {
+func (f ViewField) Fields() (fields []ViewField) {
+	fields, _, _ = f.Slice()
+	return fields
+}
+
+func (f ViewField) Names() (names []string) {
+	_, names, _ = f.Slice()
+	return names
+}
+
+func (f ViewField) Widths() (widths []int) {
+	_, _, widths = f.Slice()
+	return widths
+}
+
+func (f ViewField) String() string {
 	switch f {
-	case PFieldINode:
+	case ViewFieldINode:
 		return "inode"
-	case PFieldPermissions:
+	case ViewFieldPermissions:
 		return "Permissions"
-	case PFieldLinks:
+	case ViewFieldLinks:
 		return "Links"
-	case PFieldSize:
+	case ViewFieldSize:
 		return "Size"
-	case PFieldBlocks:
+	case ViewFieldBlocks:
 		return "Blocks"
-	case PFieldUser:
+	case ViewFieldUser:
 		return "User"
-	case PFieldGroup:
+	case ViewFieldGroup:
 		return "Group"
-	case PFieldModified:
+	case ViewFieldModified:
 		return "Modified"
-	case PFieldCreated:
+	case ViewFieldCreated:
 		return "Created"
-	case PFieldAccessed:
+	case ViewFieldAccessed:
 		return "Accessed"
-	case PFieldGit:
+	case ViewFieldGit:
 		return "Git"
-	case PFieldMd5:
+	case ViewFieldMd5:
 		return "md5"
-	case PFieldName:
+	case ViewFieldName:
 		return "Name"
-	case PFieldDefault:
-		//PFieldPermissions | PFieldSize | PFieldUser |
-		// PFieldGroup | PFieldModified | PFieldName
-		return "Permissions, Size, User, Group, Modified, Name"
 	default:
-		return ""
+		names := f.Names()
+		return strings.Join(names, ", ")
 	}
 }
 
-func (f PDFieldFlag) Name() string {
+func (f ViewField) Name() string {
 	return f.String()
 }
 
-func (f PDFieldFlag) Width() int {
+func (f ViewField) Width() int {
 	wd := paw.StringWidth(f.String())
-	if dwd, ok := pdfWidths[f]; ok {
+	if dwd, ok := viewFieldWidths[f]; ok {
 		return paw.MaxInt(dwd, wd)
 	} else {
 		return wd
 	}
 
 	// switch f {
-	// case PFieldINode:
+	// case ViewFieldINode:
 	// 	return paw.MaxInt(5, wd)
-	// case PFieldPermissions:
+	// case ViewFieldPermissions:
 	// 	return paw.MaxInt(11, wd)
-	// case PFieldLinks:
+	// case ViewFieldLinks:
 	// 	return paw.MaxInt(2, wd)
-	// case PFieldSize:
+	// case ViewFieldSize:
 	// 	return paw.MaxInt(4, wd)
-	// case PFieldBlocks:
+	// case ViewFieldBlocks:
 	// 	return paw.MaxInt(6, wd)
-	// case PFieldUser:
+	// case ViewFieldUser:
 	// 	return paw.MaxInt(4, wd)
-	// case PFieldGroup:
+	// case ViewFieldGroup:
 	// 	return paw.MaxInt(5, wd)
-	// case PFieldModified:
+	// case ViewFieldModified:
 	// 	return paw.MaxInt(11, wd)
-	// case PFieldCreated:
+	// case ViewFieldCreated:
 	// 	return paw.MaxInt(11, wd)
-	// case PFieldAccessed:
+	// case ViewFieldAccessed:
 	// 	return paw.MaxInt(11, wd)
-	// case PFieldGit:
+	// case ViewFieldGit:
 	// 	return paw.MaxInt(2, wd)
-	// case PFieldMd5:
+	// case ViewFieldMd5:
 	// 	return paw.MaxInt(32, wd)
-	// case PFieldName:
+	// case ViewFieldName:
 	// 	return paw.MaxInt(4, wd)
 	// default:
 	// 	return 0
 	// }
 }
 
-func (f PDFieldFlag) Color() *color.Color {
+func (f ViewField) Color() *color.Color {
 	switch f {
-	case PFieldINode:
+	case ViewFieldINode:
 		return cinp
-	case PFieldPermissions:
+	case ViewFieldPermissions:
 		return cpms
-	case PFieldLinks:
+	case ViewFieldLinks:
 		return clkp
-	case PFieldSize:
+	case ViewFieldSize:
 		return csnp
-	case PFieldBlocks:
+	case ViewFieldBlocks:
 		return cbkp
-	case PFieldUser:
+	case ViewFieldUser:
 		return cuup
-	case PFieldGroup:
+	case ViewFieldGroup:
 		return cgup
-	case PFieldModified:
+	case ViewFieldModified:
 		return cdap
-	case PFieldCreated:
+	case ViewFieldCreated:
 		return cdap
-	case PFieldAccessed:
+	case ViewFieldAccessed:
 		return cdap
-	case PFieldGit:
+	case ViewFieldGit:
 		return cgitp
-	case PFieldMd5:
+	case ViewFieldMd5:
 		return cmd5p
-	case PFieldName:
+	case ViewFieldName:
 		return cnop
 	default:
 		return cdashp
 	}
 }
 
-func (f PDFieldFlag) Align() paw.Align {
+func (f ViewField) Align() paw.Align {
 	switch f {
-	case PFieldINode:
+	case ViewFieldINode:
 		return paw.AlignRight
-	case PFieldPermissions:
+	case ViewFieldPermissions:
 		return paw.AlignLeft
-	case PFieldLinks:
+	case ViewFieldLinks:
 		return paw.AlignRight
-	case PFieldSize:
+	case ViewFieldSize:
 		return paw.AlignRight
-	case PFieldBlocks:
+	case ViewFieldBlocks:
 		return paw.AlignRight
-	case PFieldUser:
+	case ViewFieldUser:
 		return paw.AlignLeft
-	case PFieldGroup:
+	case ViewFieldGroup:
 		return paw.AlignLeft
-	case PFieldModified:
+	case ViewFieldModified:
 		return paw.AlignLeft
-	case PFieldCreated:
+	case ViewFieldCreated:
 		return paw.AlignLeft
-	case PFieldAccessed:
+	case ViewFieldAccessed:
 		return paw.AlignLeft
-	case PFieldGit:
+	case ViewFieldGit:
 		return paw.AlignRight
-	case PFieldMd5:
+	case ViewFieldMd5:
 		return paw.AlignLeft
-	case PFieldName:
+	case ViewFieldName:
 		return paw.AlignLeft
-	case PFieldNone:
+	case ViewFieldNone:
 		return paw.AlignRight
 	default:
 		return paw.AlignLeft
 	}
 }
 
-func (f PDFieldFlag) Field() *Field {
-	return NewField(f)
-}
-
-var (
-	DefaultPDFieldKeys = []PDFieldFlag{PFieldPermissions, PFieldSize, PFieldUser, PFieldGroup, PFieldModified, PFieldName}
-
-	PFieldAllKeys = []PDFieldFlag{PFieldINode, PFieldPermissions, PFieldLinks, PFieldSize, PFieldBlocks, PFieldUser, PFieldGroup, PFieldModified, PFieldAccessed, PFieldCreated, PFieldGit, PFieldMd5, PFieldName}
-
-	PFieldAllNoMd5Keys = []PDFieldFlag{PFieldINode, PFieldPermissions, PFieldLinks, PFieldSize, PFieldBlocks, PFieldUser, PFieldGroup, PFieldModified, PFieldAccessed, PFieldCreated, PFieldGit, PFieldName}
-
-	PFieldAllNoGitKeys = []PDFieldFlag{PFieldINode, PFieldPermissions, PFieldLinks, PFieldSize, PFieldBlocks, PFieldUser, PFieldGroup, PFieldModified, PFieldAccessed, PFieldCreated, PFieldMd5, PFieldName}
-
-	PFieldAllNoGitMd5Keys = []PDFieldFlag{PFieldINode, PFieldPermissions, PFieldLinks, PFieldSize, PFieldBlocks, PFieldUser, PFieldGroup, PFieldModified, PFieldAccessed, PFieldCreated, PFieldName}
-
-	DefaultPDFields = NewFields(DefaultPDFieldKeys...)
-
-	pdfWidths = map[PDFieldFlag]int{
-		PFieldINode:       5,
-		PFieldPermissions: 11,
-		PFieldLinks:       2,
-		PFieldSize:        4,
-		pfieldMajor:       0,
-		pfieldMinor:       0,
-		PFieldBlocks:      6,
-		PFieldUser:        4,
-		PFieldGroup:       5,
-		PFieldModified:    11,
-		PFieldAccessed:    11,
-		PFieldCreated:     11,
-		PFieldGit:         3,
-		PFieldMd5:         32,
-		PFieldName:        4,
-	}
-)
-
-func getPFHeadS(c *color.Color, fields ...PDFieldFlag) string {
+func getPFHeadS(c *color.Color, fields ...ViewField) string {
 	hd := ""
 	for _, f := range fields {
 		value := aligned(f, f.Name())
@@ -308,145 +317,149 @@ func getPFHeadS(c *color.Color, fields ...PDFieldFlag) string {
 	return hd
 }
 
-// Field stores content of a field
-//
-// Elements:
-// 	Name: name of field
-// 	NameC: colorful name of field
-// 	Width: number of name on console
-// 	Value: value of the field
-// 	ValueC: colorfulString of value of the field
-// 	ValueColor: *color.Color use to create colorful srtring for value;no default color, use SetValueColor to setup
-// 	HeadColor: *color.Color use to create colorful srtring for head; has default color, use SetHeadColor to setup
-type Field struct {
-	Key        PDFieldFlag
-	Name       string
-	Width      int
-	widthMajor int // use in size field for Dev or CharDev
-	widthMinor int // use in size field for Dev or CharDev
-	Value      interface{}
-	ValueC     interface{}
-	Align      paw.Align
-	ValueColor *color.Color
-	HeadColor  *color.Color
-	isLink     bool
-}
+// var DefaultPDViewFields = NewViewFields(DefaultPDViewFieldKeys...)
+// func (f ViewField) ViewField() *ViewField {
+// 	return NewViewField(f)
+// }
+// // ViewField stores content of a field
+// //
+// // Elements:
+// // 	Name: name of field
+// // 	NameC: colorful name of field
+// // 	Width: number of name on console
+// // 	Value: value of the field
+// // 	ValueC: colorfulString of value of the field
+// // 	ValueColor: *color.Color use to create colorful srtring for value;no default color, use SetValueColor to setup
+// // 	HeadColor: *color.Color use to create colorful srtring for head; has default color, use SetHeadColor to setup
+// type ViewField struct {
+// 	Key        ViewField
+// 	Name       string
+// 	Width      int
+// 	widthMajor int // use in size field for Dev or CharDev
+// 	widthMinor int // use in size field for Dev or CharDev
+// 	Value      interface{}
+// 	ValueC     interface{}
+// 	Align      paw.Align
+// 	ValueColor *color.Color
+// 	HeadColor  *color.Color
+// 	isLink     bool
+// }
 
-// NewField will return *Field
-func NewField(flag PDFieldFlag) *Field {
-	return &Field{
-		Key:        flag,
-		Name:       flag.Name(),  //pfieldsMap[flag],
-		Width:      flag.Width(), //pfieldWidthsMap[flag],
-		widthMajor: 0,
-		widthMinor: 0,
-		Value:      nil,
-		ValueC:     nil,
-		ValueColor: flag.Color(), // pfieldCPMap[flag],
-		Align:      flag.Align(), //pfieldAlignMap[flag],
-		HeadColor:  chdp,
-		isLink:     false,
-	}
-}
+// // NewViewField will return *ViewField
+// func NewViewField(flag ViewField) *ViewField {
+// 	return &ViewField{
+// 		Key:        flag,
+// 		Name:       flag.Name(),  //pfieldsMap[flag],
+// 		Width:      flag.Width(), //pfieldWidthsMap[flag],
+// 		widthMajor: 0,
+// 		widthMinor: 0,
+// 		Value:      nil,
+// 		ValueC:     nil,
+// 		ValueColor: flag.Color(), // pfieldCPMap[flag],
+// 		Align:      flag.Align(), //pfieldAlignMap[flag],
+// 		HeadColor:  chdp,
+// 		isLink:     false,
+// 	}
+// }
 
-// NewFields will return []*Field
-func NewFields(flags ...PDFieldFlag) []*Field {
-	if len(flags) == 0 {
-		return nil
-	}
-	dFields := make([]*Field, 0, len(flags))
-	for _, f := range flags {
-		dFields = append(dFields, NewField(f))
-	}
-	return dFields
-}
+// // NewViewFields will return []*ViewField
+// func NewViewFields(flags ...ViewField) []*ViewField {
+// 	if len(flags) == 0 {
+// 		return nil
+// 	}
+// 	dViewFields := make([]*ViewField, 0, len(flags))
+// 	for _, f := range flags {
+// 		dViewFields = append(dViewFields, NewViewField(f))
+// 	}
+// 	return dViewFields
+// }
 
-// SetValue sets up Field.Value
-func (f *Field) SetValue(value interface{}) {
-	f.Value = value
-}
+// // SetValue sets up ViewField.Value
+// func (f *ViewField) SetValue(value interface{}) {
+// 	f.Value = value
+// }
 
-// SetIsLink sets up Field.isLink
-func (f *Field) SetIsLink(isLink bool) {
-	f.isLink = isLink
-}
+// // SetIsLink sets up ViewField.isLink
+// func (f *ViewField) SetIsLink(isLink bool) {
+// 	f.isLink = isLink
+// }
 
-// SetValueC sets up colorful value of Field.Value
-func (f *Field) SetValueC(value interface{}) {
-	f.ValueC = value
-}
+// // SetValueC sets up colorful value of ViewField.Value
+// func (f *ViewField) SetValueC(value interface{}) {
+// 	f.ValueC = value
+// }
 
-// SetValueColor sets up color of Field.Value
-func (f *Field) SetValueColor(c *color.Color) {
-	f.ValueColor = c
-}
+// // SetValueColor sets up color of ViewField.Value
+// func (f *ViewField) SetValueColor(c *color.Color) {
+// 	f.ValueColor = c
+// }
 
-// GetValueColor returns color of Field.Value
-func (f *Field) GetValueColor(c *color.Color) *color.Color {
-	return f.ValueColor
-}
+// // GetValueColor returns color of ViewField.Value
+// func (f *ViewField) GetValueColor(c *color.Color) *color.Color {
+// 	return f.ValueColor
+// }
 
-// SetHeadColor sets up color of Field.Name
-func (f *Field) SetHeadColor(c *color.Color) {
-	f.HeadColor = c
-}
+// // SetHeadColor sets up color of ViewField.Name
+// func (f *ViewField) SetHeadColor(c *color.Color) {
+// 	f.HeadColor = c
+// }
 
-// GetHeadColor returns color of Field.Name
-func (f *Field) GetHeadColor(c *color.Color) *color.Color {
-	return f.HeadColor
-}
+// // GetHeadColor returns color of ViewField.Name
+// func (f *ViewField) GetHeadColor(c *color.Color) *color.Color {
+// 	return f.HeadColor
+// }
 
-// ValueString will return string of Field.Value
-func (f *Field) ValueString() string {
-	s := alignedSring(f.Value, f.Align, f.Width)
-	return s
-}
+// // ValueString will return string of ViewField.Value
+// func (f *ViewField) ValueString() string {
+// 	s := alignedSring(f.Value, f.Align, f.Width)
+// 	return s
+// }
 
-func alignedSring(value interface{}, align paw.Align, width int) string {
-	// wf := StringWidth(value)
-	s := strings.TrimSpace(fmt.Sprintf("%v", value))
-	ws := paw.StringWidth(s)
-	if ws > width {
-		return s
-	}
-	// fmt.Println("width =", width, "wf =", wf)
-	switch align {
-	case paw.AlignRight:
-		// s = paw.Spaces(width-ws) + s
-		s = fmt.Sprintf("%[1]*[2]s", width, s)
-	case paw.AlignCenter:
-		wsl := (width - ws) / 2
-		wsr := width - ws - wsl
-		s = paw.Spaces(wsl) + s + paw.Spaces(wsr)
-	default: //AlignLeft
-		// s = s + paw.Spaces(width-ws)
-		s = fmt.Sprintf("%-[1]*[2]s", width, s)
-	}
+// func alignedSring(value interface{}, align paw.Align, width int) string {
+// 	// wf := StringWidth(value)
+// 	s := strings.TrimSpace(fmt.Sprintf("%v", value))
+// 	ws := paw.StringWidth(s)
+// 	if ws > width {
+// 		return s
+// 	}
+// 	// fmt.Println("width =", width, "wf =", wf)
+// 	switch align {
+// 	case paw.AlignRight:
+// 		// s = paw.Spaces(width-ws) + s
+// 		s = fmt.Sprintf("%[1]*[2]s", width, s)
+// 	case paw.AlignCenter:
+// 		wsl := (width - ws) / 2
+// 		wsr := width - ws - wsl
+// 		s = paw.Spaces(wsl) + s + paw.Spaces(wsr)
+// 	default: //AlignLeft
+// 		// s = s + paw.Spaces(width-ws)
+// 		s = fmt.Sprintf("%-[1]*[2]s", width, s)
+// 	}
 
-	return s
-}
+// 	return s
+// }
 
-// ValueStringC will colorful string of Field.Value
-func (f *Field) ValueStringC() string {
-	if f.ValueC != nil {
-		// return fmt.Sprintf("%v", f.ValueC)
-		return cast.ToString(f.ValueC)
-	}
+// // ValueStringC will colorful string of ViewField.Value
+// func (f *ViewField) ValueStringC() string {
+// 	if f.ValueC != nil {
+// 		// return fmt.Sprintf("%v", f.ValueC)
+// 		return cast.ToString(f.ValueC)
+// 	}
 
-	s := f.ValueString()
-	if f.ValueColor != nil {
-		return f.ValueColor.Sprint(s)
-	}
-	return s
-}
+// 	s := f.ValueString()
+// 	if f.ValueColor != nil {
+// 		return f.ValueColor.Sprint(s)
+// 	}
+// 	return s
+// }
 
-// HeadString will return string of Field.Name with width Field.Width
-func (f *Field) HeadString() string {
-	return alignedSring(f.Name, f.Align, f.Width)
-}
+// // HeadString will return string of ViewField.Name with width ViewField.Width
+// func (f *ViewField) HeadString() string {
+// 	return alignedSring(f.Name, f.Align, f.Width)
+// }
 
-// HeadStringC will return colorful string of Field.Name with width Field.Width as see
-func (f *Field) HeadStringC() string {
-	s := f.HeadString()
-	return f.HeadColor.Sprint(s)
-}
+// // HeadStringC will return colorful string of ViewField.Name with width ViewField.Width as see
+// func (f *ViewField) HeadStringC() string {
+// 	s := f.HeadString()
+// 	return f.HeadColor.Sprint(s)
+// }

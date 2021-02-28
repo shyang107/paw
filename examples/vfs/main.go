@@ -37,8 +37,5 @@ func main() {
 	paw.Logger.SetLevel(loglevel)
 
 	fs := vfs.NewVFSWith(root, level)
-	// fs.DumpFS(os.Stdout, vfs.PFieldAllKeys)
-	fs.DumpFS(os.Stdout, vfs.PFieldAllNoMd5Keys)
-	// fs.DumpFS(os.Stdout,vfs.PFieldAllNoGitMd5Keys)
-	// fs.DumpFS(os.Stdout,nil)
+	fs.View(os.Stdout, vfs.AllViewFieldsNoMd5, vfs.ViewLevel)
 }
