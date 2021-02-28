@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (v *VFS) LevelView(w io.Writer, fields []ViewField) {
+func (v *VFS) ViewLevel(w io.Writer, fields []ViewField, hasX bool) {
 	paw.Logger.Info("[vfs] LevelView...")
 
 	cur := v.RootDir()
@@ -34,28 +34,31 @@ func (v *VFS) LevelView(w io.Writer, fields []ViewField) {
 
 	ViewFieldNo.SetWidth(wdidx + 1)
 	fields = append([]ViewField{ViewFieldNo}, fields...)
-	// head := chdp.Sprintf("%[1]*[2]s", wdidx+1, "No") + " "
+
 	head := getPFHeadS(chdp, fields...)
 
-	size := levelView(w, cur, head, wdidx, fields)
-	// var tnd, tnf int
-	// size := levelView(w, cur, cur.path, head, wdidx, fields, &tnd, &tnf)
+	size := viewLevel(w, cur, head, wdidx, fields, hasX)
 
 	fprintBanner(w, "", "=", sttyWidth-2)
 	fprintTotalSummary(w, "", nd, nf, size, sttyWidth-2)
 }
 
-func levelView(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField) (totalsize int64) {
-	// func levelView(w io.Writer, cur *Dir, root, head string, wdidx int, fields []PDFieldFlag, nd, nf *int) (totalsize int64) {
+func viewLevel(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField, hasX bool) (totalsize int64) {
 	var (
 		wdstty   = sttyWidth - 2
 		tnd, tnf = cur.NItems()
 		nitems   = tnd + tnf
 		nd, nf   int
+		wdmeta   = 0
 	)
-	// paw.Logger.WithField("tnd", tnd).Debug()
-	// paw.Logger.WithField("rp", cur.RelPath()).Debug()
-	// spew.Dump(cur.relpaths)
+	if hasX {
+		for _, fd := range fields {
+			if fd&ViewFieldName == ViewFieldName {
+				continue
+			}
+			wdmeta += fd.Width() + 1
+		}
+	}
 	for _, rp := range cur.relpaths {
 		var (
 			level        int
@@ -67,7 +70,8 @@ func levelView(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField
 		} else {
 			level = len(strings.Split(rp, "/"))
 		}
-		pad := paw.Spaces(level * 3)
+		wdpad := level * 3
+		pad := paw.Spaces(wdpad)
 		cur, err := cur.getDir(rp)
 		if err != nil {
 			paw.Logger.WithFields(logrus.Fields{
@@ -93,7 +97,6 @@ func levelView(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, pad)
 		}
-		// fmt.Fprintf(w, "%s%#v\n", pad, cur.rdirs)
 
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, child := range des {
@@ -105,31 +108,30 @@ func levelView(w io.Writer, cur *Dir, head string, wdidx int, fields []ViewField
 				size += f.Size()
 				sidx := fmt.Sprintf("F%-[1]*[2]d", wdidx, nf)
 				ViewFieldNo.SetValue(sidx)
-				// ViewFieldNo.SetColor(cfip)
-				// fmt.Fprintf(w, "%s%s ", pad, sidx)
+
 				fmt.Fprintf(w, "%s", pad)
 				for _, field := range fields {
 					fmt.Fprintf(w, "%v ", f.FieldC(field, nil))
 				}
 				fmt.Println()
+				if hasX {
+					fprintXattrs(w, wdpad+wdmeta, f.Xattibutes())
+				}
 			} else {
-				// (*nd)++
 				nd++
 				curnd++
 				d := child.(*Dir)
 				sidx := fmt.Sprintf("D%-[1]*[2]d", wdidx, nd)
 				ViewFieldNo.SetValue(sidx)
-				// ViewFieldNo.SetColor(cdip)
-				// fmt.Fprintf(w, "%s%s ", pad, sidx)
+
 				fmt.Fprintf(w, "%s", pad)
 				for _, field := range fields {
 					fmt.Fprintf(w, "%v ", d.FieldC(field, nil))
 				}
 				fmt.Println()
-				// if len(d.relpaths) > 0 {
-				// 	paw.Logger.WithField("rp", d.RelPath()).Debug()
-				// 	spew.Dump(d.relpaths)
-				// }
+				if hasX {
+					fprintXattrs(w, wdpad+wdmeta, d.Xattibutes())
+				}
 			}
 		}
 		totalsize += size

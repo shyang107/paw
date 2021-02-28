@@ -37,5 +37,6 @@ func main() {
 	paw.Logger.SetLevel(loglevel)
 
 	fs := vfs.NewVFSWith(root, level)
-	fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewLevel)
+	fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewListX)
+	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewLevelX)
 }

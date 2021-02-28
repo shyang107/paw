@@ -471,22 +471,23 @@ func childWidths(d *Dir, fields []ViewField) {
 			for _, fd := range fields {
 				if fd&ViewFieldSize == ViewFieldSize {
 					if f.IsCharDev() || f.IsDev() {
-						fmajor := ViewFieldWidths[_ViewFieldMajor]
-						fminor := ViewFieldWidths[_ViewFieldMinor]
+						fmajor := _ViewFieldMajor.Width()
+						fminor := _ViewFieldMinor.Width()
 						major, minor := f.DevNumber()
 						wdmajor := len(fmt.Sprint(major))
 						wdminor := len(fmt.Sprint(minor))
-						ViewFieldWidths[_ViewFieldMajor] = paw.MaxInt(fmajor, wdmajor)
-						ViewFieldWidths[_ViewFieldMinor] = paw.MaxInt(fminor, wdminor)
-						wdsize := ViewFieldWidths[_ViewFieldMajor] + ViewFieldWidths[_ViewFieldMinor] + 1
-						wd := ViewFieldWidths[fd]
-						ViewFieldWidths[fd] = paw.MaxInt(wd, wdsize)
+						_ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
+						_ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
+						wdsize := _ViewFieldMajor.Width() + _ViewFieldMinor.Width() + 1
+						wd := fd.Width()
+						fd.SetWidth(paw.MaxInt(wd, wdsize))
+						continue
 					}
 				}
 				wd := f.WidthOf(fd)
 				dwd := fd.Width()
 				width := paw.MaxInt(dwd, wd)
-				ViewFieldWidths[fd] = width
+				fd.SetWidth(width)
 			}
 		} else {
 			d := c.(*Dir)
@@ -494,7 +495,7 @@ func childWidths(d *Dir, fields []ViewField) {
 				wd := d.WidthOf(fd)
 				dwd := fd.Width()
 				width := paw.MaxInt(dwd, wd)
-				ViewFieldWidths[fd] = width
+				fd.SetWidth(width)
 			}
 			childWidths(d, fields)
 		}
@@ -560,4 +561,17 @@ func fprintTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize 
 func fprintBanner(w io.Writer, pad string, mark string, length int) {
 	banner := cdashp.Sprintf("%s%s\n", pad, strings.Repeat(mark, length))
 	fmt.Fprint(w, banner)
+}
+
+func fprintXattrs(w io.Writer, wdpad int, xattrs []string) {
+	if len(xattrs) < 1 {
+		return
+	}
+	sp := paw.Spaces(wdpad)
+	for _, x := range xattrs {
+		fmt.Fprintf(w, "%s%v%v\n",
+			sp,
+			cxbp.Sprint(XattrSymbol),
+			cxap.Sprint(x))
+	}
 }

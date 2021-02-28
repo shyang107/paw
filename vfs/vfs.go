@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 )
 
@@ -112,9 +113,6 @@ func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 			v.relpaths = append(v.relpaths, next.RelPath())
 			nextrelpaths := v.createRDirs(next)
 			relpaths = append(relpaths, nextrelpaths...)
-			// cur.relpaths = append(cur.relpaths, next.RelPath())
-			// v.relpaths = append(v.relpaths, next.RelPath())
-			//  v.createRDirs(next)
 		}
 	}
 	cur.relpaths = append(cur.relpaths, relpaths...)
@@ -179,11 +177,12 @@ func buildFS(cur *Dir, root string, level int, skipcond *SkipConds) {
 			if cur.errors == nil {
 				cur.errors = []error{}
 			}
-			cur.errors = append(cur.errors, &fs.PathError{
-				Op:   "buildFS",
-				Path: path,
-				Err:  err,
-			})
+			cur.errors = append(cur.errors, err)
+			// cur.errors = append(cur.errors, &fs.PathError{
+			// 	Op:   "os", // "buildFS",
+			// 	Path: path,
+			// 	Err:  err,
+			// })
 			continue
 		}
 		skip = skipcond.Is(de)
@@ -222,13 +221,16 @@ func buildFS(cur *Dir, root string, level int, skipcond *SkipConds) {
 
 func (v *VFS) View(w io.Writer, fields []ViewField, viewType ViewType) {
 	switch viewType {
-	// case ViewList:
-	// case ViewListX:
+	case ViewList:
+		v.ViewList(w, fields, false)
+	case ViewListX:
+		v.ViewList(w, fields, true)
 	// case ViewTree:
 	// case ViewTreeX:
 	case ViewLevel:
-		v.LevelView(w, fields)
-		// case ViewLevelX:
+		v.ViewLevel(w, fields, false)
+	case ViewLevelX:
+		v.ViewLevel(w, fields, true)
 		// case ViewTable:
 		// case ViewTableX:
 		// case ViewListTree:
@@ -239,10 +241,9 @@ func (v *VFS) View(w io.Writer, fields []ViewField, viewType ViewType) {
 }
 
 func (v *VFS) DumpFS(w io.Writer) {
-	// color.NoColor = true
-	v.LevelView(w, DefaultViewFields)
-	// color.NoColor = paw.NoColor
-
+	color.NoColor = true
+	v.View(w, DefaultViewFields, ViewLevel)
+	color.NoColor = paw.NoColor
 }
 
 // func dumpFS(de *Dir, root string, level, wdidx int, fields []PDFieldFlag, nd, nf *int) {
