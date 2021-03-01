@@ -171,7 +171,6 @@ func listOneFile(wr io.Writer, path string, pad string) {
 	for i, fd := range fields {
 		fmt.Fprintln(w, rowFile(i, fd, file.FieldC(fd, git), width, wdstty))
 	}
-
 	if len(file.XAttributes) > 0 {
 		xfield := fmt.Sprintf("%[1]*[2]s", width, "Extended")
 		wd := wdstty - width - 3

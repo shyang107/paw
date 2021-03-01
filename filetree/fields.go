@@ -321,6 +321,30 @@ func NewFields(flags ...PDFieldFlag) []*Field {
 	return dFields
 }
 
+// NewFieldsGit will return []*Field w.r.t. git status
+func NewFieldsGit(noGit bool, flags ...PDFieldFlag) []*Field {
+	if len(flags) == 0 {
+		return nil
+	}
+	if noGit {
+		irmGit := -1
+		for i, f := range flags {
+			if f == PFieldGit {
+				irmGit = i
+			}
+		}
+		if irmGit != -1 {
+			flags = append(flags[:irmGit], flags[irmGit+1:]...)
+		}
+	}
+
+	dFields := make([]*Field, 0, len(flags))
+	for _, f := range flags {
+		dFields = append(dFields, NewField(f))
+	}
+	return dFields
+}
+
 // SetValue sets up Field.Value
 func (f *Field) SetValue(value interface{}) {
 	f.Value = value

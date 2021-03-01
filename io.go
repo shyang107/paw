@@ -166,3 +166,23 @@ var execOutput = func(cmd string) (string, error) {
 
 	return string(out), err
 }
+
+// // GenMd5sh will generate md5 string of file (path)
+// func GenMd5sh(fullPath string) string {
+// 	fi, err := os.Stat(fullPath)
+// 	if err != nil {
+// 		return err.Error()
+// 	}
+// 	out, err := execOutput(fmt.Sprintf("md5 %q", fullPath))
+// 	if err != nil || fi.IsDir() {
+// 		return "-"
+// 	}
+// 	md5s := strings.Split(strings.TrimSpace(out), " = ")
+// 	return md5s[1]
+// }
+
+// var execOutput = func(cmd string) (string, error) {
+// 	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
+
+// 	return string(out), err
+// }

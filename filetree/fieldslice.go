@@ -48,6 +48,7 @@ func NewFieldSliceFrom(flags []PDFieldFlag, git *GitStatus) (fds *FieldSlice) {
 		}
 	}
 	f.fds = NewFields(flags...)
+	f.fds = NewFieldsGit(git.NoGit, flags...)
 	return f
 }
 
@@ -175,6 +176,7 @@ func (f *FieldSlice) SetValues(file *File, git *GitStatus) {
 			// fd.SetValueColor(cdap)
 		case PFieldMd5: //"Date Accessed",
 			md5 := file.GetMd5()
+			// md5 := file.Md5()
 			fd.SetValue(md5)
 			if md5 == "-" {
 				fd.SetValueC(calign(cdashp, fd.Align, fd.Width, md5))
@@ -208,6 +210,8 @@ func (f *FieldSlice) SetValues(file *File, git *GitStatus) {
 				fd.SetValueC(" " + xyc)
 				// fd.SetValue(" " + file.GitXY(git))
 				// fd.SetValueC(" " + file.GitXYC(git))
+				// fd.SetValue(file.GitStatus(git))
+				// fd.SetValueC(file.GitStatusC(git))
 				fd.SetValueColor(cp)
 				// fd.SetValueColor(cgitp)
 			}

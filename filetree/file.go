@@ -52,7 +52,7 @@ type File struct {
 	Ext         string
 	Info        os.FileInfo
 	Size        uint64
-	Md5         string
+	md5         string
 	XAttributes []string
 	// User        string
 	// Group       string
@@ -101,7 +101,7 @@ func NewFile(path string) (*File, error) {
 		Ext:         ext,
 		Info:        info,
 		Size:        size,
-		Md5:         md5,
+		md5:         md5,
 		XAttributes: xattrs,
 		UpDir:       nil,
 	}
@@ -559,27 +559,27 @@ func (f *File) GitXYc(git *GitStatus) string {
 
 // GetMd5 returns md5 codes of File
 func (f *File) GetMd5() string {
-	if len(f.Md5) != 0 {
-		return f.Md5
+	if len(f.md5) != 0 {
+		return f.md5
 	}
 	if f.IsDir() || !f.Info.Mode().IsRegular() {
-		f.Md5 = "-"
+		f.md5 = "-"
 
 	} else {
-		f.Md5 = paw.GenMd5(f.Path)
+		f.md5 = paw.GenMd5(f.Path)
 	}
-	return f.Md5
+	return f.md5
 }
 
 // GetMd5C returns colorful md5 codes of File
 func (f *File) GetMd5C() string {
-	if len(f.Md5) == 0 {
+	if len(f.md5) == 0 {
 		f.GetMd5()
 	}
-	if f.Md5 == "-" {
+	if f.md5 == "-" {
 		return cdashp.Sprint("-")
 	}
-	return PFieldMd5.Color().Sprint(f.Md5)
+	return PFieldMd5.Color().Sprint(f.md5)
 }
 
 // Field returns the specified value of File according to PDFieldFlag
@@ -648,6 +648,23 @@ func (f *File) FieldC(field PDFieldFlag, git *GitStatus) string {
 	default:
 		return ""
 	}
+}
+
+// Md5 returns md5 codes of File
+func (f *File) Md5() string {
+	if f.IsDir() || !f.Info.Mode().IsRegular() {
+		return "-"
+	}
+	return paw.GenMd5(f.Path)
+}
+
+// Md5C returns colorful md5 codes of File
+func (f *File) Md5C() string {
+	md5 := f.Md5()
+	if md5 == "-" {
+		return cdashp.Sprint("-")
+	}
+	return PFieldMd5.Color().Sprint(md5)
 }
 
 // IsDir reports whether `f` describes a directory. That is, it tests for the ModeDir bit being set in `f`.

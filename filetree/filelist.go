@@ -819,7 +819,7 @@ func osrdHandleFiles(f *FileList, dirPath string, des []fs.DirEntry) {
 // 		ignoring condition of files or directory
 // 		ignore == nil, using DefaultIgnoreFn
 func (f *FileList) FindFiles(depth int) error {
-	paw.Logger.Infof("root: %q", f.root)
+	paw.Logger.WithField("root", f.root).Trace()
 
 	if f.ignore == nil {
 		f.ignore = DefaultIgnoreFn
@@ -850,6 +850,62 @@ func (f *FileList) FindFiles(depth int) error {
 		// fpWalkDir(f)
 		// gdWalk(f)
 	}
+	// err = osReadDir(f, f.root)
+	// if err != nil {
+	// 	return fmt.Errorf("find files: %s", err.Error())
+	// }
+	// switch depth {
+	// case 0: //{root directory}/*
+	// 	file, err := NewFileRelTo(f.root, f.root)
+	// 	if err != nil {
+	// 		if pdOpt.isTrace {
+	// 			paw.Logger.Error(err)
+	// 		}
+	// 		return err
+	// 	}
+	// 	f.AddFile(file)
+	// 	err = osReadDir(f, f.root)
+	// 	if err != nil {
+	// 		return fmt.Errorf("find files: %s", err.Error())
+	// 	}
+	// default: //walk through all directories of {root directory}
+	// 	file, err := NewFileRelTo(f.root, f.root)
+	// 	if err != nil {
+	// 		if pdOpt.isTrace {
+	// 			paw.Logger.Error(err)
+	// 		}
+	// 		return err
+	// 	}
+	// 	f.AddFile(file)
+	// 	if file.IsLink() {
+	// 		f.root = file.LinkPath()
+	// 		f.gitstatus, _ = GetShortGitStatus(f.root)
+	// 		f.depth = depth
+	// 	}
+	// 	err = osReadDir(f, f.root)
+	// 	if err != nil {
+	// 		return fmt.Errorf("find files: %s", err.Error())
+	// 	}
+	// 	// fpWalk
+	// 	// file, errf := NewFileRelTo(f.root, f.root)
+	// 	// if errf != nil {
+	// 	// 	if pdOpt.isTrace {
+	// 	// 		paw.Logger.Error(errf)
+	// 	// 	}
+	// 	// 	f.AddError(f.root, errf)
+	// 	// 	return errf
+	// 	// }
+	// 	// if file.IsLink() {
+	// 	// 	f.root = file.LinkPath()
+	// 	// 	f.gitstatus, _ = GetShortGitStatus(f.root)
+	// 	// 	f.depth = depth
+	// 	// }
+
+	// 	// err := fpWalk(f)
+	// 	// if err != nil {
+	// 	// 	return fmt.Errorf("find files: %s", err.Error())
+	// 	// }
+	// }
 
 	if f.IsSort {
 		f.Sort()
