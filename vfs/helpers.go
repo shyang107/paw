@@ -100,12 +100,11 @@ func nameC(de DirEntryX) string {
 func linkC(de DirEntryX) string {
 	if de.IsLink() {
 		link := de.LinkPath()
+		dir, name := filepath.Split(link)
 		_, err := os.Stat(link)
 		if err != nil {
-			dir, name := filepath.Split(link)
-			return cdirp.Sprint(dir+"/") + corp.Sprint(name)
+			return cdirp.Sprint(dir) + corp.Sprint(name)
 		}
-		dir, name := filepath.Split(link)
 		return cdirp.Sprint(dir) + paw.FileLSColor(link).Sprint(name)
 	}
 	return ""

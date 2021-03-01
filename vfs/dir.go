@@ -403,6 +403,104 @@ func (d *Dir) IsExecutable() bool {
 	return d.IsExecAny()
 }
 
+// Field returns the specified value of File according to ViewField
+func (d *Dir) Field(field ViewField) string {
+	switch field {
+	case ViewFieldNo:
+		return fmt.Sprint(field.Value())
+	case ViewFieldINode:
+		return fmt.Sprint(d.INode())
+	case ViewFieldPermissions:
+		return permissionS(d)
+	case ViewFieldLinks:
+		return fmt.Sprint(d.HDLinks())
+	case ViewFieldSize, ViewFieldBlocks:
+		// return bytefmt.ByteSize(uint64(d.Size()))
+		return "-"
+	// case ViewFieldBlocks:
+	// 	return "-"
+	case ViewFieldUser:
+		return d.User()
+	case ViewFieldGroup:
+		return d.Group()
+	case ViewFieldModified:
+		return dateS(d.ModifiedTime())
+	case ViewFieldCreated:
+		return dateS(d.CreatedTime())
+	case ViewFieldAccessed:
+		return dateS(d.AccessedTime())
+	case ViewFieldGit:
+		return d.XY()
+	case ViewFieldMd5:
+		return d.Md5()
+	case ViewFieldName:
+		return d.Name()
+	default:
+		return ""
+	}
+}
+
+// FieldC returns the specified colorful value of File according to ViewField
+func (d *Dir) FieldC(field ViewField) string {
+	value := aligned(field, d.Field(field))
+	switch field {
+	case ViewFieldNo:
+		return aligned(field, cdip.Sprint(field.Value()))
+	case ViewFieldPermissions:
+		return aligned(field, permissionC(d))
+	case ViewFieldSize:
+		return sizeCaligned(d)
+	case ViewFieldBlocks:
+		return blocksCaligned(d)
+	case ViewFieldUser: //"User",
+		furname := d.User()
+		var c *color.Color
+		if furname != urname {
+			c = cunp
+		} else {
+			c = cuup
+		}
+		return aligned(field, c.Sprint(furname))
+	case ViewFieldGroup: //"Group",
+		fgpname := d.Group()
+		var c *color.Color
+		if fgpname != gpname {
+			c = cgnp
+		} else {
+			c = cgup
+		}
+		return aligned(field, c.Sprint(fgpname))
+	case ViewFieldGit:
+		return aligned(field, d.git.XYc(d.RelPath()+"/"))
+	case ViewFieldName:
+		return cdip.Sprint(d.Name())
+	default:
+		return field.Color().Sprint(value)
+	}
+}
+
+func (d *Dir) widthOfSize() (width, wmajor, wminor int) {
+	return 1, 0, 0
+}
+
+// WidthOf returns width of string of field
+func (d *Dir) WidthOf(field ViewField) int {
+	var w int
+	switch field {
+	case ViewFieldSize, ViewFieldBlocks:
+		w = 1
+		// case PFieldGit:
+		// 	w = 3
+	case ViewFieldMd5:
+		w = len(d.Md5())
+	case ViewFieldName:
+		w = 0
+	default:
+		w = paw.StringWidth(d.Field(field))
+	}
+	return w
+}
+
 // =====================================
 
 func (d *Dir) checkGitDir() {
@@ -582,6 +680,20 @@ func (d *Dir) RelDir() string {
 	return filepath.Dir(d.RelPath())
 }
 
+// DirInfoC will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.
+func (d *Dir) DirInfoC() (cdinf string, wdinf int) {
+	nd, nf := d.NItems()
+	cnd := csnp.Sprint(nd)
+	cnf := csnp.Sprint(nf)
+	di := " dirs"
+	fi := " files"
+	cdi := cdirp.Sprintf(di)
+	cfi := cdirp.Sprintf(fi)
+	wdinf = len(di) + len(fi) + 4
+	cdinf = fmt.Sprintf("[%v%v, %v%v]", cnd, cdi, cnf, cfi)
+	return cdinf, wdinf
+}
+
 // // NameToLink return colorized name & symlink
 // func (d *Dir) NameToLink() string {
 // 	if d.IsLink() {
@@ -618,104 +730,6 @@ func calcSize(cur *Dir) (size int64) {
 		}
 	}
 	return size
-}
-
-// Field returns the specified value of File according to ViewField
-func (d *Dir) Field(field ViewField) string {
-	switch field {
-	case ViewFieldNo:
-		return fmt.Sprint(field.Value())
-	case ViewFieldINode:
-		return fmt.Sprint(d.INode())
-	case ViewFieldPermissions:
-		return permissionS(d)
-	case ViewFieldLinks:
-		return fmt.Sprint(d.HDLinks())
-	case ViewFieldSize, ViewFieldBlocks:
-		// return bytefmt.ByteSize(uint64(d.Size()))
-		return "-"
-	// case ViewFieldBlocks:
-	// 	return "-"
-	case ViewFieldUser:
-		return d.User()
-	case ViewFieldGroup:
-		return d.Group()
-	case ViewFieldModified:
-		return dateS(d.ModifiedTime())
-	case ViewFieldCreated:
-		return dateS(d.CreatedTime())
-	case ViewFieldAccessed:
-		return dateS(d.AccessedTime())
-	case ViewFieldGit:
-		return d.XY()
-	case ViewFieldMd5:
-		return d.Md5()
-	case ViewFieldName:
-		return d.Name()
-	default:
-		return ""
-	}
-}
-
-// FieldC returns the specified colorful value of File according to ViewField
-func (d *Dir) FieldC(field ViewField) string {
-	value := aligned(field, d.Field(field))
-	switch field {
-	case ViewFieldNo:
-		return aligned(field, cdip.Sprint(field.Value()))
-	case ViewFieldPermissions:
-		return aligned(field, permissionC(d))
-	case ViewFieldSize:
-		return sizeCaligned(d)
-	case ViewFieldBlocks:
-		return blocksCaligned(d)
-	case ViewFieldUser: //"User",
-		furname := d.User()
-		var c *color.Color
-		if furname != urname {
-			c = cunp
-		} else {
-			c = cuup
-		}
-		return aligned(field, c.Sprint(furname))
-	case ViewFieldGroup: //"Group",
-		fgpname := d.Group()
-		var c *color.Color
-		if fgpname != gpname {
-			c = cgnp
-		} else {
-			c = cgup
-		}
-		return aligned(field, c.Sprint(fgpname))
-	case ViewFieldGit:
-		return aligned(field, d.git.XYc(d.RelPath()+"/"))
-	case ViewFieldName:
-		return cdip.Sprint(d.Name())
-	default:
-		return field.Color().Sprint(value)
-	}
-}
-
-func (d *Dir) widthOfSize() (width, wmajor, wminor int) {
-	return 1, 0, 0
-}
-
-// WidthOf returns width of string of field
-func (d *Dir) WidthOf(field ViewField) int {
-	var w int
-	switch field {
-	case ViewFieldSize, ViewFieldBlocks:
-		w = 1
-		// case PFieldGit:
-		// 	w = 3
-	case ViewFieldMd5:
-		w = len(d.Md5())
-	case ViewFieldName:
-		w = 0
-	default:
-		w = paw.StringWidth(d.Field(field))
-	}
-	return w
 }
 
 // getDir 通過一個路徑獲取其 dir 類型實例

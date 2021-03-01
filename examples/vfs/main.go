@@ -39,5 +39,9 @@ func main() {
 	fs := vfs.NewVFSWith(root, level)
 	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewListX)
 	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewLevelX)
-	fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewTableX)
+	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewTableX)
+	fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewListTreeX)
+	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewTreeX)
+	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewListTree)
+	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewTree)
 }

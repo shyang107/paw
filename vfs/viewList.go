@@ -22,11 +22,11 @@ func (v *VFS) ViewList(w io.Writer, fields []ViewField, hasX bool) {
 
 	modFieldWidths(v, fields)
 
-	viewList(w, cur, 0, fields, hasX)
+	viewList(w, cur, fields, hasX)
 
 }
 
-func viewList(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) {
+func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX bool) {
 	var (
 		wdstty    = sttyWidth - 2
 		tnd, tnf  = cur.NItems()
