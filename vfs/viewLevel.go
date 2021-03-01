@@ -12,7 +12,7 @@ import (
 )
 
 func (v *VFS) ViewLevel(w io.Writer, fields []ViewField, hasX bool) {
-	paw.Logger.Info("[vfs] LevelView...")
+	paw.Logger.Info("[vfs] ViewLevel...")
 
 	cur := v.RootDir()
 
@@ -87,11 +87,11 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 		}
 
 		cdir, cname := filepath.Split(rp)
+		cname = cdip.Sprint(cname)
 		cdir = cdirp.Sprint(cdir)
 		if level > 0 {
 			cdir = cdirp.Sprint("./") + cdir
 		}
-		cname = cdip.Sprint(cname)
 
 		fmt.Fprintf(w, "%sL%d: %v\n", pad, level, cdir+cname)
 		if len(cur.errors) > 0 {

@@ -5,22 +5,18 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
 )
 
-func (v *VFS) ViewClassify(w io.Writer, fields []ViewField) {
-	paw.Logger.Info("[vfs] LevelView...")
+func (v *VFS) ViewClassify(w io.Writer) {
+	paw.Logger.Info("[vfs] ViewClassify...")
 
 	cur := v.RootDir()
 
-	if fields == nil {
-		fields = DefaultViewFields
-	}
-	fields = checkFieldsHasGit(fields, cur.git.NoGit)
-
-	modFieldWidths(v, fields)
+	fields := []ViewField{ViewFieldName}
 
 	viewClassify(w, cur, 0, fields)
 
@@ -28,27 +24,16 @@ func (v *VFS) ViewClassify(w io.Writer, fields []ViewField) {
 
 func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 	var (
-		wdstty   = sttyWidth - 2
-		tnd, tnf = cur.NItems()
-		nitems   = tnd + tnf
-		nd, nf   int
-		// wdmeta    = 0
+		wdstty    = sttyWidth - 2
+		tnd, tnf  = cur.NItems()
+		nitems    = tnd + tnf
+		nd, nf    int
 		roothead  = getRootHeadC(cur, wdstty)
-		head      = getPFHeadS(chdp, fields...)
 		totalsize int64
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
-	fprintBanner(w, "", "=", wdstty)
 
-	// if hasX {
-	// 	for _, fd := range fields {
-	// 		if fd&ViewFieldName == ViewFieldName {
-	// 			continue
-	// 		}
-	// 		wdmeta += fd.Width() + 1
-	// 	}
-	// }
 	for _, rp := range cur.relpaths {
 		var (
 			curnd, curnf int
@@ -70,34 +55,57 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 		}
 
 		cdir, cname := filepath.Split(rp)
+		cname = cdip.Sprint(cname)
 		cdir = cdirp.Sprint(cdir)
 		if rp != "." {
 			cdir = cdirp.Sprint("./") + cdir
+			fmt.Fprintf(w, "%v\n", cdir+cname)
 		}
-		cname = cdip.Sprint(cname)
 
-		fmt.Fprintf(w, "%v\n", cdir+cname)
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, "")
 		}
-
-		fmt.Fprintf(w, "%v\n", head)
+		nfiles := len(des)
+		names := make([]string, 0, nfiles)
+		cnames := make([]string, 0, nfiles)
 		for _, de := range des {
-			if de.IsFile() {
+			cname = de.LSColor().Sprint(strings.TrimSpace(de.Name()))
+			if de.Xattibutes() == nil {
+				names = append(names, de.Name()+"?")
+				cnames = append(cnames, cname+cdashp.Sprint("?"))
+			} else {
+				if len(de.Xattibutes()) > 0 {
+					names = append(names, de.Name()+"@")
+					cnames = append(cnames, cname+cdashp.Sprint("@"))
+				} else {
+					names = append(names, de.Name()+" ")
+					cnames = append(cnames, cname+" ")
+				}
+			}
+			if !de.IsDir() {
+				size += de.Size()
 				nf++
 				curnf++
-				size += de.Size()
 			} else {
 				nd++
 				curnd++
 			}
-			for _, field := range fields {
-				fmt.Fprintf(w, "%v ", de.FieldC(field))
+		}
+
+		wdcols := vcGridWidths(names, wdstty)
+		ncols := len(wdcols)
+		for i := 0; i < nfiles; i += ncols {
+			idx := i
+			for j := 0; j < ncols; j++ {
+				if idx > nfiles-1 {
+					break
+				}
+				wd := paw.StringWidth(names[idx])
+				sp := paw.Spaces(wdcols[j] - wd)
+				fmt.Fprintf(w, "%s%s", cnames[idx], sp)
+				idx++
 			}
-			fmt.Println()
-			// if hasX {
-			// 	fprintXattrs(w, wdmeta, de.Xattibutes())
-			// }
+			fmt.Fprintln(w)
 		}
 		totalsize += size
 		fprintDirSummary(w, "", curnd, curnf, size, wdstty)
@@ -107,5 +115,48 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 	}
 
 	fprintBanner(w, "", "=", wdstty)
-	fprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
+	fprintTotalSummary(w, "", tnd, tnf, totalsize, wdstty)
+}
+
+func vcGridWidths(names []string, wdstty int) (wdcols []int) {
+	var (
+		nf = len(names)
+	)
+	wds := make([]int, 0, nf)
+	for _, name := range names {
+		wds = append(wds, paw.StringWidth(name)+2)
+	}
+	wdcols = vcGrisNcols(1, wds, wdstty)
+	return wdcols
+}
+
+func vcGrisNcols(nc int, wds []int, wdstty int) (wdcols []int) {
+	wdcols = make([]int, nc)
+	for i := 0; i < len(wds); i += nc {
+		idx := i
+		for j := 0; j < nc; j++ {
+			if idx > len(wds)-1 {
+				break
+			}
+			wdcols[j] = paw.MaxInt(wdcols[j], wds[idx])
+			idx++
+		}
+	}
+	if paw.SumInts(wdcols...) < wdstty && nc < len(wds) {
+		wdcols = vcGrisNcols(nc+1, wds, wdstty)
+	}
+	if paw.SumInts(wdcols...) > wdstty {
+		for i := 0; i < len(wds); i += nc {
+			idx := i
+			for j := 0; j < nc; j++ {
+				if idx > len(wds)-1 {
+					break
+				}
+				wdcols[j] = paw.MaxInt(wdcols[j], wds[idx])
+				idx++
+			}
+		}
+		return wdcols[:nc]
+	}
+	return wdcols
 }

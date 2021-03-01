@@ -11,7 +11,7 @@ import (
 )
 
 func (v *VFS) ViewList(w io.Writer, fields []ViewField, hasX bool) {
-	paw.Logger.Info("[vfs] LevelView...")
+	paw.Logger.Info("[vfs] ViewList...")
 
 	cur := v.RootDir()
 
@@ -70,13 +70,13 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX bool) {
 		}
 
 		cdir, cname := filepath.Split(rp)
+		cname = cdip.Sprint(cname)
 		cdir = cdirp.Sprint(cdir)
 		if rp != "." {
 			cdir = cdirp.Sprint("./") + cdir
+			fmt.Fprintf(w, "%v\n", cdir+cname)
 		}
-		cname = cdip.Sprint(cname)
 
-		fmt.Fprintf(w, "%v\n", cdir+cname)
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, "")
 		}

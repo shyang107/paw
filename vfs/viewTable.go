@@ -13,7 +13,7 @@ import (
 )
 
 func (v *VFS) ViewTable(w io.Writer, fields []ViewField, hasX bool) {
-	paw.Logger.Info("[vfs] LevelView...")
+	paw.Logger.Info("[vfs] ViewTable...")
 
 	cur := v.RootDir()
 

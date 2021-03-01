@@ -25,7 +25,7 @@ func (v *VFS) View(w io.Writer, fields []ViewField, viewType ViewType) {
 	case ViewTableX:
 		v.ViewTable(w, fields, true)
 	case ViewClassify:
-		v.ViewClassify(w, fields)
+		v.ViewClassify(w)
 	default:
 		v.ViewList(w, fields, false)
 	}

@@ -8,7 +8,7 @@ import (
 )
 
 func (v *VFS) ViewListTree(w io.Writer, fields []ViewField, hasX, onlyTree bool) {
-	paw.Logger.Info("[vfs] LevelView...")
+	paw.Logger.Info("[vfs] ViewListTree...")
 
 	cur := v.RootDir()
 
