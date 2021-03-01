@@ -17,11 +17,12 @@ func (v *VFS) ViewLevel(w io.Writer, fields []ViewField, hasX bool) {
 	cur := v.RootDir()
 
 	if fields == nil {
-		fields = DefaultViewFields
+		fields = DefaultViewFieldSlice
 	}
 	fields = checkFieldsHasGit(fields, cur.git.NoGit)
 
 	modFieldWidths(v, fields)
+	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
 	cdir, cname := filepath.Split(cur.Path())
 	cdir = cdirp.Sprint(cdir)
@@ -34,17 +35,20 @@ func (v *VFS) ViewLevel(w io.Writer, fields []ViewField, hasX bool) {
 	fields = append([]ViewField{ViewFieldNo}, fields...)
 
 	viewLevel(w, cur, wdidx, fields, hasX)
+
+	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
 func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) {
 	var (
-		wdstty    = sttyWidth - 2
-		tnd, tnf  = cur.NItems()
-		nitems    = tnd + tnf
-		nd, nf    int
-		wdmeta    = 0
-		roothead  = getRootHeadC(cur, wdstty)
-		head      = getPFHeadS(chdp, fields...)
+		wdname   = GetViewFieldNameWidthOf(fields)
+		wdstty   = sttyWidth - 2
+		tnd, tnf = cur.NItems()
+		nitems   = tnd + tnf
+		nd, nf   int
+		wdmeta   = 0
+		roothead = getRootHeadC(cur, wdstty)
+		// head      = getPFHeadS(chdp, fields...)
 		totalsize int64
 	)
 
@@ -97,7 +101,8 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, pad)
 		}
-
+		ViewFieldName.SetWidth(wdname - wdpad)
+		head := getPFHeadS(chdp, fields...)
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
 			var sidx string
@@ -105,6 +110,7 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 				nf++
 				curnf++
 				size += de.Size()
+				sidx = fmt.Sprintf("F%-[1]*[2]d", wdidx, nf)
 			} else {
 				nd++
 				curnd++
@@ -125,6 +131,7 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 		if nd+nf < nitems {
 			fprintBanner(w, "", "-", wdstty)
 		}
+		ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 	}
 
 	fprintBanner(w, "", "=", wdstty)

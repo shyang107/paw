@@ -16,14 +16,14 @@ func (v *VFS) ViewList(w io.Writer, fields []ViewField, hasX bool) {
 	cur := v.RootDir()
 
 	if fields == nil {
-		fields = DefaultViewFields
+		fields = DefaultViewFieldSlice
 	}
 	fields = checkFieldsHasGit(fields, cur.git.NoGit)
-
 	modFieldWidths(v, fields)
+	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
 	viewList(w, cur, fields, hasX)
-
+	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
 func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX bool) {

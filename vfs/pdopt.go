@@ -326,7 +326,7 @@ func (v ViewType) String() string {
 }
 
 // Do  will print out VFS
-func (v ViewType) Do(w io.Writer, vfs *VFS, fields []ViewField) error {
+func (v ViewType) Do(w io.Writer, vfs *VFS, fields ViewField) error {
 	if vfs == nil {
 		return errors.New("not a valid VFS")
 	}

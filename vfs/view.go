@@ -2,7 +2,8 @@ package vfs
 
 import "io"
 
-func (v *VFS) View(w io.Writer, fields []ViewField, viewType ViewType) {
+func (v *VFS) View(w io.Writer, vfields ViewField, viewType ViewType) {
+	fields := vfields.Fields()
 	switch viewType {
 	case ViewList:
 		v.ViewList(w, fields, false)

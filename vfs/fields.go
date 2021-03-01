@@ -1,6 +1,7 @@
 package vfs
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/fatih/color"
@@ -42,27 +43,27 @@ const (
 	ViewFieldNo
 
 	// ViewFieldDefault useas default fields
-	ViewFieldDefault = ViewFieldPermissions | ViewFieldSize | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldName
+	DefaultViewField = ViewFieldPermissions | ViewFieldSize | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldName
 
-	ViewFieldAll = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldGit | ViewFieldMd5 | ViewFieldName
+	DefaultViewFieldAll = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldGit | ViewFieldMd5 | ViewFieldName
 
-	ViewFieldAllNoGit = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldMd5 | ViewFieldName
+	DefaultViewFieldAllNoGit = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldMd5 | ViewFieldName
 
-	ViewFieldAllNoMd5 = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldGit | ViewFieldName
+	DefaultViewFieldAllNoMd5 = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldGit | ViewFieldName
 
-	ViewFieldAllNoGitMd5 = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldName
+	DefaultViewFieldAllNoGitMd5 = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldName
 )
 
 var (
-	DefaultViewFields = ViewFieldDefault.Fields()
+	DefaultViewFieldSlice = DefaultViewField.Fields()
 
-	DefaultViewFieldsAll = ViewFieldAll.Fields()
+	DefaultViewFieldsAllSlice = DefaultViewFieldAll.Fields()
 
-	DefaultViewFieldAllNoGit = ViewFieldAllNoGit.Fields()
+	DefaultViewFieldsAllNoGitSlice = DefaultViewFieldAllNoGit.Fields()
 
-	DefaultViewFieldAllNoMd5 = ViewFieldAllNoMd5.Fields()
+	DefaultViewFieldsAllNoMd5Slice = DefaultViewFieldAllNoMd5.Fields()
 
-	DefaultViewFieldAllNoGitMd5 = ViewFieldAllNoGitMd5.Fields()
+	DefaultViewFieldsAllNoGitMd5Slice = DefaultViewFieldAllNoGitMd5.Fields()
 
 	ViewFieldNames = map[ViewField]string{
 		ViewFieldNo:          "No.",
@@ -397,9 +398,13 @@ func (f ViewField) Slice() (fields []ViewField, names []string, nameWidths []int
 		fields = append(fields, ViewFieldGit)
 	}
 
-	if f&ViewFieldName != 0 {
-		fields = append(fields, ViewFieldName)
-	}
+	// if f&ViewFieldName != 0 {
+	// 	fields = append(fields, ViewFieldName)
+	// }
+	fields = append(fields, ViewFieldName)
+	sort.Slice(fields, func(i, j int) bool {
+		return int(fields[i]) < int(fields[i])
+	})
 
 	for _, k := range fields {
 		names = append(names, k.Name())
@@ -426,6 +431,10 @@ func (f ViewField) Widths() (widths []int) {
 func getPFHeadS(c *color.Color, fields ...ViewField) string {
 	hd := ""
 	for _, f := range fields {
+		if f&ViewFieldName != 0 {
+			hd += c.Sprintf("%-[1]*[2]s", f.Width(), f.Name())
+			continue
+		}
 		value := aligned(f, f.Name())
 		hd += c.Sprintf("%v", value) + " "
 	}

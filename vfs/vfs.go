@@ -221,7 +221,7 @@ func buildFS(cur *Dir, root string, level int, skipcond *SkipConds) {
 
 func (v *VFS) DumpFS(w io.Writer) {
 	color.NoColor = true
-	v.View(w, DefaultViewFields, ViewLevel)
+	v.View(w, DefaultViewField, ViewLevel)
 	color.NoColor = paw.NoColor
 }
 

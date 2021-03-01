@@ -541,3 +541,20 @@ func fprintXattrs(w io.Writer, wdpad int, xattrs []string) {
 			cxap.Sprint(x))
 	}
 }
+
+func GetViewFieldNameWidth(vfields ViewField) int {
+	wds := vfields.Widths()
+	wdmeta := paw.SumInts(wds...) + len(wds) - 1 - ViewFieldName.Width()
+	return sttyWidth - 2 - wdmeta
+}
+
+func GetViewFieldNameWidthOf(fields []ViewField) int {
+	wdmeta := 0
+	for _, f := range fields {
+		if f&ViewFieldName != 0 {
+			continue
+		}
+		wdmeta += f.Width() + 1
+	}
+	return sttyWidth - 2 - wdmeta
+}

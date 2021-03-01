@@ -13,16 +13,18 @@ func (v *VFS) ViewListTree(w io.Writer, fields []ViewField, hasX, onlyTree bool)
 	cur := v.RootDir()
 
 	if fields == nil {
-		fields = DefaultViewFields
+		fields = DefaultViewFieldSlice
 	}
 	if onlyTree {
 		fields = []ViewField{ViewFieldName}
 	} else {
 		fields = checkFieldsHasGit(fields, cur.git.NoGit)
 		modFieldWidths(v, fields)
+		ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 	}
 
 	viewListTree(w, cur, fields, hasX, onlyTree)
+	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 
 }
 

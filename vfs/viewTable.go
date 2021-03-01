@@ -18,11 +18,12 @@ func (v *VFS) ViewTable(w io.Writer, fields []ViewField, hasX bool) {
 	cur := v.RootDir()
 
 	if fields == nil {
-		fields = DefaultViewFields
+		fields = DefaultViewFieldSlice
 	}
 	fields = checkFieldsHasGit(fields, cur.git.NoGit)
 
 	modFieldWidths(v, fields)
+	// ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
 	nd, nf := cur.NItems()
 	wdidx := paw.MaxInt(len(fmt.Sprint(nd)), len(fmt.Sprint(nf))) + 1

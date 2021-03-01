@@ -37,13 +37,18 @@ func main() {
 	paw.Logger.SetLevel(loglevel)
 
 	fs := vfs.NewVFSWith(root, level)
-	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewList)
-	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewListX)
-	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewLevelX)
-	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewTableX)
-	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewListTreeX)
-	fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewTreeX)
-	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewListTree)
-	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewTree)
-	// fs.View(os.Stdout, vfs.DefaultViewFieldAllNoMd5, vfs.ViewClassify)
+
+	vfields := vfs.DefaultViewField //| vfs.ViewFieldMd5
+	// fs.View(os.Stdout, vfields, vfs.ViewList)
+	// fs.View(os.Stdout, vfields, vfs.ViewListX)
+	fs.View(os.Stdout, vfields, vfs.ViewLevel)
+	// fs.View(os.Stdout, vfields, vfs.ViewLevelX)
+	// fs.View(os.Stdout, vfields, vfs.ViewTable)
+	// fs.View(os.Stdout, vfields, vfs.ViewTableX)
+	// fs.View(os.Stdout, vfields, vfs.ViewListTree)
+	// fs.View(os.Stdout, vfields, vfs.ViewListTreeX)
+	// fs.View(os.Stdout, vfields, vfs.ViewTree)
+	// fs.View(os.Stdout, vfields, vfs.ViewTreeX)
+	// fs.View(os.Stdout, vfields, vfs.ViewClassify)
+
 }
