@@ -9,13 +9,13 @@ func (v *VFS) View(w io.Writer, fields []ViewField, viewType ViewType) {
 	case ViewListX:
 		v.ViewList(w, fields, true)
 	case ViewTree:
-		v.ViewListTree(w, fields, false, false)
-	case ViewTreeX:
-		v.ViewListTree(w, fields, true, false)
-	case ViewListTree:
 		v.ViewListTree(w, fields, false, true)
-	case ViewListTreeX:
+	case ViewTreeX:
 		v.ViewListTree(w, fields, true, true)
+	case ViewListTree:
+		v.ViewListTree(w, fields, false, false)
+	case ViewListTreeX:
+		v.ViewListTree(w, fields, true, false)
 	case ViewLevel:
 		v.ViewLevel(w, fields, false)
 	case ViewLevelX:
@@ -24,7 +24,8 @@ func (v *VFS) View(w io.Writer, fields []ViewField, viewType ViewType) {
 		v.ViewTable(w, fields, false)
 	case ViewTableX:
 		v.ViewTable(w, fields, true)
-	// case ViewClassify:
+	case ViewClassify:
+		v.ViewClassify(w, fields)
 	default:
 		v.ViewList(w, fields, false)
 	}

@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (v *VFS) ViewClassify(w io.Writer, fields []ViewField, hasX bool) {
+func (v *VFS) ViewClassify(w io.Writer, fields []ViewField) {
 	paw.Logger.Info("[vfs] LevelView...")
 
 	cur := v.RootDir()
@@ -22,17 +22,17 @@ func (v *VFS) ViewClassify(w io.Writer, fields []ViewField, hasX bool) {
 
 	modFieldWidths(v, fields)
 
-	viewClassify(w, cur, 0, fields, hasX)
+	viewClassify(w, cur, 0, fields)
 
 }
 
-func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) {
+func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 	var (
-		wdstty    = sttyWidth - 2
-		tnd, tnf  = cur.NItems()
-		nitems    = tnd + tnf
-		nd, nf    int
-		wdmeta    = 0
+		wdstty   = sttyWidth - 2
+		tnd, tnf = cur.NItems()
+		nitems   = tnd + tnf
+		nd, nf   int
+		// wdmeta    = 0
 		roothead  = getRootHeadC(cur, wdstty)
 		head      = getPFHeadS(chdp, fields...)
 		totalsize int64
@@ -41,14 +41,14 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX boo
 	fmt.Fprintf(w, "%v\n", roothead)
 	fprintBanner(w, "", "=", wdstty)
 
-	if hasX {
-		for _, fd := range fields {
-			if fd&ViewFieldName == ViewFieldName {
-				continue
-			}
-			wdmeta += fd.Width() + 1
-		}
-	}
+	// if hasX {
+	// 	for _, fd := range fields {
+	// 		if fd&ViewFieldName == ViewFieldName {
+	// 			continue
+	// 		}
+	// 		wdmeta += fd.Width() + 1
+	// 	}
+	// }
 	for _, rp := range cur.relpaths {
 		var (
 			curnd, curnf int
@@ -95,9 +95,9 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX boo
 				fmt.Fprintf(w, "%v ", de.FieldC(field))
 			}
 			fmt.Println()
-			if hasX {
-				fprintXattrs(w, wdmeta, de.Xattibutes())
-			}
+			// if hasX {
+			// 	fprintXattrs(w, wdmeta, de.Xattibutes())
+			// }
 		}
 		totalsize += size
 		fprintDirSummary(w, "", curnd, curnf, size, wdstty)
