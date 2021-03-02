@@ -14,7 +14,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
-	"github.com/sirupsen/logrus"
 )
 
 // dir 代表一個目錄
@@ -31,7 +30,7 @@ type Dir struct {
 
 	// 存放該目錄下的子項，value 可能是 *dir 或 *file
 	// map[basename]fs.DirEntry
-	children map[string]fs.DirEntry
+	children map[string]DirEntryX
 
 	errors []error
 
@@ -504,6 +503,7 @@ func (d *Dir) WidthOf(field ViewField) int {
 // =====================================
 
 func (d *Dir) checkGitDir() {
+	// paw.Logger.Trace(paw.Caller(1))
 
 	gs := d.git.GetStatus()
 	if d.git.NoGit || len(d.children) < 1 || gs == nil || len(d.children) < 1 {
@@ -516,12 +516,12 @@ func (d *Dir) checkGitDir() {
 	rp := d.RelPath() + "/"
 	if gxy, ok := gs[rp]; ok {
 		if isXY(gxy, GitIgnored) {
-			paw.Logger.WithField("rp", rp).Trace("GitIgnored")
+			// paw.Logger.WithField("rp", rp).Trace("GitIgnored")
 			isMarkIgnored = true
 			xy = *gxy
 		}
 		if isXY(gxy, GitUntracked) {
-			paw.Logger.WithField("rp", rp).Trace("GitUntracked")
+			// paw.Logger.WithField("rp", rp).Trace("GitUntracked")
 			isUntracked = true
 			xy = *gxy
 		}
@@ -533,6 +533,7 @@ func (d *Dir) checkGitDir() {
 }
 
 func (d *Dir) checkGitFiles() {
+	// paw.Logger.Trace(paw.Caller(1))
 	gs := d.git.GetStatus()
 	if d.git.NoGit || len(d.children) < 1 || gs == nil || len(d.children) < 1 {
 		return
@@ -552,11 +553,11 @@ func (d *Dir) setSubDirXY() {
 	xs, ys := d.getSubXYs()
 	if len(xs) > 0 || len(ys) > 0 {
 		rp := d.RelPath() + "/"
-		paw.Logger.WithFields(logrus.Fields{
-			"rp": "" + color.New(color.FgMagenta).Sprint(rp) + "",
-			"xs": xs,
-			"ys": ys,
-		}).Trace()
+		// paw.Logger.WithFields(logrus.Fields{
+		// 	"rp": "" + color.New(color.FgMagenta).Sprint(rp) + "",
+		// 	"xs": xs,
+		// 	"ys": ys,
+		// }).Trace()
 		gs[rp] = &GitFileStatus{
 			Staging:  getSC(xs),
 			Worktree: getSC(ys),
