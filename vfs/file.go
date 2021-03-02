@@ -17,55 +17,45 @@ import (
 
 // file 代表一個文件
 type File struct {
-	// full path = filepath.Join(root, reldir, name)
-	path    string
+	path    string // full path = filepath.Join(root, relpath, name)
 	relpath string
-	// basename
-	name   string
-	info   fs.FileInfo
-	xattrs []string
-	git    *GitStatus
+	name    string // basename
+	info    fs.FileInfo
+	xattrs  []string
+	git     *GitStatus
 }
 
 // 實現 fs.FileInfo 接口
 // A FileInfo describes a file and is returned by Stat.
-// type FileInfo interface {
+// type FileInfo interface:
 //     Name() string       // base name of the file
 //     Size() int64        // length in bytes for regular files; system-dependent for others
 //     Mode() FileMode     // file mode bits
 //     ModTime() time.Time // modification time
 //     IsDir() bool        // abbreviation for Mode().IsDir()
 //     Sys() interface{}   // underlying data source (can return nil)
-// }
-// 文件也是某個目錄下的目錄項，因此需要實現 fs.DirEntry 接口
+//---------------------------------------------------------------------
+// 文件也是某個目錄下的檔案目錄項，因此需要實現 fs.DirEntry 接口
 // A DirEntry is an entry read from a directory (using the ReadDir function or a ReadDirFile's ReadDir method).
-// type DirEntry interface {
-// 	Name() string // Name returns the name of the file (or subdirectory) described by the entry.
-// 	// This name is only the final element of the path (the base name), not the entire path.
-// 	// For example, Name would return "hello.go" not "/home/gopher/hello.go".
-
-// 	IsDir() bool // IsDir reports whether the entry describes a directory.
-
-// 	Type() FileMode // Type returns the type bits for the entry.
-// 	// The type bits are a subset of the usual FileMode bits, those returned by the FileMode.Type method.
-
+// type DirEntry interface :
+// 	Name() string // base name of the file
+// 	IsDir() bool // abbreviation for Mode().IsDir()
+// 	Type() FileMode // file mode bits
 // 	Info() (FileInfo, error) // Info returns the FileInfo for the file or subdirectory described by the entry.
-// 	// The returned FileInfo may be from the time of the original directory read
-// 	// or from the time of the call to Info. If the file has been removed or renamed
-// 	// since the directory read, Info may return an error satisfying errors.Is(err, ErrNotExist).
-// 	// If the entry denotes a symbolic link, Info reports the information about the link itself,
-// 	// not the link's target.
-// }
-
+//---------------------------------------------------------------------
 // Both interfaces fs.FileInfo and  fs.DirEntry
-//     Name() string       // base name of the file
-//     Size() int64        // length in bytes for regular files; system-dependent for others
-//     Mode() FileMode     // file mode bits
-// 	Type() FileMode // Type returns the type bits for the entry.
-//     ModTime() time.Time // modification time
-//     IsDir() bool        // abbreviation for Mode().IsDir()
-//     Sys() interface{}   // underlying data source (can return
-// 	Info() (FileInfo, error) // Info returns the FileInfo for the file or subdirectory described by the entry.
+//     Name() string       // fs.FileInfo & fs.DirEntry
+//     Size() int64        // fs.FileInfo
+//     Mode() FileMode     // fs.FileInfo
+//     ModTime() time.Time // fs.FileInfo
+//     IsDir() bool        // fs.FileInfo & fs.DirEntry
+//     Sys() interface{}   // fs.FileInfo
+// 	   Type() FileMode     // fs.DirEntry; = Mode()
+//     Info() (FileInfo, error) // fs.DirEntry
+//---------------------------------------------------------------------
+
+//---------------------------------------------------------------------
+// 實現 fs.FileInfo & fs.DirEntry 接口：
 
 // Name is base name of the file,  returns the name of the file (or subdirectory) described by the entry.
 // This name is only the final element of the path (the base name), not the entire path.
@@ -93,7 +83,8 @@ func (f *File) ModTime() time.Time {
 // IsDir is abbreviation for Mode().IsDir()
 // IsDir reports whether the entry describes a directory.
 func (f *File) IsDir() bool {
-	return false
+	return f.Mode().IsDir()
+	// return false
 }
 
 // Sys returns underlying data source (can return nil)
@@ -117,11 +108,17 @@ func (f *File) Info() (fs.FileInfo, error) {
 	return f.info, nil
 }
 
+//---------------------------------------------------------------------
+// 實現 Extendeder 接口：
+
 // Xattibutes get the extended attributes of File
 // 	implements the interface of Extended
 func (f *File) Xattibutes() []string {
 	return f.xattrs
 }
+
+//---------------------------------------------------------------------
+// 實現 Fielder 接口：
 
 // Path get the full-path of File
 // 	implements the interface of DirEntryX
@@ -129,7 +126,7 @@ func (f *File) Path() string {
 	return f.path
 }
 
-// Path get the relative path of File with respect to some basepath (indicated in creating new intance of File)
+// RelPath get the relative path of File with respect to some basepath (indicated in creating new intance of File)
 // 	implements the interface of DirEntryX
 func (f *File) RelPath() string {
 	return f.relpath
@@ -137,23 +134,15 @@ func (f *File) RelPath() string {
 	// return relpath
 }
 
+// RelDir get dir part of File.RelPath()
+func (f *File) RelDir() string {
+	return filepath.Dir(f.RelPath())
+}
+
 // LSColor will return LS_COLORS color of File
 // 	implements the interface of DirEntryX
 func (f *File) LSColor() *color.Color {
 	return deLSColor(f)
-}
-
-// =====================================
-
-func (f *File) Git() *GitStatus {
-	return f.git
-}
-func (f *File) XY() string {
-	return f.git.XY(f.RelPath())
-}
-
-func (f *File) RelDir() string {
-	return filepath.Dir(f.RelPath())
 }
 
 // NameToLink return colorized name & symlink
@@ -303,75 +292,12 @@ func (f *File) Md5() string {
 	}
 }
 
-// IsLink() report whether File describes a symbolic link.
-func (f *File) IsLink() bool {
-	return f.info.Mode()&os.ModeSymlink != 0
+func (f *File) Git() *GitStatus {
+	return f.git
 }
 
-// IsFile reports whether File describes a regular file.
-func (f *File) IsFile() bool {
-	return f.info.Mode().IsRegular()
-}
-
-// IsCharDev() report whether File describes a Unix character device, when ModeDevice is set.
-func (f *File) IsCharDev() bool {
-	return f.info.Mode()&os.ModeCharDevice != 0
-}
-
-// IsDev() report whether File describes a device file.
-func (f *File) IsDev() bool {
-	return f.info.Mode()&os.ModeDevice != 0
-}
-
-// IsFIFO() report whether File describes a named pipe.
-func (f *File) IsFIFO() bool {
-	return f.info.Mode()&os.ModeNamedPipe != 0
-}
-
-// IsSocket() report whether File describes a socket.
-func (f *File) IsSocket() bool {
-	return f.info.Mode()&os.ModeSocket != 0
-}
-
-// IsTemporary() report whether File describes a temporary file; Plan 9 only.
-func (f *File) IsTemporary() bool {
-	return f.info.Mode()&os.ModeTemporary != 0
-}
-
-// IsExecOwner is to tell if the file is executable by its owner, use bitmask 0100:
-func (f *File) IsExecOwner() bool {
-	mode := f.info.Mode()
-	return mode&0100 != 0
-}
-
-// IsExecGroup is to tell if the file is executable by the group, use bitmask 0010:
-func (f *File) IsExecGroup() bool {
-	mode := f.info.Mode()
-	return mode&0010 != 0
-}
-
-// IsExecOther is to tell if the file is executable by others, use bitmask 0001:
-func (f *File) IsExecOther() bool {
-	mode := f.info.Mode()
-	return mode&0001 != 0
-}
-
-// IsExecAny is to tell if the file is executable by any of its owner, the group and others, use bitmask 0111:
-func (f *File) IsExecAny() bool {
-	mode := f.info.Mode()
-	return mode&0111 != 0
-}
-
-//IsExecAll is to tell if the file is executable by any of its owner, the group and others, again use bitmask 0111 but check if the result equals to 0111:
-func (f *File) IsExecAll() bool {
-	mode := f.info.Mode()
-	return mode&0111 == 0111
-}
-
-// IsExecutable is to tell if the file isexecutable.
-func (f *File) IsExecutable() bool {
-	// return f.IsExecOwner() || f.IsExecGroup() || f.IsExecOther()
-	return f.IsExecAny()
+func (f *File) XY() string {
+	return f.git.XY(f.RelPath())
 }
 
 // Field returns the specified value of File according to ViewField
@@ -493,3 +419,79 @@ func (f *File) WidthOf(field ViewField) int {
 	}
 	return w
 }
+
+//---------------------------------------------------------------------
+// 實現 ISer 接口：
+
+// IsLink() report whether File describes a symbolic link.
+func (f *File) IsLink() bool {
+	return f.info.Mode()&os.ModeSymlink != 0
+}
+
+// IsFile reports whether File describes a regular file.
+func (f *File) IsFile() bool {
+	return f.Mode().IsRegular()
+}
+
+// IsCharDev() report whether File describes a Unix character device, when ModeDevice is set.
+func (f *File) IsCharDev() bool {
+	return f.info.Mode()&os.ModeCharDevice != 0
+}
+
+// IsDev() report whether File describes a device file.
+func (f *File) IsDev() bool {
+	return f.info.Mode()&os.ModeDevice != 0
+}
+
+// IsFIFO() report whether File describes a named pipe.
+func (f *File) IsFIFO() bool {
+	return f.info.Mode()&os.ModeNamedPipe != 0
+}
+
+// IsSocket() report whether File describes a socket.
+func (f *File) IsSocket() bool {
+	return f.info.Mode()&os.ModeSocket != 0
+}
+
+// IsTemporary() report whether File describes a temporary file; Plan 9 only.
+func (f *File) IsTemporary() bool {
+	return f.info.Mode()&os.ModeTemporary != 0
+}
+
+// IsExecOwner is to tell if the file is executable by its owner, use bitmask 0100:
+func (f *File) IsExecOwner() bool {
+	mode := f.info.Mode()
+	return mode&0100 != 0
+}
+
+// IsExecGroup is to tell if the file is executable by the group, use bitmask 0010:
+func (f *File) IsExecGroup() bool {
+	mode := f.info.Mode()
+	return mode&0010 != 0
+}
+
+// IsExecOther is to tell if the file is executable by others, use bitmask 0001:
+func (f *File) IsExecOther() bool {
+	mode := f.info.Mode()
+	return mode&0001 != 0
+}
+
+// IsExecAny is to tell if the file is executable by any of its owner, the group and others, use bitmask 0111:
+func (f *File) IsExecAny() bool {
+	mode := f.info.Mode()
+	return mode&0111 != 0
+}
+
+//IsExecAll is to tell if the file is executable by any of its owner, the group and others, again use bitmask 0111 but check if the result equals to 0111:
+func (f *File) IsExecAll() bool {
+	mode := f.info.Mode()
+	return mode&0111 == 0111
+}
+
+// IsExecutable is to tell if the file isexecutable.
+func (f *File) IsExecutable() bool {
+	// return f.IsExecOwner() || f.IsExecGroup() || f.IsExecOther()
+	return f.IsExecAny()
+}
+
+// ====================================================================

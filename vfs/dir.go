@@ -18,65 +18,53 @@ import (
 
 // dir 代表一個目錄
 type Dir struct {
-	// full path = filepath.Join(root, reldir, name)
-	path    string
+	path    string // full path = filepath.Join(root, relpath, name)
 	relpath string
-	// basename
-	name     string
-	info     fs.FileInfo
-	xattrs   []string
-	git      *GitStatus
-	relpaths []string
+	name    string // basename
+	info    fs.FileInfo
+	xattrs  []string
+	git     *GitStatus
 
 	// 存放該目錄下的子項，value 可能是 *dir 或 *file
 	// map[basename]fs.DirEntry
 	children map[string]DirEntryX
-
-	errors []error
-
+	relpaths []string
+	errors   []error
 	// ReadDir 遍歷用
 	idx int
 }
 
 // 實現 fs.FileInfo 接口
 // A FileInfo describes a file and is returned by Stat.
-// type FileInfo interface {
+// type FileInfo interface:
 //     Name() string       // base name of the file
 //     Size() int64        // length in bytes for regular files; system-dependent for others
 //     Mode() FileMode     // file mode bits
 //     ModTime() time.Time // modification time
 //     IsDir() bool        // abbreviation for Mode().IsDir()
 //     Sys() interface{}   // underlying data source (can return nil)
-// }
-// 文件也是某個目錄下的目錄項，因此需要實現 fs.DirEntry 接口
+//---------------------------------------------------------------------
+// 需要實現 fs.DirEntry 接口
 // A DirEntry is an entry read from a directory (using the ReadDir function or a ReadDirFile's ReadDir method).
-// type DirEntry interface {
-// 	Name() string // Name returns the name of the file (or subdirectory) described by the entry.
-// 	// This name is only the final element of the path (the base name), not the entire path.
-// 	// For example, Name would return "hello.go" not "/home/gopher/hello.go".
-
-// 	IsDir() bool // IsDir reports whether the entry describes a directory.
-
-// 	Type() FileMode // Type returns the type bits for the entry.
-// 	// The type bits are a subset of the usual FileMode bits, those returned by the FileMode.Type method.
-
+// type DirEntry interface :
+// 	Name() string // base name of the file
+// 	IsDir() bool // abbreviation for Mode().IsDir()
+// 	Type() FileMode // file mode bits
 // 	Info() (FileInfo, error) // Info returns the FileInfo for the file or subdirectory described by the entry.
-// 	// The returned FileInfo may be from the time of the original directory read
-// 	// or from the time of the call to Info. If the file has been removed or renamed
-// 	// since the directory read, Info may return an error satisfying errors.Is(err, ErrNotExist).
-// 	// If the entry denotes a symbolic link, Info reports the information about the link itself,
-// 	// not the link's target.
-// }
-
+//---------------------------------------------------------------------
 // Both interfaces fs.FileInfo and  fs.DirEntry
-//     Name() string       // base name of the file
-//     Size() int64        // length in bytes for regular files; system-dependent for others
-//     Mode() FileMode     // file mode bits
-// 	Type() FileMode // Type returns the type bits for the entry.
-//     ModTime() time.Time // modification time
-//     IsDir() bool        // abbreviation for Mode().IsDir()
-//     Sys() interface{}   // underlying data source (can return
-// 	Info() (FileInfo, error) // Info returns the FileInfo for the file or subdirectory described by the entry.
+//     Name() string       // fs.FileInfo & fs.DirEntry
+//     Size() int64        // fs.FileInfo
+//     Mode() FileMode     // fs.FileInfo
+//     ModTime() time.Time // fs.FileInfo
+//     IsDir() bool        // fs.FileInfo & fs.DirEntry
+//     Sys() interface{}   // fs.FileInfo
+// 	   Type() FileMode     // fs.DirEntry; = Mode()
+//     Info() (FileInfo, error) // fs.DirEntry
+//---------------------------------------------------------------------
+
+//---------------------------------------------------------------------
+// fs.FileInfo & fs.DirEntry 接口：
 
 // Name is base name of the file,  returns the name of the file (or subdirectory) described by the entry.
 // This name is only the final element of the path (the base name), not the entire path.
@@ -103,7 +91,8 @@ func (d *Dir) ModTime() time.Time {
 // IsDir is abbreviation for Mode().IsDir()
 // IsDir reports whether the entry describes a directory.
 func (d *Dir) IsDir() bool {
-	return true
+	return d.Mode().IsDir()
+	// return true
 }
 
 // Sys returns underlying data source (can return nil)
@@ -127,46 +116,17 @@ func (d *Dir) Info() (fs.FileInfo, error) {
 	return d.info, nil
 }
 
-// ReadDir 實現 fs.ReadDirFile 接口，方便遍歷目錄
-func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
-	names := make([]string, 0, len(d.children))
-	for name := range d.children {
-		names = append(names, name)
-	}
-
-	sort.Slice(names, func(i, j int) bool {
-		return strings.ToLower(names[i]) < strings.ToLower(names[j])
-	})
-
-	totalEntry := len(names)
-	if n <= 0 {
-		n = totalEntry
-	}
-
-	dirEntries := make([]DirEntryX, 0, n)
-	for i := d.idx; i < n && i < totalEntry; i++ {
-		name := names[i]
-		child := d.children[name]
-
-		f, isFile := child.(*File)
-		if isFile {
-			dirEntries = append(dirEntries, f)
-		} else {
-			dirEntry := child.(*Dir)
-			dirEntries = append(dirEntries, dirEntry)
-		}
-
-		d.idx = i
-	}
-
-	return dirEntries, nil
-}
+//---------------------------------------------------------------------
+// 實現 Extendeder 接口：
 
 // Xattibutes get the extended attributes of Dir
 // 	implements the interface of Extended
 func (d *Dir) Xattibutes() []string {
 	return d.xattrs
 }
+
+//---------------------------------------------------------------------
+// 實現 Fielder 接口：
 
 // Path get the full-path of Dir
 // 	implements the interface of DirEntryX
@@ -180,6 +140,17 @@ func (d *Dir) RelPath() string {
 	return d.relpath
 	// relpath, _ := filepath.Rel(basepath, d.path)
 	// return relpath
+}
+
+// RelDir get dir part of File.RelPath()
+func (d *Dir) RelDir() string {
+	return filepath.Dir(d.RelPath())
+}
+
+// LSColor will return LS_COLORS color of File
+// 	implements the interface of DirEntryX
+func (d *Dir) LSColor() *color.Color {
+	return deLSColor(d)
 }
 
 // NameToLink return colorized name & symlink
@@ -201,12 +172,6 @@ func (d *Dir) LinkPath() string {
 		return alink
 	}
 	return ""
-}
-
-// LSColor will return LS_COLORS color of File
-// 	implements the interface of DirEntryX
-func (d *Dir) LSColor() *color.Color {
-	return deLSColor(d)
 }
 
 // INode will return the inode number of File
@@ -331,75 +296,12 @@ func (d *Dir) Md5() string {
 	return "-"
 }
 
-// IsLink() report whether File describes a symbolic link.
-func (d *Dir) IsLink() bool {
-	return d.info.Mode()&os.ModeSymlink != 0
+func (d *Dir) Git() *GitStatus {
+	return d.git
 }
 
-// IsFile reports whether File describes a regular file.
-func (d *Dir) IsFile() bool {
-	return false
-}
-
-// IsCharDev() report whether File describes a Unix character device, when ModeDevice is set.
-func (d *Dir) IsCharDev() bool {
-	return false
-}
-
-// IsDev() report whether File describes a device file.
-func (d *Dir) IsDev() bool {
-	return false
-}
-
-// IsFIFO() report whether File describes a named pipe.
-func (d *Dir) IsFIFO() bool {
-	return false
-}
-
-// IsSocket() report whether File describes a socket.
-func (d *Dir) IsSocket() bool {
-	return false
-}
-
-// IsTemporary() report whether File describes a temporary file; Plan 9 only.
-func (d *Dir) IsTemporary() bool {
-	return d.info.Mode()&os.ModeTemporary != 0
-}
-
-// IsExecOwner is to tell if the file is executable by its owner, use bitmask 0100:
-func (d *Dir) IsExecOwner() bool {
-	mode := d.info.Mode()
-	return mode&0100 != 0
-}
-
-// IsExecGroup is to tell if the file is executable by the group, use bitmask 0010:
-func (d *Dir) IsExecGroup() bool {
-	mode := d.info.Mode()
-	return mode&0010 != 0
-}
-
-// IsExecOther is to tell if the file is executable by others, use bitmask 0001:
-func (d *Dir) IsExecOther() bool {
-	mode := d.info.Mode()
-	return mode&0001 != 0
-}
-
-// IsExecAny is to tell if the file is executable by any of its owner, the group and others, use bitmask 0111:
-func (d *Dir) IsExecAny() bool {
-	mode := d.info.Mode()
-	return mode&0111 != 0
-}
-
-//IsExecAll is to tell if the file is executable by any of its owner, the group and others, again use bitmask 0111 but check if the result equals to 0111:
-func (d *Dir) IsExecAll() bool {
-	mode := d.info.Mode()
-	return mode&0111 == 0111
-}
-
-// IsExecutable is to tell if the file isexecutable.
-func (d *Dir) IsExecutable() bool {
-	// return d.IsExecOwner() || d.IsExecGroup() || d.IsExecOther()
-	return d.IsExecAny()
+func (d *Dir) XY() string {
+	return d.git.XY(d.RelPath() + "/")
 }
 
 // Field returns the specified value of File according to ViewField
@@ -500,7 +402,188 @@ func (d *Dir) WidthOf(field ViewField) int {
 	return w
 }
 
-// =====================================
+//---------------------------------------------------------------------
+// 實現 ISer 接口：
+
+// IsLink() report whether File describes a symbolic link.
+func (d *Dir) IsLink() bool {
+	return d.info.Mode()&os.ModeSymlink != 0
+}
+
+// IsFile reports whether File describes a regular file.
+func (d *Dir) IsFile() bool {
+	return d.Mode().IsRegular()
+	// return false
+}
+
+// IsCharDev() report whether File describes a Unix character device, when ModeDevice is set.
+func (d *Dir) IsCharDev() bool {
+	return false
+}
+
+// IsDev() report whether File describes a device file.
+func (d *Dir) IsDev() bool {
+	return false
+}
+
+// IsFIFO() report whether File describes a named pipe.
+func (d *Dir) IsFIFO() bool {
+	return false
+}
+
+// IsSocket() report whether File describes a socket.
+func (d *Dir) IsSocket() bool {
+	return false
+}
+
+// IsTemporary() report whether File describes a temporary file; Plan 9 only.
+func (d *Dir) IsTemporary() bool {
+	return d.info.Mode()&os.ModeTemporary != 0
+}
+
+// IsExecOwner is to tell if the file is executable by its owner, use bitmask 0100:
+func (d *Dir) IsExecOwner() bool {
+	mode := d.info.Mode()
+	return mode&0100 != 0
+}
+
+// IsExecGroup is to tell if the file is executable by the group, use bitmask 0010:
+func (d *Dir) IsExecGroup() bool {
+	mode := d.info.Mode()
+	return mode&0010 != 0
+}
+
+// IsExecOther is to tell if the file is executable by others, use bitmask 0001:
+func (d *Dir) IsExecOther() bool {
+	mode := d.info.Mode()
+	return mode&0001 != 0
+}
+
+// IsExecAny is to tell if the file is executable by any of its owner, the group and others, use bitmask 0111:
+func (d *Dir) IsExecAny() bool {
+	mode := d.info.Mode()
+	return mode&0111 != 0
+}
+
+//IsExecAll is to tell if the file is executable by any of its owner, the group and others, again use bitmask 0111 but check if the result equals to 0111:
+func (d *Dir) IsExecAll() bool {
+	mode := d.info.Mode()
+	return mode&0111 == 0111
+}
+
+// IsExecutable is to tell if the file isexecutable.
+func (d *Dir) IsExecutable() bool {
+	// return d.IsExecOwner() || d.IsExecGroup() || d.IsExecOther()
+	return d.IsExecAny()
+}
+
+//---------------------------------------------------------------------
+
+// ReadDir 實現 fs.ReadDirFile 接口，方便遍歷目錄
+func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
+	names := make([]string, 0, len(d.children))
+	for name := range d.children {
+		names = append(names, name)
+	}
+
+	sort.Slice(names, func(i, j int) bool {
+		return strings.ToLower(names[i]) < strings.ToLower(names[j])
+	})
+
+	totalEntry := len(names)
+	if n <= 0 {
+		n = totalEntry
+	}
+
+	dirEntries := make([]DirEntryX, 0, n)
+	for i := d.idx; i < n && i < totalEntry; i++ {
+		name := names[i]
+		child := d.children[name]
+
+		f, isFile := child.(*File)
+		if isFile {
+			dirEntries = append(dirEntries, f)
+		} else {
+			dirEntry := child.(*Dir)
+			dirEntries = append(dirEntries, dirEntry)
+		}
+
+		d.idx = i
+	}
+
+	return dirEntries, nil
+}
+
+// ====================================================================
+
+func (d *Dir) RelPaths() []string {
+	return d.relpaths
+}
+
+func (d *Dir) resetIdx() {
+	d.idx = 0
+}
+
+func (d *Dir) Errors(pad string) string {
+	sb := new(strings.Builder)
+	d.FprintErrors(sb, pad)
+	return sb.String()
+}
+
+func (d *Dir) FprintErrors(w io.Writer, pad string) {
+	if d.errors != nil && len(d.errors) > 0 {
+		for _, err := range d.errors {
+			fmt.Fprintf(w, "%s%v\n", pad, cerror.Sprint(err))
+		}
+	}
+}
+
+func (d *Dir) NItems() (ndirs, nfiles int) {
+	for _, entry := range d.children {
+		_, isFile := entry.(*File)
+		if isFile {
+			nfiles++
+		} else {
+			ndirs++
+			dd := entry.(*Dir)
+			nd, nf := dd.NItems()
+			ndirs += nd
+			nfiles += nf
+		}
+	}
+	return ndirs, nfiles
+}
+
+// DirInfoC will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.
+func (d *Dir) DirInfoC() (cdinf string, wdinf int) {
+	nd, nf := d.NItems()
+	cnd := csnp.Sprint(nd)
+	cnf := csnp.Sprint(nf)
+	di := " dirs"
+	fi := " files"
+	cdi := cdirp.Sprintf(di)
+	cfi := cdirp.Sprintf(fi)
+	wdinf = len(di) + len(fi) + 4
+	cdinf = fmt.Sprintf("[%v%v, %v%v]", cnd, cdi, cnf, cfi)
+	return cdinf, wdinf
+}
+
+func (d *Dir) TotalSize() int64 {
+	return calcSize(d)
+}
+
+func calcSize(cur *Dir) (size int64) {
+	for _, de := range cur.children {
+		f, isFile := de.(*File)
+		if isFile {
+			size += f.Size()
+		} else {
+			next := de.(*Dir)
+			size += calcSize(next)
+		}
+	}
+	return size
+}
 
 func (d *Dir) checkGitDir() {
 	// paw.Logger.Trace(paw.Caller(1))
@@ -629,108 +712,6 @@ func markChildGit(d *Dir, xy *GitFileStatus) {
 func isXY(xy *GitFileStatus, gcode GitStatusCode) bool {
 	return xy.Staging == gcode ||
 		xy.Worktree == gcode
-}
-
-func (d *Dir) Git() *GitStatus {
-	return d.git
-}
-
-func (d *Dir) XY() string {
-	return d.git.XY(d.RelPath() + "/")
-}
-
-func (d *Dir) FprintErrors(w io.Writer, pad string) {
-	if d.errors != nil && len(d.errors) > 0 {
-		for _, err := range d.errors {
-			fmt.Fprintf(w, "%s%v\n", pad, cerror.Sprint(err))
-		}
-	}
-}
-
-func (d *Dir) Errors(pad string) string {
-	sb := new(strings.Builder)
-	d.FprintErrors(sb, pad)
-	return sb.String()
-}
-
-func (d *Dir) resetIdx() {
-	d.idx = 0
-}
-
-func (d *Dir) NItems() (ndirs, nfiles int) {
-	for _, entry := range d.children {
-		_, isFile := entry.(*File)
-		if isFile {
-			nfiles++
-		} else {
-			ndirs++
-			dd := entry.(*Dir)
-			nd, nf := dd.NItems()
-			ndirs += nd
-			nfiles += nf
-		}
-	}
-	return ndirs, nfiles
-}
-
-func (d *Dir) RelPaths() []string {
-	return d.relpaths
-}
-
-func (d *Dir) RelDir() string {
-	return filepath.Dir(d.RelPath())
-}
-
-// DirInfoC will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.
-func (d *Dir) DirInfoC() (cdinf string, wdinf int) {
-	nd, nf := d.NItems()
-	cnd := csnp.Sprint(nd)
-	cnf := csnp.Sprint(nf)
-	di := " dirs"
-	fi := " files"
-	cdi := cdirp.Sprintf(di)
-	cfi := cdirp.Sprintf(fi)
-	wdinf = len(di) + len(fi) + 4
-	cdinf = fmt.Sprintf("[%v%v, %v%v]", cnd, cdi, cnf, cfi)
-	return cdinf, wdinf
-}
-
-// // NameToLink return colorized name & symlink
-// func (d *Dir) NameToLink() string {
-// 	if d.IsLink() {
-// 		return d.name + " -> " + d.LinkPath()
-// 	}
-// 	return d.name
-// }
-
-// // LinkPath report far-end path of a symbolic link.
-// func (d *Dir) LinkPath() string {
-// 	if d.IsLink() {
-// 		// alink, err := filepath.EvalSymlinks(d.Path)
-// 		alink, err := os.Readlink(d.path)
-// 		if err != nil {
-// 			return err.Error()
-// 		}
-// 		return alink
-// 	}
-// 	return ""
-// }
-
-func (d *Dir) TotalSize() int64 {
-	return calcSize(d)
-}
-
-func calcSize(cur *Dir) (size int64) {
-	for _, de := range cur.children {
-		f, isFile := de.(*File)
-		if isFile {
-			size += f.Size()
-		} else {
-			next := de.(*Dir)
-			size += calcSize(next)
-		}
-	}
-	return size
 }
 
 // getDir 通過一個路徑獲取其 dir 類型實例

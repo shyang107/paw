@@ -15,6 +15,7 @@ type Extendeder interface {
 type Fielder interface {
 	Path() string
 	RelPath() string
+	RelDir() string
 	NameToLink() string
 	LinkPath() string
 	LSColor() *color.Color
@@ -31,6 +32,9 @@ type Fielder interface {
 	CreatedTime() time.Time
 	ModifiedTime() time.Time
 	Md5() string
+	Git() *GitStatus
+	XY() string
+
 	Field(ViewField) string
 	FieldC(ViewField) string
 	WidthOf(ViewField) int
