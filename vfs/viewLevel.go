@@ -106,7 +106,7 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
 			var sidx string
-			if de.IsFile() {
+			if !de.IsDir() {
 				nf++
 				curnf++
 				size += de.Size()
