@@ -395,8 +395,7 @@ func checkFieldsHasGit(fields []ViewField, isNoGit bool) []ViewField {
 }
 
 func modFieldWidths(v *VFS, fields []ViewField) {
-	rd := v.rootDir
-	childWidths(rd, fields)
+	childWidths(&v.Dir, fields)
 }
 
 func childWidths(d *Dir, fields []ViewField) {

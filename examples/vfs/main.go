@@ -38,6 +38,17 @@ func main() {
 
 	fs := vfs.NewVFSWith(root, level)
 
+	// reSkip := vfs.NewSkipFuncRe("not *.go", `.go$`, func(de vfs.DirEntryX, r *regexp.Regexp) bool {
+	// 	name := strings.TrimSpace(de.Name())
+	// 	if !r.MatchString(name) || de.IsDir() {
+	// 		return false
+	// 	}
+	// 	return true
+	// })
+	// fs.AddSkipFuncs(reSkip)
+
+	fs.BuildFS()
+
 	vfields := vfs.DefaultViewField //| vfs.ViewFieldMd5
 	// fs.View(os.Stdout, vfields, vfs.ViewList)
 	// fs.View(os.Stdout, vfields, vfs.ViewListX)

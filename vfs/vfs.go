@@ -1,9 +1,7 @@
 package vfs
 
 import (
-	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -19,9 +17,10 @@ import (
 
 // VFS 是 fs.FS 的唯讀文件系統實現
 type VFS struct {
-	rootDir   *Dir
+	Dir
 	relpaths  []string
 	skipConds *SkipConds
+	level     int
 }
 
 // NewVFSWith 創建一個唯讀文件系統的實例
@@ -44,62 +43,60 @@ func NewVFSWith(root string, level int) *VFS {
 	relpath, _ := filepath.Rel(aroot, aroot)
 	name := filepath.Base(aroot)
 	v := &VFS{
-		rootDir: &Dir{
+		Dir: Dir{
 			path:     aroot,
 			relpath:  relpath,
 			name:     name,
 			info:     info,
 			git:      git,
 			relpaths: []string{relpath},
-			children: make(map[string]fs.DirEntry),
+			children: make(map[string]DirEntryX),
 		},
 		relpaths:  []string{relpath},
-		skipConds: NewSkipConds(true),
+		skipConds: NewSkipConds().Add(DefaultSkip),
+		level:     level,
 	}
-	v.BuildFS(level)
 
-	cur := v.rootDir
-	v.createRDirs(cur)
-	// sort.Slice(v.rdirs, func(i, j int) bool {
-	// 	return strings.ToLower(v.rdirs[i]) < strings.ToLower(v.rdirs[j])
-	// })
-	// spew.Dump(v.relpaths)
-	// spew.Dump(v.rootDir.relpaths)
-	// paw.Logger.WithField("reflect.DeepEqual(v.relpaths, v.rootDir.relpaths)", reflect.DeepEqual(v.relpaths, v.rootDir.relpaths)).Debug()
-
-	// v.rootDir.git.Dump("(vfs) ConfigGit: before")
-	checkChildGitDir(v.rootDir)
-	checkChildGitFiles(v.rootDir)
-	// v.rootDir.checkGitDir()
-	// v.rootDir.checkGitFiles()
-	v.rootDir.git.Dump("checkChildGit: modified")
 	return v
 }
 
 func (v *VFS) RootDir() *Dir {
-	return v.rootDir
+	return &v.Dir
 }
 func (v *VFS) RelPaths() []string {
 	return v.relpaths
 }
 
-func (v *VFS) SetSkipConds(skips ...*SkipFunc) {
+func (v *VFS) SetSkipConds(skips ...Skiper) {
 	if len(skips) < 1 {
 		return
 	}
-	v.skipConds = NewSkipConds(false)
-	for _, skip := range skips {
-		v.skipConds.Add(skip)
-	}
+	v.skipConds = NewSkipConds().Add(skips...)
+
 }
 
-func (v *VFS) AddSkipFuncs(skips ...*SkipFunc) {
+func (v *VFS) AddSkipFuncs(skips ...Skiper) {
 	if len(skips) < 1 {
 		return
 	}
-	for _, skip := range skips {
-		v.skipConds.Add(skip)
-	}
+	v.skipConds.Add(skips...)
+}
+
+func (v *VFS) BuildFS() {
+	paw.Logger.Trace("building VFS...")
+	cur := &v.Dir
+	buildFS(cur, cur.Path(), v.level, v.skipConds)
+
+	paw.Logger.Trace("building VFS.relpaths...")
+	v.createRDirs(&v.Dir)
+
+	paw.Logger.Trace("checking VFS.git: dir...")
+	checkChildGitDir(&v.Dir)
+
+	paw.Logger.Trace("checking VFS.git: file...")
+	checkChildGitFiles(&v.Dir)
+
+	v.git.Dump("checkChildGit: modified")
 }
 
 func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
@@ -151,16 +148,10 @@ func checkChildGitFiles(d *Dir) {
 			continue
 		}
 		dd.checkGitFiles()
-		// checkChildGitFiles(dd)
 	}
 }
 
-func (v *VFS) BuildFS(level int) {
-	cur := v.rootDir
-	buildFS(cur, cur.Path(), level, v.skipConds)
-}
-
-func buildFS(cur *Dir, root string, level int, skipcond *SkipConds) {
+func buildFS(cur *Dir, root string, level int, skip *SkipConds) {
 	dpath := cur.Path()
 	git := cur.git
 	nlevel := len(strings.Split(cur.RelPath(), "/"))
@@ -169,9 +160,7 @@ func buildFS(cur *Dir, root string, level int, skipcond *SkipConds) {
 	}
 	des, _ := os.ReadDir(dpath)
 	for _, de := range des {
-		skip := false
 		path := filepath.Join(dpath, de.Name())
-
 		info, err := os.Lstat(path)
 		if err != nil {
 			if cur.errors == nil {
@@ -185,14 +174,11 @@ func buildFS(cur *Dir, root string, level int, skipcond *SkipConds) {
 			// })
 			continue
 		}
-		skip = skipcond.Is(de)
-		if skip {
-			continue
-		}
 		relpath, _ := filepath.Rel(root, path)
 		xattrs, _ := getXattr(path)
+		var child DirEntryX
 		if !de.IsDir() {
-			cur.children[de.Name()] = &File{
+			child = &File{
 				path:    path,
 				relpath: relpath,
 				name:    de.Name(),
@@ -201,7 +187,7 @@ func buildFS(cur *Dir, root string, level int, skipcond *SkipConds) {
 				git:     git,
 			}
 		} else {
-			childtDir := &Dir{
+			child = &Dir{
 				path:     path,
 				relpath:  relpath,
 				name:     de.Name(),
@@ -209,12 +195,18 @@ func buildFS(cur *Dir, root string, level int, skipcond *SkipConds) {
 				xattrs:   xattrs,
 				git:      git,
 				relpaths: make([]string, 0),
-				children: make(map[string]fs.DirEntry),
+				children: make(map[string]DirEntryX),
 			}
-			cur.children[de.Name()] = childtDir
-			if level != 0 {
-				buildFS(childtDir, root, level, skipcond)
-			}
+		}
+
+		if skip.Is(child) {
+			continue
+		}
+
+		cur.children[de.Name()] = child
+
+		if level != 0 && child.IsDir() {
+			buildFS(child.(*Dir), root, level, skip)
 		}
 	}
 }
@@ -227,25 +219,48 @@ func (v *VFS) DumpFS(w io.Writer) {
 
 // getDir 通過一個路徑獲取其 dir 類型實例
 func (v *VFS) getDir(path string) (*Dir, error) {
-	if path == "." {
-		return v.rootDir, nil
-	}
-	parts := strings.Split(path, "/")
+	return v.Dir.getDir(path)
+	// if path == "." {
+	// 	return &v.Dir, nil
+	// }
+	// parts := strings.Split(path, "/")
 
-	cur := v.rootDir
-	for _, part := range parts {
-		child := cur.children[part]
-		if child == nil {
-			return nil, fmt.Errorf("%s is not exists", path)
-		}
+	// cur := &v.Dir
+	// for _, part := range parts {
+	// 	child := cur.children[part]
+	// 	if child == nil {
+	// 		return nil, fmt.Errorf("%s is not exists", path)
+	// 	}
 
-		childDir, ok := child.(*Dir)
-		if !ok {
-			return nil, fmt.Errorf("%s is not directory", path)
-		}
+	// 	childDir, ok := child.(*Dir)
+	// 	if !ok {
+	// 		return nil, fmt.Errorf("%s is not directory", path)
+	// 	}
 
-		cur = childDir
-	}
+	// 	cur = childDir
+	// }
 
-	return cur, nil
+	// return cur, nil
 }
+
+// func (v *VFS) ReadDir(n int) ([]DirEntryX, error) {
+// 	return v.Dir.ReadDir(n)
+// }
+
+// // implement DirEntry interface of VFS
+
+// func (v *VFS) Name() string {
+// 	return v.Dir.Name()
+// }
+
+// func (v *VFS) IsDir() bool {
+// 	return v.Dir.IsDir()
+// }
+
+// func (v *VFS) Type() fs.FileMode {
+// 	return v.Dir.Type()
+// }
+
+// func (v *VFS) Info() (fs.FileInfo, error) {
+// 	return v.Dir.Info()
+// }
