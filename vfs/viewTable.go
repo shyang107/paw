@@ -130,14 +130,22 @@ func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 		for _, de := range des {
 			jdx := ""
 			if de.IsFile() {
+				if isViewNoFiles {
+					nitems--
+					continue
+				}
+				nd++
+				curnd++
+				jdx = fmt.Sprintf("D%d", nd)
+			} else {
+				if isViewNoDirs {
+					nitems--
+					continue
+				}
 				nf++
 				curnf++
 				size += de.Size()
 				jdx = fmt.Sprintf("F%d", nf)
-			} else {
-				nd++
-				curnd++
-				jdx = fmt.Sprintf("D%d", nd)
 			}
 			ViewFieldNo.SetValue(jdx)
 			values := setTableValues(de, tf, fields)

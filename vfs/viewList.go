@@ -83,13 +83,21 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX bool) {
 
 		fmt.Fprintf(w, "%v\n", head)
 		for _, de := range des {
-			if de.IsFile() {
+			if de.IsDir() {
+				if isViewNoDirs {
+					nitems--
+					continue
+				}
+				nd++
+				curnd++
+			} else {
+				if isViewNoFiles {
+					nitems--
+					continue
+				}
 				nf++
 				curnf++
 				size += de.Size()
-			} else {
-				nd++
-				curnd++
 			}
 			for _, field := range fields {
 				fmt.Fprintf(w, "%v ", de.FieldC(field))

@@ -86,15 +86,18 @@ var DefaultSkip = NewSkipFunc("default skip func", func(de DirEntryX) bool {
 	return false
 })
 
-// SkipRegularFile skips regular files
-var SkipRegularFile = NewSkipFunc("skip regular file", func(de DirEntryX) bool {
-	if de.Type().IsRegular() {
+// SkipFile skips regular files
+// 	Another way, use ViewType.NoFiles(); and use ViewType.ViewDirAndFile() back to default show directories and files (excluding ViewListTree and ViewListTreeX).
+var SkipFile = NewSkipFunc("skip file", func(de DirEntryX) bool {
+	if de.IsFile() {
 		return true
 	}
 	return false
 })
 
 // SkipDir skips directory file
+// 	[Warning] If use SkipDir, any directories under root do not be accessed.
+//  Use ViewType.NoDirs() would be great; and use ViewType.ViewDirAndFile() back to default show directories and files (excluding ViewListTree and ViewListTreeX).
 var SkipDir = NewSkipFunc("skip directory", func(de DirEntryX) bool {
 	if de.IsDir() {
 		return true

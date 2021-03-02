@@ -1,10 +1,5 @@
 package vfs
 
-import (
-	"errors"
-	"io"
-)
-
 // // PrintDirOption is the option of PrintDir
 // //
 // // Fields:
@@ -264,75 +259,6 @@ import (
 // 	p.ConfigFields()
 // 	return p
 // }
-
-type ViewType int
-
-const (
-	// PExtendView is the option to add extended attributes view using in PrintDir
-	ViewExtended ViewType = 1 << iota // 1 << 0 which is 00000001
-	// ViewList is the option of list view using in PrintDir
-	ViewList
-	// ViewListTree is the option of combining list & tree view using in PrintDir
-	ViewListTree
-	// ViewTree is the option of tree view using in PrintDir
-	ViewTree
-	// ViewLevel is the option of level view using in PrintDir
-	ViewLevel
-	// ViewTable is the option of table view using in PrintDir
-	ViewTable
-	// ViewClassify display type indicator by file names (like as `exa -F` or `exa --classify`) in PrintDir
-	ViewClassify
-	// ViewListX is the option of list view icluding extend attributes using in PrintDir
-	ViewListX = ViewList | ViewExtended
-	// ViewListTreeX is the option of combining list & tree view including extend attribute using in PrintDir
-	ViewListTreeX = ViewListTree | ViewExtended
-	// ViewTreeX is the option of tree view icluding extend atrribute using in PrintDir
-	ViewTreeX = ViewTree | ViewExtended
-
-	// ViewLevelX is the option of level view icluding extend attributes using in PrintDir
-	ViewLevelX = ViewLevel | ViewExtended
-
-	// ViewTableX is the option of table view icluding extend attributes using in PrintDir
-	ViewTableX = ViewTable | ViewExtended
-)
-
-func (v ViewType) String() string {
-	switch v {
-	case ViewList:
-		return "List view"
-	case ViewListX:
-		return "Extended List view"
-	case ViewTree:
-		return "Tree view"
-	case ViewTreeX:
-		return "Extended Tree view"
-	case ViewLevel:
-		return "Level view"
-	case ViewLevelX:
-		return "Extended Level view"
-	case ViewTable:
-		return "Table view"
-	case ViewTableX:
-		return "Extended Table view"
-	case ViewListTree:
-		return "List & Tree view"
-	case ViewListTreeX:
-		return "Extended List & Tree  view"
-	case ViewClassify:
-		return "Classify"
-	default:
-		return "Unknown"
-	}
-}
-
-// Do  will print out VFS
-func (v ViewType) Do(w io.Writer, vfs *VFS, fields ViewField) error {
-	if vfs == nil {
-		return errors.New("not a valid VFS")
-	}
-	vfs.View(w, fields, v)
-	return nil
-}
 
 // // PDSortOption defines sorting way view of PrintDir
 // //

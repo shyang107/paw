@@ -68,32 +68,55 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 		nfiles := len(des)
 		names := make([]string, 0, nfiles)
 		cnames := make([]string, 0, nfiles)
+		// nitems = orgialNitems
 		for _, de := range des {
-			cname = de.LSColor().Sprint(strings.TrimSpace(de.Name()))
+			name := de.Name()
+			cname = de.LSColor().Sprint(strings.TrimSpace(name))
+			isAppendName := true
+			if de.IsDir() && isViewNoDirs {
+				isAppendName = false
+				nfiles--
+				nitems--
+			}
+			if de.IsFile() && isViewNoFiles {
+				isAppendName = false
+				nfiles--
+				nitems--
+			}
 			if de.Xattibutes() == nil {
-				names = append(names, de.Name()+"?")
-				cnames = append(cnames, cname+cdashp.Sprint("?"))
+				if isAppendName {
+					names = append(names, name+"?")
+					cnames = append(cnames, cname+cdashp.Sprint("?"))
+				}
 			} else {
 				if len(de.Xattibutes()) > 0 {
-					names = append(names, de.Name()+"@")
-					cnames = append(cnames, cname+cdashp.Sprint("@"))
+					if isAppendName {
+						names = append(names, name+"@")
+						cnames = append(cnames, cname+cdashp.Sprint("@"))
+					}
 				} else {
-					names = append(names, de.Name()+" ")
-					cnames = append(cnames, cname+" ")
+					if isAppendName {
+						names = append(names, name+" ")
+						cnames = append(cnames, cname+" ")
+					}
 				}
 			}
-			if !de.IsDir() {
+			if de.IsDir() && isAppendName {
+				nd++
+				curnd++
+			}
+			if de.IsFile() && isAppendName {
 				size += de.Size()
 				nf++
 				curnf++
-			} else {
-				nd++
-				curnd++
 			}
 		}
 
 		wdcols := vcGridWidths(names, wdstty)
 		ncols := len(wdcols)
+		if nfiles < 1 {
+			continue
+		}
 		for i := 0; i < nfiles; i += ncols {
 			idx := i
 			for j := 0; j < ncols; j++ {
@@ -115,7 +138,7 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 	}
 
 	fprintBanner(w, "", "=", wdstty)
-	fprintTotalSummary(w, "", tnd, tnf, totalsize, wdstty)
+	fprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
 }
 
 func vcGridWidths(names []string, wdstty int) (wdcols []int) {

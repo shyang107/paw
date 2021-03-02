@@ -106,15 +106,23 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
 			var sidx string
-			if !de.IsDir() {
+			if de.IsDir() {
+				if isViewNoDirs {
+					nitems--
+					continue
+				}
+				nd++
+				curnd++
+				sidx = fmt.Sprintf("D%-[1]*[2]d", wdidx, nd)
+			} else {
+				if isViewNoFiles {
+					nitems--
+					continue
+				}
 				nf++
 				curnf++
 				size += de.Size()
 				sidx = fmt.Sprintf("F%-[1]*[2]d", wdidx, nf)
-			} else {
-				nd++
-				curnd++
-				sidx = fmt.Sprintf("D%-[1]*[2]d", wdidx, nd)
 			}
 			ViewFieldNo.SetValue(sidx)
 			fmt.Fprintf(w, "%s", pad)
