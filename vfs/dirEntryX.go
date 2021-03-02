@@ -8,15 +8,11 @@ import (
 )
 
 // Extended is a interface to get extended attributes from Dir or File
-type Extended interface {
+type Extendeder interface {
 	Xattibutes() []string
 }
 
-type DirEntryX interface {
-	fs.FileInfo
-	fs.DirEntry
-	Extended
-
+type Fielder interface {
 	Path() string
 	RelPath() string
 	NameToLink() string
@@ -35,6 +31,12 @@ type DirEntryX interface {
 	CreatedTime() time.Time
 	ModifiedTime() time.Time
 	Md5() string
+	Field(ViewField) string
+	FieldC(ViewField) string
+	WidthOf(ViewField) int
+}
+
+type ISer interface {
 	IsLink() bool
 	IsFile() bool
 	IsCharDev() bool
@@ -48,7 +50,12 @@ type DirEntryX interface {
 	IsExecAny() bool
 	IsExecAll() bool
 	IsExecutable() bool
-	WidthOf(ViewField) int
-	Field(ViewField) string
-	FieldC(ViewField) string
+}
+
+type DirEntryX interface {
+	fs.FileInfo
+	fs.DirEntry
+	Extendeder
+	Fielder
+	ISer
 }
