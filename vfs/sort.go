@@ -128,6 +128,53 @@ var (
 	}
 )
 
+type SortKey int
+
+const (
+	SortReverse SortKey = 1 << iota
+	SortByINode
+	SortByHDLinks
+	SortBySize
+	SortByBlocks
+	SortByMTime
+	SortByATime
+	SortByCTime
+	SortByName
+	SortByLowerName
+	SortByINodeR     = SortReverse | SortByINode
+	SortByHDLinksR   = SortReverse | SortByHDLinks
+	SortBySizeR      = SortReverse | SortBySize
+	SortByBlocksR    = SortReverse | SortByBlocks
+	SortByMTimeR     = SortReverse | SortByMTime
+	SortByATimeR     = SortReverse | SortByATime
+	SortByCTimeR     = SortReverse | SortByCTime
+	SortByNameR      = SortReverse | SortByName
+	SortByLowerNameR = SortReverse | SortByLowerName
+)
+
+var (
+	SortFuncMap = map[SortKey]*ByFunc{
+		SortByINode:      &ByINodeFunc,
+		SortByHDLinks:    &ByHDLinksFunc,
+		SortBySize:       &BySizeFunc,
+		SortByBlocks:     &ByBlocksFunc,
+		SortByMTime:      &ByMTimeFunc,
+		SortByATime:      &ByATimeFunc,
+		SortByCTime:      &ByCTimeFunc,
+		SortByName:       &ByNameFunc,
+		SortByLowerName:  &ByLowerNameFunc,
+		SortByINodeR:     &ByINodeFuncR,
+		SortByHDLinksR:   &ByHDLinksFuncR,
+		SortBySizeR:      &BySizeFuncR,
+		SortByBlocksR:    &ByBlocksFuncR,
+		SortByMTimeR:     &ByMTimeFuncR,
+		SortByATimeR:     &ByATimeFuncR,
+		SortByCTimeR:     &ByCTimeFuncR,
+		SortByNameR:      &ByNameFuncR,
+		SortByLowerNameR: &ByLowerNameFuncR,
+	}
+)
+
 type ByINode struct{ values []DirEntryX }
 
 func (a ByINode) Len() int      { return len(a.values) }

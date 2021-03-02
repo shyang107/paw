@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -30,7 +31,8 @@ type Dir struct {
 	relpaths []string
 	errors   []error
 	// ReadDir 遍歷用
-	idx int
+	idx      int
+	sortFunc *ByFunc
 }
 
 // 實現 fs.FileInfo 接口
@@ -485,6 +487,8 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 		names = append(names, name)
 	}
 
+	sort.Sort(ByLowerString{names})
+
 	totalEntry := len(names)
 	if n <= 0 {
 		n = totalEntry
@@ -499,12 +503,24 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 	// sort.Sort(ByLowerName{dirEntries})
 
 	// sort.Sort(DirEntryXA(dirEntries).SetLessFunc(ByLowerNameFunc))
-	ByLowerNameFunc.Sort(dirEntries)
+	// ByLowerNameFunc.Sort(dirEntries)
+
+	if d.sortFunc == nil {
+		d.sortFunc = &ByLowerNameFunc
+	}
+	d.sortFunc.Sort(dirEntries)
 
 	return dirEntries, nil
 }
 
 // ====================================================================
+
+func (d *Dir) SetLessFunc(sortFunc ByFunc) {
+	if sortFunc == nil {
+		sortFunc = ByLowerNameFunc
+	}
+	d.sortFunc = &sortFunc
+}
 
 func (d *Dir) RelPaths() []string {
 	return d.relpaths

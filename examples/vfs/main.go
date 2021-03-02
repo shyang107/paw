@@ -36,7 +36,9 @@ func main() {
 	}
 	paw.Logger.SetLevel(loglevel)
 
-	fs := vfs.NewVFSWith(root, level)
+	fs := vfs.NewVFS(root, level, nil)
+	// fs := vfs.NewVFS(root, level, &vfs.BySizeFunc)
+	// fs := vfs.NewVFSWithSortKey(root, level, vfs.SortBySize)
 
 	// reSkip := vfs.NewSkipFuncRe("not *.go", `.go$`, func(de vfs.DirEntryX, r *regexp.Regexp) bool {
 	// 	name := strings.TrimSpace(de.Name())

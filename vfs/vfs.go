@@ -24,7 +24,7 @@ type VFS struct {
 }
 
 // NewVFSWith 創建一個唯讀文件系統的實例
-func NewVFSWith(root string, level int) *VFS {
+func NewVFS(root string, level int, sortFunc *ByFunc) *VFS {
 	paw.Logger.Info()
 
 	aroot, err := filepath.Abs(root)
@@ -42,6 +42,10 @@ func NewVFSWith(root string, level int) *VFS {
 	git := NewGitStatus(aroot)
 	relpath, _ := filepath.Rel(aroot, aroot)
 	name := filepath.Base(aroot)
+	if sortFunc == nil {
+		sortFunc = &ByLowerNameFunc
+	}
+
 	v := &VFS{
 		Dir: Dir{
 			path:     aroot,
@@ -51,6 +55,7 @@ func NewVFSWith(root string, level int) *VFS {
 			git:      git,
 			relpaths: []string{relpath},
 			children: make(map[string]DirEntryX),
+			sortFunc: sortFunc,
 		},
 		relpaths:  []string{relpath},
 		skipConds: NewSkipConds().Add(DefaultSkip),
@@ -58,6 +63,18 @@ func NewVFSWith(root string, level int) *VFS {
 	}
 
 	return v
+}
+
+func NewVFSWithSortKey(root string, level int, sortKey SortKey) *VFS {
+	paw.Logger.Info()
+
+	var sortFunc *ByFunc
+	if less, ok := SortFuncMap[sortKey]; ok {
+		sortFunc = less
+	} else {
+		sortFunc = &ByLowerNameFunc
+	}
+	return NewVFS(root, level, sortFunc)
 }
 
 func (v *VFS) RootDir() *Dir {
@@ -196,6 +213,7 @@ func buildFS(cur *Dir, root string, level int, skip *SkipConds) {
 				git:      git,
 				relpaths: make([]string, 0),
 				children: make(map[string]DirEntryX),
+				sortFunc: cur.sortFunc,
 			}
 		}
 
