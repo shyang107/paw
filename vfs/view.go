@@ -23,9 +23,6 @@ const (
 	// ViewClassify display type indicator by file names (like as `exa -F` or `exa --classify`) in PrintDir
 	ViewClassify
 
-	// ViewNoDirs
-	// ViewNoFiles
-
 	// ViewListX is the option of list view icluding extend attributes using in PrintDir
 	ViewListX = ViewList | ViewExtended
 	// ViewListTreeX is the option of combining list & tree view including extend attribute using in PrintDir
@@ -53,9 +50,8 @@ var (
 		ViewListTree:  "List & Tree view",
 		ViewListTreeX: "Extended List & Tree  view",
 		ViewClassify:  "Classify",
-		// ViewNoDirs:    "Not showing directories",
-		// ViewNoFiles:   "Not showing regular files",
 	}
+
 	isViewNoDirs  bool = false
 	isViewNoFiles bool = false
 )
