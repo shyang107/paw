@@ -63,7 +63,7 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX bool) {
 		}
 
 		des, _ := cur.ReadDir(-1)
-		cur.resetIdx()
+		cur.ResetIndex()
 		if len(des) < 1 {
 			tnd--
 			continue

@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -26,7 +25,7 @@ type Dir struct {
 	git     *GitStatus
 
 	// 存放該目錄下的子項，value 可能是 *dir 或 *file
-	// map[basename]fs.DirEntry
+	// map[basename]DirEntryX
 	children map[string]DirEntryX
 	relpaths []string
 	errors   []error
@@ -486,10 +485,6 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 		names = append(names, name)
 	}
 
-	sort.Slice(names, func(i, j int) bool {
-		return strings.ToLower(names[i]) < strings.ToLower(names[j])
-	})
-
 	totalEntry := len(names)
 	if n <= 0 {
 		n = totalEntry
@@ -497,19 +492,14 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 
 	dirEntries := make([]DirEntryX, 0, n)
 	for i := d.idx; i < n && i < totalEntry; i++ {
-		name := names[i]
-		child := d.children[name]
-
-		f, isFile := child.(*File)
-		if isFile {
-			dirEntries = append(dirEntries, f)
-		} else {
-			dirEntry := child.(*Dir)
-			dirEntries = append(dirEntries, dirEntry)
-		}
-
+		dirEntries = append(dirEntries, d.children[names[i]])
 		d.idx = i
 	}
+
+	// sort.Sort(ByLowerName{dirEntries})
+
+	// sort.Sort(DirEntryXA(dirEntries).SetLessFunc(ByLowerNameFunc))
+	ByLowerNameFunc.Sort(dirEntries)
 
 	return dirEntries, nil
 }
@@ -520,7 +510,7 @@ func (d *Dir) RelPaths() []string {
 	return d.relpaths
 }
 
-func (d *Dir) resetIdx() {
+func (d *Dir) ResetIndex() {
 	d.idx = 0
 }
 
@@ -679,7 +669,7 @@ func (d *Dir) getSubXYs() (xs, ys []GitStatusCode) {
 func markChildGit(d *Dir, xy *GitFileStatus) {
 	gs := d.git.GetStatus()
 	ds, _ := d.ReadDir(-1)
-	d.resetIdx()
+	d.ResetIndex()
 	if len(ds) == 0 {
 		return
 	}

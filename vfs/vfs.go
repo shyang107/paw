@@ -101,7 +101,7 @@ func (v *VFS) BuildFS() {
 
 func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 	ds, _ := cur.ReadDir(-1)
-	cur.resetIdx()
+	cur.ResetIndex()
 	relpaths = make([]string, 0) //
 	for _, d := range ds {
 		next, isDir := d.(*Dir)
@@ -123,7 +123,7 @@ func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 
 func checkChildGitDir(d *Dir) {
 	ds, _ := d.ReadDir(-1)
-	d.resetIdx()
+	d.ResetIndex()
 	if len(ds) == 0 {
 		return
 	}
@@ -138,7 +138,7 @@ func checkChildGitDir(d *Dir) {
 }
 func checkChildGitFiles(d *Dir) {
 	ds, _ := d.ReadDir(-1)
-	d.resetIdx()
+	d.ResetIndex()
 	if len(ds) == 0 {
 		return
 	}

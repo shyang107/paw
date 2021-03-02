@@ -84,7 +84,7 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 		}
 
 		des, _ := cur.ReadDir(-1)
-		cur.resetIdx()
+		cur.ResetIndex()
 		if len(des) < 1 {
 			tnd--
 			continue

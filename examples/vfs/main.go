@@ -52,9 +52,9 @@ func main() {
 	vfields := vfs.DefaultViewField //| vfs.ViewFieldMd5
 	// fs.View(os.Stdout, vfields, vfs.ViewList)
 	// fs.View(os.Stdout, vfields, vfs.ViewListX)
-	// fs.View(os.Stdout, vfields, vfs.ViewLevel)
+	fs.View(os.Stdout, vfields, vfs.ViewLevel)
 	// fs.View(os.Stdout, vfields, vfs.ViewLevelX)
-	fs.View(os.Stdout, vfields, vfs.ViewTable.NoDirs())
+	// fs.View(os.Stdout, vfields, vfs.ViewTable)
 	// fs.View(os.Stdout, vfields, vfs.ViewTableX)
 	// fs.View(os.Stdout, vfields, vfs.ViewListTree)
 	// fs.View(os.Stdout, vfields, vfs.ViewListTreeX)

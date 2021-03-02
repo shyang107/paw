@@ -400,7 +400,7 @@ func modFieldWidths(v *VFS, fields []ViewField) {
 
 func childWidths(d *Dir, fields []ViewField) {
 	ds, _ := d.ReadDir(-1)
-	d.resetIdx()
+	d.ResetIndex()
 	for _, c := range ds {
 		f, isFile := c.(*File)
 		if isFile {

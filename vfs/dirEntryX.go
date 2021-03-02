@@ -21,6 +21,7 @@ type Fielder interface {
 	LSColor() *color.Color
 	INode() uint64
 	HDLinks() uint64
+	Blocks() uint64
 	Uid() uint32
 	User() string
 	Gid() uint32
