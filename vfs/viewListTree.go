@@ -7,7 +7,7 @@ import (
 	"github.com/shyang107/paw"
 )
 
-func (v *VFS) ViewListTree(w io.Writer, fields []ViewField, hasX, onlyTree bool) {
+func (v *VFS) ViewListTree(w io.Writer, fields []ViewField, hasX, hasList bool) {
 	paw.Logger.Info("[vfs] ViewListTree...")
 
 	cur := v.RootDir()
@@ -15,20 +15,20 @@ func (v *VFS) ViewListTree(w io.Writer, fields []ViewField, hasX, onlyTree bool)
 	if fields == nil {
 		fields = DefaultViewFieldSlice
 	}
-	if onlyTree {
-		fields = []ViewField{ViewFieldName}
-	} else {
+	if hasList {
 		fields = checkFieldsHasGit(fields, cur.git.NoGit)
 		modFieldWidths(v, fields)
 		ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
+	} else {
+		fields = []ViewField{ViewFieldName}
 	}
 
-	viewListTree(w, cur, fields, hasX, onlyTree)
+	viewListTree(w, cur, fields, hasX, hasList)
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 
 }
 
-func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, onlyTree bool) {
+func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, hasList bool) {
 	var (
 		wdstty   = sttyWidth - 2
 		wdmeta   = 0
@@ -69,12 +69,12 @@ func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, onlyTree bool
 			edge = EdgeTypeEnd
 			levelsEnded = append(levelsEnded, level)
 		}
-		if !de.IsDir() {
-			vltFile(w, level, levelsEnded, edge, de, fields, hasX, onlyTree, wdstty)
-		} else {
-			vltFile(w, level, levelsEnded, edge, de, fields, hasX, onlyTree, wdstty)
+		if de.IsDir() {
+			vltFile(w, level, levelsEnded, edge, de, fields, hasX, hasList, wdstty)
 			cur := de.(*Dir)
-			vltDir(w, level+1, levelsEnded, edge, cur, fields, hasX, onlyTree, wdstty)
+			vltDir(w, level+1, levelsEnded, edge, cur, fields, hasX, hasList, wdstty)
+		} else {
+			vltFile(w, level, levelsEnded, edge, de, fields, hasX, hasList, wdstty)
 		}
 	}
 
@@ -84,7 +84,7 @@ func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, onlyTree bool
 	fprintTotalSummary(w, "", tnd, tnf, cur.TotalSize(), wdstty)
 }
 
-func vltFile(w io.Writer, level int, levelsEnded []int, edge EdgeType, de DirEntryX, fields []ViewField, hasX bool, onlyTree bool, wdstty int) {
+func vltFile(w io.Writer, level int, levelsEnded []int, edge EdgeType, de DirEntryX, fields []ViewField, hasX bool, hasList bool, wdstty int) {
 	var (
 		padMeta = ""
 		meta    = ""
@@ -93,8 +93,8 @@ func vltFile(w io.Writer, level int, levelsEnded []int, edge EdgeType, de DirEnt
 		wdinf   int
 		cedge   = ""
 	)
-	if !onlyTree {
-		// 1. print all fields except Name
+	// 1. print all fields except Name
+	if hasList {
 		for _, field := range fields {
 			if field&ViewFieldName != 0 {
 				continue
@@ -121,7 +121,7 @@ func vltFile(w io.Writer, level int, levelsEnded []int, edge EdgeType, de DirEnt
 
 	xattrs := de.Xattibutes()
 	cname := de.FieldC(ViewFieldName)
-	if onlyTree && !hasX && len(xattrs) > 0 {
+	if hasList && !hasX && len(xattrs) > 0 {
 		cname += cdashp.Sprint(" @")
 	}
 	// 2. print out Name field
@@ -160,7 +160,7 @@ func isEnded(levelsEnded []int, level int) bool {
 	return false
 }
 
-func vltDir(w io.Writer, level int, levelsEnded []int, edge EdgeType, cur *Dir, fields []ViewField, hasX bool, onlyTree bool, wdstty int) {
+func vltDir(w io.Writer, level int, levelsEnded []int, edge EdgeType, cur *Dir, fields []ViewField, hasX bool, hasList bool, wdstty int) {
 	des, _ := cur.ReadDir(-1)
 	cur.ResetIndex()
 	if len(des) < 1 {
@@ -172,12 +172,12 @@ func vltDir(w io.Writer, level int, levelsEnded []int, edge EdgeType, cur *Dir, 
 			edge = EdgeTypeEnd
 			levelsEnded = append(levelsEnded, level)
 		}
-		if !de.IsDir() {
-			vltFile(w, level, levelsEnded, edge, de, fields, hasX, onlyTree, wdstty)
-		} else {
-			vltFile(w, level, levelsEnded, edge, de, fields, hasX, onlyTree, wdstty)
+		if de.IsDir() {
+			vltFile(w, level, levelsEnded, edge, de, fields, hasX, hasList, wdstty)
 			cur := de.(*Dir)
-			vltDir(w, level+1, levelsEnded, edge, cur, fields, hasX, onlyTree, wdstty)
+			vltDir(w, level+1, levelsEnded, edge, cur, fields, hasX, hasList, wdstty)
+		} else {
+			vltFile(w, level, levelsEnded, edge, de, fields, hasX, hasList, wdstty)
 		}
 	}
 }
