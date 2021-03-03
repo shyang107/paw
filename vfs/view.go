@@ -63,12 +63,14 @@ func (v ViewType) ViewDirAndFile() {
 }
 
 // NoDirs disables ViewType showing directories (excluding ViewListTree and ViewListTreeX)
+// 	see examples/vfs
 func (v ViewType) NoDirs() ViewType {
 	isViewNoDirs = true
 	return v
 }
 
 // NoFiles disables ViewType showing files (excluding ViewListTree and ViewListTreeX)
+// 	see examples/vfs
 func (v ViewType) NoFiles() ViewType {
 	isViewNoFiles = true
 	return v
@@ -83,16 +85,22 @@ func (v ViewType) String() string {
 }
 
 // Do  will print out VFS
-func (v ViewType) Do(w io.Writer, vfs *VFS, fields ViewField) error {
+func (v ViewType) Do(w io.Writer, vfs *VFS) error {
 	if vfs == nil {
 		return errors.New("not a valid VFS")
 	}
-	vfs.View(w, fields, v)
+	vfs.opt.ViewType = v
+	vfs.View(w)
 	return nil
 }
 
-func (v *VFS) View(w io.Writer, vfields ViewField, viewType ViewType) {
-	fields := vfields.Fields()
+// View excutes view operation of VFS and all needed arguments to view in VFS.opt.
+func (v *VFS) View(w io.Writer) {
+	var (
+		vfields  = v.opt.ViewFields
+		fields   = vfields.Fields()
+		viewType = v.opt.ViewType
+	)
 	switch viewType {
 	case ViewList:
 		v.ViewList(w, fields, false)

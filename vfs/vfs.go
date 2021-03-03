@@ -18,13 +18,13 @@ import (
 // VFS 是 fs.FS 的唯讀文件系統實現
 type VFS struct {
 	Dir
-	relpaths  []string
-	skipConds *SkipConds
-	level     int
+	relpaths []string
+	// skipConds *SkipConds
+	opt *VFSOption
 }
 
 // NewVFSWith 創建一個唯讀文件系統的實例
-func NewVFS(root string, level int, sortFunc *ByFunc) *VFS {
+func NewVFS(root string, opt *VFSOption) *VFS {
 	paw.Logger.Info()
 
 	aroot, err := filepath.Abs(root)
@@ -42,10 +42,9 @@ func NewVFS(root string, level int, sortFunc *ByFunc) *VFS {
 	git := NewGitStatus(aroot)
 	relpath, _ := filepath.Rel(aroot, aroot)
 	name := filepath.Base(aroot)
-	if sortFunc == nil {
-		sortFunc = &ByLowerNameFunc
+	if opt == nil {
+		opt = NewVFSOption()
 	}
-
 	v := &VFS{
 		Dir: Dir{
 			path:     aroot,
@@ -55,27 +54,26 @@ func NewVFS(root string, level int, sortFunc *ByFunc) *VFS {
 			git:      git,
 			relpaths: []string{relpath},
 			children: make(map[string]DirEntryX),
-			sortFunc: sortFunc,
+			opt:      opt,
 		},
-		relpaths:  []string{relpath},
-		skipConds: NewSkipConds().Add(DefaultSkip),
-		level:     level,
+		relpaths: []string{relpath},
+		opt:      opt,
 	}
 
 	return v
 }
 
-func NewVFSWithSortKey(root string, level int, sortKey SortKey) *VFS {
-	paw.Logger.Info()
+// func NewVFSWithSortKey(root string, level int, sortKey SortKey) *VFS {
+// 	paw.Logger.Info()
 
-	var sortFunc *ByFunc
-	if less, ok := SortFuncMap[sortKey]; ok {
-		sortFunc = less
-	} else {
-		sortFunc = &ByLowerNameFunc
-	}
-	return NewVFS(root, level, sortFunc)
-}
+// 	var sortFunc *ByFunc
+// 	if less, ok := SortFuncMap[sortKey]; ok {
+// 		sortFunc = less
+// 	} else {
+// 		sortFunc = &ByLowerNameFunc
+// 	}
+// 	return NewVFS(root, level, sortFunc)
+// }
 
 func (v *VFS) RootDir() *Dir {
 	return &v.Dir
@@ -84,11 +82,19 @@ func (v *VFS) RelPaths() []string {
 	return v.relpaths
 }
 
+func (v *VFS) Option() *VFSOption {
+	return v.opt
+}
+
+func (v *VFS) SetOption(opt *VFSOption) {
+	v.RootDir().SetOption(opt)
+}
+
 func (v *VFS) SetSkipConds(skips ...Skiper) {
 	if len(skips) < 1 {
 		return
 	}
-	v.skipConds = NewSkipConds().Add(skips...)
+	v.opt.Skips = NewSkipConds().Add(skips...)
 
 }
 
@@ -96,13 +102,13 @@ func (v *VFS) AddSkipFuncs(skips ...Skiper) {
 	if len(skips) < 1 {
 		return
 	}
-	v.skipConds.Add(skips...)
+	v.opt.Skips.Add(skips...)
 }
 
 func (v *VFS) BuildFS() {
 	paw.Logger.Trace("building VFS...")
 	cur := &v.Dir
-	buildFS(cur, cur.Path(), v.level, v.skipConds)
+	buildFS(cur, cur.Path())
 
 	paw.Logger.Trace("building VFS.relpaths...")
 	v.createRDirs(&v.Dir)
@@ -168,9 +174,13 @@ func checkChildGitFiles(d *Dir) {
 	}
 }
 
-func buildFS(cur *Dir, root string, level int, skip *SkipConds) {
-	dpath := cur.Path()
-	git := cur.git
+func buildFS(cur *Dir, root string) {
+	var (
+		dpath = cur.Path()
+		git   = cur.git
+		skip  = cur.opt.Skips
+		level = cur.opt.Depth
+	)
 	nlevel := len(strings.Split(cur.RelPath(), "/"))
 	if level > 0 && nlevel > level {
 		return
@@ -213,7 +223,7 @@ func buildFS(cur *Dir, root string, level int, skip *SkipConds) {
 				git:      git,
 				relpaths: make([]string, 0),
 				children: make(map[string]DirEntryX),
-				sortFunc: cur.sortFunc,
+				opt:      cur.opt,
 			}
 		}
 
@@ -224,14 +234,14 @@ func buildFS(cur *Dir, root string, level int, skip *SkipConds) {
 		cur.children[de.Name()] = child
 
 		if level != 0 && child.IsDir() {
-			buildFS(child.(*Dir), root, level, skip)
+			buildFS(child.(*Dir), root)
 		}
 	}
 }
 
 func (v *VFS) DumpFS(w io.Writer) {
 	color.NoColor = true
-	v.View(w, DefaultViewField, ViewLevel)
+	v.View(w)
 	color.NoColor = paw.NoColor
 }
 

@@ -1,5 +1,41 @@
 package vfs
 
+// VFSOption uses in VFS
+type VFSOption struct {
+	Depth      int
+	Grouping   Group
+	By         *ByFunc
+	Skips      *SkipConds
+	ViewFields ViewField
+	ViewType   ViewType
+}
+
+type Group int
+
+const (
+	// GroupNone is default order of []DirEntryX returned by Dir.ReadDir(n)
+	// 	see example/vfs
+	GroupNone Group = 1 << iota
+	// Grouped use in returned values of Dir.ReadDir(n). Arrange order of []DirEntryX by dir..., file...
+	// 	see example/vfs
+	Grouped
+	// GroupedR use in returned values of Dir.ReadDir(n). Arrange reverse order of []DirEntryX by file..., dir...
+	// 	see example/vfs
+	GroupedR
+)
+
+// NewVFSOption creates a new instance of VFSOption
+func NewVFSOption() *VFSOption {
+	return &VFSOption{
+		Depth:      0,
+		Grouping:   GroupNone,
+		By:         &ByLowerNameFunc,
+		Skips:      NewSkipConds().Add(DefaultSkip),
+		ViewFields: DefaultViewField,
+		ViewType:   ViewList,
+	}
+}
+
 // // PrintDirOption is the option of PrintDir
 // //
 // // Fields:

@@ -50,7 +50,7 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 		des, _ := cur.ReadDir(-1)
 		cur.ResetIndex()
 		if len(des) < 1 {
-			tnd--
+			// nitems--
 			continue
 		}
 
@@ -68,7 +68,6 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 		nfiles := len(des)
 		names := make([]string, 0, nfiles)
 		cnames := make([]string, 0, nfiles)
-		// nitems = orgialNitems
 		for _, de := range des {
 			name := de.Name()
 			cname = de.LSColor().Sprint(strings.TrimSpace(name))
@@ -101,17 +100,16 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 					}
 				}
 			}
-			if de.IsDir() && isAppendName {
+			if de.IsDir() && !isViewNoDirs {
 				nd++
 				curnd++
 			}
-			if de.IsFile() && isAppendName {
+			if !de.IsDir() && !isViewNoFiles {
 				size += de.Size()
 				nf++
 				curnf++
 			}
 		}
-
 		wdcols := vcGridWidths(names, wdstty)
 		ncols := len(wdcols)
 		if nfiles < 1 {
@@ -132,7 +130,8 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 		}
 		totalsize += size
 		fprintDirSummary(w, "", curnd, curnf, size, wdstty)
-		if nd+nf < nitems {
+
+		if nfiles < nitems {
 			fprintBanner(w, "", "-", wdstty)
 		}
 	}

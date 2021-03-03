@@ -14,31 +14,25 @@ func main() {
 	// root := `/Users/shyang/go/src/github.com/shyang107/paw/`
 	// root := `/dev`
 	var (
-		root     string
-		level    int
-		loglevel = logrus.WarnLevel
+		root string
+		opt  = vfs.NewVFSOption()
 	)
 	switch len(os.Args) {
 	case 2:
 		root = os.Args[1]
 	case 3:
 		root = os.Args[1]
-		level = cast.ToInt(os.Args[2])
+		opt.Depth = cast.ToInt(os.Args[2])
 	case 4:
 		root = os.Args[1]
-		level = cast.ToInt(os.Args[2])
+		opt.Depth = cast.ToInt(os.Args[2])
 		if strings.ToLower(os.Args[3]) == "-v" {
-			loglevel = logrus.TraceLevel
+			paw.Logger.SetLevel(logrus.TraceLevel)
 		}
 	default:
 		root = "."
-		level = 0
+		opt.Depth = 0
 	}
-	paw.Logger.SetLevel(loglevel)
-
-	fs := vfs.NewVFS(root, level, nil)
-	// fs := vfs.NewVFS(root, level, &vfs.BySizeFunc)
-	// fs := vfs.NewVFSWithSortKey(root, level, vfs.SortBySize)
 
 	// reSkip := vfs.NewSkipFuncRe("not *.go", `.go$`, func(de vfs.DirEntryX, r *regexp.Regexp) bool {
 	// 	name := strings.TrimSpace(de.Name())
@@ -47,21 +41,40 @@ func main() {
 	// 	}
 	// 	return true
 	// })
+
+	// reSkip := vfs.NewSkipFuncRe("get *.go", `.go$`, func(de vfs.DirEntryX, r *regexp.Regexp) bool {
+	// 	name := strings.TrimSpace(de.Name())
+	// 	if r.MatchString(name) || de.IsDir() {
+	// 		return false
+	// 	}
+	// 	return true
+	// })
+
+	skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkip)
+	// skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkip).Add(reSkip)
+	vfields := vfs.DefaultViewField | vfs.ViewFieldGit //| vfs.ViewFieldMd5
+	vopt := &vfs.VFSOption{
+		Depth:      opt.Depth,
+		Grouping:   vfs.GroupedR, // vfs.GroupNone,
+		By:         &vfs.ByLowerNameFunc,
+		Skips:      skipcond,
+		ViewFields: vfields,
+		// ViewType:   vfs.ViewList,
+		// ViewType:   vfs.ViewListX,
+		// ViewType: vfs.ViewLevel, //vfs.ViewLevel.NoDirs(),
+		// ViewType:   vfs.ViewLevelX,
+		// ViewType:   vfs.ViewTable,
+		// ViewType:   vfs.ViewTableX,
+		ViewType: vfs.ViewListTree,
+		// ViewType:   vfs.ViewListTreeX,
+		// ViewType: vfs.ViewTree,
+		// ViewType:   vfs.ViewTreeX,
+		// ViewType: vfs.ViewClassify,
+	}
+	fs := vfs.NewVFS(root, vopt)
 	// fs.AddSkipFuncs(reSkip)
 	// fs.AddSkipFuncs(vfs.SkipFile)
 	fs.BuildFS()
 
-	vfields := vfs.DefaultViewField //| vfs.ViewFieldMd5
-	// fs.View(os.Stdout, vfields, vfs.ViewList)
-	// fs.View(os.Stdout, vfields, vfs.ViewListX)
-	fs.View(os.Stdout, vfields, vfs.ViewLevel)
-	// fs.View(os.Stdout, vfields, vfs.ViewLevelX)
-	// fs.View(os.Stdout, vfields, vfs.ViewTable)
-	// fs.View(os.Stdout, vfields, vfs.ViewTableX)
-	// fs.View(os.Stdout, vfields, vfs.ViewListTree)
-	// fs.View(os.Stdout, vfields, vfs.ViewListTreeX)
-	// fs.View(os.Stdout, vfields, vfs.ViewTree)
-	// fs.View(os.Stdout, vfields, vfs.ViewTreeX)
-	// fs.View(os.Stdout, vfields, vfs.ViewClassify)
-
+	fs.View(os.Stdout)
 }

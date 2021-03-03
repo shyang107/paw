@@ -16,6 +16,7 @@ type ByFunc func(fi, fj DirEntryX) bool
 
 // Sort is a method on the function type, By, that sorts the argument slice according to the function.
 func (by ByFunc) Sort(files []DirEntryX) {
+	// paw.Logger.Trace("sorting..." + paw.Caller(1))
 	ps := &DirEntryXSorter{
 		files: files,
 		by:    by, // The Sort method's receiver is the function (closure) that defines the sort order.

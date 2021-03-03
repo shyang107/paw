@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -31,8 +30,8 @@ type Dir struct {
 	relpaths []string
 	errors   []error
 	// ReadDir 遍歷用
-	idx      int
-	sortFunc *ByFunc
+	idx int
+	opt *VFSOption
 }
 
 // 實現 fs.FileInfo 接口
@@ -482,12 +481,11 @@ func (d *Dir) IsExecutable() bool {
 
 // ReadDir 實現 fs.ReadDirFile 接口，方便遍歷目錄
 func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
+	// 1. reading items
 	names := make([]string, 0, len(d.children))
 	for name := range d.children {
 		names = append(names, name)
 	}
-
-	sort.Sort(ByLowerString{names})
 
 	totalEntry := len(names)
 	if n <= 0 {
@@ -500,26 +498,59 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 		d.idx = i
 	}
 
+	// 2. sort items
+	d.opt.By.Sort(dirEntries)
 	// sort.Sort(ByLowerName{dirEntries})
-
 	// sort.Sort(DirEntryXA(dirEntries).SetLessFunc(ByLowerNameFunc))
 	// ByLowerNameFunc.Sort(dirEntries)
 
-	if d.sortFunc == nil {
-		d.sortFunc = &ByLowerNameFunc
+	// 3. grouping items
+	if d.opt.Grouping != GroupNone {
+		dirs := make([]DirEntryX, 0)
+		files := make([]DirEntryX, 0)
+		for _, de := range dirEntries {
+			if de.IsDir() {
+				dirs = append(dirs, de)
+			} else {
+				files = append(files, de)
+			}
+		}
+		switch d.opt.Grouping {
+		case Grouped:
+			return append(dirs, files...), nil
+		case GroupedR:
+			return append(files, dirs...), nil
+		}
 	}
-	d.sortFunc.Sort(dirEntries)
-
 	return dirEntries, nil
 }
 
 // ====================================================================
 
-func (d *Dir) SetLessFunc(sortFunc ByFunc) {
-	if sortFunc == nil {
-		sortFunc = ByLowerNameFunc
+func (d *Dir) Option() *VFSOption {
+	return d.opt
+}
+
+func (d *Dir) SetOption(opt *VFSOption) {
+	setDirOption(d, opt)
+}
+
+func setDirOption(cur *Dir, opt *VFSOption) {
+	cur.opt = opt
+	des, _ := cur.ReadDir(-1)
+	for _, de := range des {
+		if de.IsDir() {
+			child := de.(*Dir)
+			setDirOption(child, opt)
+		}
 	}
-	d.sortFunc = &sortFunc
+}
+
+func (d *Dir) SetLessFunc(sortFunc *ByFunc) {
+	if sortFunc == nil {
+		sortFunc = &ByLowerNameFunc
+	}
+	d.opt.By = sortFunc
 }
 
 func (d *Dir) RelPaths() []string {
