@@ -12,16 +12,6 @@ type VFSOption struct {
 	ViewType   ViewType
 }
 
-func (v VFSOption) String() string {
-	s := fmt.Sprintf("Depth: %d\n", v.Depth)
-	s += fmt.Sprintf("Grouping: %v\n", v.Grouping)
-	s += fmt.Sprintf("By: %v\n", v.By)
-	s += fmt.Sprintf("Skips: %v\n", v.Skips)
-	s += fmt.Sprintf("ViewFields: %v\n", v.ViewFields)
-	s += fmt.Sprintf("ViewType: %v", v.ViewType)
-	return s
-}
-
 // NewVFSOption creates a new instance of VFSOption
 func NewVFSOption() *VFSOption {
 	return &VFSOption{
@@ -32,6 +22,20 @@ func NewVFSOption() *VFSOption {
 		ViewFields: DefaultViewField,
 		ViewType:   ViewList,
 	}
+}
+
+func (v VFSOption) String() string {
+	s := fmt.Sprintf("[Depth]:      %d\n", v.Depth)
+	s += fmt.Sprintf("[Grouping]:   %q\n", v.Grouping)
+	s += fmt.Sprintf("[By]:         %q\n", v.By)
+	s += fmt.Sprintf("[Skips]:      %q\n", v.Skips)
+	s += fmt.Sprintf("[ViewFields]: %q\n", v.ViewFields)
+	s += fmt.Sprintf("[ViewType]:   %q", v.ViewType)
+	return s
+}
+
+func (v *VFSOption) Sort(dxs []DirEntryX) {
+	v.By.Sort(dxs)
 }
 
 type Group int

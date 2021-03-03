@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+type ByLessX func(fi, fj DirEntryX) bool
+
 // ByFunc is the type of a "less" function that defines the ordering of its File arguments.
 //
 // Example:
@@ -13,28 +15,49 @@ import (
 // 	}
 // 	ByFunc(lowerPathName).Sort(files)
 type ByFunc struct {
-	Name string
-	Less func(fi, fj DirEntryX) bool
+	Name       string
+	_IsReverse bool
+	Less       ByLessX
 }
 
 func (b ByFunc) String() string {
 	return b.Name
 }
 
+func (b ByFunc) SetReverse() ByFunc {
+	b._IsReverse = true
+	b.Name = "reversely " + b.Name
+	return b
+}
+
 // Sort is a method on the function type, By, that sorts the argument slice according to the function.
-func (b ByFunc) Sort(files []DirEntryX) {
+func (b *ByFunc) Sort(files []DirEntryX) {
 	// paw.Logger.Trace("sorting..." + paw.Caller(1))
 	ps := &DirEntryXSorter{
 		files: files,
 		by:    b, // The Sort method's receiver is the function (closure) that defines the sort order.
 	}
-	sort.Sort(ps)
+	if b._IsReverse {
+		sort.Sort(sort.Reverse(ps))
+	} else {
+		sort.Sort(ps)
+	}
 }
+
+// // SortReverse like as Byfunc.Sort, but in reverse order.
+// func (b ByFunc) SortReverse(files []DirEntryX) {
+// 	// paw.Logger.Trace("sorting..." + paw.Caller(1))
+// 	ps := &DirEntryXSorter{
+// 		files: files,
+// 		by:    b, // The Sort method's receiver is the function (closure) that defines the sort order.
+// 	}
+// 	sort.Sort(sort.Reverse(ps))
+// }
 
 // DirEntryXSorter joins a By function and a slice of Files to be sorted.
 type DirEntryXSorter struct {
 	files []DirEntryX
-	by    ByFunc //func(p1, p2 DirEntryX) bool
+	by    *ByFunc //func(p1, p2 DirEntryX) bool
 }
 
 // Len is part of sort.Interface.
@@ -52,53 +75,38 @@ func (s *DirEntryXSorter) Less(i, j int) bool {
 	return s.by.Less(s.files[i], s.files[j])
 }
 
-type ByLowerString struct {
-	values []string
-}
-
-func (a ByLowerString) Len() int      { return len(a.values) }
-func (a ByLowerString) Swap(i, j int) { a.values[i], a.values[j] = a.values[j], a.values[i] }
-func (a ByLowerString) Less(i, j int) bool {
-	return strings.ToLower(a.values[i]) < strings.ToLower(a.values[j])
-}
-
 var (
 	ByINodeFunc = ByFunc{
-		Name: "by Inode",
+		Name:       "by Inode",
+		_IsReverse: false,
 		Less: func(fi, fj DirEntryX) bool {
 			return fi.INode() < fj.INode()
 		},
 	}
 
-	ByINodeFuncR = ByFunc{
-		Name: "by Inode reversely",
-		Less: func(fi, fj DirEntryX) bool {
-			return ByINodeFunc.Less(fj, fi)
-		},
-	}
+	ByINodeFuncR = ByINodeFunc.SetReverse()
 
 	ByHDLinksFunc = ByFunc{
-		Name: "by HDLinks",
+		Name:       "by HDLinks",
+		_IsReverse: false,
 		Less: func(fi, fj DirEntryX) bool {
 			return fi.HDLinks() < fj.HDLinks()
 		},
 	}
-	ByHDLinksFuncR = ByFunc{
-		Name: "by HDLinks reversely",
-		Less: func(fi, fj DirEntryX) bool {
-			return ByHDLinksFunc.Less(fj, fi)
-		},
-	}
+
+	ByHDLinksFuncR = ByHDLinksFunc.SetReverse()
 
 	ByPathFunc = ByFunc{
-		Name: "by lower Path",
+		Name:       "by lower Path",
+		_IsReverse: false,
 		Less: func(fi, fj DirEntryX) bool {
 			return strings.ToLower(fi.Path()) < strings.ToLower(fj.Path())
 		},
 	}
 
 	BySizeFunc = ByFunc{
-		Name: "by Size",
+		Name:       "by Size",
+		_IsReverse: false,
 		Less: func(fi, fj DirEntryX) bool {
 			// if fi.IsDir() && fj.IsDir() {
 			// 	return ByPathFunc(fi, fj)
@@ -106,15 +114,12 @@ var (
 			return fi.Size() < fj.Size()
 		},
 	}
-	BySizeFuncR = ByFunc{
-		Name: "by Size reversely",
-		Less: func(fi, fj DirEntryX) bool {
-			return BySizeFunc.Less(fj, fi)
-		},
-	}
+
+	BySizeFuncR = BySizeFunc.SetReverse()
 
 	ByBlocksFunc = ByFunc{
-		Name: "by Blocks",
+		Name:       "by Blocks",
+		_IsReverse: false,
 		Less: func(fi, fj DirEntryX) bool {
 			// if fi.IsDir() && fj.IsDir() {
 			// 	return ByPathFunc(fi, fj)
@@ -123,82 +128,63 @@ var (
 		},
 	}
 
-	ByBlocksFuncR = ByFunc{
-		Name: "by Blocks reversely",
-		Less: func(fi, fj DirEntryX) bool {
-			return ByBlocksFunc.Less(fj, fi)
-		},
-	}
+	ByBlocksFuncR = ByBlocksFunc.SetReverse()
 
 	ByMTimeFunc = ByFunc{
-		Name: "by MTime",
+		Name:       "by MTime",
+		_IsReverse: false,
 		Less: func(fi, fj DirEntryX) bool {
 			return fi.ModifiedTime().Before(fj.ModifiedTime())
 		},
 	}
-	ByMTimeFuncR = ByFunc{
-		Name: "by MTime reversely",
-		Less: func(fi, fj DirEntryX) bool {
-			return ByMTimeFunc.Less(fj, fi)
-		},
-	}
+
+	ByMTimeFuncR = ByMTimeFunc.SetReverse()
 
 	ByATimeFunc = ByFunc{
-		Name: "by ATime",
+		Name:       "by ATime",
+		_IsReverse: false,
 		Less: func(fi, fj DirEntryX) bool {
 			return fi.AccessedTime().Before(fj.AccessedTime())
 		},
 	}
-	ByATimeFuncR = ByFunc{
-		Name: "by Atime reversely",
-		Less: func(fi, fj DirEntryX) bool {
-			return ByATimeFunc.Less(fj, fi)
-		},
-	}
+
+	ByATimeFuncR = ByATimeFunc.SetReverse()
+
 	ByCTimeFunc = ByFunc{
-		Name: "by CTime",
+		Name:       "by CTime",
+		_IsReverse: false,
 		Less: func(fi, fj DirEntryX) bool {
 			return fi.CreatedTime().Before(fj.CreatedTime())
 		},
 	}
-	ByCTimeFuncR = ByFunc{
-		Name: "by Ctime reversely",
-		Less: func(fi, fj DirEntryX) bool {
-			return ByCTimeFunc.Less(fj, fi)
-		},
-	}
+
+	ByCTimeFuncR = ByCTimeFunc.SetReverse()
 
 	ByNameFunc = ByFunc{
-		Name: "by Name",
+		Name:       "by Name",
+		_IsReverse: false,
 		Less: func(fi, fj DirEntryX) bool {
 			return fi.Name() < fj.Name()
 		},
 	}
-	ByNameFuncR = ByFunc{
-		Name: "by Name reversely",
-		Less: func(fi, fj DirEntryX) bool {
-			return ByLowerNameFunc.Less(fj, fi)
-		},
-	}
+
+	ByNameFuncR = ByNameFunc.SetReverse()
 
 	ByLowerNameFunc = ByFunc{
-		Name: "by lower Name",
+		Name:       "by lower Name",
+		_IsReverse: false,
 		Less: func(fi, fj DirEntryX) bool {
 			return strings.ToLower(fi.Name()) < strings.ToLower(fj.Name())
 		},
 	}
-	ByLowerNameFuncR = ByFunc{
-		Name: "by lower Name reversely",
-		Less: func(fi, fj DirEntryX) bool {
-			return ByLowerNameFunc.Less(fj, fi)
-		},
-	}
+
+	ByLowerNameFuncR = ByLowerNameFunc.SetReverse()
 )
 
 type SortKey int
 
 const (
-	SortReverse SortKey = 1 << iota
+	_SortReverse SortKey = 1 << iota
 	SortByINode
 	SortByHDLinks
 	SortBySize
@@ -208,15 +194,15 @@ const (
 	SortByCTime
 	SortByName
 	SortByLowerName
-	SortByINodeR     = SortReverse | SortByINode
-	SortByHDLinksR   = SortReverse | SortByHDLinks
-	SortBySizeR      = SortReverse | SortBySize
-	SortByBlocksR    = SortReverse | SortByBlocks
-	SortByMTimeR     = SortReverse | SortByMTime
-	SortByATimeR     = SortReverse | SortByATime
-	SortByCTimeR     = SortReverse | SortByCTime
-	SortByNameR      = SortReverse | SortByName
-	SortByLowerNameR = SortReverse | SortByLowerName
+	SortByINodeR     = _SortReverse | SortByINode
+	SortByHDLinksR   = _SortReverse | SortByHDLinks
+	SortBySizeR      = _SortReverse | SortBySize
+	SortByBlocksR    = _SortReverse | SortByBlocks
+	SortByMTimeR     = _SortReverse | SortByMTime
+	SortByATimeR     = _SortReverse | SortByATime
+	SortByCTimeR     = _SortReverse | SortByCTime
+	SortByNameR      = _SortReverse | SortByName
+	SortByLowerNameR = _SortReverse | SortByLowerName
 )
 
 var (
@@ -339,6 +325,16 @@ func (a ByLowerName) Len() int      { return len(a.values) }
 func (a ByLowerName) Swap(i, j int) { a.values[i], a.values[j] = a.values[j], a.values[i] }
 func (a ByLowerName) Less(i, j int) bool {
 	return ByLowerNameFunc.Less(a.values[i], a.values[i])
+}
+
+type ByLowerString struct {
+	values []string
+}
+
+func (a ByLowerString) Len() int      { return len(a.values) }
+func (a ByLowerString) Swap(i, j int) { a.values[i], a.values[j] = a.values[j], a.values[i] }
+func (a ByLowerString) Less(i, j int) bool {
+	return strings.ToLower(a.values[i]) < strings.ToLower(a.values[j])
 }
 
 // DirEntryXSorter joins a By function and a slice of Files to be sorted.

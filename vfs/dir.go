@@ -499,7 +499,9 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 	}
 
 	// 2. sort items
-	d.opt.By.Sort(dirEntries)
+	d.opt.Sort(dirEntries)
+	// d.opt.By.Sort(dirEntries)
+
 	// sort.Sort(ByLowerName{dirEntries})
 	// sort.Sort(DirEntryXA(dirEntries).SetLessFunc(ByLowerNameFunc))
 	// ByLowerNameFunc.Sort(dirEntries)

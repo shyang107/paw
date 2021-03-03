@@ -69,6 +69,14 @@ func (v ViewType) NoDirs() ViewType {
 	return v
 }
 
+// Reset reset false to nodir and nofile
+// 	see examples/vfs
+func (v ViewType) Reset() ViewType {
+	isViewNoDirs = false
+	isViewNoFiles = false
+	return v
+}
+
 // NoFiles disables ViewType showing files (excluding ViewListTree and ViewListTreeX)
 // 	see examples/vfs
 func (v ViewType) NoFiles() ViewType {
@@ -77,11 +85,20 @@ func (v ViewType) NoFiles() ViewType {
 }
 
 func (v ViewType) String() string {
+	vtname := ""
 	if name, ok := ViewTypeNames[v]; ok {
-		return name
+		vtname = name
 	} else {
-		return "Unknown"
+		vtname = "Unknown"
 	}
+	if isViewNoDirs {
+		return vtname + " (no dirs)"
+	}
+	if isViewNoFiles {
+		return vtname + " (no files)"
+	}
+
+	return vtname
 }
 
 // Do  will print out VFS

@@ -54,9 +54,10 @@ func main() {
 	// skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkip).Add(reSkip)
 	vfields := vfs.DefaultViewField | vfs.ViewFieldGit //| vfs.ViewFieldMd5
 	vopt := &vfs.VFSOption{
-		Depth:      opt.Depth,
-		Grouping:   vfs.GroupedR, //vfs.GroupNone,
-		By:         &vfs.ByLowerNameFunc,
+		Depth:    opt.Depth,
+		Grouping: vfs.GroupedR, //vfs.GroupNone,
+		// By:         &vfs.ByLowerNameFunc,
+		By:         &vfs.BySizeFuncR,
 		Skips:      skipcond,
 		ViewFields: vfields,
 		// ViewType:   vfs.ViewList,
@@ -80,9 +81,9 @@ func main() {
 	viewTypes := []vfs.ViewType{
 		// vfs.ViewList,
 		// vfs.ViewListX,
-		// vfs.ViewLevel,
-		vfs.ViewLevelX,
-		// vfs.ViewTable,
+		vfs.ViewLevel.NoDirs(),
+		// vfs.ViewLevelX,
+		vfs.ViewTable.Reset(),
 		// vfs.ViewTableX,
 		// vfs.ViewListTree,
 		// vfs.ViewListTreeX,
@@ -93,11 +94,9 @@ func main() {
 	for _, v := range viewTypes {
 		paw.Logger.Infoln(v)
 		fs.SetViewType(v)
-		sopt := vopt.String()
-		ss := strings.Split(sopt, "\n")
+		ss := strings.Split(vopt.String(), "\n")
 		for _, v := range ss {
-			a := strings.Split(v, ": ")
-			paw.Logger.WithField(a[0], a[1]).Debug()
+			paw.Logger.Debugf(v)
 		}
 		fs.View(os.Stdout)
 		// fmt.Println()
