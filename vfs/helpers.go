@@ -399,12 +399,13 @@ func modFieldWidths(v *VFS, fields []ViewField) {
 }
 
 func childWidths(d *Dir, fields []ViewField) {
-	ds, _ := d.ReadDir(-1)
-	d.ResetIndex()
+	ds, _ := d.ReadDirAll()
 	for _, c := range ds {
 		f, isFile := c.(*File)
 		if isFile {
 			for _, fd := range fields {
+				wd := f.WidthOf(fd)
+				dwd := fd.Width()
 				if fd&ViewFieldSize == ViewFieldSize {
 					if f.IsCharDev() || f.IsDev() {
 						fmajor := _ViewFieldMajor.Width()
@@ -414,14 +415,11 @@ func childWidths(d *Dir, fields []ViewField) {
 						wdminor := len(fmt.Sprint(minor))
 						_ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
 						_ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
-						wdsize := _ViewFieldMajor.Width() + _ViewFieldMinor.Width() + 1
-						wd := fd.Width()
-						fd.SetWidth(paw.MaxInt(wd, wdsize))
-						continue
+						wd = _ViewFieldMajor.Width() +
+							_ViewFieldMinor.Width() + 1
+						dwd = fd.Width()
 					}
 				}
-				wd := f.WidthOf(fd)
-				dwd := fd.Width()
 				width := paw.MaxInt(dwd, wd)
 				fd.SetWidth(width)
 			}

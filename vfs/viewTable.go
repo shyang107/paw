@@ -13,7 +13,7 @@ import (
 )
 
 func (v *VFS) ViewTable(w io.Writer, fields []ViewField, hasX bool) {
-	paw.Logger.Info("[vfs] ViewTable...")
+	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
 
 	cur := v.RootDir()
 
@@ -106,8 +106,7 @@ func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 			}).Fatal(err)
 		}
 
-		des, _ := cur.ReadDir(-1)
-		cur.ReadDirClose()
+		des, _ := cur.ReadDirAll()
 		if len(des) < 1 {
 			tnd--
 			continue

@@ -11,7 +11,7 @@ import (
 )
 
 func (v *VFS) ViewList(w io.Writer, fields []ViewField, hasX bool) {
-	paw.Logger.Info("[vfs] ViewList...")
+	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
 
 	cur := v.RootDir()
 
@@ -62,8 +62,7 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX bool) {
 			}).Fatal(err)
 		}
 
-		des, _ := cur.ReadDir(-1)
-		cur.ResetIndex()
+		des, _ := cur.ReadDirAll()
 		if len(des) < 1 {
 			tnd--
 			continue

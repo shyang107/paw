@@ -12,7 +12,7 @@ import (
 )
 
 func (v *VFS) ViewLevel(w io.Writer, fields []ViewField, hasX bool) {
-	paw.Logger.Info("[vfs] ViewLevel...")
+	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
 
 	cur := v.RootDir()
 
@@ -83,8 +83,7 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 			}).Fatal(err)
 		}
 
-		des, _ := cur.ReadDir(-1)
-		cur.ResetIndex()
+		des, _ := cur.ReadDirAll()
 		if len(des) < 1 {
 			tnd--
 			continue

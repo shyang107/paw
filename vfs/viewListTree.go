@@ -8,7 +8,7 @@ import (
 )
 
 func (v *VFS) ViewListTree(w io.Writer, fields []ViewField, hasX, hasList bool) {
-	paw.Logger.Info("[vfs] ViewListTree...")
+	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
 
 	cur := v.RootDir()
 
@@ -58,8 +58,7 @@ func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, hasList bool)
 		}
 	}
 	fmt.Fprintln(w)
-	des, _ := cur.ReadDir(-1)
-	cur.ResetIndex()
+	des, _ := cur.ReadDirAll()
 	// print files in the root dir
 	level := 0
 	var levelsEnded []int
@@ -161,8 +160,7 @@ func isEnded(levelsEnded []int, level int) bool {
 }
 
 func vltDir(w io.Writer, level int, levelsEnded []int, edge EdgeType, cur *Dir, fields []ViewField, hasX bool, hasList bool, wdstty int) {
-	des, _ := cur.ReadDir(-1)
-	cur.ResetIndex()
+	des, _ := cur.ReadDirAll()
 	if len(des) < 1 {
 		return
 	}

@@ -527,6 +527,12 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 
 // ====================================================================
 
+func (d *Dir) ReadDirAll() ([]DirEntryX, error) {
+	dirEntries, err := d.ReadDir(-1)
+	d.ReadDirClose()
+	return dirEntries, err
+}
+
 func (d *Dir) ResetIndex() {
 	d.idx = 0
 }
@@ -545,11 +551,9 @@ func (d *Dir) SetOption(opt *VFSOption) {
 
 func setDirOption(cur *Dir, opt *VFSOption) {
 	cur.opt = opt
-	des, _ := cur.ReadDir(-1)
-	cur.ReadDirClose()
-	for _, de := range des {
-		if de.IsDir() {
-			child := de.(*Dir)
+	for _, dx := range cur.children {
+		if dx.IsDir() {
+			child := dx.(*Dir)
 			setDirOption(child, opt)
 		}
 	}
@@ -561,11 +565,9 @@ func (d *Dir) SetViewType(viewType ViewType) {
 
 func setViewType(cur *Dir, viewType ViewType) {
 	cur.opt.ViewType = viewType
-	des, _ := cur.ReadDir(-1)
-	cur.ReadDirClose()
-	for _, de := range des {
-		if de.IsDir() {
-			child := de.(*Dir)
+	for _, dx := range cur.children {
+		if dx.IsDir() {
+			child := dx.(*Dir)
 			setViewType(child, viewType)
 		}
 	}
@@ -736,8 +738,7 @@ func (d *Dir) getSubXYs() (xs, ys []GitStatusCode) {
 
 func markChildGit(d *Dir, xy *GitFileStatus) {
 	gs := d.git.GetStatus()
-	ds, _ := d.ReadDir(-1)
-	d.ResetIndex()
+	ds, _ := d.ReadDirAll()
 	if len(ds) == 0 {
 		return
 	}

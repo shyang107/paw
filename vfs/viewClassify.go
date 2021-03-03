@@ -47,8 +47,7 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
 			}).Fatal(err)
 		}
 
-		des, _ := cur.ReadDir(-1)
-		cur.ResetIndex()
+		des, _ := cur.ReadDirAll()
 		if len(des) < 1 {
 			// nitems--
 			continue

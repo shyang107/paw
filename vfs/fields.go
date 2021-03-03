@@ -71,6 +71,8 @@ var (
 		ViewFieldPermissions: "Permissions",
 		ViewFieldLinks:       "Links",
 		ViewFieldSize:        "Size",
+		_ViewFieldMajor:      "Major",
+		_ViewFieldMinor:      "Minor",
 		ViewFieldBlocks:      "Blocks",
 		ViewFieldUser:        "User",
 		ViewFieldGroup:       "Group",
@@ -160,39 +162,6 @@ func (f ViewField) String() string {
 		names := f.Names()
 		return strings.Join(names, "|")
 	}
-	// switch f {
-	// case ViewFieldNo:
-	// 	return "No"
-	// case ViewFieldINode:
-	// 	return "inode"
-	// case ViewFieldPermissions:
-	// 	return "Permissions"
-	// case ViewFieldLinks:
-	// 	return "Links"
-	// case ViewFieldSize:
-	// 	return "Size"
-	// case ViewFieldBlocks:
-	// 	return "Blocks"
-	// case ViewFieldUser:
-	// 	return "User"
-	// case ViewFieldGroup:
-	// 	return "Group"
-	// case ViewFieldModified:
-	// 	return "Modified"
-	// case ViewFieldCreated:
-	// 	return "Created"
-	// case ViewFieldAccessed:
-	// 	return "Accessed"
-	// case ViewFieldGit:
-	// 	return "Git"
-	// case ViewFieldMd5:
-	// 	return "md5"
-	// case ViewFieldName:
-	// 	return "Name"
-	// default:
-	// 	names := f.Names()
-	// 	return strings.Join(names, ", ")
-	// }
 }
 
 func (f ViewField) SetName(name string) {
@@ -256,38 +225,6 @@ func (f ViewField) Align() paw.Align {
 	} else {
 		return paw.AlignLeft
 	}
-	// switch f {
-	// case ViewFieldNo:
-	// 	return paw.AlignLeft
-	// case ViewFieldINode:
-	// 	return paw.AlignRight
-	// case ViewFieldPermissions:
-	// 	return paw.AlignLeft
-	// case ViewFieldLinks:
-	// 	return paw.AlignRight
-	// case ViewFieldSize:
-	// 	return paw.AlignRight
-	// case ViewFieldBlocks:
-	// 	return paw.AlignRight
-	// case ViewFieldUser:
-	// 	return paw.AlignLeft
-	// case ViewFieldGroup:
-	// 	return paw.AlignLeft
-	// case ViewFieldModified:
-	// 	return paw.AlignLeft
-	// case ViewFieldCreated:
-	// 	return paw.AlignLeft
-	// case ViewFieldAccessed:
-	// 	return paw.AlignLeft
-	// case ViewFieldGit:
-	// 	return paw.AlignRight
-	// case ViewFieldMd5:
-	// 	return paw.AlignLeft
-	// case ViewFieldName:
-	// 	return paw.AlignLeft
-	// default:
-	// 	return paw.AlignLeft
-	// }
 }
 
 func (f ViewField) SetColor(color *color.Color) {
@@ -338,11 +275,6 @@ func (f ViewField) SetValue(value interface{}) {
 
 func (f ViewField) Value() interface{} {
 	return ViewFieldValues[f]
-	// if v, ok := ViewFieldValues[f]; ok {
-	// 	return v
-	// } else {
-	// 	return nil
-	// }
 }
 
 func (f ViewField) Slice() (fields []ViewField, names []string, nameWidths []int) {
@@ -402,6 +334,7 @@ func (f ViewField) Slice() (fields []ViewField, names []string, nameWidths []int
 	// 	fields = append(fields, ViewFieldName)
 	// }
 	fields = append(fields, ViewFieldName)
+
 	sort.Slice(fields, func(i, j int) bool {
 		return int(fields[i]) < int(fields[i])
 	})
@@ -440,150 +373,3 @@ func getPFHeadS(c *color.Color, fields ...ViewField) string {
 	}
 	return hd
 }
-
-// var DefaultPDViewFields = NewViewFields(DefaultPDViewFieldKeys...)
-// func (f ViewField) ViewField() *ViewField {
-// 	return NewViewField(f)
-// }
-// // ViewField stores content of a field
-// //
-// // Elements:
-// // 	Name: name of field
-// // 	NameC: colorful name of field
-// // 	Width: number of name on console
-// // 	Value: value of the field
-// // 	ValueC: colorfulString of value of the field
-// // 	ValueColor: *color.Color use to create colorful srtring for value;no default color, use SetValueColor to setup
-// // 	HeadColor: *color.Color use to create colorful srtring for head; has default color, use SetHeadColor to setup
-// type ViewField struct {
-// 	Key        ViewField
-// 	Name       string
-// 	Width      int
-// 	widthMajor int // use in size field for Dev or CharDev
-// 	widthMinor int // use in size field for Dev or CharDev
-// 	Value      interface{}
-// 	ValueC     interface{}
-// 	Align      paw.Align
-// 	ValueColor *color.Color
-// 	HeadColor  *color.Color
-// 	isLink     bool
-// }
-
-// // NewViewField will return *ViewField
-// func NewViewField(flag ViewField) *ViewField {
-// 	return &ViewField{
-// 		Key:        flag,
-// 		Name:       flag.Name(),  //pfieldsMap[flag],
-// 		Width:      flag.Width(), //pfieldWidthsMap[flag],
-// 		widthMajor: 0,
-// 		widthMinor: 0,
-// 		Value:      nil,
-// 		ValueC:     nil,
-// 		ValueColor: flag.Color(), // pfieldCPMap[flag],
-// 		Align:      flag.Align(), //pfieldAlignMap[flag],
-// 		HeadColor:  chdp,
-// 		isLink:     false,
-// 	}
-// }
-
-// // NewViewFields will return []*ViewField
-// func NewViewFields(flags ...ViewField) []*ViewField {
-// 	if len(flags) == 0 {
-// 		return nil
-// 	}
-// 	dViewFields := make([]*ViewField, 0, len(flags))
-// 	for _, f := range flags {
-// 		dViewFields = append(dViewFields, NewViewField(f))
-// 	}
-// 	return dViewFields
-// }
-
-// // SetValue sets up ViewField.Value
-// func (f *ViewField) SetValue(value interface{}) {
-// 	f.Value = value
-// }
-
-// // SetIsLink sets up ViewField.isLink
-// func (f *ViewField) SetIsLink(isLink bool) {
-// 	f.isLink = isLink
-// }
-
-// // SetValueC sets up colorful value of ViewField.Value
-// func (f *ViewField) SetValueC(value interface{}) {
-// 	f.ValueC = value
-// }
-
-// // SetValueColor sets up color of ViewField.Value
-// func (f *ViewField) SetValueColor(c *color.Color) {
-// 	f.ValueColor = c
-// }
-
-// // GetValueColor returns color of ViewField.Value
-// func (f *ViewField) GetValueColor(c *color.Color) *color.Color {
-// 	return f.ValueColor
-// }
-
-// // SetHeadColor sets up color of ViewField.Name
-// func (f *ViewField) SetHeadColor(c *color.Color) {
-// 	f.HeadColor = c
-// }
-
-// // GetHeadColor returns color of ViewField.Name
-// func (f *ViewField) GetHeadColor(c *color.Color) *color.Color {
-// 	return f.HeadColor
-// }
-
-// // ValueString will return string of ViewField.Value
-// func (f *ViewField) ValueString() string {
-// 	s := alignedSring(f.Value, f.Align, f.Width)
-// 	return s
-// }
-
-// func alignedSring(value interface{}, align paw.Align, width int) string {
-// 	// wf := StringWidth(value)
-// 	s := strings.TrimSpace(fmt.Sprintf("%v", value))
-// 	ws := paw.StringWidth(s)
-// 	if ws > width {
-// 		return s
-// 	}
-// 	// fmt.Println("width =", width, "wf =", wf)
-// 	switch align {
-// 	case paw.AlignRight:
-// 		// s = paw.Spaces(width-ws) + s
-// 		s = fmt.Sprintf("%[1]*[2]s", width, s)
-// 	case paw.AlignCenter:
-// 		wsl := (width - ws) / 2
-// 		wsr := width - ws - wsl
-// 		s = paw.Spaces(wsl) + s + paw.Spaces(wsr)
-// 	default: //AlignLeft
-// 		// s = s + paw.Spaces(width-ws)
-// 		s = fmt.Sprintf("%-[1]*[2]s", width, s)
-// 	}
-
-// 	return s
-// }
-
-// // ValueStringC will colorful string of ViewField.Value
-// func (f *ViewField) ValueStringC() string {
-// 	if f.ValueC != nil {
-// 		// return fmt.Sprintf("%v", f.ValueC)
-// 		return cast.ToString(f.ValueC)
-// 	}
-
-// 	s := f.ValueString()
-// 	if f.ValueColor != nil {
-// 		return f.ValueColor.Sprint(s)
-// 	}
-// 	return s
-// }
-
-// // HeadString will return string of ViewField.Name with width ViewField.Width
-// func (f *ViewField) HeadString() string {
-// 	return alignedSring(f.Name, f.Align, f.Width)
-// }
-
-// // HeadStringC will return colorful string of ViewField.Name with width ViewField.Width as see
-// func (f *ViewField) HeadStringC() string {
-// 	s := f.HeadString()
-// 	return f.HeadColor.Sprint(s)
-// }

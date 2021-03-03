@@ -18,7 +18,7 @@ func (v VFSOption) String() string {
 	s += fmt.Sprintf("By: %v\n", v.By)
 	s += fmt.Sprintf("Skips: %v\n", v.Skips)
 	s += fmt.Sprintf("ViewFields: %v\n", v.ViewFields)
-	s += fmt.Sprintf("ViewType: %v\n", v.ViewType)
+	s += fmt.Sprintf("ViewType: %v", v.ViewType)
 	return s
 }
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -72,7 +71,6 @@ func main() {
 		// ViewType:   vfs.ViewTreeX,
 		// ViewType: vfs.ViewClassify,
 	}
-	fmt.Println(vopt)
 
 	fs := vfs.NewVFS(root, vopt)
 	// fs.AddSkipFuncs(reSkip)
@@ -95,7 +93,13 @@ func main() {
 	for _, v := range viewTypes {
 		paw.Logger.Infoln(v)
 		fs.SetViewType(v)
+		sopt := vopt.String()
+		ss := strings.Split(sopt, "\n")
+		for _, v := range ss {
+			a := strings.Split(v, ": ")
+			paw.Logger.WithField(a[0], a[1]).Debug()
+		}
 		fs.View(os.Stdout)
-		fmt.Println()
+		// fmt.Println()
 	}
 }
