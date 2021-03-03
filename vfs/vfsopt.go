@@ -1,5 +1,7 @@
 package vfs
 
+import "fmt"
+
 // VFSOption uses in VFS
 type VFSOption struct {
 	Depth      int
@@ -8,6 +10,28 @@ type VFSOption struct {
 	Skips      *SkipConds
 	ViewFields ViewField
 	ViewType   ViewType
+}
+
+func (v VFSOption) String() string {
+	s := fmt.Sprintf("Depth: %d\n", v.Depth)
+	s += fmt.Sprintf("Grouping: %v\n", v.Grouping)
+	s += fmt.Sprintf("By: %v\n", v.By)
+	s += fmt.Sprintf("Skips: %v\n", v.Skips)
+	s += fmt.Sprintf("ViewFields: %v\n", v.ViewFields)
+	s += fmt.Sprintf("ViewType: %v\n", v.ViewType)
+	return s
+}
+
+// NewVFSOption creates a new instance of VFSOption
+func NewVFSOption() *VFSOption {
+	return &VFSOption{
+		Depth:      0,
+		Grouping:   GroupNone,
+		By:         &ByLowerNameFunc,
+		Skips:      NewSkipConds().Add(DefaultSkip),
+		ViewFields: DefaultViewField,
+		ViewType:   ViewList,
+	}
 }
 
 type Group int
@@ -24,15 +48,14 @@ const (
 	GroupedR
 )
 
-// NewVFSOption creates a new instance of VFSOption
-func NewVFSOption() *VFSOption {
-	return &VFSOption{
-		Depth:      0,
-		Grouping:   GroupNone,
-		By:         &ByLowerNameFunc,
-		Skips:      NewSkipConds().Add(DefaultSkip),
-		ViewFields: DefaultViewField,
-		ViewType:   ViewList,
+func (g Group) String() string {
+	switch g {
+	case Grouped:
+		return "Grouped"
+	case GroupedR:
+		return "Grouped reversely"
+	default:
+		return "Not grouped"
 	}
 }
 

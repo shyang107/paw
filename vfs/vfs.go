@@ -86,18 +86,6 @@ func checkOpt(opt *VFSOption) {
 	}
 }
 
-// func NewVFSWithSortKey(root string, level int, sortKey SortKey) *VFS {
-// 	paw.Logger.Info()
-
-// 	var sortFunc *ByFunc
-// 	if less, ok := SortFuncMap[sortKey]; ok {
-// 		sortFunc = less
-// 	} else {
-// 		sortFunc = &ByLowerNameFunc
-// 	}
-// 	return NewVFS(root, level, sortFunc)
-// }
-
 func (v *VFS) RootDir() *Dir {
 	return &v.Dir
 }
@@ -301,25 +289,3 @@ func (v *VFS) getDir(path string) (*Dir, error) {
 
 	// return cur, nil
 }
-
-// func (v *VFS) ReadDir(n int) ([]DirEntryX, error) {
-// 	return v.Dir.ReadDir(n)
-// }
-
-// // implement DirEntry interface of VFS
-
-// func (v *VFS) Name() string {
-// 	return v.Dir.Name()
-// }
-
-// func (v *VFS) IsDir() bool {
-// 	return v.Dir.IsDir()
-// }
-
-// func (v *VFS) Type() fs.FileMode {
-// 	return v.Dir.Type()
-// }
-
-// func (v *VFS) Info() (fs.FileInfo, error) {
-// 	return v.Dir.Info()
-// }

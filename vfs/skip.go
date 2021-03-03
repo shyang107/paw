@@ -22,6 +22,17 @@ func NewSkipConds() *SkipConds {
 	}
 }
 
+func (s SkipConds) String() string {
+	ss := make([]string, 0, len(s.skips))
+	if len(s.skips) == 0 {
+		return "nil"
+	}
+	for _, skip := range s.skips {
+		ss = append(ss, skip.Name())
+	}
+	return strings.Join(ss, "|")
+}
+
 // Add adds a new skip to SkipConds
 // 	see examples/vfs
 func (s *SkipConds) Add(skips ...Skiper) *SkipConds {

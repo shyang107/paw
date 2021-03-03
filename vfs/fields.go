@@ -158,7 +158,7 @@ func (f ViewField) String() string {
 		return name
 	} else {
 		names := f.Names()
-		return strings.Join(names, ", ")
+		return strings.Join(names, "|")
 	}
 	// switch f {
 	// case ViewFieldNo:

@@ -72,6 +72,8 @@ func main() {
 		// ViewType:   vfs.ViewTreeX,
 		// ViewType: vfs.ViewClassify,
 	}
+	fmt.Println(vopt)
+
 	fs := vfs.NewVFS(root, vopt)
 	// fs.AddSkipFuncs(reSkip)
 	// fs.AddSkipFuncs(vfs.SkipFile)
