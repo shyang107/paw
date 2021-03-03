@@ -107,7 +107,7 @@ func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 		}
 
 		des, _ := cur.ReadDir(-1)
-		cur.ResetIndex()
+		cur.ReadDirClose()
 		if len(des) < 1 {
 			tnd--
 			continue
@@ -154,12 +154,14 @@ func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) 
 				xattrs := de.Xattibutes()
 				if len(xattrs) > 0 {
 					cxvalues := make([]string, len(fields))
+					values := make([]interface{}, len(fields))
 					for _, x := range xattrs {
+						values[len(fields)-1] = paw.XAttrSymbol + x
 						cxvalues[len(fields)-1] =
-							cxbp.Sprint(tf.XAttributeSymbol) +
+							cxbp.Sprint(paw.XAttrSymbol) +
 								cxap.Sprint(x)
 						tf.FieldsColorString = cxvalues
-						tf.PrintRow(nil)
+						tf.PrintRow(values...)
 					}
 				}
 			}
