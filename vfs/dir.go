@@ -527,6 +527,14 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 
 // ====================================================================
 
+func (d *Dir) ResetIndex() {
+	d.idx = 0
+}
+
+func (d *Dir) ReadDirClose() {
+	d.idx = 0
+}
+
 func (d *Dir) Option() *VFSOption {
 	return d.opt
 }
@@ -538,10 +546,27 @@ func (d *Dir) SetOption(opt *VFSOption) {
 func setDirOption(cur *Dir, opt *VFSOption) {
 	cur.opt = opt
 	des, _ := cur.ReadDir(-1)
+	cur.ReadDirClose()
 	for _, de := range des {
 		if de.IsDir() {
 			child := de.(*Dir)
 			setDirOption(child, opt)
+		}
+	}
+}
+
+func (d *Dir) SetViewType(viewType ViewType) {
+	setViewType(d, viewType)
+}
+
+func setViewType(cur *Dir, viewType ViewType) {
+	cur.opt.ViewType = viewType
+	des, _ := cur.ReadDir(-1)
+	cur.ReadDirClose()
+	for _, de := range des {
+		if de.IsDir() {
+			child := de.(*Dir)
+			setViewType(child, viewType)
 		}
 	}
 }
@@ -555,10 +580,6 @@ func (d *Dir) SetLessFunc(sortFunc *ByFunc) {
 
 func (d *Dir) RelPaths() []string {
 	return d.relpaths
-}
-
-func (d *Dir) ResetIndex() {
-	d.idx = 0
 }
 
 func (d *Dir) Errors(pad string) string {

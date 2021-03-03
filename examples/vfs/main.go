@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -55,7 +56,7 @@ func main() {
 	vfields := vfs.DefaultViewField | vfs.ViewFieldGit //| vfs.ViewFieldMd5
 	vopt := &vfs.VFSOption{
 		Depth:      opt.Depth,
-		Grouping:   vfs.GroupedR, // vfs.GroupNone,
+		Grouping:   vfs.GroupedR, //vfs.GroupNone,
 		By:         &vfs.ByLowerNameFunc,
 		Skips:      skipcond,
 		ViewFields: vfields,
@@ -75,6 +76,24 @@ func main() {
 	// fs.AddSkipFuncs(reSkip)
 	// fs.AddSkipFuncs(vfs.SkipFile)
 	fs.BuildFS()
-
-	fs.View(os.Stdout)
+	// fs.View(os.Stdout)
+	viewTypes := []vfs.ViewType{
+		// vfs.ViewList,
+		// vfs.ViewListX,
+		// vfs.ViewLevel,
+		vfs.ViewLevelX,
+		// vfs.ViewTable,
+		// vfs.ViewTableX,
+		// vfs.ViewListTree,
+		// vfs.ViewListTreeX,
+		// vfs.ViewTree,
+		// vfs.ViewTreeX,
+		// vfs.ViewClassify,
+	}
+	for _, v := range viewTypes {
+		paw.Logger.Infoln(v)
+		fs.SetViewType(v)
+		fs.View(os.Stdout)
+		fmt.Println()
+	}
 }

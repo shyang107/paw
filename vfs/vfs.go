@@ -42,9 +42,10 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 	git := NewGitStatus(aroot)
 	relpath, _ := filepath.Rel(aroot, aroot)
 	name := filepath.Base(aroot)
-	if opt == nil {
-		opt = NewVFSOption()
-	}
+
+	paw.Logger.Trace("checking VFSOption...")
+	checkOpt(opt)
+
 	v := &VFS{
 		Dir: Dir{
 			path:     aroot,
@@ -61,6 +62,28 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 	}
 
 	return v
+}
+
+func checkOpt(opt *VFSOption) {
+	if opt == nil {
+		opt = NewVFSOption()
+	} else {
+		if opt.Grouping == 0 {
+			opt.Grouping = GroupNone
+		}
+		if opt.By == nil {
+			opt.By = &ByLowerNameFunc
+		}
+		if opt.Skips == nil {
+			opt.Skips = NewSkipConds().Add(DefaultSkip)
+		}
+		if opt.ViewType == 0 {
+			opt.ViewType = ViewList
+		}
+		if opt.ViewFields == 0 {
+			opt.ViewFields = DefaultViewField
+		}
+	}
 }
 
 // func NewVFSWithSortKey(root string, level int, sortKey SortKey) *VFS {
@@ -88,6 +111,14 @@ func (v *VFS) Option() *VFSOption {
 
 func (v *VFS) SetOption(opt *VFSOption) {
 	v.RootDir().SetOption(opt)
+}
+
+func (v *VFS) ViewType() ViewType {
+	return v.opt.ViewType
+}
+
+func (v *VFS) SetViewType(viewType ViewType) {
+	v.RootDir().SetViewType(viewType)
 }
 
 func (v *VFS) SetSkipConds(skips ...Skiper) {
