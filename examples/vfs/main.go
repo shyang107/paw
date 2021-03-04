@@ -50,8 +50,13 @@ func main() {
 	// 	return true
 	// })
 
-	skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkip)
-	vfs.SkipPrefix.Add("go")
+	skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkiper)
+	// skipcond.AddToSkipSuffix("go")
+	// skipcond.AddToSkipNames("pd")
+	// skipcond.AddToSkipPrefix("make", "read")
+
+	// vfs.SkipSuffix.Add("go")
+	// spew.Dump(vfs.SkipSuffix)
 
 	// skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkip).Add(reSkip)
 	vfields := vfs.DefaultViewField | vfs.ViewFieldGit //| vfs.ViewFieldMd5

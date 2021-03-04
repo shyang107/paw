@@ -22,7 +22,7 @@ func NewVFSOption() *VFSOption {
 		Depth:      0,
 		Grouping:   GroupNone,
 		ByField:    SortByLowerName,
-		Skips:      NewSkipConds().Add(DefaultSkip),
+		Skips:      NewSkipConds().Add(DefaultSkiper),
 		ViewFields: DefaultViewField,
 		ViewType:   ViewList,
 	}
