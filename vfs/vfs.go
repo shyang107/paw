@@ -71,17 +71,22 @@ func checkOpt(opt *VFSOption) {
 		if opt.Grouping == 0 {
 			opt.Grouping = GroupNone
 		}
+
 		_, ok := SortFuncFields[opt.ByField]
 		if !ok {
 			opt.ByField = SortByLowerName
 		}
+
 		if opt.Skips == nil {
 			opt.Skips = NewSkipConds().Add(DefaultSkip)
 		}
-		if opt.ViewType == 0 {
+
+		_, ok = ViewTypeNames[opt.ViewType]
+		if !ok {
 			opt.ViewType = ViewList
 		}
-		if opt.ViewFields == 0 {
+
+		if !opt.ViewFields.IsOk() {
 			opt.ViewFields = DefaultViewField
 		}
 	}

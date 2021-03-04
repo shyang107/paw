@@ -14,9 +14,10 @@ func (v *VFS) ViewListTree(w io.Writer) {
 func VFSViewListTree(w io.Writer, v *VFS) {
 	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
 
-	fields := v.opt.ViewFields.Fields()
-
-	hasList, hasX := v.hasList_hasX()
+	var (
+		fields        = v.opt.ViewFields.Fields()
+		hasList, hasX = v.hasList_hasX()
+	)
 
 	cur := v.RootDir()
 

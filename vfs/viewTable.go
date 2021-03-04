@@ -19,27 +19,29 @@ func (v *VFS) ViewTable(w io.Writer) {
 func VFSViewTable(w io.Writer, v *VFS) {
 	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
 
-	fields := v.opt.ViewFields.Fields()
+	var (
+		cur                               = v.RootDir()
+		vfields                           = v.opt.ViewFields
+		fields                            []ViewField
+		hasX, isViewNoDirs, isViewNoFiles = v.hasX_NoDir_NoFiles()
+		nd, nf                            = cur.NItems()
+		snd, snf                          = fmt.Sprint(nd), fmt.Sprint(nf)
+		wdidx                             = paw.MaxInt(len(snd), len(snf))
+	)
 
-	hasX, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
-
-	cur := v.RootDir()
-
-	if fields == nil {
-		fields = DefaultViewFieldSlice
+	if vfields&ViewFieldNo == 0 {
+		vfields = ViewFieldNo | vfields
 	}
-	fields = checkFieldsHasGit(fields, cur.git.NoGit)
+
+	fields = checkFieldsHasGit(vfields.Fields(), cur.git.NoGit)
 
 	modFieldWidths(v, fields)
 	// ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
-
-	nd, nf := cur.NItems()
-	wdidx := paw.MaxInt(len(fmt.Sprint(nd)), len(fmt.Sprint(nf))) + 1
-
-	ViewFieldNo.SetWidth(wdidx)
-	fields = append([]ViewField{ViewFieldNo}, fields...)
+	ViewFieldNo.SetWidth(wdidx + 1)
 
 	viewTable(w, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
+
+	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
 func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
@@ -50,7 +52,6 @@ func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 		nd, nf   int
 		wdmeta   = 0
 		roothead = getRootHeadC(cur, wdstty)
-		spNo     = cpmpt.Sprint(paw.Spaces(wdidx + 1))
 		banner   = strings.Repeat("-", wdstty)
 	)
 	for _, fd := range fields {
@@ -136,7 +137,7 @@ func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 		}
 		for _, de := range des {
 			jdx := ""
-			if de.IsFile() {
+			if de.IsDir() {
 				if isViewNoFiles {
 					nitems--
 					continue
@@ -174,7 +175,7 @@ func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 			}
 		}
 		totalsize += size
-		tf.PrintLineln(dirSummary(spNo, curnd, curnf, size, wdstty))
+		tf.PrintLineln(dirSummary("", curnd, curnf, size, wdstty))
 		if nd+nf < nitems {
 			tf.PrintLineln(banner)
 		}

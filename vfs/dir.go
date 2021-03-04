@@ -493,37 +493,41 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 	}
 
 	dirEntries := make([]DirEntryX, 0, n)
+	dirs := make([]DirEntryX, 0)
+	files := make([]DirEntryX, 0)
 	for i := d.idx; i < n && i < totalEntry; i++ {
-		dirEntries = append(dirEntries, d.children[names[i]])
+		child := d.children[names[i]]
+		if d.opt.Grouping == GroupNone {
+			dirEntries = append(dirEntries, child)
+		} else { //grouping items
+			if child.IsDir() {
+				dirs = append(dirs, child)
+			} else {
+				files = append(files, child)
+			}
+		}
 		d.idx = i
 	}
 
 	// 2. sort items
-	d.opt.Sort(dirEntries)
+	if d.opt.Grouping == GroupNone {
+		d.opt.Sort(dirEntries)
+	} else { //grouping items
+		d.opt.Sort(dirs)
+		d.opt.Sort(files)
+		switch d.opt.Grouping {
+		case Grouped:
+			dirEntries = append(dirs, files...)
+		case GroupedR:
+			dirEntries = append(files, dirs...)
+		}
+	}
 	// d.opt.By.Sort(dirEntries)
 
 	// sort.Sort(ByLowerName{dirEntries})
 	// sort.Sort(DirEntryXA(dirEntries).SetLessFunc(ByLowerNameFunc))
 	// ByLowerNameFunc.Sort(dirEntries)
 
-	// 3. grouping items
-	if d.opt.Grouping != GroupNone {
-		dirs := make([]DirEntryX, 0)
-		files := make([]DirEntryX, 0)
-		for _, de := range dirEntries {
-			if de.IsDir() {
-				dirs = append(dirs, de)
-			} else {
-				files = append(files, de)
-			}
-		}
-		switch d.opt.Grouping {
-		case Grouped:
-			return append(dirs, files...), nil
-		case GroupedR:
-			return append(files, dirs...), nil
-		}
-	}
 	return dirEntries, nil
 }
 

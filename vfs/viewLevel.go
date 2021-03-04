@@ -18,29 +18,25 @@ func (v *VFS) ViewLevel(w io.Writer) {
 func VFSViewLevel(w io.Writer, v *VFS) {
 	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
 
-	fields := v.opt.ViewFields.Fields()
+	var (
+		cur                               = v.RootDir()
+		vfields                           = v.opt.ViewFields
+		fields                            []ViewField
+		hasX, isViewNoDirs, isViewNoFiles = v.hasX_NoDir_NoFiles()
+		nd, nf                            = cur.NItems()
+		snd, snf                          = fmt.Sprint(nd), fmt.Sprint(nf)
+		wdidx                             = paw.MaxInt(len(snd), len(snf))
+	)
 
-	hasX, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
-
-	cur := v.RootDir()
-
-	if fields == nil {
-		fields = DefaultViewFieldSlice
+	if vfields&ViewFieldNo == 0 {
+		vfields = ViewFieldNo | vfields
 	}
-	fields = checkFieldsHasGit(fields, cur.git.NoGit)
+
+	fields = checkFieldsHasGit(vfields.Fields(), cur.git.NoGit)
 
 	modFieldWidths(v, fields)
-	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
-
-	cdir, cname := filepath.Split(cur.Path())
-	cdir = cdirp.Sprint(cdir)
-	cname = cdip.Sprint(cname)
-
-	nd, nf := cur.NItems()
-	wdidx := paw.MaxInt(len(fmt.Sprint(nd)), len(fmt.Sprint(nf)))
-
 	ViewFieldNo.SetWidth(wdidx + 1)
-	fields = append([]ViewField{ViewFieldNo}, fields...)
+	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
 	viewLevel(w, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
 

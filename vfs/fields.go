@@ -11,8 +11,10 @@ import (
 type ViewField int
 
 const (
+	// ViewFieldNo is No. field
+	ViewFieldNo ViewField = 1 << iota
 	// ViewFieldINode is inode field
-	ViewFieldINode ViewField = 1 << iota
+	ViewFieldINode
 	// ViewFieldPermissions is permission field
 	ViewFieldPermissions
 	// ViewFieldLinks is hard link field
@@ -39,8 +41,6 @@ const (
 	ViewFieldMd5
 	// ViewFieldName is name field
 	ViewFieldName
-	// ViewFieldNo is No. field
-	ViewFieldNo
 
 	// ViewFieldDefault useas default fields
 	DefaultViewField = ViewFieldPermissions | ViewFieldSize | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldName
@@ -283,6 +283,10 @@ func (f ViewField) Slice() (fields []ViewField, names []string, nameWidths []int
 	names = []string{}
 	nameWidths = []int{}
 
+	if f&ViewFieldNo != 0 {
+		fields = append(fields, ViewFieldNo)
+	}
+
 	if f&ViewFieldINode != 0 {
 		fields = append(fields, ViewFieldINode)
 	}
@@ -330,10 +334,10 @@ func (f ViewField) Slice() (fields []ViewField, names []string, nameWidths []int
 		fields = append(fields, ViewFieldGit)
 	}
 
+	fields = append(fields, ViewFieldName)
 	// if f&ViewFieldName != 0 {
 	// 	fields = append(fields, ViewFieldName)
 	// }
-	fields = append(fields, ViewFieldName)
 
 	sort.Slice(fields, func(i, j int) bool {
 		return int(fields[i]) < int(fields[i])
@@ -359,6 +363,27 @@ func (f ViewField) Names() (names []string) {
 func (f ViewField) Widths() (widths []int) {
 	_, _, widths = f.Slice()
 	return widths
+}
+
+func (f ViewField) IsOk() (ok bool) {
+	if f&ViewFieldINode != 0 ||
+		f&ViewFieldPermissions != 0 ||
+		f&ViewFieldLinks != 0 ||
+		f&ViewFieldSize != 0 ||
+		f&ViewFieldBlocks != 0 ||
+		f&ViewFieldUser != 0 ||
+		f&ViewFieldGroup != 0 ||
+		f&ViewFieldModified != 0 ||
+		f&ViewFieldCreated != 0 ||
+		f&ViewFieldAccessed != 0 ||
+		f&ViewFieldMd5 != 0 ||
+		f&ViewFieldGit != 0 ||
+		f&ViewFieldName != 0 ||
+		f&ViewFieldNo != 0 {
+		return true
+	} else {
+		return false
+	}
 }
 
 func getPFHeadS(c *color.Color, fields ...ViewField) string {

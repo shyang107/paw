@@ -17,9 +17,10 @@ func (v *VFS) ViewList(w io.Writer) {
 func VFSViewList(w io.Writer, v *VFS) {
 	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
 
-	fields := v.opt.ViewFields.Fields()
-
-	hasX, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
+	var (
+		fields                            = v.opt.ViewFields.Fields()
+		hasX, isViewNoDirs, isViewNoFiles = v.hasX_NoDir_NoFiles()
+	)
 
 	cur := v.RootDir()
 
