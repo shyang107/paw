@@ -11,18 +11,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (v *VFS) ViewClassify(w io.Writer) {
-	paw.Logger.Info("[vfs] ViewClassify...")
+func (v *VFS) ViewClassify(w io.Writer, fields []ViewField) {
+	VFSViewClassify(w, v)
+}
+func VFSViewClassify(w io.Writer, v *VFS) {
+	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
+
+	_, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
 
 	cur := v.RootDir()
 
 	fields := []ViewField{ViewFieldName}
 
-	viewClassify(w, cur, 0, fields)
+	viewClassify(w, cur, 0, fields, isViewNoDirs, isViewNoFiles)
 
 }
 
-func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField) {
+func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		wdstty    = sttyWidth - 2
 		tnd, tnf  = cur.NItems()

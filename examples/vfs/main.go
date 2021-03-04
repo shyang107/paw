@@ -54,10 +54,8 @@ func main() {
 	// skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkip).Add(reSkip)
 	vfields := vfs.DefaultViewField | vfs.ViewFieldGit //| vfs.ViewFieldMd5
 	vopt := &vfs.VFSOption{
-		Depth:    opt.Depth,
-		Grouping: vfs.GroupNone, //vfs.GroupedR,
-		// By:         &vfs.ByLowerNameFunc,
-		// By:         &vfs.BySizeFuncR,
+		Depth:      opt.Depth,
+		Grouping:   vfs.GroupNone, //vfs.GroupedR,
 		ByField:    vfs.SortBySizeR,
 		Skips:      skipcond,
 		ViewFields: vfields,
@@ -81,16 +79,30 @@ func main() {
 	// fs.View(os.Stdout)
 	viewTypes := []vfs.ViewType{
 		// vfs.ViewList,
+		// vfs.ViewListNoDirs,
+		// vfs.ViewListNoFiles,
 		// vfs.ViewListX,
-		vfs.ViewLevel.NoDirs(),
+		// vfs.ViewListXNoDirs,
+		// vfs.ViewListXNoFiles,
+		// vfs.ViewLevel,
+		// vfs.ViewLevelNoDirs,
+		// vfs.ViewLevelNoFiles,
 		// vfs.ViewLevelX,
-		vfs.ViewTable.Reset(),
-		// vfs.ViewTableX,
+		// vfs.ViewLevelXNoDirs,
+		// vfs.ViewLevelXNoFiles,
+		vfs.ViewTable,
+		vfs.ViewTableNoDirs,
+		vfs.ViewTableNoFiles,
+		vfs.ViewTableX,
+		vfs.ViewTableXNoDirs,
+		vfs.ViewTableXNoFiles,
 		// vfs.ViewListTree,
 		// vfs.ViewListTreeX,
 		// vfs.ViewTree,
 		// vfs.ViewTreeX,
 		// vfs.ViewClassify,
+		// vfs.ViewClassifyNoDirs,
+		// vfs.ViewClassifyNoFiles,
 	}
 	for _, v := range viewTypes {
 		paw.Logger.Infoln(v)

@@ -11,8 +11,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (v *VFS) ViewLevel(w io.Writer, fields []ViewField, hasX bool) {
+func (v *VFS) ViewLevel(w io.Writer) {
+	VFSViewLevel(w, v)
+}
+
+func VFSViewLevel(w io.Writer, v *VFS) {
 	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
+
+	fields := v.opt.ViewFields.Fields()
+
+	hasX, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
 
 	cur := v.RootDir()
 
@@ -34,12 +42,12 @@ func (v *VFS) ViewLevel(w io.Writer, fields []ViewField, hasX bool) {
 	ViewFieldNo.SetWidth(wdidx + 1)
 	fields = append([]ViewField{ViewFieldNo}, fields...)
 
-	viewLevel(w, cur, wdidx, fields, hasX)
+	viewLevel(w, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
 
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) {
+func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		wdname   = GetViewFieldNameWidthOf(fields)
 		wdstty   = sttyWidth - 2

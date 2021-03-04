@@ -8,6 +8,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Skipper is an interface of skipping function of SkipConds
+type Skiper interface {
+	Name() string
+	Skip(DirEntryX) bool
+}
+
 // SkipConds is skipping condtions during building VFS
 // 	see examples/vfs
 type SkipConds struct {
@@ -61,12 +67,6 @@ func (s *SkipConds) Is(de DirEntryX) bool {
 		}
 	}
 	return false
-}
-
-// Skipper is an interface of skipping function of SkipConds
-type Skiper interface {
-	Name() string
-	Skip(DirEntryX) bool
 }
 
 // SkipFunc is a func used to skip DirEntryX during building VFS

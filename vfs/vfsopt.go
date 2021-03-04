@@ -4,9 +4,8 @@ import "fmt"
 
 // VFSOption uses in VFS
 type VFSOption struct {
-	Depth    int
-	Grouping Group
-	// By         *ByLessFunc
+	Depth      int
+	Grouping   Group
 	ByField    SortKey
 	Skips      *SkipConds
 	ViewFields ViewField
@@ -16,9 +15,8 @@ type VFSOption struct {
 // NewVFSOption creates a new instance of VFSOption
 func NewVFSOption() *VFSOption {
 	return &VFSOption{
-		Depth:    0,
-		Grouping: GroupNone,
-		// By:         &ByLowerNameLessFunc,
+		Depth:      0,
+		Grouping:   GroupNone,
 		ByField:    SortByLowerName,
 		Skips:      NewSkipConds().Add(DefaultSkip),
 		ViewFields: DefaultViewField,

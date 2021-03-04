@@ -12,8 +12,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (v *VFS) ViewTable(w io.Writer, fields []ViewField, hasX bool) {
+func (v *VFS) ViewTable(w io.Writer) {
+	VFSViewTable(w, v)
+}
+
+func VFSViewTable(w io.Writer, v *VFS) {
 	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
+
+	fields := v.opt.ViewFields.Fields()
+
+	hasX, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
 
 	cur := v.RootDir()
 
@@ -31,10 +39,10 @@ func (v *VFS) ViewTable(w io.Writer, fields []ViewField, hasX bool) {
 	ViewFieldNo.SetWidth(wdidx)
 	fields = append([]ViewField{ViewFieldNo}, fields...)
 
-	viewTable(w, cur, wdidx, fields, hasX)
+	viewTable(w, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
 }
 
-func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX bool) (totalsize int64) {
+func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
 	var (
 		wdstty   = sttyWidth - 2
 		tnd, tnf = cur.NItems()

@@ -147,8 +147,7 @@ var (
 type SortKey int
 
 const (
-	_SortReverse SortKey = 1 << iota
-	SortByINode
+	SortByINode SortKey = 1 << iota
 	SortByHDLinks
 	SortBySize
 	SortByBlocks
@@ -157,6 +156,7 @@ const (
 	SortByCTime
 	SortByName
 	SortByLowerName
+	_SortReverse
 	SortByINodeR     = _SortReverse | SortByINode
 	SortByHDLinksR   = _SortReverse | SortByHDLinks
 	SortBySizeR      = _SortReverse | SortBySize

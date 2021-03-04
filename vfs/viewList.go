@@ -10,8 +10,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (v *VFS) ViewList(w io.Writer, fields []ViewField, hasX bool) {
+func (v *VFS) ViewList(w io.Writer) {
+	VFSViewList(w, v)
+}
+
+func VFSViewList(w io.Writer, v *VFS) {
 	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
+
+	fields := v.opt.ViewFields.Fields()
+
+	hasX, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
 
 	cur := v.RootDir()
 
@@ -22,11 +30,11 @@ func (v *VFS) ViewList(w io.Writer, fields []ViewField, hasX bool) {
 	modFieldWidths(v, fields)
 	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
-	viewList(w, cur, fields, hasX)
+	viewList(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX bool) {
+func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		wdstty    = sttyWidth - 2
 		tnd, tnf  = cur.NItems()
