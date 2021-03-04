@@ -575,11 +575,8 @@ func setViewType(cur *Dir, viewType ViewType) {
 	}
 }
 
-func (d *Dir) SetLessFunc(sortFunc *ByFunc) {
-	if sortFunc == nil {
-		sortFunc = &ByLowerNameFunc
-	}
-	d.opt.By = sortFunc
+func (d *Dir) SetSortField(sortField SortKey) {
+	d.opt.ByField = sortField
 }
 
 func (d *Dir) RelPaths() []string {

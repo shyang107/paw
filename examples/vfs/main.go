@@ -55,9 +55,10 @@ func main() {
 	vfields := vfs.DefaultViewField | vfs.ViewFieldGit //| vfs.ViewFieldMd5
 	vopt := &vfs.VFSOption{
 		Depth:    opt.Depth,
-		Grouping: vfs.GroupedR, //vfs.GroupNone,
+		Grouping: vfs.GroupNone, //vfs.GroupedR,
 		// By:         &vfs.ByLowerNameFunc,
-		By:         &vfs.BySizeFuncR,
+		// By:         &vfs.BySizeFuncR,
+		ByField:    vfs.SortBySizeR,
 		Skips:      skipcond,
 		ViewFields: vfields,
 		// ViewType:   vfs.ViewList,

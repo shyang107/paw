@@ -4,9 +4,10 @@ import "fmt"
 
 // VFSOption uses in VFS
 type VFSOption struct {
-	Depth      int
-	Grouping   Group
-	By         *ByFunc
+	Depth    int
+	Grouping Group
+	// By         *ByLessFunc
+	ByField    SortKey
 	Skips      *SkipConds
 	ViewFields ViewField
 	ViewType   ViewType
@@ -15,9 +16,10 @@ type VFSOption struct {
 // NewVFSOption creates a new instance of VFSOption
 func NewVFSOption() *VFSOption {
 	return &VFSOption{
-		Depth:      0,
-		Grouping:   GroupNone,
-		By:         &ByLowerNameFunc,
+		Depth:    0,
+		Grouping: GroupNone,
+		// By:         &ByLowerNameLessFunc,
+		ByField:    SortByLowerName,
 		Skips:      NewSkipConds().Add(DefaultSkip),
 		ViewFields: DefaultViewField,
 		ViewType:   ViewList,
@@ -27,7 +29,7 @@ func NewVFSOption() *VFSOption {
 func (v VFSOption) String() string {
 	s := fmt.Sprintf("[Depth]:      %d\n", v.Depth)
 	s += fmt.Sprintf("[Grouping]:   %q\n", v.Grouping)
-	s += fmt.Sprintf("[By]:         %q\n", v.By)
+	s += fmt.Sprintf("[Sort]:       %q\n", v.ByField)
 	s += fmt.Sprintf("[Skips]:      %q\n", v.Skips)
 	s += fmt.Sprintf("[ViewFields]: %q\n", v.ViewFields)
 	s += fmt.Sprintf("[ViewType]:   %q", v.ViewType)
@@ -35,7 +37,7 @@ func (v VFSOption) String() string {
 }
 
 func (v *VFSOption) Sort(dxs []DirEntryX) {
-	v.By.Sort(dxs)
+	v.ByField.Sort(dxs)
 }
 
 type Group int

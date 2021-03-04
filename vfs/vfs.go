@@ -71,8 +71,9 @@ func checkOpt(opt *VFSOption) {
 		if opt.Grouping == 0 {
 			opt.Grouping = GroupNone
 		}
-		if opt.By == nil {
-			opt.By = &ByLowerNameFunc
+		_, ok := SortFuncFields[opt.ByField]
+		if !ok {
+			opt.ByField = SortByLowerName
 		}
 		if opt.Skips == nil {
 			opt.Skips = NewSkipConds().Add(DefaultSkip)
@@ -155,9 +156,10 @@ func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 	}
 	cur.relpaths = append(cur.relpaths, relpaths...)
 	if len(cur.relpaths) > 0 {
-		sort.Slice(cur.relpaths, func(i, j int) bool {
-			return strings.ToLower(cur.relpaths[i]) < strings.ToLower(cur.relpaths[j])
-		})
+		sort.Sort(ByLowerString{cur.relpaths})
+		// sort.Slice(cur.relpaths, func(i, j int) bool {
+		// 	return strings.ToLower(cur.relpaths[i]) < strings.ToLower(cur.relpaths[j])
+		// })
 	}
 	return relpaths
 }
