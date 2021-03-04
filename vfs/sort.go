@@ -191,6 +191,18 @@ func (s SortKey) Sort(dxs []DirEntryX) {
 	}
 }
 
+// IsOk returns true for effective and otherwise not. In genernal, use it in checking.
+func (s SortKey) IsOk() bool {
+	paw.Logger.Trace("checking SortKey..." + paw.Caller(1))
+
+	switch s {
+	case SortByINode, SortByHDLinks, SortBySize, SortByBlocks, SortByMTime, SortByATime, SortByCTime, SortByName, SortByLowerName, SortByINodeR, SortByHDLinksR, SortBySizeR, SortByBlocksR, SortByMTimeR, SortByATimeR, SortByCTimeR, SortByNameR, SortByLowerNameR:
+		return true
+	default:
+		return false
+	}
+}
+
 var (
 	SortLessFuncMap = map[SortKey]ByLessFunc{
 		SortByINode:      ByINodeLessFunc,

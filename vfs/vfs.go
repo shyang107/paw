@@ -43,8 +43,7 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 	relpath, _ := filepath.Rel(aroot, aroot)
 	name := filepath.Base(aroot)
 
-	paw.Logger.Trace("checking VFSOption...")
-	checkOpt(opt)
+	opt.Check()
 
 	v := &VFS{
 		Dir: Dir{
@@ -62,34 +61,6 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 	}
 
 	return v
-}
-
-func checkOpt(opt *VFSOption) {
-	if opt == nil {
-		opt = NewVFSOption()
-	} else {
-		if opt.Grouping == 0 {
-			opt.Grouping = GroupNone
-		}
-
-		_, ok := SortFuncFields[opt.ByField]
-		if !ok {
-			opt.ByField = SortByLowerName
-		}
-
-		if opt.Skips == nil {
-			opt.Skips = NewSkipConds().Add(DefaultSkip)
-		}
-
-		_, ok = ViewTypeNames[opt.ViewType]
-		if !ok {
-			opt.ViewType = ViewList
-		}
-
-		if !opt.ViewFields.IsOk() {
-			opt.ViewFields = DefaultViewField
-		}
-	}
 }
 
 func (v *VFS) RootDir() *Dir {
@@ -246,8 +217,7 @@ func buildFS(cur *Dir, root string) {
 				opt:      cur.opt,
 			}
 		}
-
-		if skip.Is(child) {
+		if skip.IsSkip(child) {
 			continue
 		}
 

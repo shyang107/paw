@@ -129,8 +129,8 @@ func vltFile(w io.Writer, level int, levelsEnded []int, edge EdgeType, de DirEnt
 
 	xattrs := de.Xattibutes()
 	cname := de.FieldC(ViewFieldName)
-	if hasList && !hasX && len(xattrs) > 0 {
-		cname += cdashp.Sprint(" @")
+	if !hasList && !hasX && len(xattrs) > 0 {
+		cname += cdashp.Sprint("@")
 	}
 	// 2. print out Name field
 	if de.IsDir() {
