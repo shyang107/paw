@@ -12,6 +12,7 @@ type option struct {
 	paths    []string
 	// ViewType
 	viewType       vfs.ViewType
+	grouping       vfs.Group
 	isViewList     bool
 	isViewLevel    bool
 	isViewListTree bool
@@ -19,17 +20,37 @@ type option struct {
 	isViewTable    bool
 	isViewClassify bool
 	isViewX        bool
+	isViewGroup    bool
+	isViewGroupR   bool
 	isViewNoFiles  bool
 	isViewNoDirs   bool
 	// Depth
 	depth          int
 	isDepthRecurse bool
+	// Sort
+	byField vfs.SortKey
+	// Skiper
+	skips *vfs.SkipConds
+	// Fields
+	viewFields    vfs.ViewField
+	hasINode      bool
+	hasPermission bool
+	hasHDLinks    bool
+	hasSize       bool
+	hasBlocks     bool
+	hasUser       bool
+	hasGroup      bool
+	hasMTime      bool
+	hasATime      bool
+	hasCTime      bool
+	hasGit        bool
+	hasMd5        bool
 }
 
 var (
-	opt  = new(option)
-	vopt = vfs.NewVFSOption()
-	// vopt = &VFSOption{
+	opt    = new(option)
+	vfsOpt = new(vfs.VFSOption)
+	// vfsOpt = &VFSOption{
 	// 	Depth:      0,
 	// 	Grouping:   GroupNone,
 	// 	ByField:    SortByLowerName,
@@ -37,6 +58,7 @@ var (
 	// 	ViewFields: DefaultViewField,
 	// 	ViewType:   ViewList,
 	// }
+
 	// -------------------------------------------
 	// Verbose
 	fg_isVerbose = &cli.BoolFlag{
@@ -97,6 +119,20 @@ var (
 		Usage:       "list each file's extended attributes and sizes",
 		Destination: &opt.isViewX,
 	}
+	fg_isViewGroup = &cli.BoolFlag{
+		Name:        "grouped",
+		Aliases:     []string{"G"},
+		Value:       false,
+		Usage:       "group files and directories separately",
+		Destination: &opt.isViewGroup,
+	}
+	fg_isViewGroupR = &cli.BoolFlag{
+		Name:        "groupedr",
+		Aliases:     []string{"H"},
+		Value:       false,
+		Usage:       "group files and directories separately",
+		Destination: &opt.isViewGroupR,
+	}
 	fg_isViewNoDirs = &cli.BoolFlag{
 		Name:        "nodirs",
 		Aliases:     []string{"D"},
@@ -127,4 +163,6 @@ var (
 		Usage:       "recurse into directories (equivalent to --depth=-1)",
 		Destination: &opt.isDepthRecurse,
 	}
+	// -------------------------------------------
+	// Fields
 )

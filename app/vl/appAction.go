@@ -16,8 +16,20 @@ var appAction cli.ActionFunc = func(c *cli.Context) error {
 
 	opt.checkArgs(c)
 
-	// ViewType
+	// ViewType (during view)
 	opt.checkViewType()
+
+	//ByField (sort))
+	opt.checkByField()
+
+	// Skips (during BuildVFS)
+	opt.checkSkips()
+
+	// ViewFields
+	opt.checkViewFields()
+
+	// Setuo vfs.VFSOption
+	opt.setVFSOption(vfsOpt)
 
 	// pattern
 	// pdopt.Ignore = getPatternflag(opt).Ignore(opt)

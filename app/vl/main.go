@@ -78,10 +78,12 @@ func _runFirst() {
 		fg_isVerbose,
 		//  ViewType
 		fg_isViewList, fg_isViewLevel, fg_isViewListTree, fg_isViewTree, fg_isViewTable, fg_isViewClassify,
-		fg_isViewX,
+		fg_isViewX, fg_isViewGroup, fg_isViewGroupR,
 		fg_isViewNoDirs, fg_isViewNoFiles,
 		// Depth
 		fg_Depth, fg_isDepthRecurse,
+
+		// Fields
 
 		// &allFilesFlag, &includePatternFlag, &excludePatternFlag,
 		// &isNoEmptyDirsFlag, &isJustDirsFlag, &isJustFilesFlag,
