@@ -13,6 +13,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
+	"github.com/sirupsen/logrus"
 )
 
 // dir 代表一個目錄
@@ -372,7 +373,11 @@ func (d *Dir) FieldC(field ViewField) string {
 		}
 		return aligned(field, c.Sprint(fgpname))
 	case ViewFieldGit:
-		return aligned(field, d.git.XYc(d.RelPath()+"/"))
+		rp := d.RelPath()
+		if rp != "." {
+			rp += "/"
+		}
+		return aligned(field, d.git.XYc(rp))
 	case ViewFieldName:
 		return cdip.Sprint(d.Name())
 	default:
@@ -681,7 +686,7 @@ func (d *Dir) checkGitDir() {
 func (d *Dir) checkGitFiles() {
 	// paw.Logger.Trace(paw.Caller(1))
 	gs := d.git.GetStatus()
-	if d.git.NoGit || len(d.children) < 1 || gs == nil || len(d.children) < 1 {
+	if d.git.NoGit || len(d.children) < 1 || gs == nil {
 		return
 	}
 	// 2. if any of subfiles of dir (including root) has any change of git status, set GitChanged to dir
@@ -697,13 +702,21 @@ func (d *Dir) checkGitFiles() {
 func (d *Dir) setSubDirXY() {
 	gs := d.git.GetStatus()
 	xs, ys := d.getSubXYs()
+	// paw.Logger.WithFields(logrus.Fields{
+	// 	"rp": "" + color.New(color.FgMagenta).Sprint(d.RelPath()) + "",
+	// 	"xs": xs,
+	// 	"ys": ys,
+	// }).Trace(paw.Caller(1))
 	if len(xs) > 0 || len(ys) > 0 {
-		rp := d.RelPath() + "/"
-		// paw.Logger.WithFields(logrus.Fields{
-		// 	"rp": "" + color.New(color.FgMagenta).Sprint(rp) + "",
-		// 	"xs": xs,
-		// 	"ys": ys,
-		// }).Trace()
+		rp := d.RelPath()
+		if rp != "." {
+			rp += "/"
+		}
+		paw.Logger.WithFields(logrus.Fields{
+			"rp": "" + color.New(color.FgMagenta).Sprint(rp) + "",
+			"xs": xs,
+			"ys": ys,
+		}).Trace()
 		gs[rp] = &GitFileStatus{
 			Staging:  getSC(xs),
 			Worktree: getSC(ys),

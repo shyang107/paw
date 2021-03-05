@@ -53,13 +53,17 @@ func (s *SkipConds) Add(skips ...Skiper) *SkipConds {
 		caller = paw.Caller(1)
 	}
 	for _, skip := range skips {
-		paw.Logger.Trace("add skiper: ", skip.Name(), caller)
-		s.skips = append(s.skips, skip)
+		if !s.isExistSkiper(skip) {
+			paw.Logger.Trace("add skiper: ", skip.Name(), caller)
+			s.skips = append(s.skips, skip)
+		} else {
+			paw.Logger.Warnf("ignore duplicate skiper: %s %s", skip.Name(), paw.Caller(1))
+		}
 	}
 	return s
 }
 
-func (s *SkipConds) isDuplicateSkiper(skip Skiper) bool {
+func (s *SkipConds) isExistSkiper(skip Skiper) bool {
 	if s.skips == nil || len(s.skips) == 0 {
 		return false
 	}
@@ -73,7 +77,7 @@ func (s *SkipConds) isDuplicateSkiper(skip Skiper) bool {
 
 // AddToSkipNames appends name to SkipNames
 func (s *SkipConds) AddToSkipNames(names ...string) *SkipConds {
-	if !s.isDuplicateSkiper(SkiperHasNames) {
+	if !s.isExistSkiper(SkiperHasNames) {
 		s.Add(SkiperHasNames)
 	}
 	SkipNames = append(SkipNames, names...)
@@ -82,7 +86,7 @@ func (s *SkipConds) AddToSkipNames(names ...string) *SkipConds {
 
 // AddToSkipPrefix appends prefix to SkipPrefix
 func (s *SkipConds) AddToSkipPrefix(prefixs ...string) *SkipConds {
-	if !s.isDuplicateSkiper(SkiperWithPrefix) {
+	if !s.isExistSkiper(SkiperWithPrefix) {
 		s.Add(SkiperWithPrefix)
 	}
 	SkipPrefix = append(SkipPrefix, prefixs...)
@@ -91,7 +95,7 @@ func (s *SkipConds) AddToSkipPrefix(prefixs ...string) *SkipConds {
 
 // AddToSkipSuffix appends suffix to SkipSuffix
 func (s *SkipConds) AddToSkipSuffix(suffixs ...string) *SkipConds {
-	if !s.isDuplicateSkiper(SkiperWithSuffix) {
+	if !s.isExistSkiper(SkiperWithSuffix) {
 		s.Add(SkiperWithSuffix)
 	}
 	SkipSuffix = append(SkipSuffix, suffixs...)
@@ -198,7 +202,7 @@ func (s *SkipSuffixType) Add(suffixs ...string) *SkipSuffixType {
 // 	1. with prefix of "."
 // 	2. "_gsdata_"
 // 	see examples/vfs
-var DefaultSkiper = NewSkipFunc("DefaultSkiper", func(de DirEntryX) bool {
+var DefaultSkiper = NewSkipFunc("«DefaultSkiper»", func(de DirEntryX) bool {
 	if SkiperHiddens.IsSkip(de) {
 		return true
 	}
@@ -221,7 +225,7 @@ var DefaultSkiper = NewSkipFunc("DefaultSkiper", func(de DirEntryX) bool {
 
 // SkiperHiddens is a SkipFunc used to skip Name of DirEntryX with prefix of "."
 // 	see examples/vfs
-var SkiperHiddens = NewSkipFunc("SkiperHiddens", func(de DirEntryX) bool {
+var SkiperHiddens = NewSkipFunc("«SkiperHiddens»", func(de DirEntryX) bool {
 	name := strings.TrimSpace(de.Name())
 	if strings.HasPrefix(name, ".") {
 		return true
@@ -231,7 +235,7 @@ var SkiperHiddens = NewSkipFunc("SkiperHiddens", func(de DirEntryX) bool {
 
 // SkiperHasNames is a SkipFunc used to skip Name of DirEntryX in SkipNames
 // 	see examples/vfs
-var SkiperHasNames = NewSkipFunc("SkiperHasNames", func(de DirEntryX) bool {
+var SkiperHasNames = NewSkipFunc("«SkiperHasNames»", func(de DirEntryX) bool {
 	name := strings.TrimSpace(de.Name())
 	for _, skipname := range SkipNames {
 		if strings.EqualFold(name, skipname) {
@@ -243,7 +247,7 @@ var SkiperHasNames = NewSkipFunc("SkiperHasNames", func(de DirEntryX) bool {
 
 // SkiperWithPrefix is a SkipFunc used to skip Name of DirEntryX with prefix in SkipPrefix
 // 	see examples/vfs
-var SkiperWithPrefix = NewSkipFunc("SkiperWithPrefix", func(de DirEntryX) bool {
+var SkiperWithPrefix = NewSkipFunc("«SkiperWithPrefix»", func(de DirEntryX) bool {
 	name := strings.ToLower(strings.TrimSpace(de.Name()))
 	for _, prefix := range SkipPrefix {
 		if strings.HasPrefix(name, strings.ToLower(prefix)) {
@@ -255,7 +259,7 @@ var SkiperWithPrefix = NewSkipFunc("SkiperWithPrefix", func(de DirEntryX) bool {
 
 // SkiperWithSuffix is a SkipFunc used to skip Name of DirEntryX with prefix in SkipPrefix
 // 	see examples/vfs
-var SkiperWithSuffix = NewSkipFunc("SkiperWithSuffix", func(de DirEntryX) bool {
+var SkiperWithSuffix = NewSkipFunc("«SkiperWithSuffix»", func(de DirEntryX) bool {
 	name := strings.ToLower(strings.TrimSpace(de.Name()))
 	for _, suffix := range SkipSuffix {
 		if strings.HasSuffix(name, strings.ToLower(suffix)) {
@@ -268,7 +272,7 @@ var SkiperWithSuffix = NewSkipFunc("SkiperWithSuffix", func(de DirEntryX) bool {
 // SkiperFile skips regular files
 // 	Another way, use VFSOption.ViewType.NoFiles(); and use VFSOption.ViewType.ViewDirAndFile() back to default show directories and files (excluding ViewListTree and ViewListTreeX).
 // 	see examples/vfs
-var SkiperFile = NewSkipFunc("SkiperFile", func(de DirEntryX) bool {
+var SkiperFiles = NewSkipFunc("«SkiperFiles»", func(de DirEntryX) bool {
 	if de.IsFile() {
 		return true
 	}
@@ -279,7 +283,7 @@ var SkiperFile = NewSkipFunc("SkiperFile", func(de DirEntryX) bool {
 // 	[Warning] If use SkipDirer, any directories under root do not be accessed.
 //  Use VFSOption.ViewType.NoDirs() would be great; and use VFSOption.ViewType.ViewDirAndFile() back to default show directories and files (excluding ViewListTree and ViewListTreeX).
 // 	see examples/vfs
-var SkiperDir = NewSkipFunc("SkiperDir", func(de DirEntryX) bool {
+var SkiperDirs = NewSkipFunc("«SkiperDirs»", func(de DirEntryX) bool {
 	if de.IsDir() {
 		return true
 	}

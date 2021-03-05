@@ -109,11 +109,11 @@ func (v *VFS) BuildFS() {
 	paw.Logger.Trace("building VFS.relpaths...")
 	v.createRDirs(&v.Dir)
 
-	paw.Logger.Trace("checking VFS.git: dir...")
-	checkChildGitDir(&v.Dir)
+	paw.Logger.Tracef("checking VFS.git: dir...[%q]", cur.RelPath())
+	v.Dir.checkGitDir()
 
-	paw.Logger.Trace("checking VFS.git: file...")
-	checkChildGitFiles(&v.Dir)
+	paw.Logger.Tracef("checking VFS.git: files...[%q]", cur.RelPath())
+	v.Dir.checkGitFiles()
 
 	v.git.Dump("checkChildGit: modified")
 }
@@ -135,34 +135,6 @@ func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 		sort.Sort(ByLowerString{cur.relpaths})
 	}
 	return relpaths
-}
-
-func checkChildGitDir(d *Dir) {
-	ds, _ := d.ReadDirAll()
-	if len(ds) == 0 {
-		return
-	}
-	for _, child := range ds {
-		dd, isDir := child.(*Dir)
-		if !isDir {
-			continue
-		}
-		dd.checkGitDir()
-		checkChildGitDir(dd)
-	}
-}
-func checkChildGitFiles(d *Dir) {
-	ds, _ := d.ReadDirAll()
-	if len(ds) == 0 {
-		return
-	}
-	for _, child := range ds {
-		dd, isDir := child.(*Dir)
-		if !isDir {
-			continue
-		}
-		dd.checkGitFiles()
-	}
 }
 
 func buildFS(cur *Dir, root string) {

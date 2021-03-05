@@ -50,7 +50,7 @@ func main() {
 	// 	return true
 	// })
 
-	skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkiper)
+	skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkiper).Add(vfs.DefaultSkiper)
 	// skipcond.AddToSkipSuffix("go")
 	// skipcond.AddToSkipNames("pd")
 	// skipcond.AddToSkipPrefix("make", "read")
