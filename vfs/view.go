@@ -26,72 +26,72 @@ const (
 
 	_ViewList
 
-	_ViewExtended
-	_ViewNoDirs
-	_ViewNoFiles
+	ViewExtended
+	ViewNoDirs
+	ViewNoFiles
 
 	// ViewListTree is the option of combining list & tree view using in PrintDir
 	ViewListTree = ViewTree | _ViewList
 
 	// ViewListX is the option of list view icluding extend attributes using in PrintDir
-	ViewListX = ViewList | _ViewExtended
+	ViewListX = ViewList | ViewExtended
 	// ViewListTreeX is the option of combining list & tree view including extend attribute using in PrintDir
-	ViewListTreeX = ViewListTree | _ViewExtended
+	ViewListTreeX = ViewListTree | ViewExtended
 	// ViewTreeX is the option of tree view icluding extend atrribute using in PrintDir
-	ViewTreeX = ViewTree | _ViewExtended
+	ViewTreeX = ViewTree | ViewExtended
 
 	// ViewLevelX is the option of level view icluding extend attributes using in PrintDir
-	ViewLevelX = ViewLevel | _ViewExtended
+	ViewLevelX = ViewLevel | ViewExtended
 
 	// ViewTableX is the option of table view icluding extend attributes using in PrintDir
-	ViewTableX = ViewTable | _ViewExtended
+	ViewTableX = ViewTable | ViewExtended
 
-	ViewListNoDirs     = ViewList | _ViewNoDirs
-	ViewLevelNoDirs    = ViewLevel | _ViewNoDirs
-	ViewTableNoDirs    = ViewTable | _ViewNoDirs
-	ViewClassifyNoDirs = ViewClassify | _ViewNoDirs
+	ViewListNoDirs     = ViewList | ViewNoDirs
+	ViewLevelNoDirs    = ViewLevel | ViewNoDirs
+	ViewTableNoDirs    = ViewTable | ViewNoDirs
+	ViewClassifyNoDirs = ViewClassify | ViewNoDirs
 
-	ViewListNoFiles     = ViewList | _ViewNoFiles
-	ViewLevelNoFiles    = ViewLevel | _ViewNoFiles
-	ViewTableNoFiles    = ViewTable | _ViewNoFiles
-	ViewClassifyNoFiles = ViewClassify | _ViewNoFiles
+	ViewListNoFiles     = ViewList | ViewNoFiles
+	ViewLevelNoFiles    = ViewLevel | ViewNoFiles
+	ViewTableNoFiles    = ViewTable | ViewNoFiles
+	ViewClassifyNoFiles = ViewClassify | ViewNoFiles
 
-	ViewListXNoDirs  = ViewList | _ViewExtended | _ViewNoDirs
-	ViewLevelXNoDirs = ViewLevel | _ViewExtended | _ViewNoDirs
-	ViewTableXNoDirs = ViewTable | _ViewExtended | _ViewNoDirs
+	ViewListXNoDirs  = ViewList | ViewExtended | ViewNoDirs
+	ViewLevelXNoDirs = ViewLevel | ViewExtended | ViewNoDirs
+	ViewTableXNoDirs = ViewTable | ViewExtended | ViewNoDirs
 
-	ViewListXNoFiles  = ViewList | _ViewExtended | _ViewNoFiles
-	ViewLevelXNoFiles = ViewLevel | _ViewExtended | _ViewNoFiles
-	ViewTableXNoFiles = ViewTable | _ViewExtended | _ViewNoFiles
+	ViewListXNoFiles  = ViewList | ViewExtended | ViewNoFiles
+	ViewLevelXNoFiles = ViewLevel | ViewExtended | ViewNoFiles
+	ViewTableXNoFiles = ViewTable | ViewExtended | ViewNoFiles
 )
 
 var (
 	ViewTypeNames = map[ViewType]string{
 		ViewList:            "List view",
-		ViewListX:           "Extended List view",
 		ViewTree:            "Tree view",
-		ViewTreeX:           "Extended Tree view",
 		ViewLevel:           "Level view",
-		ViewLevelX:          "Extended Level view",
 		ViewTable:           "Table view",
-		ViewTableX:          "Extended Table view",
 		ViewListTree:        "List & Tree view",
-		ViewListTreeX:       "Extended List & Tree view",
 		ViewClassify:        "Classify view",
+		ViewListX:           "Extended List view",
+		ViewTreeX:           "Extended Tree view",
+		ViewLevelX:          "Extended Level view",
+		ViewTableX:          "Extended Table view",
+		ViewListTreeX:       "Extended List & Tree view",
 		ViewListNoDirs:      "List view (no dirs)",
-		ViewListXNoDirs:     "Extended List view (no dirs)",
 		ViewLevelNoDirs:     "Level view (no dirs)",
-		ViewLevelXNoDirs:    "Extended Level view (no dirs)",
 		ViewTableNoDirs:     "Table view (no dirs)",
-		ViewTableXNoDirs:    "Extended Table view (no dirs)",
 		ViewClassifyNoDirs:  "Classify view (no dirs)",
 		ViewListNoFiles:     "List view (no files)",
-		ViewListXNoFiles:    "Extended List view (no files)",
 		ViewLevelNoFiles:    "Level view (no files)",
-		ViewLevelXNoFiles:   "Extended Level view (no files)",
 		ViewTableNoFiles:    "Table view (no files)",
-		ViewTableXNoFiles:   "Extended Table view (no files)",
 		ViewClassifyNoFiles: "Classify view (no files)",
+		ViewListXNoDirs:     "Extended List view (no dirs)",
+		ViewLevelXNoDirs:    "Extended Level view (no dirs)",
+		ViewTableXNoDirs:    "Extended Table view (no dirs)",
+		ViewListXNoFiles:    "Extended List view (no files)",
+		ViewLevelXNoFiles:   "Extended Level view (no files)",
+		ViewTableXNoFiles:   "Extended Table view (no files)",
 	}
 
 	ViewTypeFuncs = map[ViewType]func(io.Writer, *VFS){
@@ -166,9 +166,9 @@ func (v *VFS) hasX_NoDir_NoFiles() (hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		vt = v.opt.ViewType
 	)
-	hasX = vt&_ViewExtended != 0
-	isViewNoDirs = vt&_ViewNoDirs != 0
-	isViewNoFiles = vt&_ViewNoFiles != 0
+	hasX = vt&ViewExtended != 0
+	isViewNoDirs = vt&ViewNoDirs != 0
+	isViewNoFiles = vt&ViewNoFiles != 0
 	return hasX, isViewNoDirs, isViewNoFiles
 }
 
@@ -177,6 +177,6 @@ func (v *VFS) hasList_hasX() (hasList, hasX bool) {
 		vt = v.opt.ViewType
 	)
 	hasList = vt&_ViewList != 0
-	hasX = vt&_ViewExtended != 0
+	hasX = vt&ViewExtended != 0
 	return hasList, hasX
 }
