@@ -88,6 +88,8 @@ func _runFirst() {
 		fg_isNoSkip, fg_reIncludePattern, fg_reExcludePattern,
 		fg_withPrefix, fg_withSufix, fg_psDelimiter,
 		// ViewFields
+		fg_hasAll, fg_hasAllNoGit, fg_hasAllNoMd5, fg_hasAllNoGitMd5,
+		fg_hasBasicPSUGN,
 		fg_hasINode,
 		fg_hasPermission,
 		fg_hasHDLinks, fg_hasSize, fg_hasBlocks,

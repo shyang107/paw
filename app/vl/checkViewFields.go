@@ -1,76 +1,119 @@
 package main
 
-import "github.com/shyang107/paw"
+import (
+	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/vfs"
+)
 
 func (opt *option) checkViewFields() {
-	lg.Info("TODO..." + paw.Caller(1))
+	lg.Info(paw.Caller(1))
 
-	// var (
-	// 	flag   filetree.PDFieldFlag
-	// 	fields []string
-	// )
+	var (
+		viewFields vfs.ViewField
+		isOk       bool = false
+		hasBasic        = opt.hasBasicPSUGN
+	)
 
-	// if opt.isFieldINode {
-	// 	flag = flag | filetree.PFieldINode
-	// 	fields = append(fields, filetree.PFieldINode.Name())
-	// }
+	if opt.hasAll {
+		opt.viewFields = vfs.DefaultViewFieldAll
+		goto END
+	}
+	if opt.hasAllNoMd5 {
+		opt.viewFields = vfs.DefaultViewFieldAllNoMd5
+		goto END
+	}
+	if opt.hasAllNoGit {
+		opt.viewFields = vfs.DefaultViewFieldAllNoGit
+		goto END
+	}
+	if opt.hasAllNoGitMd5 {
+		opt.viewFields = vfs.DefaultViewFieldAllNoGitMd5
+		goto END
+	}
 
-	// flag = flag | filetree.PFieldPermissions
-	// fields = append(fields, filetree.PFieldPermissions.Name())
+	if opt.hasINode {
+		isOk = true
+		viewFields |= vfs.ViewFieldINode
+	}
+	if hasBasic {
+		isOk = true
+		viewFields |= vfs.ViewFieldPermissions
+	} else {
+		if opt.hasPermission {
+			isOk = true
+			viewFields |= vfs.ViewFieldPermissions
+		}
+	}
+	if opt.hasHDLinks {
+		isOk = true
+		viewFields |= vfs.ViewFieldLinks
+	}
+	if hasBasic {
+		isOk = true
+		viewFields |= vfs.ViewFieldSize
+	} else {
+		if opt.hasSize {
+			isOk = true
+			viewFields |= vfs.ViewFieldSize
+		}
+	}
+	if opt.hasBlocks {
+		isOk = true
+		viewFields |= vfs.ViewFieldBlocks
+	}
+	if hasBasic {
+		isOk = true
+		viewFields |= vfs.ViewFieldUser
+		viewFields |= vfs.ViewFieldGroup
+		viewFields |= vfs.ViewFieldModified
+	} else {
+		if opt.hasUser {
+			isOk = true
+			viewFields |= vfs.ViewFieldUser
+		}
+		if opt.hasGroup {
+			isOk = true
+			viewFields |= vfs.ViewFieldGroup
+		}
+		if opt.hasMTime {
+			isOk = true
+			viewFields |= vfs.ViewFieldModified
+		}
+	}
+	if opt.hasCTime {
+		isOk = true
+		viewFields |= vfs.ViewFieldCreated
+	}
+	if opt.hasATime {
+		isOk = true
+		viewFields |= vfs.ViewFieldAccessed
+	}
+	if opt.hasMd5 {
+		isOk = true
+		viewFields |= vfs.ViewFieldMd5
+	}
+	if opt.hasGit {
+		isOk = true
+		viewFields |= vfs.ViewFieldGit
+	}
 
-	// if opt.isFieldLinks {
-	// 	flag = flag | filetree.PFieldLinks
-	// 	fields = append(fields, filetree.PFieldLinks.Name())
-	// }
-
-	// flag = flag | filetree.PFieldSize
-	// fields = append(fields, filetree.PFieldSize.Name())
-
-	// if opt.isFieldBlocks {
-	// 	flag = flag | filetree.PFieldBlocks
-	// 	fields = append(fields, filetree.PFieldBlocks.Name())
-	// }
-
-	// flag = flag | filetree.PFieldUser
-	// fields = append(fields, filetree.PFieldUser.Name())
-
-	// flag = flag | filetree.PFieldGroup
-	// fields = append(fields, filetree.PFieldGroup.Name())
-
-	// if opt.isFieldModified {
-	// 	flag = flag | filetree.PFieldModified
-	// 	fields = append(fields, filetree.PFieldModified.Name())
-	// }
-	// if opt.isFieldAccessed {
-	// 	flag = flag | filetree.PFieldAccessed
-	// 	fields = append(fields, filetree.PFieldAccessed.Name())
-	// }
-	// if opt.isFieldCreated {
-	// 	flag = flag | filetree.PFieldCreated
-	// 	fields = append(fields, filetree.PFieldCreated.Name())
-	// }
-	// if !opt.isFieldModified &&
-	// 	!opt.isFieldAccessed &&
-	// 	!opt.isFieldCreated {
-	// 	flag = flag | filetree.PFieldModified
-	// 	fields = append(fields, filetree.PFieldModified.Name())
-	// }
-
-	// if opt.isFieldMd5 {
-	// 	flag = flag | filetree.PFieldMd5
-	// 	fields = append(fields, filetree.PFieldMd5.Name())
-	// }
-
-	// if opt.isFieldGit {
-	// 	flag = flag | filetree.PFieldGit
-	// 	fields = append(fields, filetree.PFieldGit.Name())
-	// }
-
-	// fields = append(fields, filetree.PFieldName.Name())
+	viewFields |= vfs.ViewFieldName
 	// lg.WithFields(logrus.Fields{
-	// 	"N":      len(fields),
-	// 	"fields": fields,
-	// }).Trace("fields" + paw.Caller(1))
+	// 	"isOk":       isOk,
+	// 	"viewFields": viewFields,
+	// }).Trace()
 
-	// return flag
+	if isOk {
+		opt.viewFields = viewFields
+		// if viewFields == vfs.ViewFieldName {
+		// 	opt.viewFields = vfs.DefaultViewField
+		// } else {
+		// 	opt.viewFields = viewFields
+		// }
+	} else {
+		opt.viewFields = vfs.DefaultViewField
+	}
+END:
+	lg.WithField("viewFields", opt.viewFields).Trace()
+
 }

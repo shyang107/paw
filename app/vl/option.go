@@ -43,20 +43,25 @@ type option struct {
 	psDelimiter      string
 	withPrefix       string
 	withSufix        string
-	// ViewField
-	viewFields    vfs.ViewField
-	hasINode      bool
-	hasPermission bool
-	hasHDLinks    bool
-	hasSize       bool
-	hasBlocks     bool
-	hasUser       bool
-	hasGroup      bool
-	hasMTime      bool
-	hasATime      bool
-	hasCTime      bool
-	hasGit        bool
-	hasMd5        bool
+	// ViewFields
+	viewFields     vfs.ViewField
+	hasAll         bool
+	hasAllNoMd5    bool
+	hasAllNoGit    bool
+	hasAllNoGitMd5 bool
+	hasBasicPSUGN  bool
+	hasINode       bool
+	hasPermission  bool
+	hasHDLinks     bool
+	hasSize        bool
+	hasBlocks      bool
+	hasUser        bool
+	hasGroup       bool
+	hasMTime       bool
+	hasATime       bool
+	hasCTime       bool
+	hasGit         bool
+	hasMd5         bool
 }
 
 var (
@@ -264,7 +269,42 @@ var (
 		Destination: &opt.psDelimiter,
 	}
 	// -------------------------------------------
-	// ViewField
+	// ViewFields
+	fg_hasAll = &cli.BoolFlag{
+		Name:        "allfields",
+		Aliases:     []string{"x"},
+		Value:       false,
+		Usage:       "list each file's all fields",
+		Destination: &opt.hasAll,
+	}
+	fg_hasAllNoGit = &cli.BoolFlag{
+		Name:        "xgit",
+		Aliases:     []string{"xg"},
+		Value:       false,
+		Usage:       "list each file's all fields, except git",
+		Destination: &opt.hasAllNoGit,
+	}
+	fg_hasAllNoMd5 = &cli.BoolFlag{
+		Name:        "xmd5",
+		Aliases:     []string{"x5"},
+		Value:       false,
+		Usage:       "list each file's all fields, except md5",
+		Destination: &opt.hasAllNoMd5,
+	}
+	fg_hasAllNoGitMd5 = &cli.BoolFlag{
+		Name:        "xgitmd5",
+		Aliases:     []string{"xg5"},
+		Value:       false,
+		Usage:       "list each file's all fields, except git and md5",
+		Destination: &opt.hasAllNoGitMd5,
+	}
+	fg_hasBasicPSUGN = &cli.BoolFlag{
+		Name:        "basic",
+		Aliases:     []string{"6"},
+		Value:       false,
+		Usage:       "list each file's basic fields: inode, permission, user, group, modified, and name (required field)",
+		Destination: &opt.hasBasicPSUGN,
+	}
 	fg_hasINode = &cli.BoolFlag{
 		Name:        "inode",
 		Aliases:     []string{"I"},
