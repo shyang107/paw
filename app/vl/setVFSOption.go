@@ -7,7 +7,7 @@ import (
 )
 
 func (opt *option) setVFSOption(vfsOpt *vfs.VFSOption) {
-	lg.Info("TODO..." + paw.Caller(1))
+	lg.Info(paw.Caller(1))
 
 	vfsOpt = &vfs.VFSOption{
 		Depth:      opt.depth,

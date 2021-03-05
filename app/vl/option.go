@@ -40,6 +40,7 @@ type option struct {
 	isNoSkip         bool
 	reIncludePattern string
 	reExcludePattern string
+	psDelimiter      string
 	withPrefix       string
 	withSufix        string
 	// ViewField
@@ -231,29 +232,36 @@ var (
 		Name:        "include",
 		Aliases:     []string{"ri"},
 		Value:       "",
-		Usage:       "use regex to find files (dirs) with matching `pattern`",
+		Usage:       "use regex to find files (not dirs) with matching `pattern`",
 		Destination: &opt.reIncludePattern,
 	}
 	fg_reExcludePattern = &cli.StringFlag{
 		Name:        "exclude",
 		Aliases:     []string{"rx"},
 		Value:       "",
-		Usage:       "use regex to find files (dirs) without matching `pattern`",
+		Usage:       "use regex to find files (not dirs) without matching `pattern`",
 		Destination: &opt.reExcludePattern,
 	}
 	fg_withPrefix = &cli.StringFlag{
 		Name:        "prefix",
 		Aliases:     []string{"pf"},
 		Value:       "",
-		Usage:       "finds name of files (dirs) with `prefix`",
+		Usage:       "finds name of files (dirs) with `prefix`; mutli-prefixs: prefix1,prefix2,...",
 		Destination: &opt.withPrefix,
 	}
 	fg_withSufix = &cli.StringFlag{
 		Name:        "suffix",
 		Aliases:     []string{"sf"},
 		Value:       "",
-		Usage:       "finds name of files (dirs) with `suffix`",
+		Usage:       "finds name of files (dirs) with `suffix`; mutli-suffixs: suffix1,suffix2,...",
 		Destination: &opt.withSufix,
+	}
+	fg_psDelimiter = &cli.StringFlag{
+		Name:        "delimiter",
+		Aliases:     []string{"psd"},
+		Value:       ",",
+		Usage:       "set `delimiter` needed int mutli-[prefixs|suffixs]",
+		Destination: &opt.psDelimiter,
 	}
 	// -------------------------------------------
 	// ViewField

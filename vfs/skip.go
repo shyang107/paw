@@ -31,7 +31,7 @@ func NewSkipConds() *SkipConds {
 func (s SkipConds) String() string {
 	ss := make([]string, 0, len(s.skips))
 	if len(s.skips) == 0 {
-		return "nil"
+		return "«nil»"
 	}
 	for _, skip := range s.skips {
 		ss = append(ss, skip.Name())
@@ -144,7 +144,7 @@ type SkipFunc struct {
 
 // NewSkipFunc returns a new instance of SkipFunc
 // 	see examples/vfs
-func NewSkipFunc(name string, skip func(DirEntryX) bool) *SkipFunc {
+func NewSkipFunc(name string, skip func(DirEntryX) bool) Skiper {
 	return &SkipFunc{
 		name: name,
 		skip: skip,
@@ -301,7 +301,7 @@ type SkipFuncRe struct {
 
 // NewSkipFuncRe returns a new instance of SkipFuncRe
 // 	see examples/vfs
-func NewSkipFuncRe(name string, pattern string, skip func(DirEntryX, *regexp.Regexp) bool) *SkipFuncRe {
+func NewSkipFuncRe(name string, pattern string, skip func(d DirEntryX, re *regexp.Regexp) bool) Skiper {
 	return &SkipFuncRe{
 		name:    name,
 		pattern: pattern,
@@ -315,8 +315,8 @@ func (s *SkipFuncRe) Name() string {
 	return s.name
 }
 
-// Skip return true to skip file, otherwise not.
-func (s *SkipFuncRe) Skip(de DirEntryX) bool {
+// IsSkip return true to skip file, otherwise not.
+func (s *SkipFuncRe) IsSkip(de DirEntryX) bool {
 	// paw.Logger.Debug(s.Name(), ": ", de.Name())
 	return s.skip(de, s.re)
 }

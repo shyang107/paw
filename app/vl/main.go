@@ -86,7 +86,7 @@ func _runFirst() {
 		fg_isSortNo, fg_isSortReverse, fg_sortByField, fg_isSortByName, fg_isSortBySize, fg_isSortByMTime,
 		// SkipConds
 		fg_isNoSkip, fg_reIncludePattern, fg_reExcludePattern,
-		fg_withPrefix, fg_withSufix,
+		fg_withPrefix, fg_withSufix, fg_psDelimiter,
 		// ViewFields
 		fg_hasINode,
 		fg_hasPermission,
