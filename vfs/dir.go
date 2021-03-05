@@ -655,7 +655,21 @@ func calcSize(cur *Dir) (size int64) {
 
 func (d *Dir) checkGitDir() {
 	// paw.Logger.Trace(paw.Caller(1))
+	// 1. check: if dir is GitIgnored, then marks all subfiles with GitIgnored.
+	dxs, _ := d.ReadDirAll()
+	if len(dxs) == 0 {
+		return
+	}
+	for _, child := range dxs {
+		if child.IsDir() {
+			next := child.(*Dir)
+			_checkGitDir(next)
+			next.checkGitDir()
+		}
+	}
+}
 
+func _checkGitDir(d *Dir) {
 	gs := d.git.GetStatus()
 	if d.git.NoGit || len(d.children) < 1 || gs == nil || len(d.children) < 1 {
 		return
@@ -681,6 +695,36 @@ func (d *Dir) checkGitDir() {
 	if isMarkIgnored || isUntracked {
 		markChildGit(d, &xy)
 	}
+}
+
+func markChildGit(d *Dir, xy *GitFileStatus) {
+	gs := d.git.GetStatus()
+	ds, _ := d.ReadDirAll()
+	if len(ds) == 0 {
+		return
+	}
+	for _, child := range ds {
+		var rp string
+		if child.IsDir() {
+			rp = child.RelPath() + "/"
+		} else {
+			rp = child.RelPath()
+		}
+		gs[rp] = &GitFileStatus{
+			Staging:  xy.Staging,
+			Worktree: xy.Worktree,
+			Extra:    child.Name(),
+		}
+		if child.IsDir() {
+			next := child.(*Dir)
+			markChildGit(next, xy)
+		}
+	}
+}
+
+func isXY(xy *GitFileStatus, gcode GitStatusCode) bool {
+	return xy.Staging == gcode ||
+		xy.Worktree == gcode
 }
 
 func (d *Dir) checkGitFiles() {
@@ -750,43 +794,6 @@ func (d *Dir) getSubXYs() (xs, ys []GitStatusCode) {
 		}
 	}
 	return xs, ys
-}
-
-func markChildGit(d *Dir, xy *GitFileStatus) {
-	gs := d.git.GetStatus()
-	ds, _ := d.ReadDirAll()
-	if len(ds) == 0 {
-		return
-	}
-	for _, child := range ds {
-		f, isFile := child.(*File)
-		if isFile {
-			rp := f.RelPath()
-			gs[rp] = &GitFileStatus{
-				Staging:  xy.Staging,
-				Worktree: xy.Worktree,
-				Extra:    f.Name(),
-			}
-		} else {
-			dd := child.(*Dir)
-			rp := dd.RelPath() + "/"
-			gs[rp] = &GitFileStatus{
-				Staging:  xy.Staging,
-				Worktree: xy.Worktree,
-				Extra:    dd.Name(),
-			}
-			// paw.Logger.WithFields(logrus.Fields{
-			// 	"rp": rp,
-			// 	"xy": gs[rp].Staging.String() + gs[rp].Worktree.String(),
-			// }).Debug()
-			dd.checkGitDir()
-		}
-	}
-}
-
-func isXY(xy *GitFileStatus, gcode GitStatusCode) bool {
-	return xy.Staging == gcode ||
-		xy.Worktree == gcode
 }
 
 // getDir 通過一個路徑獲取其 dir 類型實例
