@@ -27,7 +27,7 @@ func Caller(skip int) string {
 		funcName := s[len(s)-1]
 		c := FileLSColor(path)
 		base := filepath.Base(path)
-		return Cdashp.Sprint("from [") +
+		return Cdashp.Sprint(" from [") +
 			c.Sprint(base) + Cdashp.Sprint(":") +
 			Csnp.Sprint(line) + Cdashp.Sprint("][") +
 			color.New(color.FgYellow).Sprint(funcName) + Cdashp.Sprint("]")

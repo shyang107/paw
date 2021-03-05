@@ -72,10 +72,15 @@ var DefaultFormat = &Formatter{
 	},
 }
 
+var (
+	crp = color.New([]color.Attribute{38, 5, 193, 4}...)
+)
+
 // Format an log entry
 func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
-	cl := getColorOfLevel(entry.Level)
-
+	var (
+		cl = getColorOfLevel(entry.Level)
+	)
 	timestampFormat := f.TimestampFormat
 	if timestampFormat == "" {
 		timestampFormat = time.StampMilli
@@ -128,11 +133,12 @@ func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 		// f.writeOrderedFields(b, entry)
 		sfields = f.sOrderedFields(entry)
 	}
-	if f.NoColors {
-		fmt.Fprint(b, sfields)
-	} else {
-		cl.Fprint(b, sfields)
-	}
+	// if f.NoColors {
+	// 	fmt.Fprint(b, sfields)
+	// } else {
+	// 	cl.Fprint(b, sfields)
+	// }
+	fmt.Fprint(b, sfields)
 
 	if f.NoFieldsSpace {
 		b.WriteString(" ")
@@ -216,11 +222,31 @@ func (f *Formatter) sOrderedFields(entry *logrus.Entry) (s string) {
 }
 
 func (f *Formatter) sField(entry *logrus.Entry, field string) (s string) {
+	var (
+		cl    = getColorOfLevel(entry.Level)
+		value = entry.Data[field]
+		sbl   = "["
+		sbr   = "]"
+		colon = ":"
+	)
 
-	if f.HideKeys {
-		s = fmt.Sprintf("[%v]", entry.Data[field])
+	if f.NoColors {
+		if f.HideKeys {
+			s = fmt.Sprintf("[%v]", value)
+		} else {
+			s = fmt.Sprintf("[%s:%v]", field, value)
+		}
 	} else {
-		s = fmt.Sprintf("[%s:%v]", field, entry.Data[field])
+		csbl := cl.Sprint(sbl)
+		csbr := cl.Sprint(sbr)
+		cfield := cl.Sprint(field)
+		ccolon := cl.Sprint(colon)
+		cvalue := crp.Sprint(value)
+		if f.HideKeys {
+			s = csbl + cvalue + csbr // fmt.Sprintf("[%v]", value)
+		} else {
+			s = csbl + cfield + ccolon + cvalue + csbr //fmt.Sprintf("[%s:%v]", field, value)
+		}
 	}
 
 	if !f.NoFieldsSpace {
