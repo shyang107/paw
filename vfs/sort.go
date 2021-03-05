@@ -156,52 +156,20 @@ const (
 	SortByCTime
 	SortByName
 	SortByLowerName
-	_SortReverse
-	SortByINodeR     = _SortReverse | SortByINode
-	SortByHDLinksR   = _SortReverse | SortByHDLinks
-	SortBySizeR      = _SortReverse | SortBySize
-	SortByBlocksR    = _SortReverse | SortByBlocks
-	SortByMTimeR     = _SortReverse | SortByMTime
-	SortByATimeR     = _SortReverse | SortByATime
-	SortByCTimeR     = _SortReverse | SortByCTime
-	SortByNameR      = _SortReverse | SortByName
-	SortByLowerNameR = _SortReverse | SortByLowerName
+
+	SortByNone
+	SortReverse
+
+	SortByINodeR     = SortReverse | SortByINode
+	SortByHDLinksR   = SortReverse | SortByHDLinks
+	SortBySizeR      = SortReverse | SortBySize
+	SortByBlocksR    = SortReverse | SortByBlocks
+	SortByMTimeR     = SortReverse | SortByMTime
+	SortByATimeR     = SortReverse | SortByATime
+	SortByCTimeR     = SortReverse | SortByCTime
+	SortByNameR      = SortReverse | SortByName
+	SortByLowerNameR = SortReverse | SortByLowerName
 )
-
-func (s SortKey) String() string {
-	return s.Name()
-}
-
-func (s SortKey) Name() string {
-	field, ok := SortFuncFields[s]
-	if !ok {
-		return "[Error] use default sort field: by " + SortFuncFields[SortByLowerName]
-	}
-	return "by " + field
-}
-
-// Sort is a method on the function type, By, that sorts the argument slice according to the function.
-func (s SortKey) Sort(dxs []DirEntryX) {
-	dxa := DirEntryXA(dxs).SetLessFunc(s)
-	switch s {
-	case SortByINodeR, SortByHDLinksR, SortBySizeR, SortByBlocksR, SortByMTimeR, SortByATimeR, SortByCTimeR, SortByNameR, SortByLowerNameR:
-		sort.Sort(sort.Reverse(dxa))
-	default:
-		sort.Sort(dxa)
-	}
-}
-
-// IsOk returns true for effective and otherwise not. In genernal, use it in checking.
-func (s SortKey) IsOk() bool {
-	paw.Logger.Trace("checking SortKey..." + paw.Caller(1))
-
-	switch s {
-	case SortByINode, SortByHDLinks, SortBySize, SortByBlocks, SortByMTime, SortByATime, SortByCTime, SortByName, SortByLowerName, SortByINodeR, SortByHDLinksR, SortBySizeR, SortByBlocksR, SortByMTimeR, SortByATimeR, SortByCTimeR, SortByNameR, SortByLowerNameR:
-		return true
-	default:
-		return false
-	}
-}
 
 var (
 	SortLessFuncMap = map[SortKey]ByLessFunc{
@@ -226,6 +194,7 @@ var (
 	}
 
 	SortFuncFields = map[SortKey]string{
+		SortByNone:       "none",
 		SortByINode:      "INode",
 		SortByHDLinks:    "HDLinks",
 		SortBySize:       "Size",
@@ -246,6 +215,7 @@ var (
 		SortByLowerNameR: "reverse LowerName",
 	}
 	SortKeyNames = map[SortKey]string{
+		SortByNone:       "SortByNone",
 		SortByINode:      "SortByINode",
 		SortByHDLinks:    "SortByHDLinks",
 		SortBySize:       "SortBySize",
@@ -266,6 +236,7 @@ var (
 		SortByLowerNameR: "SortByLowerNameR",
 	}
 	SortNameKeys = map[string]SortKey{
+		"SortByNone":       SortByNone,
 		"SortByINode":      SortByINode,
 		"SortByHDLinks":    SortByHDLinks,
 		"SortBySize":       SortBySize,
@@ -285,7 +256,69 @@ var (
 		"SortByNameR":      SortByNameR,
 		"SortByLowerNameR": SortByLowerNameR,
 	}
+
+	SortShortNameKeys = map[string]SortKey{
+		"none":    SortByNone,
+		"inode":   SortByINode,
+		"links":   SortByHDLinks,
+		"size":    SortBySize,
+		"blocks":  SortByBlocks,
+		"mtime":   SortByMTime,
+		"atime":   SortByATime,
+		"ctime":   SortByCTime,
+		"name":    SortByName,
+		"lname":   SortByLowerName,
+		"inoder":  SortByINodeR,
+		"linksr":  SortByHDLinksR,
+		"sizer":   SortBySizeR,
+		"blocksr": SortByBlocksR,
+		"mtimer":  SortByMTimeR,
+		"atimer":  SortByATimeR,
+		"ctimer":  SortByCTimeR,
+		"namer":   SortByNameR,
+		"lnamer":  SortByLowerNameR,
+	}
 )
+
+func (s SortKey) String() string {
+	return s.Name()
+}
+
+func (s SortKey) Name() string {
+	if s&SortByNone != 0 {
+		return "not sort"
+	}
+	field, ok := SortFuncFields[s]
+	if !ok {
+		return "[Error] use default sort field: by " + SortFuncFields[SortByLowerName]
+	}
+	return "by " + field
+}
+
+// Sort is a method on the function type, By, that sorts the argument slice according to the function.
+func (s SortKey) Sort(dxs []DirEntryX) {
+	dxa := DirEntryXA(dxs).SetLessFunc(s)
+	switch s {
+	case SortByINodeR, SortByHDLinksR, SortBySizeR, SortByBlocksR, SortByMTimeR, SortByATimeR, SortByCTimeR, SortByNameR, SortByLowerNameR:
+		sort.Sort(sort.Reverse(dxa))
+	case SortByNone:
+		return
+	default:
+		sort.Sort(dxa)
+	}
+}
+
+// IsOk returns true for effective and otherwise not. In genernal, use it in checking.
+func (s SortKey) IsOk() bool {
+	paw.Logger.Trace("checking SortKey..." + paw.Caller(1))
+
+	switch s {
+	case SortByINode, SortByHDLinks, SortBySize, SortByBlocks, SortByMTime, SortByATime, SortByCTime, SortByName, SortByLowerName, SortByINodeR, SortByHDLinksR, SortBySizeR, SortByBlocksR, SortByMTimeR, SortByATimeR, SortByCTimeR, SortByNameR, SortByLowerNameR, SortByNone:
+		return true
+	default:
+		return false
+	}
+}
 
 type ByINode struct{ values []DirEntryX }
 

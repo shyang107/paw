@@ -27,8 +27,14 @@ type option struct {
 	// Depth
 	depth          int
 	isDepthRecurse bool
-	// Sort
-	byField vfs.SortKey
+	// ByField (sort)
+	byField       vfs.SortKey
+	isSortNo      bool
+	isSortReverse bool
+	sortByField   string
+	isSortByName  bool //default name
+	isSortBySize  bool
+	isSortByMTime bool
 	// Skiper
 	skips *vfs.SkipConds
 	// Fields
@@ -162,6 +168,50 @@ var (
 		Value:       false,
 		Usage:       "recurse into directories (equivalent to --depth=-1)",
 		Destination: &opt.isDepthRecurse,
+	}
+	// -------------------------------------------
+	// ByField (sort)
+	fg_isSortNo = &cli.BoolFlag{
+		Name:        "no-sort",
+		Aliases:     []string{"N"},
+		Value:       false,
+		Usage:       "not sort by name in increasing order (single key)",
+		Destination: &opt.isSortNo,
+	}
+	fg_isSortReverse = &cli.BoolFlag{
+		Name:        "reverse",
+		Aliases:     []string{"r"},
+		Value:       false,
+		Usage:       "sort in decreasing order, default sort by name",
+		Destination: &opt.isSortReverse,
+	}
+	fg_sortByField = &cli.StringFlag{
+		Name:        "sort",
+		Aliases:     []string{"sf"},
+		Value:       "",
+		Usage:       "which single `field` to sort by. (case insensitive,field: inode, links, blocks, size, mtime (ot modified), atime (or accessed), ctime (or created), name, lname (lower name, default); «field»[r|R]: reverse sort)",
+		Destination: &opt.sortByField,
+	}
+	fg_isSortByName = &cli.BoolFlag{
+		Name:        "sort-by-name",
+		Aliases:     []string{"sn"},
+		Value:       false,
+		Usage:       "sort by name in increasing order (single key)",
+		Destination: &opt.isSortByName,
+	}
+	fg_isSortBySize = &cli.BoolFlag{
+		Name:        "sort-by-size",
+		Aliases:     []string{"sz"},
+		Value:       false,
+		Usage:       "sort by size in increasing order (single key)",
+		Destination: &opt.isSortBySize,
+	}
+	fg_isSortByMTime = &cli.BoolFlag{
+		Name:        "sort-by-mtime",
+		Aliases:     []string{"sm"},
+		Value:       false,
+		Usage:       "sort by modified time in increasing order (single key)",
+		Destination: &opt.isSortByMTime,
 	}
 	// -------------------------------------------
 	// Fields

@@ -63,7 +63,7 @@ func main() {
 	vopt := &vfs.VFSOption{
 		Depth: opt.Depth,
 		// Grouping: vfs.GroupedR, //vfs.GroupNone
-		// ByField:  vfs.SortBySizeR,
+		ByField:    vfs.SortByNone,
 		Skips:      skipcond,
 		ViewFields: vfields,
 		// ViewType:   vfs.ViewList,

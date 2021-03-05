@@ -82,22 +82,10 @@ func _runFirst() {
 		fg_isViewNoDirs, fg_isViewNoFiles,
 		// Depth
 		fg_Depth, fg_isDepthRecurse,
-
+		// ByField (sort)
+		fg_isSortNo, fg_isSortReverse, fg_sortByField, fg_isSortByName, fg_isSortBySize, fg_isSortByMTime,
+		// Skiper
 		// Fields
-
-		// &allFilesFlag, &includePatternFlag, &excludePatternFlag,
-		// &isNoEmptyDirsFlag, &isJustDirsFlag, &isJustFilesFlag,
-		// &isFieldINodeFlag, &isFieldLinksFlag,
-		// // &isFieldPermissionsFlag,
-		// // &isFieldSizeFlag,
-		// &isFieldBlocksFlag,
-		// // &isFieldUserFlag, &isFieldGroupFlag,
-		// &isModifiedFlag, &isAccessedFlag, &isCreatedFlag,
-		// &isFieldMd5Flag,
-		// &isFieldGitFlag,
-		// &isExtendedFlag,
-		// &isNoSortFlag, &isReverseFlag, &sortByFieldFlag, &isSortByNameFlag, &isSortBySizeFlag, &isSortByMTimeFlag,
-		// &isGroupedFlag,
 	}
 
 	app.Action = appAction
