@@ -22,7 +22,7 @@ var appAction cli.ActionFunc = func(c *cli.Context) error {
 	//ByField (sort))
 	opt.checkByField()
 
-	// Skips (during BuildVFS)
+	// SkipConds (during BuildVFS)
 	opt.checkSkips()
 
 	// ViewFields

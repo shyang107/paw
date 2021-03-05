@@ -35,9 +35,14 @@ type option struct {
 	isSortByName  bool //default name
 	isSortBySize  bool
 	isSortByMTime bool
-	// Skiper
-	skips *vfs.SkipConds
-	// Fields
+	// SkipConds
+	skips            *vfs.SkipConds
+	isNoSkip         bool
+	reIncludePattern string
+	reExcludePattern string
+	withPrefix       string
+	withSufix        string
+	// ViewField
 	viewFields    vfs.ViewField
 	hasINode      bool
 	hasPermission bool
@@ -187,7 +192,7 @@ var (
 	}
 	fg_sortByField = &cli.StringFlag{
 		Name:        "sort",
-		Aliases:     []string{"sf"},
+		Aliases:     []string{"fd"},
 		Value:       "",
 		Usage:       "which single `field` to sort by. (case insensitive,field: inode, links, blocks, size, mtime (ot modified), atime (or accessed), ctime (or created), name, lname (lower name, default); «field»[r|R]: reverse sort)",
 		Destination: &opt.sortByField,
@@ -214,5 +219,127 @@ var (
 		Destination: &opt.isSortByMTime,
 	}
 	// -------------------------------------------
-	// Fields
+	// SkipConds
+	fg_isNoSkip = &cli.BoolFlag{
+		Name:        "all",
+		Aliases:     []string{"a"},
+		Value:       false,
+		Usage:       "show all files including hidden files",
+		Destination: &opt.isNoSkip,
+	}
+	fg_reIncludePattern = &cli.StringFlag{
+		Name:        "include",
+		Aliases:     []string{"ri"},
+		Value:       "",
+		Usage:       "use regex to find files (dirs) with matching `pattern`",
+		Destination: &opt.reIncludePattern,
+	}
+	fg_reExcludePattern = &cli.StringFlag{
+		Name:        "exclude",
+		Aliases:     []string{"rx"},
+		Value:       "",
+		Usage:       "use regex to find files (dirs) without matching `pattern`",
+		Destination: &opt.reExcludePattern,
+	}
+	fg_withPrefix = &cli.StringFlag{
+		Name:        "prefix",
+		Aliases:     []string{"pf"},
+		Value:       "",
+		Usage:       "finds name of files (dirs) with `prefix`",
+		Destination: &opt.withPrefix,
+	}
+	fg_withSufix = &cli.StringFlag{
+		Name:        "suffix",
+		Aliases:     []string{"sf"},
+		Value:       "",
+		Usage:       "finds name of files (dirs) with `suffix`",
+		Destination: &opt.withSufix,
+	}
+	// -------------------------------------------
+	// ViewField
+	fg_hasINode = &cli.BoolFlag{
+		Name:        "inode",
+		Aliases:     []string{"I"},
+		Value:       false,
+		Usage:       "list each file's inode number",
+		Destination: &opt.hasINode,
+	}
+	fg_hasPermission = &cli.BoolFlag{
+		Name:        "permissions",
+		Aliases:     []string{"P"},
+		Value:       false,
+		Usage:       "list each file's permissions",
+		Destination: &opt.hasPermission,
+	}
+	fg_hasHDLinks = &cli.BoolFlag{
+		Name:        "links",
+		Aliases:     []string{"K"},
+		Value:       false,
+		Usage:       "list each file's number of hard links",
+		Destination: &opt.hasHDLinks,
+	}
+	fg_hasSize = &cli.BoolFlag{
+		Name:        "size",
+		Aliases:     []string{"S"},
+		Value:       false,
+		Usage:       "list each file's size",
+		Destination: &opt.hasSize,
+	}
+	fg_hasBlocks = &cli.BoolFlag{
+		Name:        "blocks",
+		Aliases:     []string{"B"},
+		Value:       false,
+		Usage:       "show number of file system blocks",
+		Destination: &opt.hasBlocks,
+	}
+	fg_hasUser = &cli.BoolFlag{
+		Name:        "user",
+		Aliases:     []string{"s"},
+		Value:       false,
+		Usage:       "show user's name",
+		Destination: &opt.hasUser,
+	}
+	fg_hasGroup = &cli.BoolFlag{
+		Name:        "group",
+		Aliases:     []string{"p"},
+		Value:       false,
+		Usage:       "show user's group name",
+		Destination: &opt.hasGroup,
+	}
+	fg_hasGit = &cli.BoolFlag{
+		Name:        "git",
+		Aliases:     []string{"g"},
+		Value:       false,
+		Usage:       " list each file's Git status, if tracked or ignored",
+		Destination: &opt.hasGit,
+	}
+	fg_hasMd5 = &cli.BoolFlag{
+		Name:        "md5",
+		Aliases:     []string{"5"},
+		Value:       false,
+		Usage:       " list each file's md5 field",
+		Destination: &opt.hasMd5,
+	}
+
+	fg_hasMTime = &cli.BoolFlag{
+		Name:        "modified",
+		Aliases:     []string{"M"},
+		Value:       false,
+		Usage:       "use the modified timestamp field",
+		Destination: &opt.hasMTime,
+	}
+	fg_hasATime = &cli.BoolFlag{
+		Name:        "accessed",
+		Aliases:     []string{"A"},
+		Value:       false,
+		Usage:       "use the accessed timestamp field",
+		Destination: &opt.hasATime,
+	}
+	fg_hasCTime = &cli.BoolFlag{
+		Name:        "created",
+		Aliases:     []string{"C"},
+		Value:       false,
+		Usage:       "use the created timestamp field",
+		Destination: &opt.hasCTime,
+	}
 )

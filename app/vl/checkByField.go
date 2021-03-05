@@ -9,7 +9,7 @@ import (
 )
 
 func (opt *option) checkByField() {
-	lg.Info("TODO..." + paw.Caller(1))
+	lg.Info(paw.Caller(1))
 	var (
 		sflag string
 		ok    bool

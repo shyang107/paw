@@ -84,8 +84,16 @@ func _runFirst() {
 		fg_Depth, fg_isDepthRecurse,
 		// ByField (sort)
 		fg_isSortNo, fg_isSortReverse, fg_sortByField, fg_isSortByName, fg_isSortBySize, fg_isSortByMTime,
-		// Skiper
-		// Fields
+		// SkipConds
+		fg_isNoSkip, fg_reIncludePattern, fg_reExcludePattern,
+		fg_withPrefix, fg_withSufix,
+		// ViewFields
+		fg_hasINode,
+		fg_hasPermission,
+		fg_hasHDLinks, fg_hasSize, fg_hasBlocks,
+		fg_hasUser, fg_hasGroup,
+		fg_hasMTime, fg_hasATime, fg_hasCTime,
+		fg_hasGit, fg_hasMd5,
 	}
 
 	app.Action = appAction
