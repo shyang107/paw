@@ -804,8 +804,8 @@ func (s *sizesStack) Accumulate(i int64) {
 
 func showlogrus() {
 	if pdOpt.isTrace {
-		paw.Logger.Trace("trace")
-		paw.Logger.Debug("debug")
+		paw.Logger.Debug("trace")
+		paw.Logger.Trace("debug")
 		paw.Logger.Info("info")
 		paw.Logger.Warn("warn")
 		paw.Logger.Error("error")

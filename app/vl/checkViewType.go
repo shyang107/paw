@@ -7,7 +7,7 @@ import (
 )
 
 func (opt *option) checkViewType() {
-	lg.Info(paw.Caller(1))
+	lg.Debug(paw.Caller(1))
 	// 1. cehck basic ViewType
 	if opt.isViewListTree {
 		if opt.depth == 0 {
@@ -84,5 +84,5 @@ func (opt *option) checkViewType() {
 		"viewType": opt.viewType,
 		"grouping": opt.grouping,
 		"depth":    opt.depth,
-	}).Trace()
+	}).Info()
 }

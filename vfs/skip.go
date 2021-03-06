@@ -158,7 +158,7 @@ func (s *SkipFunc) Name() string {
 
 // Skip return true to skip file, otherwise not.
 func (s *SkipFunc) IsSkip(de DirEntryX) bool {
-	// paw.Logger.Debug(s.Name(), ": ", de.Name())
+	// paw.Logger.Trace(s.Name(), ": ", de.Name())
 	return s.skip(de)
 }
 
@@ -317,6 +317,6 @@ func (s *SkipFuncRe) Name() string {
 
 // IsSkip return true to skip file, otherwise not.
 func (s *SkipFuncRe) IsSkip(de DirEntryX) bool {
-	// paw.Logger.Debug(s.Name(), ": ", de.Name())
+	// paw.Logger.Trace(s.Name(), ": ", de.Name())
 	return s.skip(de, s.re)
 }

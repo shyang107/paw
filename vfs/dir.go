@@ -654,7 +654,7 @@ func calcSize(cur *Dir) (size int64) {
 }
 
 func (d *Dir) checkGitDir() {
-	// paw.Logger.Trace(paw.Caller(1))
+	// paw.Logger.Debug(paw.Caller(1))
 	// 1. check: if dir is GitIgnored, then marks all subfiles with GitIgnored.
 	dxs, _ := d.ReadDirAll()
 	if len(dxs) == 0 {
@@ -681,12 +681,12 @@ func _checkGitDir(d *Dir) {
 	rp := d.RelPath() + "/"
 	if gxy, ok := gs[rp]; ok {
 		if isXY(gxy, GitIgnored) {
-			// paw.Logger.WithField("rp", rp).Trace("GitIgnored")
+			// paw.Logger.WithField("rp", rp).Debug("GitIgnored")
 			isMarkIgnored = true
 			xy = *gxy
 		}
 		if isXY(gxy, GitUntracked) {
-			// paw.Logger.WithField("rp", rp).Trace("GitUntracked")
+			// paw.Logger.WithField("rp", rp).Debug("GitUntracked")
 			isUntracked = true
 			xy = *gxy
 		}
@@ -728,7 +728,7 @@ func isXY(xy *GitFileStatus, gcode GitStatusCode) bool {
 }
 
 func (d *Dir) checkGitFiles() {
-	// paw.Logger.Trace(paw.Caller(1))
+	// paw.Logger.Debug(paw.Caller(1))
 	gs := d.git.GetStatus()
 	if d.git.NoGit || len(d.children) < 1 || gs == nil {
 		return
@@ -750,7 +750,7 @@ func (d *Dir) setSubDirXY() {
 	// 	"rp": "" + color.New(color.FgMagenta).Sprint(d.RelPath()) + "",
 	// 	"xs": xs,
 	// 	"ys": ys,
-	// }).Trace(paw.Caller(1))
+	// }).Debug(paw.Caller(1))
 	if len(xs) > 0 || len(ys) > 0 {
 		rp := d.RelPath()
 		if rp != "." {
@@ -760,7 +760,7 @@ func (d *Dir) setSubDirXY() {
 			"rp": "" + color.New(color.FgMagenta).Sprint(rp) + "",
 			"xs": xs,
 			"ys": ys,
-		}).Trace()
+		}).Debug()
 		gs[rp] = &GitFileStatus{
 			Staging:  getSC(xs),
 			Worktree: getSC(ys),

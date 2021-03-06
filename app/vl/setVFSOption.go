@@ -6,9 +6,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (opt *option) setVFSOption(vfsOpt *vfs.VFSOption) {
-	lg.Info(paw.Caller(1))
-
+func (opt *option) setVFSOption() {
+	lg.Debug(paw.Caller(1))
+	vfsOpt := opt.vopt
 	vfsOpt = &vfs.VFSOption{
 		Depth:      opt.depth,
 		Grouping:   opt.grouping,
@@ -25,5 +25,5 @@ func (opt *option) setVFSOption(vfsOpt *vfs.VFSOption) {
 		"Skips":      vfsOpt.Skips,
 		"ViewFields": vfsOpt.ViewFields,
 		"ViewType":   vfsOpt.ViewType,
-	}).Trace()
+	}).Info()
 }

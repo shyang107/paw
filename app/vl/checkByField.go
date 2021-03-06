@@ -9,7 +9,7 @@ import (
 )
 
 func (opt *option) checkByField() {
-	lg.Info(paw.Caller(1))
+	lg.Debug(paw.Caller(1))
 	var (
 		sflag string
 		ok    bool
@@ -53,5 +53,5 @@ func (opt *option) checkByField() {
 END:
 	lg.WithFields(logrus.Fields{
 		"byField": opt.byField,
-	}).Trace()
+	}).Info()
 }

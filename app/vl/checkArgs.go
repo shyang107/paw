@@ -9,7 +9,7 @@ import (
 )
 
 func (opt *option) checkArgs(c *cli.Context) {
-	lg.Info()
+	lg.Debug()
 
 	switch c.NArg() {
 	case 0:
@@ -19,7 +19,7 @@ func (opt *option) checkArgs(c *cli.Context) {
 			paw.Error.Println(err)
 		}
 		opt.rootPath = path
-		lg.WithField("rootPath", opt.rootPath).Trace()
+		lg.WithField("rootPath", opt.rootPath).Info()
 	case 1:
 		lg.WithField("arg", c.Args().Get(0)).Trace("no argument" + paw.Caller(1))
 		path, err := filepath.Abs(c.Args().Get(0))
@@ -33,13 +33,13 @@ func (opt *option) checkArgs(c *cli.Context) {
 		}
 		if fi.IsDir() {
 			opt.rootPath = path
-			lg.WithField("rootPath", opt.rootPath).Trace()
+			lg.WithField("rootPath", opt.rootPath).Info()
 		} else {
 			if opt.paths == nil {
 				opt.paths = make([]string, 0)
 			}
 			opt.paths = append(opt.paths, path)
-			lg.WithField("paths", opt.paths).Trace()
+			lg.WithField("paths", opt.paths).Info()
 		}
 	default: // > 1
 		lg.WithField("arg", c.Args()).Trace("multi-arguments" + paw.Caller(1))
@@ -54,7 +54,7 @@ func (opt *option) checkArgs(c *cli.Context) {
 				continue
 			}
 			opt.paths = append(opt.paths, path)
-			lg.WithField("paths", path).Trace()
+			lg.WithField("paths", path).Info()
 		}
 	}
 }

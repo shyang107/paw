@@ -250,7 +250,7 @@ func (p *PrintDirOption) NPath() int {
 	return len(p.Paths)
 }
 
-func (p *PrintDirOption) EnableTrace(isTrace bool) {
+func (p *PrintDirOption) EnableDebug(isTrace bool) {
 	p.isTrace = isTrace
 }
 

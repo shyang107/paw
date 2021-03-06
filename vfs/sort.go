@@ -31,7 +31,7 @@ import (
 
 // // Sort is a method on the function type, By, that sorts the argument slice according to the function.
 // func (b *ByFunc) Sort(files []DirEntryX) {
-// 	// paw.Logger.Trace("sorting..." + paw.Caller(1))
+// 	// paw.Logger.Debug("sorting..." + paw.Caller(1))
 // 	ps := &DirEntryXSorter{
 // 		files: files,
 // 		by:    b, // The Sort method's receiver is the function (closure) that defines the sort order.
@@ -310,7 +310,7 @@ func (s SortKey) Sort(dxs []DirEntryX) {
 
 // IsOk returns true for effective and otherwise not. In genernal, use it in checking.
 func (s SortKey) IsOk() bool {
-	paw.Logger.Trace("checking SortKey..." + paw.Caller(1))
+	paw.Logger.Debug("checking SortKey..." + paw.Caller(1))
 
 	switch s {
 	case SortByINode, SortByHDLinks, SortBySize, SortByBlocks, SortByMTime, SortByATime, SortByCTime, SortByName, SortByLowerName, SortByINodeR, SortByHDLinksR, SortBySizeR, SortByBlocksR, SortByMTimeR, SortByATimeR, SortByCTimeR, SortByNameR, SortByLowerNameR, SortByNone:

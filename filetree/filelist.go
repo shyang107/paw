@@ -87,7 +87,7 @@ func newFileListError(path string, err error, root string) *flError {
 	// 	"dir":  dir,
 	// 	"adir": adir,
 	// 	"name": basename,
-	// }).Debug()
+	// }).Trace()
 	return &flError{
 		path:     path,
 		dir:      adir,
@@ -819,7 +819,7 @@ func osrdHandleFiles(f *FileList, dirPath string, des []fs.DirEntry) {
 // 		ignoring condition of files or directory
 // 		ignore == nil, using DefaultIgnoreFn
 func (f *FileList) FindFiles(depth int) error {
-	paw.Logger.WithField("root", f.root).Trace()
+	paw.Logger.WithField("root", f.root).Debug()
 
 	if f.ignore == nil {
 		f.ignore = DefaultIgnoreFn
@@ -840,12 +840,12 @@ func (f *FileList) FindFiles(depth int) error {
 	}
 
 	if hasMd5 {
-		paw.Logger.Trace("finding files starts... (goroutine)" + paw.Caller(1))
+		paw.Logger.Debug("finding files starts... (goroutine)" + paw.Caller(1))
 		wg.Add(1)
 		go wgosReadDir(f, f.root)
 		wg.Wait()
 	} else {
-		paw.Logger.Trace("finding files starts..." + paw.Caller(1))
+		paw.Logger.Debug("finding files starts..." + paw.Caller(1))
 		osReadDir(f, f.root)
 		// fpWalkDir(f)
 		// gdWalk(f)

@@ -27,5 +27,5 @@ func main() {
 		"md5sh":     md5sh,
 		"md5sh-len": len(md5sh),
 		"equal":     md5 == md5sh,
-	}).Trace()
+	}).Debug()
 }

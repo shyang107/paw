@@ -367,7 +367,7 @@ func (f ViewField) Widths() (widths []int) {
 
 // IsOk returns true for effective and otherwise not. In genernal, use it in checking.
 func (f ViewField) IsOk() (ok bool) {
-	paw.Logger.Trace("checking ViewField..." + paw.Caller(1))
+	paw.Logger.Debug("checking ViewField..." + paw.Caller(1))
 
 	if f&ViewFieldINode != 0 ||
 		f&ViewFieldPermissions != 0 ||

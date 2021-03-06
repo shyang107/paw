@@ -6,10 +6,21 @@ import (
 )
 
 type option struct {
-	isVerbose bool
+	isTrace bool
+	isDebug bool
+	isInfo  bool
 	// VFS
 	rootPath string
 	paths    []string
+	vopt     *vfs.VFSOption
+	// vfsOpt = &VFSOption{
+	// 	Depth:      0,
+	// 	Grouping:   GroupNone,
+	// 	ByField:    SortByLowerName,
+	// 	Skips:      NewSkipConds().Add(DefaultSkiper),
+	// 	ViewFields: DefaultViewField,
+	// 	ViewType:   ViewList,
+	// }
 	// ViewType
 	viewType       vfs.ViewType
 	grouping       vfs.Group
@@ -65,25 +76,30 @@ type option struct {
 }
 
 var (
-	opt    = new(option)
-	vfsOpt = new(vfs.VFSOption)
-	// vfsOpt = &VFSOption{
-	// 	Depth:      0,
-	// 	Grouping:   GroupNone,
-	// 	ByField:    SortByLowerName,
-	// 	Skips:      NewSkipConds().Add(DefaultSkiper),
-	// 	ViewFields: DefaultViewField,
-	// 	ViewType:   ViewList,
-	// }
+	opt = new(option)
 
 	// -------------------------------------------
 	// Verbose
-	fg_isVerbose = &cli.BoolFlag{
-		Name:        "verbose",
-		Aliases:     []string{"V"},
+	fg_isInfo = &cli.BoolFlag{
+		Name:        "info",
+		Aliases:     []string{},
 		Value:       false,
-		Usage:       "show verbose message",
-		Destination: &opt.isVerbose,
+		Usage:       "info",
+		Destination: &opt.isInfo,
+	}
+	fg_isDebug = &cli.BoolFlag{
+		Name:        "debug",
+		Aliases:     []string{},
+		Value:       false,
+		Usage:       "debug mode",
+		Destination: &opt.isDebug,
+	}
+	fg_isTrace = &cli.BoolFlag{
+		Name:        "trace",
+		Aliases:     []string{},
+		Value:       false,
+		Usage:       "trace mode",
+		Destination: &opt.isTrace,
 	}
 	// -------------------------------------------
 	// ViewType

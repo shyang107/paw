@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/shyang107/paw"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -22,6 +23,7 @@ var (
 )
 
 func _runFirst() {
+	lg.SetLevel(logrus.WarnLevel)
 	programName, err := os.Executable()
 	if err != nil {
 		programName = os.Args[0]
@@ -75,7 +77,7 @@ func _runFirst() {
 
 	app.Flags = []cli.Flag{
 		// verbose
-		fg_isVerbose,
+		fg_isInfo, fg_isDebug, fg_isTrace,
 		//  ViewType
 		fg_isViewList, fg_isViewLevel, fg_isViewListTree, fg_isViewTree, fg_isViewTable, fg_isViewClassify,
 		fg_isViewX, fg_isViewGroup, fg_isViewGroupR,
@@ -116,7 +118,7 @@ func main() {
 }
 
 func info(f string, args ...interface{}) {
-	if opt.isVerbose {
+	if lg.IsLevelEnabled(logrus.InfoLevel) {
 		paw.Info.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
 	}
 	// fmt.Fprintf(os.Stderr, programName+": "+fmt.Sprintf(f, args...)+"\n")
@@ -133,7 +135,7 @@ func fatal(f string, args ...interface{}) {
 }
 
 func warning(f string, args ...interface{}) {
-	if opt.isVerbose {
+	if lg.IsLevelEnabled(logrus.WarnLevel) {
 		paw.Warning.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
 		// stderr(f, args...)
 	}

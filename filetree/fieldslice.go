@@ -204,7 +204,7 @@ func (f *FieldSlice) SetValues(file *File, git *GitStatus) {
 				// 		// "oXY": ,
 				// 		"XY":  xy + "," + xyc,
 				// 		"fXY": file.GitXY(git) + "," + file.GitXYC(git),
-				// 	}).Debug(file.BaseNameC())
+				// 	}).Trace(file.BaseNameC())
 				// }
 				fd.SetValue(" " + xy)
 				fd.SetValueC(" " + xyc)
@@ -334,7 +334,7 @@ func (f *FieldSlice) Widths() []int {
 
 // ModifyWidth modifies Field.Width according to FileList and wdstty (maximum width on console).
 func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
-	paw.Logger.Trace(paw.Caller(1))
+	paw.Logger.Debug(paw.Caller(1))
 
 	for _, dir := range fl.Dirs() {
 		for _, file := range fl.Map()[dir][:] {

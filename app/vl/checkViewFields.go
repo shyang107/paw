@@ -3,10 +3,11 @@ package main
 import (
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/vfs"
+	"github.com/sirupsen/logrus"
 )
 
 func (opt *option) checkViewFields() {
-	lg.Info(paw.Caller(1))
+	lg.Debug(paw.Caller(1))
 
 	var (
 		viewFields vfs.ViewField
@@ -98,10 +99,10 @@ func (opt *option) checkViewFields() {
 	}
 
 	viewFields |= vfs.ViewFieldName
-	// lg.WithFields(logrus.Fields{
-	// 	"isOk":       isOk,
-	// 	"viewFields": viewFields,
-	// }).Trace()
+	lg.WithFields(logrus.Fields{
+		"isOk":       isOk,
+		"viewFields": viewFields,
+	}).Debug()
 
 	if isOk {
 		opt.viewFields = viewFields
@@ -114,6 +115,6 @@ func (opt *option) checkViewFields() {
 		opt.viewFields = vfs.DefaultViewField
 	}
 END:
-	lg.WithField("viewFields", opt.viewFields).Trace()
+	lg.WithField("viewFields", opt.viewFields).Info()
 
 }

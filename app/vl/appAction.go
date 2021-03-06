@@ -6,12 +6,20 @@ import (
 )
 
 var appAction cli.ActionFunc = func(c *cli.Context) error {
+	lg.SetLevel(logrus.WarnLevel)
 
-	if opt.isVerbose {
-		// pdopt.EnableTrace(opt.isVerbose)
+	lg.Debug()
+
+	if opt.isInfo {
+		lg.SetLevel(logrus.InfoLevel)
+	}
+
+	if opt.isDebug {
+		lg.SetLevel(logrus.DebugLevel)
+	}
+
+	if opt.isTrace {
 		lg.SetLevel(logrus.TraceLevel)
-	} else {
-		lg.SetLevel(logrus.WarnLevel)
 	}
 
 	opt.checkArgs(c)
@@ -29,7 +37,7 @@ var appAction cli.ActionFunc = func(c *cli.Context) error {
 	opt.checkViewFields()
 
 	// Setuo vfs.VFSOption
-	opt.setVFSOption(vfsOpt)
+	opt.setVFSOption()
 
 	// pattern
 	// pdopt.Ignore = getPatternflag(opt).Ignore(opt)

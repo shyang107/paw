@@ -33,7 +33,7 @@ func main() {
 			"rpath": rpath,
 			"X":     string(xy.Staging),
 			"Y":     string(xy.Worktree),
-		}).Debug()
+		}).Trace()
 	}
 	// filename := "filetree/filetree_helper.go"
 	filename := "examples/git/"

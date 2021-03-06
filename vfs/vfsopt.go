@@ -43,7 +43,7 @@ func (v *VFSOption) Sort(dxs []DirEntryX) {
 }
 
 func (opt *VFSOption) Check() {
-	paw.Logger.Trace("checking VFSOption..." + paw.Caller(1))
+	paw.Logger.Debug("checking VFSOption..." + paw.Caller(1))
 
 	if opt == nil {
 		opt = NewVFSOption()

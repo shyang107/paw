@@ -55,7 +55,7 @@ func main() {
 		key := fmt.Sprintf("path%d", i)
 		lgFields[key] = path
 	}
-	lg.WithFields(lgFields).Debug("clean path")
+	lg.WithFields(lgFields).Trace("clean path")
 	for i, path := range paths {
 		paths[i], _ = filepath.Abs(path) //clPath(path)
 	}
@@ -168,7 +168,7 @@ func clPath(path string) string {
 		"home":  hpath,
 		"clean": cpath,
 		"abs":   apath,
-	}).Debug()
+	}).Trace()
 	return apath
 }
 

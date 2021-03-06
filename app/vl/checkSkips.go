@@ -10,7 +10,7 @@ import (
 )
 
 func (opt *option) checkSkips() {
-	lg.Info(paw.Caller(1))
+	lg.Debug(paw.Caller(1))
 
 	opt.skips = vfs.NewSkipConds()
 
@@ -75,5 +75,5 @@ func (opt *option) checkSkips() {
 		}).Trace()
 	}
 
-	paw.Logger.WithField("skips", opt.skips).Trace()
+	paw.Logger.WithField("skips", opt.skips).Info()
 }

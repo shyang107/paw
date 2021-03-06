@@ -102,11 +102,11 @@ func (v *VFS) AddSkipFuncs(skips ...Skiper) {
 }
 
 func (v *VFS) BuildFS() {
-	paw.Logger.Trace("building VFS...")
+	paw.Logger.Debug("building VFS...")
 	cur := &v.Dir
 	buildFS(cur, cur.Path())
 
-	paw.Logger.Trace("building VFS.relpaths...")
+	paw.Logger.Debug("building VFS.relpaths...")
 	v.createRDirs(&v.Dir)
 
 	paw.Logger.Tracef("checking VFS.git: dir...[%q]", cur.RelPath())

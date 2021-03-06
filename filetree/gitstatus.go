@@ -168,7 +168,7 @@ func NewGitStatus(repPath string) *GitStatus {
 			NoGit: true,
 		}
 	}
-	// paw.Logger.Trace(gs.head)
+	// paw.Logger.Debug(gs.head)
 	gs.Dump("NewGitStatus")
 	return gs
 }
@@ -206,7 +206,7 @@ func (g *GitStatus) Dump(msg string) {
 			"X":     v.Staging,
 			"Y":     v.Worktree,
 			"extra": `"` + v.Extra + `"`,
-		}).Trace()
+		}).Debug()
 	}
 }
 
@@ -353,7 +353,7 @@ func getShortGitStatus(repPath string) (*GitStatus, error) {
 		// paw.Logger.Errorf("unable to read git repository status : %s", err.Error())
 		return &GitStatus{NoGit: true}, err
 	}
-	// paw.Logger.WithField("out", out).Debug("git")
+	// paw.Logger.WithField("out", out).Trace("git")
 	status := parseShort(repPath, out)
 
 	return status, err

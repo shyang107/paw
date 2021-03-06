@@ -30,7 +30,7 @@ func (g Group) String() string {
 
 // IsOk returns true for effective and otherwise not. In genernal, use it in checking.
 func (g Group) IsOk() bool {
-	paw.Logger.Trace("checking Group..." + paw.Caller(1))
+	paw.Logger.Debug("checking Group..." + paw.Caller(1))
 
 	switch g {
 	case Grouped, GroupedR, GroupNone:

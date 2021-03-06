@@ -135,7 +135,7 @@ func (v ViewType) String() string {
 
 // IsOk returns true for effective and otherwise not. In genernal, use it in checking.
 func (v ViewType) IsOk() bool {
-	paw.Logger.Trace("checking ViewType..." + paw.Caller(1))
+	paw.Logger.Debug("checking ViewType..." + paw.Caller(1))
 	if _, ok := ViewTypeNames[v]; ok {
 		return true
 	} else {
