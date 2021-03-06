@@ -421,13 +421,13 @@ func (a ByLowerName) Less(i, j int) bool {
 }
 
 type ByLowerString struct {
-	values []string
+	Values []string
 }
 
-func (a ByLowerString) Len() int      { return len(a.values) }
-func (a ByLowerString) Swap(i, j int) { a.values[i], a.values[j] = a.values[j], a.values[i] }
+func (a ByLowerString) Len() int      { return len(a.Values) }
+func (a ByLowerString) Swap(i, j int) { a.Values[i], a.Values[j] = a.Values[j], a.Values[i] }
 func (a ByLowerString) Less(i, j int) bool {
-	return strings.ToLower(a.values[i]) < strings.ToLower(a.values[j])
+	return strings.ToLower(a.Values[i]) < strings.ToLower(a.Values[j])
 }
 
 // DirEntryXSorter joins a By function and a slice of Files to be sorted.

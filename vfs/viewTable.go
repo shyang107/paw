@@ -51,7 +51,7 @@ func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 		nitems   = tnd + tnf
 		nd, nf   int
 		wdmeta   = 0
-		roothead = getRootHeadC(cur, wdstty)
+		roothead = GetRootHeadC(cur, wdstty)
 		banner   = strings.Repeat("-", wdstty)
 	)
 	for _, fd := range fields {

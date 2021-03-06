@@ -152,7 +152,9 @@ func NewGitStatus(repPath string) *GitStatus {
 		}
 	}
 	// paw.Logger.Debug(gs.head)
-	gs.Dump("NewGitStatus")
+	if paw.Logger.IsLevelEnabled(logrus.TraceLevel) {
+		gs.Dump("NewGitStatus")
+	}
 	return gs
 }
 
@@ -172,9 +174,9 @@ func getSC(sc []GitStatusCode) GitStatusCode {
 
 func (g *GitStatus) Dump(msg string) {
 	if len(msg) > 0 {
-		paw.Logger.Infof("[%v] branch: %v%v", msg, g.head, paw.Caller(1))
+		paw.Logger.Debugf("[%v] branch: %v%v", msg, g.head, paw.Caller(1))
 	} else {
-		paw.Logger.Info(g.head + paw.Caller(1))
+		paw.Logger.Debug(g.head + paw.Caller(1))
 	}
 
 	rps := []string{}
@@ -186,23 +188,23 @@ func (g *GitStatus) Dump(msg string) {
 		return strings.ToLower(rps[i]) < strings.ToLower(rps[j])
 	})
 
-	cdp := color.New(color.FgMagenta).Add(color.Bold)
-	cfp := cfip // color.New(color.FgBlue)
+	// cdp := color.New(color.FgMagenta).Add(color.Bold)
+	// cfp := cfip // color.New(color.FgBlue)
 	for i, rp := range rps {
 		v := g.status[rp]
-		var crp string
-		if strings.HasSuffix(rp, "/") {
-			crp = cdp.Sprintf("%q", rp) + ""
-		} else {
-			crp = cfp.Sprintf("%q", rp) + ""
-		}
+		// var crp string
+		// if strings.HasSuffix(rp, "/") {
+		// 	crp = cdp.Sprintf("%q", rp) + ""
+		// } else {
+		// 	crp = cfp.Sprintf("%q", rp) + ""
+		// }
 		paw.Logger.WithFields(logrus.Fields{
 			"":   i,
-			"rp": crp,
+			"rp": rp,
 			"X":  v.Staging,
 			"Y":  v.Worktree,
 			"x":  `"` + v.Extra + `"`,
-		}).Debug()
+		}).Trace()
 	}
 }
 

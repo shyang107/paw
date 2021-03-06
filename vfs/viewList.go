@@ -43,13 +43,13 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 		nitems    = tnd + tnf
 		nd, nf    int
 		wdmeta    = 0
-		roothead  = getRootHeadC(cur, wdstty)
-		head      = getPFHeadS(chdp, fields...)
+		roothead  = GetRootHeadC(cur, wdstty)
+		head      = GetPFHeadS(chdp, fields...)
 		totalsize int64
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
-	fprintBanner(w, "", "=", wdstty)
+	FprintBanner(w, "", "=", wdstty)
 
 	// paw.Logger.Trace("hasX")
 	if hasX {
@@ -120,16 +120,16 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 			}
 			fmt.Println()
 			if hasX {
-				fprintXattrs(w, wdmeta, de.Xattibutes())
+				FprintXattrs(w, wdmeta, de.Xattibutes())
 			}
 		}
 		totalsize += size
 		fprintDirSummary(w, "", curnd, curnf, size, wdstty)
 		if nd+nf < nitems {
-			fprintBanner(w, "", "-", wdstty)
+			FprintBanner(w, "", "-", wdstty)
 		}
 	}
 
-	fprintBanner(w, "", "=", wdstty)
-	fprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
+	FprintBanner(w, "", "=", wdstty)
+	FprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
 }

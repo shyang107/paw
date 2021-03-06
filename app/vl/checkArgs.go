@@ -46,15 +46,17 @@ func (opt *option) checkArgs(c *cli.Context) {
 		if opt.paths == nil {
 			opt.paths = make([]string, 0)
 		}
+		lg.WithField("args", c.Args()).Debug()
 		for i := 0; i < c.NArg(); i++ {
-			lg.WithField("args", c.Args().Get(i)).Info()
+			// lg.WithField("args", c.Args().Get(i)).Info()
 			path, err := filepath.Abs(c.Args().Get(i))
 			if err != nil {
 				paw.Error.Println(err)
 				continue
 			}
 			opt.paths = append(opt.paths, path)
-			lg.WithField("paths", path).Info()
+			lg.WithField("path", path).Trace()
 		}
+		lg.WithField("paths", opt.paths).Trace()
 	}
 }

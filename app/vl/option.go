@@ -76,8 +76,8 @@ type option struct {
 }
 
 var (
-	opt = new(option)
-
+	opt  = new(option)
+	hasX = false
 	// -------------------------------------------
 	// Verbose
 	fg_isInfo = &cli.BoolFlag{

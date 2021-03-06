@@ -25,6 +25,39 @@ type File struct {
 	git     *GitStatus
 }
 
+func NewFile(path, root string) *File {
+	apath, err := filepath.Abs(path)
+	if err != nil {
+		paw.Logger.Error(err)
+		return nil
+	}
+	info, err := os.Lstat(apath)
+	if err != nil {
+		paw.Logger.Error(err)
+		return nil
+	}
+	if info.IsDir() {
+		paw.Logger.Error(err)
+		return nil
+	}
+	dir, _ := filepath.Split(apath)
+	git := NewGitStatus(dir)
+	relpath := "."
+	if len(root) > 0 {
+		relpath, _ = filepath.Rel(root, apath)
+	}
+	name := filepath.Base(apath)
+	xattrs, _ := getXattr(apath)
+	return &File{
+		path:    apath,
+		relpath: relpath,
+		name:    name,
+		info:    info,
+		xattrs:  xattrs,
+		git:     git,
+	}
+}
+
 // 實現 fs.FileInfo 接口
 // A FileInfo describes a file and is returned by Stat.
 // type FileInfo interface:
@@ -351,8 +384,8 @@ func (f *File) FieldC(field ViewField) string {
 	case ViewFieldSize:
 		if f.IsCharDev() || f.IsDev() {
 			major, minor := f.DevNumber()
-			wdmajor := _ViewFieldMajor.Width()
-			wdminor := _ViewFieldMinor.Width()
+			wdmajor := ViewFieldMajor.Width()
+			wdminor := ViewFieldMinor.Width()
 			csj := csnp.Sprintf("%[1]*[2]v", wdmajor, major)
 			csn := csnp.Sprintf("%[1]*[2]v", wdminor, minor)
 			cdev := csj + cdirp.Sprint(",") + csn

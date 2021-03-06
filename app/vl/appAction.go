@@ -43,9 +43,16 @@ var appAction cli.ActionFunc = func(c *cli.Context) error {
 	opt.setVFSOption()
 
 	// View
-	err := opt.View()
-	if err != nil {
-		stderr("[view] %s", err.Error())
+	if len(opt.paths) < 1 {
+		err := opt.view()
+		if err != nil {
+			stderr("[view] %s", err.Error())
+		}
+	} else {
+		err := opt.viewPaths()
+		if err != nil {
+			stderr("[view] %s", err.Error())
+		}
 	}
 
 	return nil

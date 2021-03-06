@@ -33,7 +33,7 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, isViewNo
 		tnd, tnf  = cur.NItems()
 		nitems    = tnd + tnf
 		nd, nf    int
-		roothead  = getRootHeadC(cur, wdstty)
+		roothead  = GetRootHeadC(cur, wdstty)
 		totalsize int64
 	)
 
@@ -136,12 +136,12 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, isViewNo
 		fprintDirSummary(w, "", curnd, curnf, size, wdstty)
 
 		if nfiles < nitems {
-			fprintBanner(w, "", "-", wdstty)
+			FprintBanner(w, "", "-", wdstty)
 		}
 	}
 
-	fprintBanner(w, "", "=", wdstty)
-	fprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
+	FprintBanner(w, "", "=", wdstty)
+	FprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
 }
 
 func vcGridWidths(names []string, wdstty int) (wdcols []int) {

@@ -1,6 +1,7 @@
 package vfs
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -21,8 +22,8 @@ const (
 	ViewFieldLinks
 	// ViewFieldSize is size field
 	ViewFieldSize
-	_ViewFieldMajor
-	_ViewFieldMinor
+	ViewFieldMajor
+	ViewFieldMinor
 	// ViewFieldBlocks is blocks field
 	ViewFieldBlocks
 	// ViewFieldUser is user field
@@ -71,8 +72,8 @@ var (
 		ViewFieldPermissions: "Permissions",
 		ViewFieldLinks:       "Links",
 		ViewFieldSize:        "Size",
-		_ViewFieldMajor:      "Major",
-		_ViewFieldMinor:      "Minor",
+		ViewFieldMajor:       "Major",
+		ViewFieldMinor:       "Minor",
 		ViewFieldBlocks:      "Blocks",
 		ViewFieldUser:        "User",
 		ViewFieldGroup:       "Group",
@@ -90,8 +91,8 @@ var (
 		ViewFieldPermissions: 11,
 		ViewFieldLinks:       2,
 		ViewFieldSize:        4,
-		_ViewFieldMajor:      0,
-		_ViewFieldMinor:      0,
+		ViewFieldMajor:       0,
+		ViewFieldMinor:       0,
 		ViewFieldBlocks:      6,
 		ViewFieldUser:        4,
 		ViewFieldGroup:       5,
@@ -389,15 +390,22 @@ func (f ViewField) IsOk() (ok bool) {
 	}
 }
 
-func getPFHeadS(c *color.Color, fields ...ViewField) string {
+func GetPFHeadS(c *color.Color, fields ...ViewField) string {
+	var sprintf func(string, ...interface{}) string
+	if c != nil {
+		sprintf = c.Sprintf
+	} else {
+		sprintf = fmt.Sprintf
+	}
+
 	hd := ""
 	for _, f := range fields {
 		if f&ViewFieldName != 0 {
-			hd += c.Sprintf("%-[1]*[2]s", f.Width(), f.Name())
+			hd += sprintf("%-[1]*[2]s", f.Width(), f.Name())
 			continue
 		}
 		value := aligned(f, f.Name())
-		hd += c.Sprintf("%v", value) + " "
+		hd += sprintf("%v", value) + " "
 	}
 	return hd
 }
