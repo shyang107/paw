@@ -112,7 +112,7 @@ func (v *VFS) BuildFS() {
 	v.createRDirs(&v.Dir)
 
 	paw.Logger.Tracef("checking VFS.git: dir...[%q]", cur.RelPath())
-	v.Dir.checkGitDir()
+	v.Dir.CheckGitDir()
 
 	paw.Logger.Tracef("checking VFS.git: files...[%q]", cur.RelPath())
 	v.Dir.checkGitFiles()
@@ -167,7 +167,7 @@ func buildFS(cur *Dir, root string) {
 			continue
 		}
 		relpath, _ := filepath.Rel(root, path)
-		xattrs, _ := getXattr(path)
+		xattrs, _ := GetXattr(path)
 		var child DirEntryX
 		if !de.IsDir() {
 			child = &File{

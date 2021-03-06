@@ -25,7 +25,7 @@ type File struct {
 	git     *GitStatus
 }
 
-func NewFile(path, root string) *File {
+func NewFile(path, root string, git *GitStatus) *File {
 	apath, err := filepath.Abs(path)
 	if err != nil {
 		paw.Logger.Error(err)
@@ -40,14 +40,14 @@ func NewFile(path, root string) *File {
 		paw.Logger.Error(err)
 		return nil
 	}
-	dir, _ := filepath.Split(apath)
-	git := NewGitStatus(dir)
+	// dir, _ := filepath.Split(apath)
+	// git := NewGitStatus(dir)
 	relpath := "."
 	if len(root) > 0 {
 		relpath, _ = filepath.Rel(root, apath)
 	}
 	name := filepath.Base(apath)
-	xattrs, _ := getXattr(apath)
+	xattrs, _ := GetXattr(apath)
 	return &File{
 		path:    apath,
 		relpath: relpath,

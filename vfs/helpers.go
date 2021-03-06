@@ -118,7 +118,7 @@ func nameToLinkC(de DirEntryX) string {
 	}
 }
 
-func pathToLinkC(de DirEntryX, bgc []color.Attribute) string {
+func PathToLinkC(de DirEntryX, bgc []color.Attribute) string {
 	if bgc == nil {
 		dir, name := filepath.Split(de.Path())
 		if de.IsLink() {
@@ -137,7 +137,7 @@ func pathToLinkC(de DirEntryX, bgc []color.Attribute) string {
 		cnamep.Add(bgc...)
 		ccdashp.Add(bgc...)
 		if de.IsLink() {
-			return ccdirp.Sprint(dir) + cnamep.Sprint(name) + ccdashp.Sprint(" -> ") + pathToLinkC(de, bgc)
+			return ccdirp.Sprint(dir) + cnamep.Sprint(name) + ccdashp.Sprint(" -> ") + PathToLinkC(de, bgc)
 		} else {
 			return ccdirp.Sprint(dir) + cnamep.Sprint(name)
 		}
@@ -148,7 +148,7 @@ func iNodeC(de DirEntryX) string {
 	return cinp.Sprint(de.INode())
 }
 
-func getXattr(path string) ([]string, error) {
+func GetXattr(path string) ([]string, error) {
 	// paw.Logger.WithField("path", path).Info("income")
 	xattrs, err := xattr.List(path)
 	if err != nil {
@@ -400,38 +400,32 @@ func modFieldWidths(v *VFS, fields []ViewField) {
 
 func childWidths(d *Dir, fields []ViewField) {
 	ds, _ := d.ReadDirAll()
-	for _, c := range ds {
-		f, isFile := c.(*File)
-		if isFile {
-			for _, fd := range fields {
-				wd := f.WidthOf(fd)
-				dwd := fd.Width()
-				if fd&ViewFieldSize == ViewFieldSize {
-					if f.IsCharDev() || f.IsDev() {
-						fmajor := ViewFieldMajor.Width()
-						fminor := ViewFieldMinor.Width()
-						major, minor := f.DevNumber()
-						wdmajor := len(fmt.Sprint(major))
-						wdminor := len(fmt.Sprint(minor))
-						ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
-						ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
-						wd = ViewFieldMajor.Width() +
-							ViewFieldMinor.Width() + 1
-						dwd = fd.Width()
-					}
+	var (
+		wd, dwd int
+	)
+	for _, de := range ds {
+		for _, fd := range fields {
+			wd = de.WidthOf(fd)
+			dwd = fd.Width()
+			if !de.IsDir() && fd&ViewFieldSize == ViewFieldSize {
+				if de.IsCharDev() || de.IsDev() {
+					fmajor := ViewFieldMajor.Width()
+					fminor := ViewFieldMinor.Width()
+					major, minor := de.DevNumber()
+					wdmajor := len(fmt.Sprint(major))
+					wdminor := len(fmt.Sprint(minor))
+					ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
+					ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
+					wd = ViewFieldMajor.Width() +
+						ViewFieldMinor.Width() + 1
 				}
-				width := paw.MaxInt(dwd, wd)
-				fd.SetWidth(width)
 			}
-		} else {
-			d := c.(*Dir)
-			for _, fd := range fields {
-				wd := d.WidthOf(fd)
-				dwd := fd.Width()
-				width := paw.MaxInt(dwd, wd)
-				fd.SetWidth(width)
-			}
-			childWidths(d, fields)
+			width := paw.MaxInt(dwd, wd)
+			fd.SetWidth(width)
+		}
+		if de.IsDir() {
+			child := de.(*Dir)
+			childWidths(child, fields)
 		}
 	}
 }
@@ -505,7 +499,7 @@ func GetRootHeadC(de DirEntryX, wdstty int) string {
 	// }
 	// "prompt":   {38, 5, 251, 48, 5, 236}
 	chead := cpmpt.Sprint("Root directory: ")
-	chead += pathToLinkC(de, bgpmpt)
+	chead += PathToLinkC(de, bgpmpt)
 	chead += cpmpt.Sprint(", size ≈ ")
 	chead += cpmptSn.Sprint(sn) + cpmptSu.Sprint(su)
 	chead += cpmpt.Sprint(".")

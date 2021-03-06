@@ -35,7 +35,7 @@ type Dir struct {
 	opt *VFSOption
 }
 
-func NewDir(dirpath, root string) *Dir {
+func NewDir(dirpath, root string, git *GitStatus) *Dir {
 	aroot, err := filepath.Abs(dirpath)
 	if err != nil {
 		return nil
@@ -48,13 +48,13 @@ func NewDir(dirpath, root string) *Dir {
 	if !info.IsDir() {
 		return nil
 	}
-	git := NewGitStatus(aroot)
+	// git := NewGitStatus(aroot)
 	relpath := "."
 	if len(root) > 0 {
 		relpath, _ = filepath.Rel(root, aroot)
 	}
 	name := filepath.Base(aroot)
-	xattrs, _ := getXattr(aroot)
+	xattrs, _ := GetXattr(aroot)
 	return &Dir{
 		path:     aroot,
 		relpath:  relpath,
@@ -686,9 +686,13 @@ func calcSize(cur *Dir) (size int64) {
 	return size
 }
 
-func (d *Dir) checkGitDir() {
+func (d *Dir) CheckGitDir() {
 	// paw.Logger.Debug(paw.Caller(1))
 	// 1. check: if dir is GitIgnored, then marks all subfiles with GitIgnored.
+	// if d.git == nil {
+	// 	root := filepath.Dir(d.Path())
+	// 	d.git = NewGitStatus(root)
+	// }
 	dxs, _ := d.ReadDirAll()
 	if len(dxs) == 0 {
 		return
@@ -697,7 +701,7 @@ func (d *Dir) checkGitDir() {
 		if child.IsDir() {
 			next := child.(*Dir)
 			_checkGitDir(next)
-			next.checkGitDir()
+			next.CheckGitDir()
 		}
 	}
 }
