@@ -33,7 +33,7 @@ func (opt *option) viewPaths() error {
 		paths  = opt.paths
 		fields = opt.viewFields.Fields()
 		// basepaths
-		head            = vfs.GetPFHeadS(paw.Chdp, fields...)
+		// head            = vfs.GetPFHeadS(paw.Chdp, fields...)
 		pm, rdes        = createBasepaths(paths)
 		wdmeta          = 0
 		totalsize, size int64
@@ -50,14 +50,13 @@ func (opt *option) viewPaths() error {
 	vfs.FprintBanner(w, "", "=", wdstty)
 
 	modFieldWidths(pm, fields)
-	if hasX {
-		for _, fd := range fields {
-			if fd&vfs.ViewFieldName == vfs.ViewFieldName {
-				continue
-			}
-			wdmeta += fd.Width() + 1
+	for _, fd := range fields {
+		if fd&vfs.ViewFieldName == vfs.ViewFieldName {
+			continue
 		}
+		wdmeta += fd.Width() + 1
 	}
+	vfs.ViewFieldName.SetWidth(wdstty - wdmeta)
 
 	if len(viewPaths_errors) > 0 {
 		for _, err := range viewPaths_errors {
@@ -65,6 +64,7 @@ func (opt *option) viewPaths() error {
 		}
 	}
 
+	head := vfs.GetPFHeadS(paw.Chdp, fields...)
 	fmt.Fprintln(w, head)
 	for _, path := range paths {
 		pi, ok := pm[path]
@@ -195,36 +195,28 @@ func modFieldWidths(pm pathmap, fields []vfs.ViewField) {
 	for _, p := range pm {
 		de := p.de
 		// f, isFile := c.(*vfs.File)
-		if !de.IsDir() {
-			for _, fd := range fields {
-				wd := de.WidthOf(fd)
-				dwd := fd.Width()
-				if fd&vfs.ViewFieldSize == vfs.ViewFieldSize {
-					if de.IsCharDev() || de.IsDev() {
-						fmajor := vfs.ViewFieldMajor.Width()
-						fminor := vfs.ViewFieldMinor.Width()
-						major, minor := de.DevNumber()
-						wdmajor := len(fmt.Sprint(major))
-						wdminor := len(fmt.Sprint(minor))
-						vfs.ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
-						vfs.ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
-						wd = vfs.ViewFieldMajor.Width() +
-							vfs.ViewFieldMinor.Width() + 1
-						dwd = fd.Width()
-					}
+		var (
+			wd, dwd int
+		)
+		for _, fd := range fields {
+			wd = de.WidthOf(fd)
+			dwd = fd.Width()
+			if !de.IsDir() && fd&vfs.ViewFieldSize == vfs.ViewFieldSize {
+				if de.IsCharDev() || de.IsDev() {
+					fmajor := vfs.ViewFieldMajor.Width()
+					fminor := vfs.ViewFieldMinor.Width()
+					major, minor := de.DevNumber()
+					wdmajor := len(fmt.Sprint(major))
+					wdminor := len(fmt.Sprint(minor))
+					vfs.ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
+					vfs.ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
+					wd = vfs.ViewFieldMajor.Width() +
+						vfs.ViewFieldMinor.Width() + 1
+					dwd = fd.Width()
 				}
-				width := paw.MaxInt(dwd, wd)
-				fd.SetWidth(width)
 			}
-		} else {
-			// child := de.(*vfs.Dir)
-			for _, fd := range fields {
-				wd := de.WidthOf(fd)
-				dwd := fd.Width()
-				width := paw.MaxInt(dwd, wd)
-				fd.SetWidth(width)
-			}
-			// childWidths(child, fields)
+			width := paw.MaxInt(dwd, wd)
+			fd.SetWidth(width)
 		}
 	}
 }
