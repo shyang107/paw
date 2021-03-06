@@ -22,7 +22,14 @@ func (opt *option) checkArgs(c *cli.Context) {
 		lg.WithField("rootPath", opt.rootPath).Info()
 	case 1:
 		lg.WithField("arg", c.Args().Get(0)).Trace("no argument" + paw.Caller(1))
-		path, err := filepath.Abs(c.Args().Get(0))
+		arg := c.Args().Get(0)
+		// if strings.HasPrefix(arg, "~") {
+		// 	xarg, err := homedir.Expand(arg)
+		// 	if err == nil {
+		// 		arg = xarg
+		// 	}
+		// }
+		path, err := filepath.Abs(arg)
 		if err != nil {
 			paw.Error.Println(err)
 		}
@@ -46,15 +53,24 @@ func (opt *option) checkArgs(c *cli.Context) {
 		if opt.paths == nil {
 			opt.paths = make([]string, 0)
 		}
+		lg.WithField("args", c.Args()).Debug()
 		for i := 0; i < c.NArg(); i++ {
-			lg.WithField("args", c.Args().Get(i)).Info()
-			path, err := filepath.Abs(c.Args().Get(i))
+			// lg.WithField("args", c.Args().Get(i)).Info()
+			arg := c.Args().Get(i)
+			// if strings.HasPrefix(arg, "~") {
+			// 	xarg, err := homedir.Expand(arg)
+			// 	if err == nil {
+			// 		arg = xarg
+			// 	}
+			// }
+			path, err := filepath.Abs(arg)
 			if err != nil {
 				paw.Error.Println(err)
 				continue
 			}
 			opt.paths = append(opt.paths, path)
-			lg.WithField("paths", path).Info()
+			lg.WithField("path", path).Trace()
 		}
+		lg.WithField("paths", opt.paths).Trace()
 	}
 }

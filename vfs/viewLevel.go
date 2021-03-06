@@ -51,13 +51,13 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 		nitems   = tnd + tnf
 		nd, nf   int
 		wdmeta   = 0
-		roothead = getRootHeadC(cur, wdstty)
+		roothead = GetRootHeadC(cur, wdstty)
 		// head      = getPFHeadS(chdp, fields...)
 		totalsize int64
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
-	fprintBanner(w, "", "=", wdstty)
+	FprintBanner(w, "", "=", wdstty)
 
 	if hasX {
 		for _, fd := range fields {
@@ -105,7 +105,7 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 			cur.FprintErrors(os.Stderr, pad)
 		}
 		ViewFieldName.SetWidth(wdname - wdpad)
-		head := getPFHeadS(chdp, fields...)
+		head := GetPFHeadS(chdp, fields...)
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
 			var sidx string
@@ -134,17 +134,17 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 			}
 			fmt.Println()
 			if hasX {
-				fprintXattrs(w, wdpad+wdmeta, de.Xattibutes())
+				FprintXattrs(w, wdpad+wdmeta, de.Xattibutes())
 			}
 		}
 		totalsize += size
 		fprintDirSummary(w, pad, curnd, curnf, size, wdstty)
 		if nd+nf < nitems {
-			fprintBanner(w, "", "-", wdstty)
+			FprintBanner(w, "", "-", wdstty)
 		}
 		ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 	}
 
-	fprintBanner(w, "", "=", wdstty)
-	fprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
+	FprintBanner(w, "", "=", wdstty)
+	FprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
 }

@@ -35,6 +35,39 @@ type Dir struct {
 	opt *VFSOption
 }
 
+func NewDir(dirpath, root string) *Dir {
+	aroot, err := filepath.Abs(dirpath)
+	if err != nil {
+		return nil
+	}
+	info, err := os.Lstat(aroot)
+	if err != nil {
+		return nil
+	}
+
+	if !info.IsDir() {
+		return nil
+	}
+	git := NewGitStatus(aroot)
+	relpath := "."
+	if len(root) > 0 {
+		relpath, _ = filepath.Rel(root, aroot)
+	}
+	name := filepath.Base(aroot)
+	xattrs, _ := getXattr(aroot)
+	return &Dir{
+		path:     aroot,
+		relpath:  relpath,
+		name:     name,
+		info:     info,
+		xattrs:   xattrs,
+		git:      git,
+		relpaths: []string{relpath},
+		children: make(map[string]DirEntryX),
+		opt:      NewVFSOption(),
+	}
+}
+
 // 實現 fs.FileInfo 接口
 // A FileInfo describes a file and is returned by Stat.
 // type FileInfo interface:

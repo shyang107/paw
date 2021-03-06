@@ -32,6 +32,7 @@ func (opt *option) checkViewType() {
 
 	// 2. cehck Extended view
 	if opt.isViewX {
+		hasX = true
 		lg.WithField("isViewX", opt.isViewX).Trace()
 		if opt.viewType&vfs.ViewClassify == 0 {
 			opt.viewType |= vfs.ViewExtended

@@ -408,15 +408,15 @@ func childWidths(d *Dir, fields []ViewField) {
 				dwd := fd.Width()
 				if fd&ViewFieldSize == ViewFieldSize {
 					if f.IsCharDev() || f.IsDev() {
-						fmajor := _ViewFieldMajor.Width()
-						fminor := _ViewFieldMinor.Width()
+						fmajor := ViewFieldMajor.Width()
+						fminor := ViewFieldMinor.Width()
 						major, minor := f.DevNumber()
 						wdmajor := len(fmt.Sprint(major))
 						wdminor := len(fmt.Sprint(minor))
-						_ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
-						_ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
-						wd = _ViewFieldMajor.Width() +
-							_ViewFieldMinor.Width() + 1
+						ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
+						ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
+						wd = ViewFieldMajor.Width() +
+							ViewFieldMinor.Width() + 1
 						dwd = fd.Width()
 					}
 				}
@@ -486,7 +486,7 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) 
 	// fmt.Sprintf("%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return summary
 }
-func getRootHeadC(de DirEntryX, wdstty int) string {
+func GetRootHeadC(de DirEntryX, wdstty int) string {
 	var size uint64
 	d, isDir := de.(*Dir)
 	if isDir {
@@ -516,17 +516,17 @@ func getRootHeadC(de DirEntryX, wdstty int) string {
 	return chead
 }
 
-func fprintTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize int64, wdstty int) {
+func FprintTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize int64, wdstty int) {
 
 	fmt.Fprintln(w, totalSummary(pad, ndirs, nfiles, sumsize, wdstty))
 }
 
-func fprintBanner(w io.Writer, pad string, mark string, length int) {
+func FprintBanner(w io.Writer, pad string, mark string, length int) {
 	banner := cdashp.Sprintf("%s%s\n", pad, strings.Repeat(mark, length))
 	fmt.Fprint(w, banner)
 }
 
-func fprintXattrs(w io.Writer, wdpad int, xattrs []string) {
+func FprintXattrs(w io.Writer, wdpad int, xattrs []string) {
 	if len(xattrs) < 1 {
 		return
 	}

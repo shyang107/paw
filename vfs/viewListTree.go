@@ -41,12 +41,12 @@ func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, hasList bool)
 	var (
 		wdstty   = sttyWidth - 2
 		wdmeta   = 0
-		roothead = getRootHeadC(cur, wdstty)
-		head     = getPFHeadS(chdp, fields...)
+		roothead = GetRootHeadC(cur, wdstty)
+		head     = GetPFHeadS(chdp, fields...)
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
-	fprintBanner(w, "", "=", wdstty)
+	FprintBanner(w, "", "=", wdstty)
 
 	if hasX {
 		for _, fd := range fields {
@@ -87,9 +87,9 @@ func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, hasList bool)
 	}
 
 	// print end message
-	fprintBanner(w, "", "=", wdstty)
+	FprintBanner(w, "", "=", wdstty)
 	tnd, tnf := cur.NItems()
-	fprintTotalSummary(w, "", tnd, tnf, cur.TotalSize(), wdstty)
+	FprintTotalSummary(w, "", tnd, tnf, cur.TotalSize(), wdstty)
 }
 
 func vltFile(w io.Writer, level int, levelsEnded []int, edge EdgeType, de DirEntryX, fields []ViewField, hasX bool, hasList bool, wdstty int) {
