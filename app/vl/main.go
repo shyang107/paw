@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 	"github.com/urfave/cli"
 )
 
 const (
-	version     = "0.0.0.1"
-	releaseDate = "2021-03-5"
+	version     = "0.0.1"
+	releaseDate = "2021-3-6"
 )
 
 var (
@@ -42,8 +42,8 @@ func _runFirst() {
 	app.Usage = "list directory (excluding hidden items) in color view."
 	app.UsageText = app.Name + " command [command options] [arguments...]"
 	app.Version = version
-	app.Compiled = time.Now()
-	// app.Compiled = cast.ToTime(releaseDate)
+	// app.Compiled = time.Now()
+	app.Compiled = cast.ToTime(releaseDate)
 	app.Authors = []*cli.Author{
 		{
 			Name:  "Shuhhua Yang",
