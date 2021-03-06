@@ -8,8 +8,7 @@ import (
 
 func (opt *option) setVFSOption() {
 	lg.Debug(paw.Caller(1))
-	vfsOpt := opt.vopt
-	vfsOpt = &vfs.VFSOption{
+	opt.vopt = &vfs.VFSOption{
 		Depth:      opt.depth,
 		Grouping:   opt.grouping,
 		ByField:    opt.byField,
@@ -19,11 +18,11 @@ func (opt *option) setVFSOption() {
 	}
 
 	lg.WithFields(logrus.Fields{
-		"Depth":      vfsOpt.Depth,
-		"Grouping":   vfsOpt.Grouping,
-		"ByField":    vfsOpt.ByField,
-		"Skips":      vfsOpt.Skips,
-		"ViewFields": vfsOpt.ViewFields,
-		"ViewType":   vfsOpt.ViewType,
+		"Depth":      opt.vopt.Depth,
+		"Grouping":   opt.vopt.Grouping,
+		"ByField":    opt.vopt.ByField,
+		"Skips":      opt.vopt.Skips,
+		"ViewFields": opt.vopt.ViewFields,
+		"ViewType":   opt.vopt.ViewType,
 	}).Info()
 }

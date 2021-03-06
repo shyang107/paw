@@ -15,7 +15,7 @@ func (v *VFS) ViewList(w io.Writer) {
 }
 
 func VFSViewList(w io.Writer, v *VFS) {
-	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
+	paw.Logger.Debug("[vfs] " + v.opt.ViewType.String() + "...")
 
 	var (
 		fields                            = v.opt.ViewFields.Fields()
@@ -36,6 +36,7 @@ func VFSViewList(w io.Writer, v *VFS) {
 }
 
 func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
+	// paw.Logger.Debug()
 	var (
 		wdstty    = sttyWidth - 2
 		tnd, tnf  = cur.NItems()
@@ -50,6 +51,7 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 	fmt.Fprintf(w, "%v\n", roothead)
 	fprintBanner(w, "", "=", wdstty)
 
+	// paw.Logger.Trace("hasX")
 	if hasX {
 		for _, fd := range fields {
 			if fd&ViewFieldName == ViewFieldName {
@@ -58,20 +60,24 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 			wdmeta += fd.Width() + 1
 		}
 	}
+	// paw.Logger.Trace("cur.relpaths")
 	for _, rp := range cur.relpaths {
 		var (
 			curnd, curnf int
 			size         int64
 		)
-
+		paw.Logger.Trace("getDir")
 		cur, err := cur.getDir(rp)
 		if err != nil {
 			paw.Logger.WithFields(logrus.Fields{
 				"rp": rp,
 			}).Fatal(err)
 		}
-
 		des, _ := cur.ReadDirAll()
+		// paw.Logger.WithFields(logrus.Fields{
+		// 	"len":  len(des),
+		// 	"path": cur.Path(),
+		// }).Trace("ReadDirAll")
 		if len(des) < 1 {
 			tnd--
 			continue
@@ -84,11 +90,13 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 			cdir = cdirp.Sprint("./") + cdir
 			fmt.Fprintf(w, "%v\n", cdir+cname)
 		}
+		// paw.Logger.Trace(cdir + cname)
 
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, "")
 		}
 
+		// paw.Logger.Trace(head)
 		fmt.Fprintf(w, "%v\n", head)
 		for _, de := range des {
 			if de.IsDir() {

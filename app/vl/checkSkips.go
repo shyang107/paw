@@ -53,8 +53,8 @@ func (opt *option) checkSkips() {
 	}
 
 	// prefix
-	if len(opt.withPrefix) > 0 {
-		prefixs := strings.Split(opt.withPrefix, opt.psDelimiter)
+	if len(opt.withNoPrefix) > 0 {
+		prefixs := strings.Split(opt.withNoPrefix, opt.psDelimiter)
 		for _, prefix := range prefixs {
 			opt.skips.AddToSkipPrefix(prefix)
 		}
@@ -64,8 +64,8 @@ func (opt *option) checkSkips() {
 		}).Trace()
 	}
 	// suffix
-	if len(opt.withSufix) > 0 {
-		suffixs := strings.Split(opt.withSufix, opt.psDelimiter)
+	if len(opt.withNoSufix) > 0 {
+		suffixs := strings.Split(opt.withNoSufix, opt.psDelimiter)
 		for _, suffix := range suffixs {
 			opt.skips.AddToSkipSuffix(suffix)
 		}

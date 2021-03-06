@@ -45,6 +45,8 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 
 	opt.Check()
 
+	paw.Logger.Debug(opt)
+
 	v := &VFS{
 		Dir: Dir{
 			path:     aroot,

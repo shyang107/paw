@@ -52,8 +52,8 @@ type option struct {
 	reIncludePattern string
 	reExcludePattern string
 	psDelimiter      string
-	withPrefix       string
-	withSufix        string
+	withNoPrefix     string
+	withNoSufix      string
 	// ViewFields
 	viewFields     vfs.ViewField
 	hasAll         bool
@@ -263,19 +263,19 @@ var (
 		Usage:       "use regex to find files (not dirs) without matching `pattern`",
 		Destination: &opt.reExcludePattern,
 	}
-	fg_withPrefix = &cli.StringFlag{
-		Name:        "prefix",
-		Aliases:     []string{"pf"},
+	fg_withNoPrefix = &cli.StringFlag{
+		Name:        "no-prefix",
+		Aliases:     []string{"np"},
 		Value:       "",
-		Usage:       "finds name of files (dirs) with `prefix`; mutli-prefixs: prefix1,prefix2,...",
-		Destination: &opt.withPrefix,
+		Usage:       "skips name of files (dirs) with `prefix`; mutli-prefixs: prefix1,prefix2,...",
+		Destination: &opt.withNoPrefix,
 	}
-	fg_withSufix = &cli.StringFlag{
-		Name:        "suffix",
-		Aliases:     []string{"sf"},
+	fg_withNoSufix = &cli.StringFlag{
+		Name:        "no-suffix",
+		Aliases:     []string{"ns"},
 		Value:       "",
-		Usage:       "finds name of files (dirs) with `suffix`; mutli-suffixs: suffix1,suffix2,...",
-		Destination: &opt.withSufix,
+		Usage:       "skips name of files (dirs) with `suffix`; mutli-suffixs: suffix1,suffix2,...",
+		Destination: &opt.withNoSufix,
 	}
 	fg_psDelimiter = &cli.StringFlag{
 		Name:        "delimiter",

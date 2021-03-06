@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/shyang107/paw/vfs"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -22,6 +23,8 @@ var appAction cli.ActionFunc = func(c *cli.Context) error {
 		lg.SetLevel(logrus.TraceLevel)
 	}
 
+	opt.vopt = vfs.NewVFSOption()
+
 	opt.checkArgs(c)
 
 	// ViewType (during view)
@@ -39,17 +42,11 @@ var appAction cli.ActionFunc = func(c *cli.Context) error {
 	// Setuo vfs.VFSOption
 	opt.setVFSOption()
 
-	// pattern
-	// pdopt.Ignore = getPatternflag(opt).Ignore(opt)
-
-	// pdopt.FieldFlag = getFieldFlag(opt)
-	// pdopt.SortOpt = getSortOption(opt)
-	// pdopt.FiltOpt = getFiltOption(opt)
-
-	// err, _ := filetree.PrintDir(os.Stdout, opt.path, opt.isGrouped, pdopt, "")
-	// if err != nil {
-	// 	fatal("get file list from %q failed, error: %v", opt.path, err)
-	// }
+	// View
+	err := opt.View()
+	if err != nil {
+		stderr("[view] %s", err.Error())
+	}
 
 	return nil
 }
