@@ -55,7 +55,7 @@ func _runFirst() {
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Printf("%s version %s @ %v\n",
 			c.App.Name,
-			paw.NewEXAColor("sb").Sprint("gl"+c.App.Version),
+			paw.NewEXAColor("sb").Sprint(app.Name+c.App.Version),
 			paw.NewEXAColor("da").Sprint(c.App.Compiled.Format("Jan 2, 2006")))
 	}
 
