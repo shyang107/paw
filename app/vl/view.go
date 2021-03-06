@@ -99,7 +99,7 @@ func (opt *option) viewPaths() error {
 	}
 
 	vfs.FprintBanner(w, "", "=", wdstty)
-	vfs.FprintTotalSummary(w, "", nd, nf, size, wdstty)
+	vfs.FprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
 
 	if opt.depth == 0 {
 		return nil
