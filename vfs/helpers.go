@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	"code.cloudfoundry.org/bytefmt"
 	"github.com/fatih/color"
 	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/bytefmt"
 )
 
 type EdgeType string
@@ -247,12 +247,14 @@ func permissionC(de DirEntryX) string {
 }
 
 func sizeS(de DirEntryX) string {
+	var s string
 	if !de.IsDir() && de.Mode().IsRegular() {
-		return bytefmt.ByteSize(uint64(de.Size()))
-		// return paw.FillLeft(bytefmt.ByteSize(uint64(f.Size())), 6)
+		s = bytefmt.ByteSize(de.Size())
+		// s= paw.FillLeft(bytefmt.ByteSize(uint64(f.Size())), 6)
 	} else {
-		return "-"
+		s = "-"
 	}
+	return strings.ToLower(s)
 }
 
 func sizeC(de DirEntryX) (csize string) {
@@ -262,7 +264,7 @@ func sizeC(de DirEntryX) (csize string) {
 	}
 	nss := len(ss)
 	sn := fmt.Sprintf("%s", ss[:nss-1])
-	su := strings.ToLower(ss[nss-1:])
+	su := ss[nss-1:]
 	csize = csnp.Sprint(sn) + csup.Sprint(su)
 	return csize
 }
@@ -276,7 +278,7 @@ func sizeCaligned(de DirEntryX) (csize string) {
 		csize = cdashp.Sprint("-")
 	} else {
 		sn := fmt.Sprintf("%s", ss[:nss-1])
-		su := strings.ToLower(ss[nss-1:])
+		su := ss[nss-1:]
 		csize = csnp.Sprint(sn) + csup.Sprint(su)
 	}
 	var (
@@ -432,7 +434,7 @@ func childWidths(d *Dir, fields []ViewField) {
 
 func dirSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) string {
 	var (
-		ss  = bytefmt.ByteSize(uint64(sumsize))
+		ss  = bytefmt.ByteSize(sumsize)
 		nss = len(ss)
 		sn  = fmt.Sprintf("%s", ss[:nss-1])
 		su  = strings.ToLower(ss[nss-1:])
@@ -459,7 +461,7 @@ func fprintDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize in
 
 func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) string {
 	var (
-		ss  = bytefmt.ByteSize(uint64(sumsize))
+		ss  = bytefmt.ByteSize(sumsize)
 		nss = len(ss)
 		sn  = fmt.Sprintf("%s", ss[:nss-1])
 		su  = strings.ToLower(ss[nss-1:])
@@ -481,10 +483,10 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) 
 	return summary
 }
 func GetRootHeadC(de DirEntryX, wdstty int) string {
-	var size uint64
+	var size int64
 	d, isDir := de.(*Dir)
 	if isDir {
-		size = uint64(d.TotalSize())
+		size = d.TotalSize()
 	}
 	var (
 		ss  = bytefmt.ByteSize(size)
