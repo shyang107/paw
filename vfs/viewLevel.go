@@ -16,7 +16,7 @@ func (v *VFS) ViewLevel(w io.Writer) {
 }
 
 func VFSViewLevel(w io.Writer, v *VFS) {
-	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
+	paw.Logger.WithFields(logrus.Fields{"View type": v.opt.ViewType}).Debug("view...")
 
 	var (
 		cur                               = v.RootDir()
@@ -38,12 +38,12 @@ func VFSViewLevel(w io.Writer, v *VFS) {
 	ViewFieldNo.SetWidth(wdidx + 1)
 	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
-	viewLevel(w, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
+	viewLevel(w, v, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
 
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
+func viewLevel(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		wdname   = GetViewFieldNameWidthOf(fields)
 		wdstty   = sttyWidth - 2
@@ -80,6 +80,9 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 		}
 		wdpad := level * 3
 		pad := paw.Spaces(wdpad)
+		paw.Logger.WithFields(logrus.Fields{
+			"rp": rp,
+		}).Trace("getDir")
 		cur, err := cur.getDir(rp)
 		if err != nil {
 			paw.Logger.WithFields(logrus.Fields{
@@ -141,6 +144,9 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 		fprintDirSummary(w, pad, curnd, curnf, size, wdstty)
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
+		}
+		if v.opt.Depth == 0 {
+			break
 		}
 		ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 	}

@@ -29,12 +29,12 @@ func NewVFSOption() *VFSOption {
 }
 
 func (v VFSOption) String() string {
-	s := fmt.Sprintf("[Depth]:      %d\n", v.Depth)
-	s += fmt.Sprintf("[Grouping]:   %q\n", v.Grouping)
-	s += fmt.Sprintf("[Sort]:       %q\n", v.ByField)
-	s += fmt.Sprintf("[Skips]:      %q\n", v.Skips)
-	s += fmt.Sprintf("[ViewFields]: %q\n", v.ViewFields)
-	s += fmt.Sprintf("[ViewType]:   %q", v.ViewType)
+	s := fmt.Sprintf("[Depth: %d]", v.Depth)
+	s += fmt.Sprintf("[Grouping: %q]", v.Grouping)
+	s += fmt.Sprintf("[Sort: %q]", v.ByField)
+	s += fmt.Sprintf("[Skips: %q]", v.Skips)
+	s += fmt.Sprintf("[ViewFields: %q]", v.ViewFields)
+	s += fmt.Sprintf("[ViewType: %q]", v.ViewType)
 	return s
 }
 

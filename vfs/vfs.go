@@ -9,6 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
+	"github.com/sirupsen/logrus"
 )
 
 // func init() {
@@ -25,7 +26,7 @@ type VFS struct {
 
 // NewVFSWith 創建一個唯讀文件系統的實例
 func NewVFS(root string, opt *VFSOption) *VFS {
-	paw.Logger.Info()
+	paw.Logger.Debug()
 
 	aroot, err := filepath.Abs(root)
 	if err != nil {
@@ -45,7 +46,14 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 
 	opt.Check()
 
-	paw.Logger.Debug(opt)
+	paw.Logger.WithFields(logrus.Fields{
+		"Depth":      opt.Depth,
+		"Grouping":   opt.Grouping,
+		"ByField":    opt.ByField,
+		"Skips":      opt.Skips,
+		"ViewFields": opt.ViewFields,
+		"ViewType":   opt.ViewType,
+	}).Debug()
 
 	v := &VFS{
 		Dir: Dir{

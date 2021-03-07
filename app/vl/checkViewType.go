@@ -81,9 +81,12 @@ func (opt *option) checkViewType() {
 		opt.depth = -1
 	}
 
-	lg.WithFields(logrus.Fields{
-		"viewType": opt.viewType,
-		"grouping": opt.grouping,
-		"depth":    opt.depth,
-	}).Info()
+	// lg.WithFields(logrus.Fields{
+	// 	"viewType": opt.viewType,
+	// 	"grouping": opt.grouping,
+	// 	"depth":    opt.depth,
+	// }).Info()
+	info(paw.MesageFieldAndValueC("View type:", opt.viewType, logrus.InfoLevel, paw.Cnop, nil))
+	info(paw.MesageFieldAndValueC("Groupe", opt.grouping, logrus.InfoLevel, paw.Cnop, nil))
+	info(paw.MesageFieldAndValueC("Searching depth", opt.depth, logrus.InfoLevel, paw.Cnop, nil))
 }

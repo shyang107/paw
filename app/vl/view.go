@@ -7,15 +7,21 @@ import (
 	"sort"
 
 	"github.com/fatih/color"
+	"github.com/sirupsen/logrus"
 
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/vfs"
 )
 
 func (opt *option) view() error {
-	lg.Debug()
-
-	lg.Debug(opt.vopt)
+	lg.WithFields(logrus.Fields{
+		"Depth":      opt.vopt.Depth,
+		"Grouping":   opt.vopt.Grouping,
+		"ByField":    opt.vopt.ByField,
+		"Skips":      opt.vopt.Skips,
+		"ViewFields": opt.vopt.ViewFields,
+		"ViewType":   opt.vopt.ViewType,
+	}).Debug()
 	fs := vfs.NewVFS(opt.rootPath, opt.vopt)
 	fs.BuildFS()
 	fs.View(os.Stdout)
@@ -55,7 +61,6 @@ func (opt *option) viewPaths() error {
 		rhead += vfs.PathToLinkC(de, nil)
 		fmt.Fprintf(w, "%s\n", rhead)
 	}
-	vfs.FprintBanner(w, "", "=", wdstty)
 
 	fields := make([]vfs.ViewField, 0, len(vfields))
 	var tmpFields vfs.ViewField
@@ -78,6 +83,7 @@ func (opt *option) viewPaths() error {
 		}
 	}
 
+	vfs.FprintBanner(w, "", "=", wdstty)
 	head := vfs.GetPFHeadS(paw.Chdp, fields...)
 	fmt.Fprintln(w, head)
 	for i, dir := range dirs {

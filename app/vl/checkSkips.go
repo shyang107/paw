@@ -75,5 +75,6 @@ func (opt *option) checkSkips() {
 		}).Trace()
 	}
 
-	paw.Logger.WithField("skips", opt.skips).Info()
+	// paw.Logger.WithField("skips", opt.skips).Info()
+	info(paw.MesageFieldAndValueC("Skiper", opt.skips, logrus.InfoLevel, paw.Cnop, nil))
 }

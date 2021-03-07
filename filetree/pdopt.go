@@ -58,7 +58,7 @@ func (p *PrintDirOption) FieldWidths() []int {
 }
 
 func (p *PrintDirOption) ConfigFields() {
-	paw.Logger.Info()
+	paw.Logger.Debug()
 
 	p.fieldKeys = []PDFieldFlag{}
 	// p.fields = []string{}
@@ -136,7 +136,7 @@ func (p *PrintDirOption) SetIgnore(f IgnoreFunc) {
 }
 
 func (p *PrintDirOption) ConfigFilter() {
-	paw.Logger.Info()
+	paw.Logger.Debug()
 
 	igfunc := p.Ignore
 	filtOpt := p.FiltOpt

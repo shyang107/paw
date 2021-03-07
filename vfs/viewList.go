@@ -15,7 +15,7 @@ func (v *VFS) ViewList(w io.Writer) {
 }
 
 func VFSViewList(w io.Writer, v *VFS) {
-	paw.Logger.Debug("[vfs] " + v.opt.ViewType.String() + "...")
+	paw.Logger.WithFields(logrus.Fields{"View type": v.opt.ViewType}).Debug("view...")
 
 	var (
 		fields                            = v.opt.ViewFields.Fields()
@@ -31,11 +31,11 @@ func VFSViewList(w io.Writer, v *VFS) {
 	modFieldWidths(v, fields)
 	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
-	viewList(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
+	viewList(w, v, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
+func viewList(w io.Writer, v *VFS, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
 	// paw.Logger.Debug()
 	var (
 		wdstty    = sttyWidth - 2
@@ -66,7 +66,9 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 			curnd, curnf int
 			size         int64
 		)
-		paw.Logger.Trace("getDir")
+		paw.Logger.WithFields(logrus.Fields{
+			"rp": rp,
+		}).Trace("getDir")
 		cur, err := cur.getDir(rp)
 		if err != nil {
 			paw.Logger.WithFields(logrus.Fields{
@@ -74,10 +76,6 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 			}).Fatal(err)
 		}
 		des, _ := cur.ReadDirAll()
-		// paw.Logger.WithFields(logrus.Fields{
-		// 	"len":  len(des),
-		// 	"path": cur.Path(),
-		// }).Trace("ReadDirAll")
 		if len(des) < 1 {
 			tnd--
 			continue
@@ -90,13 +88,11 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 			cdir = cdirp.Sprint("./") + cdir
 			fmt.Fprintf(w, "%v\n", cdir+cname)
 		}
-		// paw.Logger.Trace(cdir + cname)
 
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, "")
 		}
 
-		// paw.Logger.Trace(head)
 		fmt.Fprintf(w, "%v\n", head)
 		for _, de := range des {
 			if de.IsDir() {
@@ -127,6 +123,9 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 		fprintDirSummary(w, "", curnd, curnf, size, wdstty)
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
+		}
+		if v.opt.Depth == 0 {
+			break
 		}
 	}
 

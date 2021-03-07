@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	// log "github.com/sirupsen/logrus"
 )
@@ -52,6 +53,27 @@ func GetDate() string {
 	//		carbon.FormattedDateFormat = "Jan 2, 2006"
 	// return carbon.Now().Format(carbon.FormattedDateFormat)
 
+}
+
+func MesageFieldAndValueC(field string, value interface{}, level logrus.Level, cf, cv *color.Color) string {
+	if cf == nil {
+		cf = LogLevelColor(level)
+	}
+
+	if cv == nil {
+		cv = Cvalue
+	}
+	msg := "[" + cf.Sprintf("%s: ", field)
+	msg += cv.Sprintf("%v", value)
+	msg += "]"
+	return msg
+}
+
+func MesageFieldAndValue(field string, value interface{}, level logrus.Level) string {
+	msg := "[" + fmt.Sprintf("%s: ", field)
+	msg += fmt.Sprintf("%v", value)
+	msg += "]"
+	return msg
 }
 
 func indirect(a interface{}) interface{} {

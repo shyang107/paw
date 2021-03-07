@@ -14,7 +14,7 @@ func (f *FileList) ToClassifyViewString(pad string) string {
 
 // ToClassifyView will return the string of FileList to display type indicator by file names (like as `exa -F` or `exa --classify`)
 func (f *FileList) ToClassifyView(pad string) string {
-	paw.Logger.Info("ClassifyView...")
+	paw.Logger.Debug("ClassifyView...")
 	var (
 		w        = f.StringBuilder()
 		dirs     = f.Dirs()

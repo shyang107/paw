@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/shyang107/paw"
+	"github.com/sirupsen/logrus"
 )
 
 func (v *VFS) ViewListTree(w io.Writer) {
@@ -12,7 +13,7 @@ func (v *VFS) ViewListTree(w io.Writer) {
 }
 
 func VFSViewListTree(w io.Writer, v *VFS) {
-	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
+	paw.Logger.WithFields(logrus.Fields{"View type": v.opt.ViewType}).Debug("view...")
 
 	var (
 		fields        = v.opt.ViewFields.Fields()

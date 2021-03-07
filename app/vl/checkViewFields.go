@@ -115,6 +115,7 @@ func (opt *option) checkViewFields() {
 		opt.viewFields = vfs.DefaultViewField
 	}
 END:
-	lg.WithField("viewFields", opt.viewFields).Info()
+	// lg.WithField("viewFields", opt.viewFields).Info()
+	info(paw.MesageFieldAndValueC("View fields", opt.viewFields, logrus.InfoLevel, paw.Cnop, nil))
 
 }

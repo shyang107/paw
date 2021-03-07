@@ -197,7 +197,7 @@ func (f *FileList) Writer() io.Writer {
 // 		2.1 Git status of sub-files are same, the git status of dir is same.
 // 		2.2 Git status of sub-files are mutilple status, the git status of dir is GitChanged.
 func (f *FileList) ConfigGit() {
-	paw.Logger.Info()
+	paw.Logger.Debug()
 
 	f.git = NewGitStatus(f.root)
 	gs := f.git.GetStatus()
@@ -946,7 +946,7 @@ func (f *FileList) SetDirsSorter(by DirsBy) {
 // 	Dirs: ToLower(a[i]) < ToLower(a[j])
 // 	Map[dir][]*file: ToLower(a[i].Path) < ToLower(a[j].Path)
 func (f *FileList) Sort() {
-	paw.Logger.Info("sort...")
+	paw.Logger.Debug("sort...")
 
 	f.SortBy(f.dirsBy, f.filesBy)
 }

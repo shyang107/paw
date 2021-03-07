@@ -191,7 +191,7 @@ func (g *GitStatus) Dump(msg string) {
 	if len(msg) > 0 {
 		paw.Logger.Infof("[%v] branch: %v", msg, g.head)
 	} else {
-		paw.Logger.Info(g.head)
+		paw.Logger.Debug(g.head)
 	}
 
 	rps := []string{}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 )
 
@@ -102,14 +103,14 @@ var (
 		"bgprompt": {48, 5, 236},
 		"promptsn": {38, 5, 156, 1, 48, 5, 236},
 		"promptsu": {38, 5, 156, 48, 5, 236},
-		"trace":    {38, 5, color.FgCyan},
-		"debug":    {38, 5, color.FgMagenta},
-		"info":     {38, 5, color.FgHiGreen},
-		"warn":     {38, 5, color.FgHiRed},
-		"error":    {38, 5, 220, 1, 48, 5, 160},
-		"fatal":    {38, 5, 220, 1, 48, 5, 160},
-		"panic":    {38, 5, 220, 1, 48, 5, 160},
-		"md5":      LSColors["no"], //LSColors[".md5"],
+		// "trace":    {38, 5, color.FgCyan},
+		// "debug":    {38, 5, color.FgMagenta},
+		// "info":     {38, 5, color.FgHiGreen},
+		// "warn":     {38, 5, color.FgHiRed},
+		// "error":    {38, 5, 220, 1, 48, 5, 160},
+		// "fatal":    {38, 5, 220, 1, 48, 5, 160},
+		// "panic":    {38, 5, 220, 1, 48, 5, 160},
+		"md5": LSColors["no"], //LSColors[".md5"],
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file
@@ -774,13 +775,14 @@ var (
 	CpmptSn = NewEXAColor("promptsn")
 	// CpmptSu is default color use for unit in prompt
 	CpmptSu = NewEXAColor("promptsu")
-	Ctrace  = NewEXAColor("trace")
-	Cdebug  = NewEXAColor("debug")
-	Cinfo   = NewEXAColor("info")
-	Cwarn   = NewEXAColor("warn")
-	Cerror  = NewEXAColor("error")
-	Cfatal  = NewEXAColor("fatal")
-	Cpanic  = NewEXAColor("panic")
+	Ctrace  = LogLevelColor(logrus.TraceLevel)
+	Cdebug  = LogLevelColor(logrus.DebugLevel)
+	Cinfo   = LogLevelColor(logrus.InfoLevel)
+	Cwarn   = LogLevelColor(logrus.WarnLevel)
+	Cerror  = LogLevelColor(logrus.ErrorLevel)
+	Cfatal  = LogLevelColor(logrus.FatalLevel)
+	Cpanic  = LogLevelColor(logrus.PanicLevel)
+	Cvalue  = color.New([]color.Attribute{38, 5, 193, 4}...)
 	CEven   = color.New([]color.Attribute{38, 5, 251, 48, 5, 234}...)
 	COdd    = color.New([]color.Attribute{38, 5, 159, 48, 5, 234}...)
 )
@@ -846,6 +848,22 @@ func KindEXAColorString(kind, s string) string {
 		att = EXAColors["fi"]
 	}
 	return color.New(att...).Sprint(s)
+}
+
+func LogLevelColor(level logrus.Level) (c *color.Color) {
+	switch level {
+	case logrus.TraceLevel:
+		c = color.New(color.FgCyan)
+	case logrus.DebugLevel:
+		c = color.New(color.FgMagenta)
+	case logrus.WarnLevel:
+		c = color.New(color.FgHiRed)
+	case logrus.ErrorLevel, logrus.FatalLevel, logrus.PanicLevel:
+		c = color.New([]color.Attribute{38, 5, 220, 1, 48, 5, 160}...) //
+	default: //info
+		c = color.New(color.FgHiGreen)
+	}
+	return c
 }
 
 // func colorstr(att []color.Attribute, s string) string {

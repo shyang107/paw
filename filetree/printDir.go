@@ -147,7 +147,7 @@ func PrintDir(w io.Writer, path string, isGrouped bool, opt *PrintDirOption, pad
 }
 
 func listOneFile(wr io.Writer, path string, pad string) {
-	paw.Logger.Info()
+	paw.Logger.Debug()
 
 	var (
 		w      = new(strings.Builder)
@@ -235,7 +235,7 @@ func rowFile(nline int, flag PDFieldFlag, valueC string, width, wdstty int) (row
 }
 
 func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) error {
-	paw.Logger.Info()
+	paw.Logger.Debug()
 
 	for i, path := range dirs {
 		pdOpt.SetRoot(path)
@@ -260,7 +260,7 @@ func listDirs(f *FileList, dirs []string, pad string, pdOpt *PrintDirOption) err
 }
 
 func listFiles(f *FileList, pad string, pdOpt *PrintDirOption) {
-	paw.Logger.Info()
+	paw.Logger.Debug()
 
 	var (
 		w     = f.StringBuilder()
@@ -318,7 +318,7 @@ func isExtendedView(viewFlag PDViewFlag) bool {
 }
 
 func setFileList(w io.Writer, root string, isGrouped bool, opt *PrintDirOption) *FileList {
-	paw.Logger.Info()
+	paw.Logger.Debug()
 
 	fl := NewFileList(root)
 	fl.ResetWriters()
@@ -343,7 +343,7 @@ func setFileList(w io.Writer, root string, isGrouped bool, opt *PrintDirOption) 
 }
 
 func setupFLSortOption(fl *FileList, opt *PrintDirOption) {
-	paw.Logger.Info()
+	paw.Logger.Debug()
 
 	if opt.ViewFlag&PTreeView == 0 ||
 		opt.ViewFlag&PListTreeView == 0 {

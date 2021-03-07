@@ -806,7 +806,7 @@ func showlogrus() {
 	if pdOpt.isTrace {
 		paw.Logger.Debug("trace")
 		paw.Logger.Trace("debug")
-		paw.Logger.Info("info")
+		paw.Logger.Debug("info")
 		paw.Logger.Warn("warn")
 		paw.Logger.Error("error")
 	}

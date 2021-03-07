@@ -28,7 +28,7 @@ func (f *FileList) ToListExtendView(pad string) string {
 
 // toListView will return the []byte of FileList in list form (like as `exa --header --long --time-style=iso --group --git`)
 func toListView(f *FileList, pad string, isExtended bool) string {
-	paw.Logger.Info("ListView")
+	paw.Logger.Debug("ListView")
 	var (
 		w                  = f.StringBuilder()
 		dirs               = f.Dirs()

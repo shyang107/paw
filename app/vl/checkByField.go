@@ -19,7 +19,7 @@ func (opt *option) checkByField() {
 		goto END
 	}
 
-	opt.byField = vfs.SortByLowerName
+	// opt.byField = vfs.SortByLowerName
 	sflag = strings.ToLower(opt.sortByField)
 	if len(sflag) == 0 {
 		sflag = "lname"
@@ -51,7 +51,8 @@ func (opt *option) checkByField() {
 	}
 
 END:
-	lg.WithFields(logrus.Fields{
-		"byField": opt.byField,
-	}).Info()
+	// lg.WithFields(logrus.Fields{
+	// 	"byField": opt.byField,
+	// }).Info()
+	info(paw.MesageFieldAndValueC("Sort", opt.byField, logrus.InfoLevel, paw.Cnop, nil))
 }

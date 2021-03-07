@@ -79,7 +79,7 @@ var (
 // Format an log entry
 func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	var (
-		cl = getColorOfLevel(entry.Level)
+		cl = ColorOfLogLevel(entry.Level)
 	)
 	timestampFormat := f.TimestampFormat
 	if timestampFormat == "" {
@@ -223,7 +223,7 @@ func (f *Formatter) sOrderedFields(entry *logrus.Entry) (s string) {
 
 func (f *Formatter) sField(entry *logrus.Entry, field string) (s string) {
 	var (
-		cl    = getColorOfLevel(entry.Level)
+		cl    = ColorOfLogLevel(entry.Level)
 		value = entry.Data[field]
 		sbl   = "["
 		sbr   = "]"
@@ -234,7 +234,7 @@ func (f *Formatter) sField(entry *logrus.Entry, field string) (s string) {
 		if f.HideKeys {
 			s = fmt.Sprintf("[%v]", value)
 		} else {
-			s = fmt.Sprintf("[%s:%v]", field, value)
+			s = fmt.Sprintf("[%s: %v]", field, value)
 		}
 	} else {
 		csbl := cl.Sprint(sbl)
@@ -255,7 +255,7 @@ func (f *Formatter) sField(entry *logrus.Entry, field string) (s string) {
 	return s
 }
 
-func getColorOfLevel(level logrus.Level) (c *color.Color) {
+func ColorOfLogLevel(level logrus.Level) (c *color.Color) {
 	switch level {
 	case logrus.TraceLevel:
 		c = color.New(color.FgCyan)

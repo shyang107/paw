@@ -174,7 +174,10 @@ func getSC(sc []GitStatusCode) GitStatusCode {
 
 func (g *GitStatus) Dump(msg string) {
 	if len(msg) > 0 {
-		paw.Logger.Debugf("[%v] branch: %v%v", msg, g.head, paw.Caller(1))
+		paw.Logger.WithFields(logrus.Fields{
+			"":       msg,
+			"branch": g.head,
+		}).Debugf(paw.Caller(1))
 	} else {
 		paw.Logger.Debug(g.head + paw.Caller(1))
 	}

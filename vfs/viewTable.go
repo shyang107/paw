@@ -17,7 +17,7 @@ func (v *VFS) ViewTable(w io.Writer) {
 }
 
 func VFSViewTable(w io.Writer, v *VFS) {
-	paw.Logger.Info("[vfs] " + v.opt.ViewType.String() + "...")
+	paw.Logger.WithFields(logrus.Fields{"View type": v.opt.ViewType}).Debug("view...")
 
 	var (
 		cur                               = v.RootDir()
@@ -39,12 +39,12 @@ func VFSViewTable(w io.Writer, v *VFS) {
 	// ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 	ViewFieldNo.SetWidth(wdidx + 1)
 
-	viewTable(w, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
+	viewTable(w, v, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
 
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
+func viewTable(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
 	var (
 		wdstty   = sttyWidth - 2
 		tnd, tnf = cur.NItems()
@@ -108,6 +108,9 @@ func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 			cidx         = cdip.Sprint(idx)
 		)
 
+		paw.Logger.WithFields(logrus.Fields{
+			"rp": rp,
+		}).Trace("getDir")
 		cur, err := cur.getDir(rp)
 		if err != nil {
 			paw.Logger.WithFields(logrus.Fields{
@@ -178,6 +181,9 @@ func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 		tf.PrintLineln(dirSummary("", curnd, curnf, size, wdstty))
 		if nd+nf < nitems {
 			tf.PrintLineln(banner)
+		}
+		if v.opt.Depth == 0 {
+			break
 		}
 	}
 

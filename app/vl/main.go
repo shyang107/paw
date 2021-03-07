@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
@@ -18,18 +17,27 @@ const (
 
 var (
 	app         = cli.NewApp()
-	programName string
+	appName     = "vl"
 	lg          = paw.Logger
 	releaseTime = cast.ToTime(releaseDate)
+	authorName  = "Shuhhua Yang"
+	authorEmail = "shyang107@gmail.com"
+
+	cInfoPrefix  = paw.Cinfo.Sprintf("[INFO]")
+	cWarnPrefix  = paw.Cwarn.Sprintf("[WARN]")
+	cErrorPrefix = paw.Cwarn.Sprintf("[ERRO]")
+	// cInfoPrefix  = paw.Cinfo.Sprintf("[%s][INFO]", appName)
+	// cWarnPrefix  = paw.Cwarn.Sprintf("[%s][WARN]", appName)
+	// cErrorPrefix = paw.Cwarn.Sprintf("[%s][ERRO]", appName)
 )
 
-func _runFirst() {
+func init() {
 	lg.SetLevel(logrus.WarnLevel)
-	programName, err := os.Executable()
-	if err != nil {
-		programName = os.Args[0]
-	}
-	programName = filepath.Base(programName)
+	// programName, err := os.Executable()
+	// if err != nil || len(programName) == 0 {
+	// 	programName = os.Args[0]
+	// }
+	// programName = filepath.Base(programName)
 
 	paw.GologInit(os.Stdout, os.Stderr, os.Stderr, false)
 
@@ -39,7 +47,7 @@ func _runFirst() {
 		Usage:   "print only the version",
 	}
 
-	app.Name = "vl"
+	app.Name = appName
 	app.Usage = "list directory (excluding hidden items) in color view."
 	app.UsageText = app.Name + " command [command options] [arguments...]"
 	app.Version = version
@@ -47,8 +55,8 @@ func _runFirst() {
 	app.Compiled = releaseTime
 	app.Authors = []*cli.Author{
 		{
-			Name:  "Shuhhua Yang",
-			Email: "shyang107@gmail.com",
+			Name:  authorName,
+			Email: authorEmail,
 		},
 	}
 	app.ArgsUsage = "[path]"
@@ -105,12 +113,11 @@ func _runFirst() {
 }
 
 func main() {
-	_runFirst()
 	// start := time.Now()
 
 	err := app.Run(os.Args)
 	if err != nil {
-		fatal("run '%s' failed, error:%v", app.Name, err)
+		fatalf("run '%s' failed, error:%v", app.Name, err)
 	}
 
 	// elapsedTime := time.Since(start)
@@ -118,26 +125,43 @@ func main() {
 	// fmt.Println("Total time for excution:", elapsedTime.String())
 }
 
-func info(f string, args ...interface{}) {
+func info(args ...interface{}) {
+	// paw.Info.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
 	if lg.IsLevelEnabled(logrus.InfoLevel) {
-		paw.Info.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
+		fmt.Fprintf(os.Stderr, "%s %v\n", cInfoPrefix, fmt.Sprint(args...))
 	}
-	// fmt.Fprintf(os.Stderr, programName+": "+fmt.Sprintf(f, args...)+"\n")
+}
+func infof(f string, args ...interface{}) {
+	// paw.Info.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
+	if lg.IsLevelEnabled(logrus.InfoLevel) {
+		fmt.Fprintf(os.Stderr, "%s %v\n", cInfoPrefix, fmt.Sprintf(f, args...))
+	}
 }
 
-func stderr(f string, args ...interface{}) {
-	paw.Error.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
-	// fmt.Fprintf(os.Stderr, programName+": "+fmt.Sprintf(f, args...)+"\n")
+func stderr(args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "%s %v\n", cErrorPrefix, fmt.Sprint(args...))
 }
 
-func fatal(f string, args ...interface{}) {
-	stderr(f, args...)
+func stderrf(f string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "%s %v\n", cErrorPrefix, fmt.Sprintf(f, args...))
+}
+
+func fatal(args ...interface{}) {
+	stderr(args...)
+	os.Exit(1)
+}
+func fatalf(f string, args ...interface{}) {
+	stderrf(f, args...)
 	os.Exit(1)
 }
 
-func warning(f string, args ...interface{}) {
+func warning(args ...interface{}) {
 	if lg.IsLevelEnabled(logrus.WarnLevel) {
-		paw.Warning.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
-		// stderr(f, args...)
+		fmt.Fprintf(os.Stderr, "%s %v\n", cWarnPrefix, fmt.Sprint(args...))
+	}
+}
+func warningf(f string, args ...interface{}) {
+	if lg.IsLevelEnabled(logrus.WarnLevel) {
+		fmt.Fprintf(os.Stderr, "%s %v\n", cWarnPrefix, fmt.Sprintf(f, args...))
 	}
 }

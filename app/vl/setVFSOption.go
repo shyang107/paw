@@ -24,5 +24,5 @@ func (opt *option) setVFSOption() {
 		"Skips":      opt.vopt.Skips,
 		"ViewFields": opt.vopt.ViewFields,
 		"ViewType":   opt.vopt.ViewType,
-	}).Info()
+	}).Debug()
 }
