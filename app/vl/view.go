@@ -134,9 +134,16 @@ func (opt *option) viewPaths() error {
 			if !de.IsDir() {
 				continue
 			}
+			// lg.WithFields(logrus.Fields{
+			// 	"path": de.Path(),
+			// 	"dir":  dir,
+			// }).Debug()
 			fmt.Fprintln(w)
 			opt.rootPath = de.Path()
-			fs := vfs.NewVFS(opt.rootPath, opt.vopt)
+			if opt.depth > 0 {
+				opt.depth--
+			}
+			fs := vfs.NewVFS(de.Path(), opt.vopt)
 			fs.BuildFS()
 			fs.View(os.Stdout)
 			nd, nf = fs.RootDir().NItems()

@@ -25,7 +25,7 @@ type VFS struct {
 
 // NewVFSWith 創建一個唯讀文件系統的實例
 func NewVFS(root string, opt *VFSOption) *VFS {
-	paw.Logger.Debug()
+	paw.Logger.Debug(root)
 
 	aroot, err := filepath.Abs(root)
 	if err != nil {
@@ -46,12 +46,13 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 	opt.Check()
 
 	paw.Logger.WithFields(logrus.Fields{
-		"Depth":      opt.Depth,
-		"Grouping":   opt.Grouping,
-		"ByField":    opt.ByField,
-		"Skips":      opt.Skips,
-		"ViewFields": opt.ViewFields,
-		"ViewType":   opt.ViewType,
+		"Depth":        opt.Depth,
+		"IsScanAllSub": opt.IsScanAllSub,
+		"Grouping":     opt.Grouping,
+		"ByField":      opt.ByField,
+		"Skips":        opt.Skips,
+		"ViewFields":   opt.ViewFields,
+		"ViewType":     opt.ViewType,
 	}).Debug()
 
 	v := &VFS{
@@ -134,7 +135,9 @@ func buildFS(cur *Dir, root string, level int) {
 		git   = cur.git
 		skip  = cur.opt.Skips
 	)
-	if !cur.opt.IsScanAllSub && level > cur.opt.Depth {
+	if !cur.opt.IsScanAllSub &&
+		cur.opt.Depth > 0 &&
+		level > cur.opt.Depth {
 		return
 	}
 	des, _ := os.ReadDir(dpath)
