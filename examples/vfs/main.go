@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/vfs"
 	"github.com/sirupsen/logrus"
@@ -22,10 +25,10 @@ func main() {
 		root = os.Args[1]
 	case 3:
 		root = os.Args[1]
-		opt.Depth = cast.ToInt(os.Args[2])
+		opt.Depth = (cast.ToInt(os.Args[2]))
 	case 4:
 		root = os.Args[1]
-		opt.Depth = cast.ToInt(os.Args[2])
+		opt.Depth = (cast.ToInt(os.Args[2]))
 		if strings.ToLower(os.Args[3]) == "-v" {
 			paw.Logger.SetLevel(logrus.TraceLevel)
 		}
@@ -61,7 +64,8 @@ func main() {
 	// skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkip).Add(reSkip)
 	vfields := vfs.DefaultViewField | vfs.ViewFieldGit //| vfs.ViewFieldMd5
 	vopt := &vfs.VFSOption{
-		Depth: opt.Depth,
+		Depth:        opt.Depth,
+		IsScanAllSub: false,
 		// Grouping: vfs.GroupedR, //vfs.GroupNone
 		ByField:    vfs.SortByNone,
 		Skips:      skipcond,
@@ -121,5 +125,122 @@ func main() {
 		}
 		fs.View(os.Stdout)
 		// fmt.Println()
+	}
+}
+
+func test() {
+	lg.SetLevel(logrus.InfoLevel)
+	root, _ := filepath.Abs("../..")
+	lg.WithField("root", root).Info()
+
+	opt := vfs.NewVFSOption()
+	opt.Depth = 1
+	opt.IsScanAllSub = true
+	opt.ViewFields = vfs.DefaultViewFieldAllNoMd5
+	opt.ViewType = vfs.ViewClassify
+
+	fs := vfs.NewVFS(root, opt)
+	fs.BuildFS()
+	rd := fs.RootDir()
+
+	lg.SetLevel(logrus.DebugLevel)
+	lg.WithFields(logrus.Fields{
+		"Depth":        opt.Depth,
+		"IsScanAllSub": opt.IsScanAllSub,
+	}).Debug()
+	curlevel := len(strings.Split(rd.RelPath(), "/"))
+	paw.Logger.WithFields(logrus.Fields{
+		"1_name":           rd.Name(),
+		"3_RelPath":        rd.RelPath(),
+		"4_curlevel":       curlevel,
+		"IsNotScanRelPath": opt.IsNotScanRelPath(rd.RelPath()),
+		"IsNotViewRelPath": opt.IsNotViewRelPath(rd.RelPath()),
+	}).Debug()
+	for _, rp := range rd.RelPaths() {
+		curlevel := len(strings.Split(rp, "/"))
+		isscan := fmt.Sprint(!opt.IsNotScanRelPath(rp))
+		if !opt.IsNotScanRelPath(rp) {
+			isscan = paw.Cwarn.Sprint(!opt.IsNotScanRelPath(rp))
+		} else {
+			isscan = paw.CEven.Sprint(!opt.IsNotScanRelPath(rp))
+		}
+		isview := fmt.Sprint(!opt.IsNotViewRelPath(rp))
+		if !opt.IsNotViewRelPath(rp) {
+			isview = paw.Cwarn.Sprint(!opt.IsNotViewRelPath(rp))
+		} else {
+			isview = paw.CEven.Sprint(!opt.IsNotViewRelPath(rp))
+		}
+		fv := paw.MesageFieldAndValue("scan", isscan, logrus.InfoLevel)
+		fv += paw.MesageFieldAndValue("view", isview, logrus.InfoLevel)
+		infof("%v; level= %d; %q", fv, curlevel, rp)
+		if opt.IsNotViewRelPath(rp) {
+			fmt.Println()
+			continue
+		}
+		fmt.Print(">>>")
+		lg.WithFields(logrus.Fields{
+			"rp":      rp,
+			"1 level": curlevel,
+			"3 depth": opt.Depth,
+			"2 l>d":   curlevel > opt.Depth,
+		}).Debug()
+		fmt.Print(">>>")
+		paw.Logger.WithFields(logrus.Fields{
+			"2_RelPath":        rp,
+			"3_curlevel":       curlevel,
+			"IsNotScanRelPath": opt.IsNotScanRelPath(rp),
+			"IsNotViewRelPath": opt.IsNotViewRelPath(rp),
+		}).Debug()
+		fmt.Println()
+	}
+	spew.Dump(rd.RelPaths())
+	fs.View(os.Stdout)
+}
+
+var (
+	lg           = paw.Logger
+	cInfoPrefix  = paw.Cinfo.Sprintf("[INFO]")
+	cWarnPrefix  = paw.Cwarn.Sprintf("[WARN]")
+	cErrorPrefix = paw.Cwarn.Sprintf("[ERRO]")
+)
+
+func info(args ...interface{}) {
+	// paw.Info.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
+	if lg.IsLevelEnabled(logrus.InfoLevel) {
+		fmt.Fprintf(os.Stderr, "%s %v\n", cInfoPrefix, fmt.Sprint(args...))
+	}
+}
+func infof(f string, args ...interface{}) {
+	// paw.Info.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
+	if lg.IsLevelEnabled(logrus.InfoLevel) {
+		fmt.Fprintf(os.Stderr, "%s %v\n", cInfoPrefix, fmt.Sprintf(f, args...))
+	}
+}
+
+func stderr(args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "%s %v\n", cErrorPrefix, fmt.Sprint(args...))
+}
+
+func stderrf(f string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "%s %v\n", cErrorPrefix, fmt.Sprintf(f, args...))
+}
+
+func fatal(args ...interface{}) {
+	stderr(args...)
+	os.Exit(1)
+}
+func fatalf(f string, args ...interface{}) {
+	stderrf(f, args...)
+	os.Exit(1)
+}
+
+func warning(args ...interface{}) {
+	if lg.IsLevelEnabled(logrus.WarnLevel) {
+		fmt.Fprintf(os.Stderr, "%s %v\n", cWarnPrefix, fmt.Sprint(args...))
+	}
+}
+func warningf(f string, args ...interface{}) {
+	if lg.IsLevelEnabled(logrus.WarnLevel) {
+		fmt.Fprintf(os.Stderr, "%s %v\n", cWarnPrefix, fmt.Sprintf(f, args...))
 	}
 }

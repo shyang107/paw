@@ -36,8 +36,9 @@ type option struct {
 	isViewNoFiles  bool
 	isViewNoDirs   bool
 	// Depth
-	depth          int
-	isDepthRecurse bool
+	depth             int
+	isDepthRecurse    bool
+	isDepthScanAllSub bool
 	// ByField (sort)
 	byField       vfs.SortKey
 	isSortNo      bool
@@ -196,6 +197,13 @@ var (
 		Usage:       "recurse into directories (equivalent to --depth=-1)",
 		Destination: &opt.isDepthRecurse,
 	}
+	fg_isDepthScanAllSub = &cli.BoolFlag{
+		Name:        "scan-all-sub",
+		Aliases:     []string{"S"},
+		Value:       false,
+		Usage:       "anyway, definitely recurse all sub-directories of root",
+		Destination: &opt.isDepthScanAllSub,
+	}
 	// -------------------------------------------
 	// ByField (sort)
 	fg_isSortNo = &cli.BoolFlag{
@@ -344,7 +352,7 @@ var (
 	}
 	fg_hasSize = &cli.BoolFlag{
 		Name:        "size",
-		Aliases:     []string{"S"},
+		Aliases:     []string{"Z"},
 		Value:       false,
 		Usage:       "list each file's size",
 		Destination: &opt.hasSize,

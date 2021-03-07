@@ -38,12 +38,12 @@ func VFSViewLevel(w io.Writer, v *VFS) {
 	ViewFieldNo.SetWidth(wdidx + 1)
 	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
-	viewLevel(w, v, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
+	viewLevel(w, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
 
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewLevel(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
+func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		wdname   = GetViewFieldNameWidthOf(fields)
 		wdstty   = sttyWidth - 2
@@ -68,6 +68,9 @@ func viewLevel(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, has
 		}
 	}
 	for _, rp := range cur.relpaths {
+		if cur.opt.IsNotViewRelPath(rp) {
+			continue
+		}
 		var (
 			level        int
 			curnd, curnf int
@@ -145,7 +148,7 @@ func viewLevel(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, has
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}
-		if v.opt.Depth == 0 {
+		if cur.opt.Depth == 0 {
 			break
 		}
 		ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))

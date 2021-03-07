@@ -15,12 +15,13 @@ import (
 
 func (opt *option) view() error {
 	lg.WithFields(logrus.Fields{
-		"Depth":      opt.vopt.Depth,
-		"Grouping":   opt.vopt.Grouping,
-		"ByField":    opt.vopt.ByField,
-		"Skips":      opt.vopt.Skips,
-		"ViewFields": opt.vopt.ViewFields,
-		"ViewType":   opt.vopt.ViewType,
+		"Depth":        opt.vopt.Depth,
+		"IsScanAllSub": opt.vopt.IsScanAllSub,
+		"Grouping":     opt.vopt.Grouping,
+		"ByField":      opt.vopt.ByField,
+		"Skips":        opt.vopt.Skips,
+		"ViewFields":   opt.vopt.ViewFields,
+		"ViewType":     opt.vopt.ViewType,
 	}).Debug()
 	fs := vfs.NewVFS(opt.rootPath, opt.vopt)
 	fs.BuildFS()

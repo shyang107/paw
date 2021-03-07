@@ -76,10 +76,15 @@ func (opt *option) checkViewType() {
 	}
 	// lg.Debugf("viewType: %v [%d]; ViewLevelXNoFiles: %v [%d]", opt.viewType, opt.viewType, vfs.ViewLevelXNoFiles, vfs.ViewLevelXNoFiles)
 
+	// Depth
+	lg.WithField("depth", opt.depth).Trace()
+
+	lg.WithField("isDepthRecurse", opt.isDepthRecurse).Trace()
 	if opt.isDepthRecurse {
-		lg.WithField("isDepthRecurse", opt.isDepthRecurse).Trace()
 		opt.depth = -1
 	}
+
+	lg.WithField("isDepthRecurse", opt.isDepthScanAllSub).Trace()
 
 	// lg.WithFields(logrus.Fields{
 	// 	"viewType": opt.viewType,

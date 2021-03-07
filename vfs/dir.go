@@ -640,14 +640,24 @@ func (d *Dir) FprintErrors(w io.Writer, pad string) {
 }
 
 func (d *Dir) NItems() (ndirs, nfiles int) {
-	for _, entry := range d.children {
-		_, isFile := entry.(*File)
-		if isFile {
+	level := 0
+	if d.RelPath() != "." {
+		level = len(strings.Split(d.RelPath(), "/"))
+	}
+	return d._NItems(level)
+}
+
+func (d *Dir) _NItems(levle int) (ndirs, nfiles int) {
+	for _, de := range d.children {
+		if levle > d.opt.Depth {
+			continue
+		}
+		if !de.IsDir() {
 			nfiles++
 		} else {
 			ndirs++
-			dd := entry.(*Dir)
-			nd, nf := dd.NItems()
+			child := de.(*Dir)
+			nd, nf := child._NItems(levle + 1)
 			ndirs += nd
 			nfiles += nf
 		}
@@ -670,17 +680,23 @@ func (d *Dir) DirInfoC() (cdinf string, wdinf int) {
 }
 
 func (d *Dir) TotalSize() int64 {
-	return calcSize(d)
+	level := 0
+	if d.RelPath() != "." {
+		level = len(strings.Split(d.RelPath(), "/"))
+	}
+	return calcSize(d, level)
 }
 
-func calcSize(cur *Dir) (size int64) {
+func calcSize(cur *Dir, level int) (size int64) {
 	for _, de := range cur.children {
-		f, isFile := de.(*File)
-		if isFile {
-			size += f.Size()
+		if level > cur.opt.Depth {
+			continue
+		}
+		if !de.IsDir() {
+			size += de.Size()
 		} else {
 			next := de.(*Dir)
-			size += calcSize(next)
+			size += calcSize(next, level+1)
 		}
 	}
 	return size

@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	version     = "0.0.1"
-	releaseDate = "2021-03-06"
+	version     = "0.0.1.1"
+	releaseDate = "2021-03-08"
 )
 
 var (
@@ -92,7 +92,7 @@ func init() {
 		fg_isViewX, fg_isViewGroup, fg_isViewGroupR,
 		fg_isViewNoDirs, fg_isViewNoFiles,
 		// Depth
-		fg_Depth, fg_isDepthRecurse,
+		fg_Depth, fg_isDepthRecurse, fg_isDepthScanAllSub,
 		// ByField (sort)
 		fg_isSortNo, fg_isSortReverse, fg_sortByField, fg_isSortByName, fg_isSortBySize, fg_isSortByMTime,
 		// SkipConds

@@ -39,12 +39,12 @@ func VFSViewTable(w io.Writer, v *VFS) {
 	// ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 	ViewFieldNo.SetWidth(wdidx + 1)
 
-	viewTable(w, v, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
+	viewTable(w, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
 
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewTable(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
+func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
 	var (
 		wdstty   = sttyWidth - 2
 		tnd, tnf = cur.NItems()
@@ -101,6 +101,9 @@ func viewTable(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, has
 		}
 	}
 	for i, rp := range cur.RelPaths() {
+		if cur.opt.IsNotViewRelPath(rp) {
+			continue
+		}
 		var (
 			curnd, curnf int
 			size         int64
@@ -182,7 +185,7 @@ func viewTable(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, has
 		if nd+nf < nitems {
 			tf.PrintLineln(banner)
 		}
-		if v.opt.Depth == 0 {
+		if cur.opt.Depth == 0 {
 			break
 		}
 	}

@@ -23,11 +23,11 @@ func VFSViewClassify(w io.Writer, v *VFS) {
 
 	fields := []ViewField{ViewFieldName}
 
-	viewClassify(w, v, cur, 0, fields, isViewNoDirs, isViewNoFiles)
+	viewClassify(w, cur, 0, fields, isViewNoDirs, isViewNoFiles)
 
 }
 
-func viewClassify(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, isViewNoDirs, isViewNoFiles bool) {
+func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		wdstty    = sttyWidth - 2
 		tnd, tnf  = cur.NItems()
@@ -40,6 +40,9 @@ func viewClassify(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, 
 	fmt.Fprintf(w, "%v\n", roothead)
 
 	for _, rp := range cur.relpaths {
+		if cur.opt.IsNotViewRelPath(rp) {
+			continue
+		}
 		var (
 			curnd, curnf int
 			size         int64
@@ -141,7 +144,7 @@ func viewClassify(w io.Writer, v *VFS, cur *Dir, wdidx int, fields []ViewField, 
 		if nfiles < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}
-		if v.opt.Depth == 0 {
+		if cur.opt.Depth == 0 {
 			break
 		}
 	}

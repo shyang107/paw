@@ -9,20 +9,22 @@ import (
 func (opt *option) setVFSOption() {
 	lg.Debug(paw.Caller(1))
 	opt.vopt = &vfs.VFSOption{
-		Depth:      opt.depth,
-		Grouping:   opt.grouping,
-		ByField:    opt.byField,
-		Skips:      opt.skips,
-		ViewFields: opt.viewFields,
-		ViewType:   opt.viewType,
+		Depth:        opt.depth,
+		IsScanAllSub: opt.isDepthScanAllSub,
+		Grouping:     opt.grouping,
+		ByField:      opt.byField,
+		Skips:        opt.skips,
+		ViewFields:   opt.viewFields,
+		ViewType:     opt.viewType,
 	}
 
 	lg.WithFields(logrus.Fields{
-		"Depth":      opt.vopt.Depth,
-		"Grouping":   opt.vopt.Grouping,
-		"ByField":    opt.vopt.ByField,
-		"Skips":      opt.vopt.Skips,
-		"ViewFields": opt.vopt.ViewFields,
-		"ViewType":   opt.vopt.ViewType,
+		"Depth":        opt.vopt.Depth,
+		"IsScanAllSub": opt.vopt.IsScanAllSub,
+		"Grouping":     opt.vopt.Grouping,
+		"ByField":      opt.vopt.ByField,
+		"Skips":        opt.vopt.Skips,
+		"ViewFields":   opt.vopt.ViewFields,
+		"ViewType":     opt.vopt.ViewType,
 	}).Debug()
 }

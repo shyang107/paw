@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
@@ -114,7 +113,8 @@ func (v *VFS) AddSkipFuncs(skips ...Skiper) {
 func (v *VFS) BuildFS() {
 	paw.Logger.Debug("building VFS...")
 	cur := v.RootDir()
-	buildFS(cur, cur.Path())
+
+	buildFS(cur, cur.Path(), 0)
 
 	paw.Logger.Debug("building VFS.relpaths...")
 	v.createRDirs(&v.Dir)
@@ -128,34 +128,13 @@ func (v *VFS) BuildFS() {
 	v.git.Dump("checkChildGit: modified")
 }
 
-func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
-	ds, _ := cur.ReadDirAll()
-	relpaths = make([]string, 0) //
-	for _, d := range ds {
-		next, isDir := d.(*Dir)
-		if isDir {
-			relpaths = append(relpaths, next.RelPath())
-			v.relpaths = append(v.relpaths, next.RelPath())
-			nextrelpaths := v.createRDirs(next)
-			relpaths = append(relpaths, nextrelpaths...)
-		}
-	}
-	cur.relpaths = append(cur.relpaths, relpaths...)
-	if len(cur.relpaths) > 0 {
-		sort.Sort(ByLowerString{cur.relpaths})
-	}
-	return relpaths
-}
-
-func buildFS(cur *Dir, root string) {
+func buildFS(cur *Dir, root string, level int) {
 	var (
 		dpath = cur.Path()
 		git   = cur.git
 		skip  = cur.opt.Skips
-		level = cur.opt.Depth
 	)
-	nlevel := len(strings.Split(cur.RelPath(), "/"))
-	if level > 0 && nlevel > level {
+	if !cur.opt.IsScanAllSub && level > cur.opt.Depth {
 		return
 	}
 	des, _ := os.ReadDir(dpath)
@@ -205,10 +184,33 @@ func buildFS(cur *Dir, root string) {
 
 		cur.children[de.Name()] = child
 
-		if level != 0 && child.IsDir() {
-			buildFS(child.(*Dir), root)
+		if child.IsDir() {
+			buildFS(child.(*Dir), root, level+1)
+		}
+
+		// if level != 0 && child.IsDir() {
+		// 	buildFS(child.(*Dir), root)
+		// }
+	}
+}
+
+func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
+	ds, _ := cur.ReadDirAll()
+	relpaths = make([]string, 0) //
+	for _, d := range ds {
+		next, isDir := d.(*Dir)
+		if isDir {
+			relpaths = append(relpaths, next.RelPath())
+			v.relpaths = append(v.relpaths, next.RelPath())
+			nextrelpaths := v.createRDirs(next)
+			relpaths = append(relpaths, nextrelpaths...)
 		}
 	}
+	cur.relpaths = append(cur.relpaths, relpaths...)
+	if len(cur.relpaths) > 0 {
+		sort.Sort(ByLowerString{cur.relpaths})
+	}
+	return relpaths
 }
 
 func (v *VFS) DumpFS(w io.Writer) {

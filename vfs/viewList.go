@@ -31,11 +31,11 @@ func VFSViewList(w io.Writer, v *VFS) {
 	modFieldWidths(v, fields)
 	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
-	viewList(w, v, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
+	viewList(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewList(w io.Writer, v *VFS, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
+func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
 	// paw.Logger.Debug()
 	var (
 		wdstty    = sttyWidth - 2
@@ -62,6 +62,9 @@ func viewList(w io.Writer, v *VFS, cur *Dir, fields []ViewField, hasX, isViewNoD
 	}
 	// paw.Logger.Trace("cur.relpaths")
 	for _, rp := range cur.relpaths {
+		if cur.opt.IsNotViewRelPath(rp) {
+			continue
+		}
 		var (
 			curnd, curnf int
 			size         int64
@@ -124,7 +127,7 @@ func viewList(w io.Writer, v *VFS, cur *Dir, fields []ViewField, hasX, isViewNoD
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}
-		if v.opt.Depth == 0 {
+		if cur.opt.Depth == 0 {
 			break
 		}
 	}
