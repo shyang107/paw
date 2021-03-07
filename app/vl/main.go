@@ -13,13 +13,14 @@ import (
 
 const (
 	version     = "0.0.1"
-	releaseDate = "2021-3-6"
+	releaseDate = "2021-03-06"
 )
 
 var (
 	app         = cli.NewApp()
 	programName string
 	lg          = paw.Logger
+	releaseTime = cast.ToTime(releaseDate)
 )
 
 func _runFirst() {
@@ -43,7 +44,7 @@ func _runFirst() {
 	app.UsageText = app.Name + " command [command options] [arguments...]"
 	app.Version = version
 	// app.Compiled = time.Now()
-	app.Compiled = cast.ToTime(releaseDate)
+	app.Compiled = releaseTime
 	app.Authors = []*cli.Author{
 		{
 			Name:  "Shuhhua Yang",
@@ -53,7 +54,7 @@ func _runFirst() {
 	app.ArgsUsage = "[path]"
 
 	cli.VersionPrinter = func(c *cli.Context) {
-		fmt.Printf("%s version %s @ %v\n",
+		fmt.Printf("%s version %s_%v\n",
 			c.App.Name,
 			paw.NewEXAColor("sb").Sprint(app.Name+c.App.Version),
 			paw.NewEXAColor("da").Sprint(c.App.Compiled.Format("Jan 2, 2006")))

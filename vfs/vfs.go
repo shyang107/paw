@@ -105,17 +105,17 @@ func (v *VFS) AddSkipFuncs(skips ...Skiper) {
 
 func (v *VFS) BuildFS() {
 	paw.Logger.Debug("building VFS...")
-	cur := &v.Dir
+	cur := v.RootDir()
 	buildFS(cur, cur.Path())
 
 	paw.Logger.Debug("building VFS.relpaths...")
 	v.createRDirs(&v.Dir)
 
 	paw.Logger.Tracef("checking VFS.git: dir...[%q]", cur.RelPath())
-	v.Dir.CheckGitDir()
+	cur.CheckGitDir()
 
 	paw.Logger.Tracef("checking VFS.git: files...[%q]", cur.RelPath())
-	v.Dir.checkGitFiles()
+	cur.CheckGitFiles()
 
 	v.git.Dump("checkChildGit: modified")
 }

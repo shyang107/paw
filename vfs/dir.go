@@ -686,6 +686,10 @@ func calcSize(cur *Dir) (size int64) {
 	return size
 }
 
+func (d *Dir) SetGit(git *GitStatus) {
+	d.git = git
+}
+
 func (d *Dir) CheckGitDir() {
 	// paw.Logger.Debug(paw.Caller(1))
 	// 1. check: if dir is GitIgnored, then marks all subfiles with GitIgnored.
@@ -764,7 +768,7 @@ func isXY(xy *GitFileStatus, gcode GitStatusCode) bool {
 		xy.Worktree == gcode
 }
 
-func (d *Dir) checkGitFiles() {
+func (d *Dir) CheckGitFiles() {
 	// paw.Logger.Debug(paw.Caller(1))
 	gs := d.git.GetStatus()
 	if d.git.NoGit || len(d.children) < 1 || gs == nil {

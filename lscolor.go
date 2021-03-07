@@ -99,6 +99,7 @@ var (
 		"lk":       {38, 5, 209, 1}, // links
 		"bk":       {38, 5, 189},    // blocks
 		"prompt":   {38, 5, 251, 48, 5, 236},
+		"bgprompt": {48, 5, 236},
 		"promptsn": {38, 5, 156, 1, 48, 5, 236},
 		"promptsu": {38, 5, 156, 48, 5, 236},
 		"trace":    {38, 5, color.FgCyan},
@@ -780,6 +781,8 @@ var (
 	Cerror  = NewEXAColor("error")
 	Cfatal  = NewEXAColor("fatal")
 	Cpanic  = NewEXAColor("panic")
+	CEven   = color.New([]color.Attribute{38, 5, 251, 48, 5, 234}...)
+	COdd    = color.New([]color.Attribute{38, 5, 159, 48, 5, 234}...)
 )
 
 func init() {

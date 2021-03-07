@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/fatih/color"
+
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/vfs"
 )
@@ -38,42 +40,37 @@ func (opt *option) viewPaths() error {
 		totalsize, size int64
 		nd, nf          int
 		tnd, tnf        int
-		pm, rm, dirs    = createBasepaths(paths)
+		dxs, rm, dirs   = createBasepaths(paths)
+		c               *color.Color
 	)
 	for i, dir := range dirs {
+		if len(dirs) == 1 {
+			c = paw.Cdirp
+		} else {
+			c = rcolor(i)
+		}
 		de := rm[dir]
-		rhead := fmt.Sprintf("«root%d» directory: ", i+1)
+		rhead := c.Sprintf("«root%d»", i+1)
+		rhead += " directory: "
 		rhead += vfs.PathToLinkC(de, nil)
 		fmt.Fprintf(w, "%s\n", rhead)
 	}
 	vfs.FprintBanner(w, "", "=", wdstty)
 
 	fields := make([]vfs.ViewField, 0, len(vfields))
+	var tmpFields vfs.ViewField
 	for _, f := range vfields {
 		if f&vfs.ViewFieldGit != 0 {
 			continue
 		}
+		tmpFields |= f
 		fields = append(fields, f)
 	}
+	opt.vopt.ViewFields = tmpFields
 
-	modFieldWidths(pm, fields)
-
-	head := ""
-	for _, fd := range fields {
-		if fd&vfs.ViewFieldName == 0 {
-			wdmeta += fd.Width() + 1
-			switch fd.Align() {
-			case paw.AlignLeft:
-				head += paw.Chdp.Sprintf("%-[1]*[2]s", fd.Width(), fd.Name())
-			default:
-				head += paw.Chdp.Sprintf("%[1]*[2]s", fd.Width(), fd.Name())
-			}
-			head += " "
-		} else {
-			vfs.ViewFieldName.SetWidth(wdstty - wdmeta)
-			head += paw.Chdp.Sprintf("%-[1]*[2]s", wdstty-wdmeta, fd.Name())
-		}
-	}
+	modFieldWidths(dxs, fields)
+	vfs.ViewFieldName.SetWidth(vfs.GetViewFieldNameWidthOf(fields))
+	wdmeta = wdstty - vfs.ViewFieldName.Width()
 
 	if len(viewPaths_errors) > 0 {
 		for _, err := range viewPaths_errors {
@@ -81,31 +78,38 @@ func (opt *option) viewPaths() error {
 		}
 	}
 
-	// head := vfs.GetPFHeadS(paw.Chdp, fields...)
+	head := vfs.GetPFHeadS(paw.Chdp, fields...)
 	fmt.Fprintln(w, head)
 	for i, dir := range dirs {
-		rooti := paw.Cdirp.Sprintf("«root%d»/", i+1)
-		for _, pi := range pm[dir] {
-			if pi.de.IsDir() {
+		if len(dirs) == 1 {
+			c = paw.Cdirp
+		} else {
+			c = rcolor(i)
+		}
+		rooti := c.Sprintf("«root%d»", i+1) + paw.Cdirp.Sprint("/")
+		des := dxs[dir]
+		opt.vopt.ByField.Sort(des)
+		for _, de := range des {
+			if de.IsDir() {
 				nd++
-				size += pi.de.Size()
+				size += de.Size()
 			} else {
 				nf++
 			}
 			for _, field := range fields {
 				var value string
 				if field&vfs.ViewFieldName != 0 {
-					value = rooti + pi.de.FieldC(field)
+					value = rooti + de.FieldC(field)
 				} else {
-					value = pi.de.FieldC(field) + " "
+					value = de.FieldC(field) + " "
 				}
 				fmt.Fprintf(w, "%v", value)
 			}
 			fmt.Fprintln(w)
 			if hasX {
-				vfs.FprintXattrs(w, wdmeta, pi.de.Xattibutes())
+				vfs.FprintXattrs(w, wdmeta, de.Xattibutes())
 			}
-			totalsize += pi.de.Size()
+			totalsize += de.Size()
 		}
 	}
 
@@ -118,12 +122,13 @@ func (opt *option) viewPaths() error {
 	tnd += nd
 	tnf += nf
 	for _, dir := range dirs {
-		for _, pi := range pm[dir] {
-			if !pi.de.IsDir() {
+		des := dxs[dir]
+		for _, de := range des {
+			if !de.IsDir() {
 				continue
 			}
 			fmt.Fprintln(w)
-			opt.rootPath = pi.de.Path()
+			opt.rootPath = de.Path()
 			fs := vfs.NewVFS(opt.rootPath, opt.vopt)
 			fs.BuildFS()
 			fs.View(os.Stdout)
@@ -139,24 +144,39 @@ func (opt *option) viewPaths() error {
 	return nil
 }
 
+func rcolor(i int) *color.Color {
+	switch i % 2 {
+	case 0:
+		return paw.CEven
+		// return paw.Cdirp
+	default:
+		return paw.COdd
+		// return paw.Cdirp.Add(paw.EXAColors["bgprompt"]...)
+	}
+}
+
 type pathinfo struct {
 	shortroot string
 	info      os.FileInfo
+	git       *vfs.GitStatus
 	de        vfs.DirEntryX
 }
 
 // pathmap is map[path]{*pathrep}
 type pathmap map[string][]pathinfo
 
-// shortrootmap is map[dir]path
-type shortrootmap map[string]vfs.DirEntryX
+// demap is map[dir][]vfs
+type demap map[string][]vfs.DirEntryX
 
-func createBasepaths(paths []string) (pm pathmap, srm shortrootmap, dirs []string) {
+// srmap is map[dir]path
+type srmap map[string]vfs.DirEntryX
+
+func createBasepaths(paths []string) (dxs demap, srm srmap, dirs []string) {
 	if len(paths) == 0 {
 		return nil, nil, nil
 	}
-	pm = make(pathmap)
-	srm = make(shortrootmap)
+	dxs = make(demap)
+	srm = make(srmap)
 	dirs = make([]string, 0, len(paths))
 	var (
 		idx = 0
@@ -171,20 +191,15 @@ func createBasepaths(paths []string) (pm pathmap, srm shortrootmap, dirs []strin
 		}
 		dir := filepath.Dir(path)
 		shortroot, ok := sm[dir]
-		// git := gm[dir]
 		if !ok {
 			idx++
 			shortroot = fmt.Sprintf("root%d", idx)
 			sm[dir] = shortroot
-			// gm[dir] = vfs.NewGitStatus(dir)
-			// lg.Debug(idx, dir)
 			rde := vfs.NewDir(dir, "", nil)
 			srm[dir] = rde
-			pm[dir] = make([]pathinfo, 0, len(paths))
+			dxs[dir] = make([]vfs.DirEntryX, 0, len(paths))
 			dirs = append(dirs, dir)
-			// lg.WithField("rde", rde.Path()).Debug()
 		}
-		// lg.WithField("path", path).Debug()
 		var de vfs.DirEntryX
 		if info.IsDir() {
 			de = vfs.NewDir(path, "", nil)
@@ -192,23 +207,18 @@ func createBasepaths(paths []string) (pm pathmap, srm shortrootmap, dirs []strin
 			de = vfs.NewFile(path, "", nil)
 		}
 		// lg.WithField("de", de.Path()).Debug()
-		pm[dir] = append(pm[dir], pathinfo{
-			info:      info,
-			shortroot: shortroot,
-			de:        de,
-		})
+		dxs[dir] = append(dxs[dir], de)
 	}
 	sort.Sort(vfs.ByLowerString{Values: dirs})
-	return pm, srm, dirs
+	return dxs, srm, dirs
 }
 
-func modFieldWidths(pm pathmap, fields []vfs.ViewField) {
-	for _, pis := range pm {
-		for _, p := range pis {
-			de := p.de
-			var (
-				wd, dwd int
-			)
+func modFieldWidths(dxm demap, fields []vfs.ViewField) {
+	for _, des := range dxm {
+		var (
+			wd, dwd int
+		)
+		for _, de := range des {
 			for _, fd := range fields {
 				wd = de.WidthOf(fd)
 				dwd = fd.Width()
