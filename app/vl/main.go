@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	app         = cli.NewApp()
+	app         *cli.App
 	appName     = "vl"
 	lg          = paw.Logger
 	releaseTime = cast.ToTime(releaseDate)
@@ -47,21 +47,6 @@ func init() {
 		Aliases: []string{"v"},
 		Usage:   "print only the version",
 	}
-
-	app.Name = appName
-	app.Usage = "list directory (excluding hidden items) in color view."
-	app.UsageText = app.Name + " command [command options] [arguments...]"
-	app.Version = version
-	// app.Compiled = time.Now()
-	app.Compiled = releaseTime
-	app.Authors = []*cli.Author{
-		{
-			Name:  authorName,
-			Email: authorEmail,
-		},
-	}
-	app.ArgsUsage = "[path]"
-
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Printf("%s version %s_%v\n",
 			c.App.Name,
@@ -69,48 +54,71 @@ func init() {
 			paw.NewEXAColor("da").Sprint(c.App.Compiled.Format("Jan 2, 2006")))
 	}
 
-	// app.EnableBashCompletion = true
-
-	app.UseShortOptionHandling = true
-
-	app.Commands = []*cli.Command{
-		{
-			Name:    "version",
-			Aliases: []string{"v"},
-			Usage:   "print only the version",
-			Action: func(c *cli.Context) error {
-				cli.ShowVersion(c)
-				return nil
-			},
+	cmd_Version := &cli.Command{
+		Name:    "version",
+		Aliases: []string{"v"},
+		Usage:   "print only the version",
+		Action: func(c *cli.Context) error {
+			cli.ShowVersion(c)
+			return nil
 		},
 	}
 
-	app.Flags = []cli.Flag{
-		// verbose
-		fg_isInfo, fg_isDebug, fg_isTrace,
-		//  ViewType
-		fg_isViewList, fg_isViewLevel, fg_isViewListTree, fg_isViewTree, fg_isViewTable, fg_isViewClassify,
-		fg_isViewX, fg_isViewGroup, fg_isViewGroupR,
-		fg_isViewNoDirs, fg_isViewNoFiles,
-		// Depth
-		fg_Depth, fg_isDepthRecurse, fg_isDepthScanAllSub,
-		// ByField (sort)
-		fg_isSortNo, fg_isSortReverse, fg_sortByField, fg_isSortByName, fg_isSortBySize, fg_isSortByMTime,
-		// SkipConds
-		fg_isNoSkip, fg_reIncludePattern, fg_reExcludePattern,
-		fg_withNoPrefix, fg_withNoSufix, fg_psDelimiter,
-		// ViewFields
-		fg_hasAll, fg_hasAllNoGit, fg_hasAllNoMd5, fg_hasAllNoGitMd5,
-		fg_hasBasicPSUGN,
-		fg_hasINode,
-		fg_hasPermission,
-		fg_hasHDLinks, fg_hasSize, fg_hasBlocks,
-		fg_hasUser, fg_hasGroup,
-		fg_hasMTime, fg_hasATime, fg_hasCTime,
-		fg_hasGit, fg_hasMd5,
+	app = &cli.App{
+		Name:      appName,
+		Usage:     "list directory (excluding hidden items) in color view.",
+		UsageText: appName + " command [command options] [arguments...]",
+		ArgsUsage: "[path]",
+		Version:   version,
+		// Compiled : time.Now(),
+		Compiled: releaseTime,
+		Authors: []*cli.Author{
+			{
+				Name:  authorName,
+				Email: authorEmail,
+			},
+		},
+		UseShortOptionHandling: true,
+		// EnableBashCompletion : true,
+		Commands: []*cli.Command{
+			cmd_Version,
+			//  ViewType
+			cmd_ViewType,
+			// ByField (sort)
+			cmd_ByField,
+			// SkipConds
+			cmd_SkipConds,
+			// ViewFields
+			cmd_ViewField,
+		},
+
+		Flags: []cli.Flag{
+			// verbose
+			fg_isInfo, fg_isDebug, fg_isTrace,
+			//  ViewType
+			fg_isViewList, fg_isViewLevel, fg_isViewListTree, fg_isViewTree, fg_isViewTable, fg_isViewClassify,
+			fg_isViewX, fg_isViewGroup, fg_isViewGroupR,
+			fg_isViewNoDirs, fg_isViewNoFiles,
+			// Depth
+			fg_Depth, fg_isDepthRecurse, fg_isDepthScanAllSub,
+			// ByField (sort)
+			fg_isSortNo, fg_isSortReverse, fg_sortByField, fg_isSortByName, fg_isSortBySize, fg_isSortByMTime,
+			// SkipConds
+			fg_isNoSkip, fg_reIncludePattern, fg_reExcludePattern,
+			fg_withNoPrefix, fg_withNoSufix, fg_psDelimiter,
+			// ViewFields
+			fg_hasAll, fg_hasAllNoGit, fg_hasAllNoMd5, fg_hasAllNoGitMd5,
+			fg_hasBasicPSUGN,
+			fg_hasINode,
+			fg_hasPermission,
+			fg_hasHDLinks, fg_hasSize, fg_hasBlocks,
+			fg_hasUser, fg_hasGroup,
+			fg_hasMTime, fg_hasATime, fg_hasCTime,
+			fg_hasGit, fg_hasMd5,
+		},
+		Action: appAction,
 	}
 
-	app.Action = appAction
 }
 
 func main() {
