@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
@@ -33,11 +34,11 @@ var (
 
 func init() {
 	lg.SetLevel(logrus.WarnLevel)
-	// programName, err := os.Executable()
-	// if err != nil || len(programName) == 0 {
-	// 	programName = os.Args[0]
-	// }
-	// programName = filepath.Base(programName)
+	appName, err := os.Executable()
+	if err != nil || len(appName) == 0 {
+		appName = os.Args[0]
+	}
+	appName = filepath.Base(appName)
 
 	paw.GologInit(os.Stdout, os.Stderr, os.Stderr, false)
 
@@ -64,7 +65,7 @@ func init() {
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Printf("%s version %s_%v\n",
 			c.App.Name,
-			paw.NewEXAColor("sb").Sprint(app.Name+c.App.Version),
+			paw.NewEXAColor("sb").Sprint(c.App.Name+c.App.Version),
 			paw.NewEXAColor("da").Sprint(c.App.Compiled.Format("Jan 2, 2006")))
 	}
 

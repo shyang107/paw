@@ -187,22 +187,19 @@ func buildFS(cur *Dir, root string, level int) {
 
 		cur.children[de.Name()] = child
 
-		if child.IsDir() {
+		if cur.opt.Depth != 0 && child.IsDir() {
 			buildFS(child.(*Dir), root, level+1)
 		}
-
-		// if level != 0 && child.IsDir() {
-		// 	buildFS(child.(*Dir), root)
-		// }
 	}
 }
 
 func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 	ds, _ := cur.ReadDirAll()
-	relpaths = make([]string, 0) //
+	nd, _ := cur.NItems()
+	relpaths = make([]string, 0, nd) //
 	for _, d := range ds {
-		next, isDir := d.(*Dir)
-		if isDir {
+		if d.IsDir() {
+			next := d.(*Dir)
 			relpaths = append(relpaths, next.RelPath())
 			v.relpaths = append(v.relpaths, next.RelPath())
 			nextrelpaths := v.createRDirs(next)
