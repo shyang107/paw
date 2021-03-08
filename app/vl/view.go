@@ -223,7 +223,7 @@ func createBasepaths(paths []string) (dxs demap, srm srmap, dirs []string) {
 		// lg.WithField("de", de.Path()).Debug()
 		dxs[dir] = append(dxs[dir], de)
 	}
-	sort.Sort(vfs.ByLowerString{Values: dirs})
+	sort.Sort(vfs.ByLowerString(dirs))
 	return dxs, srm, dirs
 }
 

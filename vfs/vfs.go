@@ -208,7 +208,7 @@ func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 	}
 	cur.relpaths = append(cur.relpaths, relpaths...)
 	if len(cur.relpaths) > 0 {
-		sort.Sort(ByLowerString{cur.relpaths})
+		sort.Sort(ByLowerString(cur.relpaths))
 	}
 	return relpaths
 }
