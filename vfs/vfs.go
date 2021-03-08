@@ -116,6 +116,11 @@ func (v *VFS) BuildFS() {
 	cur := v.RootDir()
 
 	buildFS(cur, cur.Path(), 0)
+	// nd, nf := cur.NItems()
+	// paw.Logger.WithFields(logrus.Fields{
+	// 	"nd": nd,
+	// 	"nf": nf,
+	// }).Debug()
 
 	paw.Logger.Debug("building VFS.relpaths...")
 	v.createRDirs(&v.Dir)
@@ -140,6 +145,7 @@ func buildFS(cur *Dir, root string, level int) {
 		level > cur.opt.Depth {
 		return
 	}
+
 	des, _ := os.ReadDir(dpath)
 	for _, de := range des {
 		path := filepath.Join(dpath, de.Name())
@@ -187,8 +193,14 @@ func buildFS(cur *Dir, root string, level int) {
 
 		cur.children[de.Name()] = child
 
-		if cur.opt.Depth != 0 && child.IsDir() {
-			buildFS(child.(*Dir), root, level+1)
+		if cur.opt.IsScanAllSub {
+			if child.IsDir() {
+				buildFS(child.(*Dir), root, 0)
+			}
+		} else {
+			if cur.opt.Depth != 0 && child.IsDir() {
+				buildFS(child.(*Dir), root, level+1)
+			}
 		}
 	}
 }

@@ -649,7 +649,8 @@ func (d *Dir) NItems() (ndirs, nfiles int) {
 }
 
 func _NItems(d *Dir, levle int) (ndirs, nfiles int) {
-	if d.opt.Depth > 0 && levle > d.opt.Depth {
+	if d.opt.Depth > 0 &&
+		levle > d.opt.Depth {
 		return
 	}
 	dxs, _ := d.ReadDirAll()
@@ -730,7 +731,9 @@ func (d *Dir) CheckGitDir() {
 
 func _checkGitDir(d *Dir) {
 	gs := d.git.GetStatus()
-	if d.git.NoGit || len(d.children) < 1 || gs == nil || len(d.children) < 1 {
+	if d.git.NoGit ||
+		len(d.children) < 1 ||
+		gs == nil {
 		return
 	}
 	// 1. check: if dir is GitIgnored, then marks all subfiles with GitIgnored.
@@ -789,13 +792,15 @@ func isXY(xy *GitFileStatus, gcode GitStatusCode) bool {
 func (d *Dir) CheckGitFiles() {
 	// paw.Logger.Debug(paw.Caller(1))
 	gs := d.git.GetStatus()
-	if d.git.NoGit || len(d.children) < 1 || gs == nil {
+	if d.git.NoGit ||
+		len(d.children) < 1 ||
+		gs == nil {
 		return
 	}
 	// 2. if any of subfiles of dir (including root) has any change of git status, set GitChanged to dir
-	for _, e := range d.children {
-		next, isDir := e.(*Dir)
-		if isDir {
+	for _, de := range d.children {
+		if de.IsDir() {
+			next := de.(*Dir)
 			next.setSubDirXY()
 		}
 	}
