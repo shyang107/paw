@@ -396,8 +396,22 @@ func checkFieldsHasGit(fields []ViewField, isNoGit bool) []ViewField {
 	return fds
 }
 
-func modFieldWidths(v *VFS, fields []ViewField) {
-	childWidths(&v.Dir, fields)
+func modFieldWidths(d *Dir, fields []ViewField) {
+	childWidths(d, fields)
+	hasFieldNo := false
+	for _, fd := range fields {
+		if !hasFieldNo && fd&ViewFieldNo != 0 {
+			hasFieldNo = true
+			break
+		}
+	}
+	if hasFieldNo {
+		nd, nf := d.NItems()
+		snd, snf := fmt.Sprint(nd), fmt.Sprint(nf)
+		wdidx := paw.MaxInt(len(snd), len(snf))
+		ViewFieldNo.SetWidth(wdidx + 1)
+	}
+	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 }
 
 func childWidths(d *Dir, fields []ViewField) {
@@ -430,6 +444,7 @@ func childWidths(d *Dir, fields []ViewField) {
 			childWidths(child, fields)
 		}
 	}
+
 }
 
 func dirSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) string {

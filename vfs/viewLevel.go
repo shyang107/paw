@@ -28,30 +28,35 @@ func VFSViewLevel(w io.Writer, v *VFS) {
 		wdidx                             = paw.MaxInt(len(snd), len(snf))
 	)
 
+	paw.Logger.WithFields(logrus.Fields{
+		"nd":     nd,
+		"nf":     nf,
+		"wididx": wdidx,
+	}).Debug()
+
 	if vfields&ViewFieldNo == 0 {
 		vfields = ViewFieldNo | vfields
 	}
 
 	fields = checkFieldsHasGit(vfields.Fields(), cur.git.NoGit)
+	modFieldWidths(cur, fields)
 
-	modFieldWidths(v, fields)
-	ViewFieldNo.SetWidth(wdidx + 1)
-	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
-
-	viewLevel(w, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
+	viewLevel(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
 
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
+func viewLevel(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
-		wdname   = GetViewFieldNameWidthOf(fields)
-		wdstty   = sttyWidth - 2
-		tnd, tnf = cur.NItems()
-		nitems   = tnd + tnf
-		nd, nf   int
-		wdmeta   = 0
-		roothead = GetRootHeadC(cur, wdstty)
+		wdname     = ViewFieldName.Width()
+		wdstty     = sttyWidth - 2
+		tnd, tnf   = cur.NItems()
+		stnd, stnf = fmt.Sprint(tnd), fmt.Sprint(tnf)
+		wdidx      = paw.MaxInt(len(stnd), len(stnf))
+		nitems     = tnd + tnf
+		nd, nf     int
+		wdmeta     = 0
+		roothead   = GetRootHeadC(cur, wdstty)
 		// head      = getPFHeadS(chdp, fields...)
 		totalsize int64
 	)
@@ -83,6 +88,7 @@ func viewLevel(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isVie
 		}
 		wdpad := level * 3
 		pad := paw.Spaces(wdpad)
+
 		paw.Logger.WithFields(logrus.Fields{
 			"rp": rp,
 		}).Trace("getDir")

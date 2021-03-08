@@ -24,9 +24,6 @@ func VFSViewTable(w io.Writer, v *VFS) {
 		vfields                           = v.opt.ViewFields
 		fields                            []ViewField
 		hasX, isViewNoDirs, isViewNoFiles = v.hasX_NoDir_NoFiles()
-		nd, nf                            = cur.NItems()
-		snd, snf                          = fmt.Sprint(nd), fmt.Sprint(nf)
-		wdidx                             = paw.MaxInt(len(snd), len(snf))
 	)
 
 	if vfields&ViewFieldNo == 0 {
@@ -35,32 +32,25 @@ func VFSViewTable(w io.Writer, v *VFS) {
 
 	fields = checkFieldsHasGit(vfields.Fields(), cur.git.NoGit)
 
-	modFieldWidths(v, fields)
-	// ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
-	ViewFieldNo.SetWidth(wdidx + 1)
+	modFieldWidths(cur, fields)
 
-	viewTable(w, cur, wdidx, fields, hasX, isViewNoDirs, isViewNoFiles)
+	viewTable(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
 
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewTable(w io.Writer, cur *Dir, wdidx int, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
+func viewTable(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
 	var (
 		wdstty   = sttyWidth - 2
 		tnd, tnf = cur.NItems()
+		wdidx    = ViewFieldNo.Width()
 		nitems   = tnd + tnf
 		nd, nf   int
 		wdmeta   = 0
 		roothead = GetRootHeadC(cur, wdstty)
 		banner   = strings.Repeat("-", wdstty)
 	)
-	for _, fd := range fields {
-		if fd&ViewFieldName == ViewFieldName {
-			continue
-		}
-		wdmeta += fd.Width() + 1
-	}
-	ViewFieldName.SetWidth(wdstty - wdmeta)
+
 	heads := make([]string, 0, len(fields))
 	aligns := make([]paw.Align, 0, len(fields))
 	widths := make([]int, 0, len(fields))

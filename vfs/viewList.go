@@ -28,8 +28,8 @@ func VFSViewList(w io.Writer, v *VFS) {
 		fields = DefaultViewFieldSlice
 	}
 	fields = checkFieldsHasGit(fields, cur.git.NoGit)
-	modFieldWidths(v, fields)
-	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
+	modFieldWidths(cur, fields)
+	// ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
 	viewList(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))

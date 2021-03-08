@@ -644,20 +644,22 @@ func (d *Dir) NItems() (ndirs, nfiles int) {
 	if d.RelPath() != "." {
 		level = len(strings.Split(d.RelPath(), "/"))
 	}
-	return d._NItems(level)
+	ndirs, nfiles = _NItems(d, level)
+	return ndirs, nfiles
 }
 
-func (d *Dir) _NItems(levle int) (ndirs, nfiles int) {
-	for _, de := range d.children {
-		if levle > d.opt.Depth {
-			continue
-		}
+func _NItems(d *Dir, levle int) (ndirs, nfiles int) {
+	if d.opt.Depth > 0 && levle > d.opt.Depth {
+		return
+	}
+	dxs, _ := d.ReadDirAll()
+	for _, de := range dxs {
 		if !de.IsDir() {
 			nfiles++
 		} else {
 			ndirs++
 			child := de.(*Dir)
-			nd, nf := child._NItems(levle + 1)
+			nd, nf := _NItems(child, levle+1)
 			ndirs += nd
 			nfiles += nf
 		}
@@ -689,7 +691,7 @@ func (d *Dir) TotalSize() int64 {
 
 func calcSize(cur *Dir, level int) (size int64) {
 	for _, de := range cur.children {
-		if level > cur.opt.Depth {
+		if cur.opt.Depth > 0 && level > cur.opt.Depth {
 			continue
 		}
 		if !de.IsDir() {

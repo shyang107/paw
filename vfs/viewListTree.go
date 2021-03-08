@@ -27,8 +27,7 @@ func VFSViewListTree(w io.Writer, v *VFS) {
 	}
 	if hasList {
 		fields = checkFieldsHasGit(fields, cur.git.NoGit)
-		modFieldWidths(v, fields)
-		ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
+		modFieldWidths(cur, fields)
 	} else {
 		fields = []ViewField{ViewFieldName}
 	}
