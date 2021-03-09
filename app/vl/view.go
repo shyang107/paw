@@ -8,6 +8,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/vfs"
@@ -236,8 +237,8 @@ func modFieldWidths(dxm demap, fields []vfs.ViewField) {
 						fmajor := vfs.ViewFieldMajor.Width()
 						fminor := vfs.ViewFieldMinor.Width()
 						major, minor := de.DevNumber()
-						wdmajor := len(fmt.Sprint(major))
-						wdminor := len(fmt.Sprint(minor))
+						wdmajor := len(cast.ToString(major))
+						wdminor := len(cast.ToString(minor))
 						vfs.ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
 						vfs.ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
 						wd = vfs.ViewFieldMajor.Width() +

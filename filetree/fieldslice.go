@@ -349,7 +349,7 @@ func (f *FieldSlice) ModifyWidth(fl *FileList, wdstty int) {
 					fd.widthMajor = paw.MaxInt(fd.widthMajor, wj)
 					fd.widthMinor = paw.MaxInt(fd.widthMinor, wn)
 					wd := fd.widthMajor + fd.widthMinor + 1
-					fd.Width = paw.MaxInts(fd.Width, w, wd)
+					fd.Width = paw.MaxIntA(fd.Width, w, wd)
 				default:
 					fd.Width = paw.MaxInt(fd.Width, file.WidthOf(field))
 				}
@@ -470,7 +470,7 @@ func (f *FieldSlice) ValuesStringSlice(idxs ...int) []string {
 		if err := paw.CheckIndex(vs, i, "f.ValuesStrings()"); err == nil {
 			out[i] = vs[i]
 		} else {
-			out[i] = fmt.Sprint(err)
+			out[i] = err.Error()
 		}
 	}
 	return out
@@ -493,7 +493,7 @@ func (f *FieldSlice) ValueStringCSlice(idxs ...int) []string {
 		if err := paw.CheckIndex(vs, i, "f.ValueStringCs()"); err == nil {
 			out[i] = vs[i]
 		} else {
-			out[i] = fmt.Sprint(err)
+			out[i] = err.Error()
 		}
 	}
 	return out
@@ -566,9 +566,9 @@ func (f *FieldSlice) PrintRowPrefix(w io.Writer, pad, prefix string) {
 		wprf   = paw.StringWidth(paw.StripANSI(prefix))
 		fdName = f.Get(PFieldName)
 		width  = fdName.Width
-		value  = fmt.Sprint(fdName.Value)
+		value  = fdName.Value.(string)
 		wv     = paw.StringWidth(value)
-		cvalue = fmt.Sprint(fdName.ValueC)
+		cvalue = fdName.ValueC.(string)
 		c      = fdName.ValueColor
 		isLink = fdName.isLink
 	)

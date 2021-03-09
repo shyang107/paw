@@ -174,7 +174,7 @@ func listOneFile(wr io.Writer, path string, pad string) {
 	if len(file.XAttributes) > 0 {
 		xfield := fmt.Sprintf("%[1]*[2]s", width, "Extended")
 		wd := wdstty - width - 3
-		sp := fmt.Sprint(paw.Spaces(width))
+		sp := paw.Spaces(width)
 		xsymb := "@"
 		wsymb := paw.StringWidth(xsymb)
 		csymb := cxbp.Sprint(xsymb)

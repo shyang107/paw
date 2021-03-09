@@ -162,11 +162,11 @@ func vcGridWidths(names []string, wdstty int) (wdcols []int) {
 	for _, name := range names {
 		wds = append(wds, paw.StringWidth(name)+2)
 	}
-	wdcols = vcGrisNcols(1, wds, wdstty)
+	wdcols = vcGridNcols(1, wds, wdstty)
 	return wdcols
 }
 
-func vcGrisNcols(nc int, wds []int, wdstty int) (wdcols []int) {
+func vcGridNcols(nc int, wds []int, wdstty int) (wdcols []int) {
 	wdcols = make([]int, nc)
 	for i := 0; i < len(wds); i += nc {
 		idx := i
@@ -178,10 +178,10 @@ func vcGrisNcols(nc int, wds []int, wdstty int) (wdcols []int) {
 			idx++
 		}
 	}
-	if paw.SumInts(wdcols...) < wdstty && nc < len(wds) {
-		wdcols = vcGrisNcols(nc+1, wds, wdstty)
+	if paw.SumIntA(wdcols...) < wdstty && nc < len(wds) {
+		wdcols = vcGridNcols(nc+1, wds, wdstty)
 	}
-	if paw.SumInts(wdcols...) > wdstty {
+	if paw.SumIntA(wdcols...) > wdstty {
 		for i := 0; i < len(wds); i += nc {
 			idx := i
 			for j := 0; j < nc; j++ {

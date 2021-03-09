@@ -331,7 +331,7 @@ WRAPFIELDS:
 		nlines[i] = len(wfields[i]) // count number of lines: wfields[i]
 		idx[i] = 0
 	}
-	maxlines := MaxInts(nlines...)
+	maxlines := MaxIntA(nlines...)
 	for i := 0; i < maxlines; i++ { // ith line
 		hasXattr := false
 		for j, wrapfields := range wfields {

@@ -526,7 +526,7 @@ func GetViewFieldWithoutNameA(fields []ViewField, de DirEntryX) (meta string, wd
 
 func GetViewFieldWidthWithoutName(vfields ViewField) int {
 	wds := vfields.Widths()
-	wdmeta := paw.SumInts(wds[:len(wds)-1]...) + len(wds) - 1
+	wdmeta := paw.SumIntA(wds[:len(wds)-1]...) + len(wds) - 1
 	return wdmeta
 }
 

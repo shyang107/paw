@@ -497,27 +497,23 @@ func modFieldWidths(d *Dir, fields []ViewField) {
 
 func childWidths(d *Dir, fields []ViewField) {
 	ds, _ := d.ReadDirAll()
-	var (
-		wd, dwd int
-	)
 	for _, de := range ds {
 		for _, fd := range fields {
-			wd = de.WidthOf(fd)
-			dwd = fd.Width()
+			wd := de.WidthOf(fd)
 			if !de.IsDir() && fd&ViewFieldSize == ViewFieldSize {
 				if de.IsCharDev() || de.IsDev() {
 					fmajor := ViewFieldMajor.Width()
 					fminor := ViewFieldMinor.Width()
 					major, minor := de.DevNumber()
-					wdmajor := len(fmt.Sprint(major))
-					wdminor := len(fmt.Sprint(minor))
+					wdmajor := len(cast.ToString(major))
+					wdminor := len(cast.ToString(minor))
 					ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
 					ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
 					wd = ViewFieldMajor.Width() +
 						ViewFieldMinor.Width() + 1
 				}
 			}
-			width := paw.MaxInt(dwd, wd)
+			width := paw.MaxInt(fd.Width(), wd)
 			fd.SetWidth(width)
 		}
 		if de.IsDir() {

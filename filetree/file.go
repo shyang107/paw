@@ -317,17 +317,7 @@ func (f *File) INodeC() string {
 // Permission will return a string of Info.Mode() like as exa.
 // The length of placeholder in terminal is 11.
 func (f *File) Permission() string {
-	sperm := f.Info.Mode().String() //fmt.Sprint(f.Stat.Mode())
-
-	// if strings.HasPrefix(sperm, "Dc") {
-	// 	sperm = strings.Replace(sperm, "Dc", "c", 1)
-	// }
-	// if strings.HasPrefix(sperm, "D") {
-	// 	sperm = strings.Replace(sperm, "D", "b", 1)
-	// }
-	// if strings.HasPrefix(sperm, "L") {
-	// 	sperm = strings.Replace(sperm, "L", "l", 1)
-	// }
+	sperm := f.Info.Mode().String()
 
 	if f.XAttributes == nil {
 		sperm += "?"
@@ -419,7 +409,7 @@ func (f *File) Uid() uint32 {
 
 // User returns user (owner) name of File
 func (f *File) User() string {
-	u, err := user.LookupId(fmt.Sprint(f.Uid()))
+	u, err := user.LookupId(cast.ToString(f.Uid()))
 	if err != nil {
 		return err.Error()
 	}
@@ -451,7 +441,7 @@ func (f *File) Gid() uint32 {
 
 // Group returns group (owner) name of File
 func (f *File) Group() string {
-	g, err := user.LookupGroupId(fmt.Sprint(f.Gid()))
+	g, err := user.LookupGroupId(cast.ToString(f.Gid()))
 	if err != nil {
 		return err.Error()
 	}
@@ -587,15 +577,15 @@ func (f *File) GetMd5C() string {
 func (f *File) Field(field PDFieldFlag, git *GitStatus) string {
 	switch field {
 	case PFieldINode:
-		return fmt.Sprint(f.INode())
+		return cast.ToString(f.INode())
 	case PFieldPermissions:
 		return f.Permission()
 	case PFieldLinks:
-		return fmt.Sprint(f.NLinks())
+		return cast.ToString(f.NLinks())
 	case PFieldSize:
 		return ByteSize(f.Size)
 	case PFieldBlocks:
-		return fmt.Sprint(f.Blocks())
+		return cast.ToString(f.Blocks())
 	case PFieldUser:
 		return f.User()
 	case PFieldGroup:
@@ -854,8 +844,8 @@ func (f *File) widthOfSize() (width, wmajor, wminor int) {
 	switch kind {
 	case kindChardev, kindDev:
 		major, minor := f.DevNumber()
-		wmajor = len(fmt.Sprint(major))
-		wminor = len(fmt.Sprint(minor))
+		wmajor = len(cast.ToString(major))
+		wminor = len(cast.ToString(minor))
 		// width = wmajor + wminor + 1
 		return wmajor + wminor + 1, wmajor, wminor
 	case kindDir:

@@ -136,7 +136,7 @@ func getFieldWidths(wds []int, maxwd int) (widths []int) {
 
 	nFields := 1
 	for i := len(wds); i > 0; i-- {
-		s := paw.SumInts(wds[:i]...)
+		s := paw.SumIntA(wds[:i]...)
 		if s < maxwd {
 			nFields = i
 			break
@@ -168,7 +168,7 @@ func modifyWidths(wds []int, nFields, maxwd int) (widths []int) {
 			widths[iw] = paw.MaxInt(widths[iw], wds[il])
 		}
 	}
-	if paw.SumInts(widths...) > maxwd {
+	if paw.SumIntA(widths...) > maxwd {
 		widths = modifyWidths(wds, nFields-1, maxwd)
 	}
 	return widths

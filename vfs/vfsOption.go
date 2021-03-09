@@ -2,6 +2,7 @@ package vfs
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/shyang107/paw"
@@ -33,7 +34,7 @@ func NewVFSOption() *VFSOption {
 }
 
 func (v VFSOption) String() string {
-	depth := fmt.Sprint(v.Depth)
+	depth := strconv.Itoa(v.Depth)
 	if v.IsScanAllSub && v.Depth >= 0 {
 		depth += "(but recurse to all directory)"
 	}

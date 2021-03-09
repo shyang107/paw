@@ -258,7 +258,7 @@ func (d *Dir) Uid() uint32 {
 
 // User returns user (owner) name of File
 func (d *Dir) User() string {
-	u, err := user.LookupId(fmt.Sprint(d.Uid()))
+	u, err := user.LookupId(cast.ToString(d.Uid()))
 	if err != nil {
 		return err.Error()
 	}
@@ -278,7 +278,7 @@ func (d *Dir) Gid() uint32 {
 
 // Group returns group (owner) name of File
 func (d *Dir) Group() string {
-	g, err := user.LookupGroupId(fmt.Sprint(d.Gid()))
+	g, err := user.LookupGroupId(cast.ToString(d.Gid()))
 	if err != nil {
 		return err.Error()
 	}

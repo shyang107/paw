@@ -3,6 +3,7 @@ package filetree
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/shyang107/paw"
@@ -34,8 +35,8 @@ func (f *FileList) ToLevelView(pad string, isExtended bool) string {
 		nItems             = fNDirs + fNFiles
 		git                = f.GetGitStatus()
 		ndirs, nfiles      = 0, 0
-		wdidx              = len(fmt.Sprint(fNDirs))
-		wdjdx              = paw.MaxInts(wdidx, len(fmt.Sprint(fNFiles)))
+		wdidx              = len(strconv.Itoa(fNDirs))
+		wdjdx              = paw.MaxInt(wdidx, len(strconv.Itoa(fNFiles)))
 		wNo                = paw.MaxInt(wdidx, wdjdx) + 1
 		wdstty             = sttyWidth - 2 - paw.StringWidth(pad)
 		roothead           = getColorizedRootHead(f.root, f.TotalSize(), wdstty)

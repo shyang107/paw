@@ -2,6 +2,7 @@ package filetree
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/shyang107/paw"
@@ -28,8 +29,8 @@ func (f *FileList) ToTableView(pad string, isExtended bool) string {
 		w                = f.StringBuilder() //f.Buffer()
 		nDirs, nFiles, _ = f.NTotalDirsAndFile()
 		nItems           = nDirs + nFiles
-		wdidx            = len(fmt.Sprint(nDirs))
-		wdjdx            = paw.MaxInts(wdidx, len(fmt.Sprint(nFiles)))
+		wdidx            = len(strconv.Itoa(nDirs))
+		wdjdx            = paw.MaxInt(wdidx, len(strconv.Itoa(nFiles)))
 		git              = f.GetGitStatus()
 		dirs             = f.dirs  //f.Dirs()
 		fm               = f.store //f.Map()

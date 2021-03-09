@@ -144,13 +144,13 @@ func Max(x interface{}) interface{} {
 	// var r interface{}
 	switch x.(type) {
 	case []int:
-		return MaxInts(x.([]int)...)
+		return MaxIntA(x.([]int)...)
 	case []float32:
-		return MaxFloat32s(x.([]float32)...)
+		return MaxFloat32A(x.([]float32)...)
 	case []float64:
-		return MaxFloat64s(x.([]float64)...)
+		return MaxFloat64A(x.([]float64)...)
 	case []string:
-		return MaxStrings(x.([]string)...)
+		return MaxStringA(x.([]string)...)
 	default:
 		return nil
 	}
@@ -159,12 +159,12 @@ func Max(x interface{}) interface{} {
 
 // MaxInt will return maximum value of `i` and `j`
 func MaxInt(i, j int) int {
-	return MaxInts(i, j)
+	return MaxIntA(i, j)
 }
 
-// MaxInts will return maximum value of `x...`.
+// MaxIntA will return maximum value of `x...`.
 // If x is empty, and return 0.
-func MaxInts(x ...int) int {
+func MaxIntA(x ...int) int {
 	if len(x) == 0 {
 		return 0
 	}
@@ -178,9 +178,9 @@ func MaxInts(x ...int) int {
 	return m
 }
 
-// MaxFloat32s will return maximum value of `x...`.
+// MaxFloat32A will return maximum value of `x...`.
 // If x is empty, and return 0.
-func MaxFloat32s(x ...float32) float32 {
+func MaxFloat32A(x ...float32) float32 {
 	if len(x) == 0 {
 		return 0
 	}
@@ -194,9 +194,9 @@ func MaxFloat32s(x ...float32) float32 {
 	return m
 }
 
-// MaxFloat64s will return maximum value of `x...`.
+// MaxFloat64A will return maximum value of `x...`.
 // If x is empty, and return 0.
-func MaxFloat64s(x ...float64) float64 {
+func MaxFloat64A(x ...float64) float64 {
 	if len(x) == 0 {
 		return 0
 	}
@@ -210,9 +210,9 @@ func MaxFloat64s(x ...float64) float64 {
 	return m
 }
 
-// MaxStrings will return maximum value of `x...`.
+// MaxStringA will return maximum value of `x...`.
 // Compares iterms using code point.
-func MaxStrings(x ...string) string {
+func MaxStringA(x ...string) string {
 	if len(x) == 0 {
 		return ""
 	}
@@ -235,13 +235,13 @@ func Min(x interface{}) interface{} {
 	// var r interface{}
 	switch x.(type) {
 	case []int:
-		return MinInts(x.([]int)...)
+		return MinIntA(x.([]int)...)
 	case []float32:
-		return MinFloat32s(x.([]float32)...)
+		return MinFloat32A(x.([]float32)...)
 	case []float64:
-		return MinFloat64s(x.([]float64)...)
+		return MinFloat64A(x.([]float64)...)
 	case []string:
-		return MinStrings(x.([]string)...)
+		return MinStringA(x.([]string)...)
 	default:
 		return nil
 	}
@@ -250,12 +250,12 @@ func Min(x interface{}) interface{} {
 
 // MinInt will return minimum value of `i` and `j`
 func MinInt(i, j int) int {
-	return MinInts(i, j)
+	return MinIntA(i, j)
 }
 
-// MinInts will return minimum value of `x...`.
+// MinIntA will return minimum value of `x...`.
 // If x is empty, and return 0.
-func MinInts(x ...int) int {
+func MinIntA(x ...int) int {
 	if len(x) == 0 {
 		return 0
 	}
@@ -269,9 +269,9 @@ func MinInts(x ...int) int {
 	return m
 }
 
-// MinFloat32s will return minimum value of `x...`.
+// MinFloat32A will return minimum value of `x...`.
 // If x is empty, and return 0.
-func MinFloat32s(x ...float32) float32 {
+func MinFloat32A(x ...float32) float32 {
 	if len(x) == 0 {
 		return 0
 	}
@@ -285,9 +285,9 @@ func MinFloat32s(x ...float32) float32 {
 	return m
 }
 
-// MinFloat64s will return minimum value of `x...`.
+// MinFloat64A will return minimum value of `x...`.
 // If x is empty, and return 0.
-func MinFloat64s(x ...float64) float64 {
+func MinFloat64A(x ...float64) float64 {
 	if len(x) == 0 {
 		return 0
 	}
@@ -301,10 +301,10 @@ func MinFloat64s(x ...float64) float64 {
 	return m
 }
 
-// MinStrings will return minimum value of `x...`.
+// MinStringA will return minimum value of `x...`.
 // Compares iterms using code point
 // If x is empty, and return "".
-func MinStrings(x ...string) string {
+func MinStringA(x ...string) string {
 	if len(x) == 0 {
 		return ""
 	}
@@ -351,21 +351,21 @@ func Sum(x interface{}) interface{} {
 	// var r interface{}
 	switch x.(type) {
 	case []int:
-		return SumInts(x.([]int)...)
+		return SumIntA(x.([]int)...)
 	case []float32:
-		return SumFloat32s(x.([]float32)...)
+		return SumFloat32A(x.([]float32)...)
 	case []float64:
-		return SumFloat64s(x.([]float64)...)
+		return SumFloat64A(x.([]float64)...)
 	case []string:
-		return SumStrings(x.([]string)...)
+		return SumStringA(x.([]string)...)
 	default:
 		return nil
 	}
 	// return r
 }
 
-// SumInts will return summation of []int
-func SumInts(a ...int) int {
+// SumIntA will return summation of []int
+func SumIntA(a ...int) int {
 	var s int = 0
 	for _, v := range a {
 		s += v
@@ -373,8 +373,8 @@ func SumInts(a ...int) int {
 	return s
 }
 
-// SumFloat32s will return summation of []float32
-func SumFloat32s(a ...float32) float32 {
+// SumFloat32A will return summation of []float32
+func SumFloat32A(a ...float32) float32 {
 	var s float32 = 0
 	for _, v := range a {
 		s += v
@@ -382,8 +382,8 @@ func SumFloat32s(a ...float32) float32 {
 	return s
 }
 
-// SumFloat64s will return summation of []float64
-func SumFloat64s(a ...float64) float64 {
+// SumFloat64A will return summation of []float64
+func SumFloat64A(a ...float64) float64 {
 	var s float64 = 0
 	for _, v := range a {
 		s += v
@@ -391,8 +391,8 @@ func SumFloat64s(a ...float64) float64 {
 	return s
 }
 
-// SumStrings will return concatenation of []string using strings.Join(a, "")
-func SumStrings(a ...string) string {
+// SumStringA will return concatenation of []string using strings.Join(a, "")
+func SumStringA(a ...string) string {
 	return strings.Join(a, "")
 }
 

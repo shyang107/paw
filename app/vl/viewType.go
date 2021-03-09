@@ -105,7 +105,7 @@ var (
 		Destination: &opt.isDepthRecurse,
 	}
 	fg_isDepthScanAllSub = &cli.BoolFlag{
-		Name:        "scan-all-sub",
+		Name:        "force-recurse",
 		Aliases:     []string{"S"},
 		Value:       false,
 		Usage:       "anyway, definitely recurse all sub-directories of root",
