@@ -35,15 +35,12 @@ func (opt *option) checkArgs(c *cli.Context) {
 		if fi.IsDir() {
 			opt.rootPath = path
 			info(paw.NewValuePair("Root", opt.rootPath))
-			// info(paw.MesageFieldAndValueC("Root", opt.rootPath, logrus.InfoLevel, paw.Cnop, nil))
 		} else {
 			if opt.paths == nil {
 				opt.paths = make([]string, 0)
 			}
 			opt.paths = append(opt.paths, path)
-			// lg.WithField("paths", opt.paths).Info()
 			info(paw.NewValuePair("Paths", opt.paths))
-			// info(paw.MesageFieldAndValueC("Paths", opt.paths, logrus.InfoLevel, paw.Cnop, nil))
 		}
 	default: // > 1
 		lg.WithField("arg", c.Args()).Trace("multi-arguments" + paw.Caller(1))

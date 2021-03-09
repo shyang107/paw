@@ -43,6 +43,7 @@ func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, hasList bool)
 		// wdmeta   = 0
 		roothead = GetRootHeadC(cur, wdstty)
 		head     = GetPFHeadS(chdp, fields...)
+		vfields  = cur.opt.ViewFields
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
@@ -53,15 +54,10 @@ func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, hasList bool)
 	// }
 	fmt.Fprintf(w, "%v\n", head)
 
+	fmt.Fprintf(w, "%v ", vfields.RowStringXNameC(cur))
 	cdinf, _ := cur.DirInfoC()
-	for _, field := range fields {
-		if field&ViewFieldName != 0 {
-			fmt.Fprintf(w, "%v %v", cdinf, cdip.Sprint("."))
-		} else {
-			fmt.Fprintf(w, "%v ", cur.FieldC(field))
-		}
-	}
-	fmt.Fprintln(w)
+	fmt.Fprintf(w, "%v %v\n", cdinf, cdip.Sprint("."))
+
 	des, _ := cur.ReadDirAll()
 	// print files in the root dir
 	level := 0

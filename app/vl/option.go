@@ -40,13 +40,21 @@ type option struct {
 	isDepthRecurse    bool
 	isDepthScanAllSub bool
 	// ByField (sort)
-	byField       vfs.SortKey
-	isSortNo      bool
-	isSortReverse bool
-	sortByField   string
-	isSortByName  bool //default name
-	isSortBySize  bool
-	isSortByMTime bool
+	byField         vfs.SortKey
+	isSortNo        bool
+	isSortReverse   bool
+	sortByField     string
+	isSortByName    bool //default name
+	isSortByINode   bool
+	isSortBySize    bool
+	isSortByBlocks  bool
+	isSortByHDLinks bool
+	isSortByUser    bool
+	isSortByGroup   bool
+	isSortByMTime   bool
+	isSortByATime   bool
+	isSortByCTime   bool
+	isSortByMd5     bool
 	// SkipConds
 	skips            *vfs.SkipConds
 	isNoSkip         bool
@@ -61,7 +69,7 @@ type option struct {
 	hasAllNoMd5    bool
 	hasAllNoGit    bool
 	hasAllNoGitMd5 bool
-	hasBasicPSUGN  bool
+	hasBasicPSUGMN bool
 	hasINode       bool
 	hasPermission  bool
 	hasHDLinks     bool

@@ -25,7 +25,7 @@ func main() {
 		root = os.Args[1]
 	case 3:
 		root = os.Args[1]
-		opt.Depth = (cast.ToInt(os.Args[2]))
+		opt.Depth = cast.ToInt(os.Args[2])
 	case 4:
 		root = os.Args[1]
 		opt.Depth = (cast.ToInt(os.Args[2]))
@@ -126,6 +126,9 @@ func main() {
 		fs.View(os.Stdout)
 		// fmt.Println()
 	}
+	// fs.SetViewType(vfs.ViewLevel)
+	// fs.View(os.Stdout)
+
 }
 
 func test() {

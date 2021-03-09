@@ -178,22 +178,12 @@ func setTableValues(de DirEntryX, tf *paw.TableFormat, fields []ViewField) (valu
 	values = make([]interface{}, 0, len(fields))
 	cvalues := make([]string, 0, len(fields))
 	colors := make([]*color.Color, 0, len(fields))
-	f, isFile := de.(*File)
-	if isFile {
-		for _, field := range fields {
-			values = append(values, f.Field(field))
-			cvalues = append(cvalues, f.FieldC(field))
-			if field&ViewFieldName != 0 {
-				colors = append(colors, f.LSColor())
-			} else {
-				colors = append(colors, field.Color())
-			}
-		}
-	} else {
-		d := de.(*Dir)
-		for _, field := range fields {
-			values = append(values, d.Field(field))
-			cvalues = append(cvalues, d.FieldC(field))
+	for _, field := range fields {
+		values = append(values, de.Field(field))
+		cvalues = append(cvalues, de.FieldC(field))
+		if field&ViewFieldName != 0 {
+			colors = append(colors, de.LSColor())
+		} else {
 			colors = append(colors, field.Color())
 		}
 	}

@@ -43,6 +43,7 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 		roothead       = GetRootHeadC(cur, wdstty)
 		head           = GetPFHeadS(chdp, fields...)
 		totalsize      int64
+		vfields        = cur.opt.ViewFields
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
@@ -105,9 +106,10 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 				curnf++
 				size += de.Size()
 			}
-			for _, field := range fields {
-				fmt.Fprintf(w, "%v ", de.FieldC(field))
-			}
+
+			// print fields of de
+			fmt.Fprintf(w, "%v ", vfields.RowStringC(de))
+
 			fmt.Println()
 			if hasX {
 				FprintXattrs(w, wdmeta, de.Xattibutes())

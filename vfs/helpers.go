@@ -373,26 +373,26 @@ func deLSColor(de DirEntryX) *color.Color {
 	return cfip
 }
 
-func aligned(field ViewField, value interface{}) string {
-	var (
-		align = field.Align()
-		s     = fmt.Sprintf("%v", value)
-		wd    = paw.StringWidth(paw.StripANSI(s))
-		width = paw.MaxInt(wd, field.Width())
-		sp    = paw.Spaces(width - wd)
-	)
+// func aligned(field ViewField, value interface{}) string {
+// 	var (
+// 		align = field.Align()
+// 		s     = fmt.Sprintf("%v", value)
+// 		wd    = paw.StringWidth(paw.StripANSI(s))
+// 		width = paw.MaxInt(wd, field.Width())
+// 		sp    = paw.Spaces(width - wd)
+// 	)
 
-	if field&ViewFieldName == ViewFieldName {
-		return s
-	}
+// 	if field&ViewFieldName == ViewFieldName {
+// 		return s
+// 	}
 
-	switch align {
-	case paw.AlignLeft:
-		return s + sp
-	default:
-		return sp + s
-	}
-}
+// 	switch align {
+// 	case paw.AlignLeft:
+// 		return s + sp
+// 	default:
+// 		return sp + s
+// 	}
+// }
 
 func checkFieldsHasGit(fields []ViewField, isNoGit bool) []ViewField {
 	fds := []ViewField{}
@@ -507,9 +507,9 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) 
 }
 func GetRootHeadC(de DirEntryX, wdstty int) string {
 	var size int64
-	d, isDir := de.(*Dir)
-	if isDir {
-		size = d.TotalSize()
+
+	if de.IsDir() {
+		size = de.(*Dir).TotalSize()
 	}
 	var (
 		ss  = bytefmt.ByteSize(size)

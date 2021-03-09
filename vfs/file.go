@@ -13,6 +13,7 @@ import (
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
+	"github.com/spf13/cast"
 )
 
 // file 代表一個文件
@@ -248,7 +249,7 @@ func (f *File) Uid() uint32 {
 
 // User returns user (owner) name of File
 func (f *File) User() string {
-	u, err := user.LookupId(fmt.Sprint(f.Uid()))
+	u, err := user.LookupId(cast.ToString(f.Uid()))
 	if err != nil {
 		return err.Error()
 	}
@@ -268,7 +269,7 @@ func (f *File) Gid() uint32 {
 
 // Group returns group (owner) name of File
 func (f *File) Group() string {
-	g, err := user.LookupGroupId(fmt.Sprint(f.Gid()))
+	g, err := user.LookupGroupId(cast.ToString(f.Gid()))
 	if err != nil {
 		return err.Error()
 	}
@@ -337,13 +338,13 @@ func (f *File) XY() string {
 func (f *File) Field(field ViewField) string {
 	switch field {
 	case ViewFieldNo:
-		return fmt.Sprint(field.Value())
+		return cast.ToString(field.Value())
 	case ViewFieldINode:
-		return fmt.Sprint(f.INode())
+		return cast.ToString(f.INode())
 	case ViewFieldPermissions:
 		return permissionS(f)
 	case ViewFieldLinks:
-		return fmt.Sprint(f.HDLinks())
+		return cast.ToString(f.HDLinks())
 	case ViewFieldSize:
 		if f.IsCharDev() || f.IsDev() {
 			return f.DevNumberS()
@@ -351,7 +352,7 @@ func (f *File) Field(field ViewField) string {
 			return bytefmt.ByteSize(uint64(f.Size()))
 		}
 	case ViewFieldBlocks:
-		return fmt.Sprint(f.Blocks())
+		return cast.ToString(f.Blocks())
 	case ViewFieldUser:
 		return f.User()
 	case ViewFieldGroup:
@@ -374,13 +375,13 @@ func (f *File) Field(field ViewField) string {
 }
 
 // FieldC returns the specified colorful value of File according to ViewField
-func (f *File) FieldC(field ViewField) string {
-	value := aligned(field, f.Field(field))
-	switch field {
+func (f *File) FieldC(fd ViewField) string {
+
+	switch fd {
 	case ViewFieldNo:
-		return aligned(field, cfip.Sprint(field.Value()))
+		return cfip.Sprint(fd.AlignedString(fd.Value()))
 	case ViewFieldPermissions:
-		return aligned(field, permissionC(f))
+		return fd.AlignedStringC(permissionC(f))
 	case ViewFieldSize:
 		if f.IsCharDev() || f.IsDev() {
 			major, minor := f.DevNumber()
@@ -390,8 +391,8 @@ func (f *File) FieldC(field ViewField) string {
 			csn := csnp.Sprintf("%[1]*[2]v", wdminor, minor)
 			cdev := csj + cdirp.Sprint(",") + csn
 			wdev := wdmajor + wdminor + 1 //len(paw.StripANSI(cdev))
-			if wdev < field.Width() {
-				cdev = csj + cdirp.Sprint(",") + paw.Spaces(field.Width()-wdev) + csn
+			if wdev < fd.Width() {
+				cdev = csj + cdirp.Sprint(",") + paw.Spaces(fd.Width()-wdev) + csn
 			}
 			return cdev
 		} else {
@@ -405,7 +406,7 @@ func (f *File) FieldC(field ViewField) string {
 		} else {
 			c = cuup
 		}
-		return aligned(field, c.Sprint(furname))
+		return c.Sprint(fd.AlignedString(furname))
 	case ViewFieldGroup: //"Group",
 		fgpname := f.Group()
 		var c *color.Color
@@ -414,21 +415,21 @@ func (f *File) FieldC(field ViewField) string {
 		} else {
 			c = cgup
 		}
-		return aligned(field, c.Sprint(fgpname))
+		return c.Sprint(fd.AlignedString(fgpname))
 	case ViewFieldGit:
-		return aligned(field, f.git.XYc(f.RelPath()))
+		return fd.AlignedStringC(f.git.XYc(f.RelPath()))
 	case ViewFieldName:
 		return nameToLinkC(f)
 	default:
-		return field.Color().Sprint(value)
+		return fd.Color().Sprint(fd.AlignedString(f.Field(fd)))
 	}
 }
 
 func (f *File) widthOfSize() (width, wmajor, wminor int) {
 	if f.IsCharDev() || f.IsDev() {
 		major, minor := f.DevNumber()
-		wmajor = len(fmt.Sprint(major))
-		wminor = len(fmt.Sprint(minor))
+		wmajor = len(cast.ToString(major))
+		wminor = len(cast.ToString(minor))
 		// width = wmajor + wminor + 1
 		return wmajor + wminor + 1, wmajor, wminor
 	}

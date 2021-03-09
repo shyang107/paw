@@ -14,6 +14,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 )
 
 // dir 代表一個目錄
@@ -342,18 +343,18 @@ func (d *Dir) XY() string {
 func (d *Dir) Field(field ViewField) string {
 	switch field {
 	case ViewFieldNo:
-		return fmt.Sprint(field.Value())
+		return cast.ToString(field.Value())
 	case ViewFieldINode:
-		return fmt.Sprint(d.INode())
+		return cast.ToString(d.INode())
 	case ViewFieldPermissions:
 		return permissionS(d)
 	case ViewFieldLinks:
-		return fmt.Sprint(d.HDLinks())
-	case ViewFieldSize, ViewFieldBlocks:
+		return cast.ToString(d.HDLinks())
+	case ViewFieldSize:
 		// return bytefmt.ByteSize(uint64(d.Size()))
 		return "-"
-	// case ViewFieldBlocks:
-	// 	return "-"
+	case ViewFieldBlocks:
+		return "-"
 	case ViewFieldUser:
 		return d.User()
 	case ViewFieldGroup:
@@ -376,13 +377,12 @@ func (d *Dir) Field(field ViewField) string {
 }
 
 // FieldC returns the specified colorful value of File according to ViewField
-func (d *Dir) FieldC(field ViewField) string {
-	value := aligned(field, d.Field(field))
-	switch field {
+func (d *Dir) FieldC(fd ViewField) string {
+	switch fd {
 	case ViewFieldNo:
-		return aligned(field, cdip.Sprint(field.Value()))
+		return cdip.Sprint(fd.AlignedString(fd.Value()))
 	case ViewFieldPermissions:
-		return aligned(field, permissionC(d))
+		return fd.AlignedStringC(permissionC(d))
 	case ViewFieldSize:
 		return sizeCaligned(d)
 	case ViewFieldBlocks:
@@ -395,7 +395,7 @@ func (d *Dir) FieldC(field ViewField) string {
 		} else {
 			c = cuup
 		}
-		return aligned(field, c.Sprint(furname))
+		return c.Sprint(fd.AlignedString(furname))
 	case ViewFieldGroup: //"Group",
 		fgpname := d.Group()
 		var c *color.Color
@@ -404,17 +404,17 @@ func (d *Dir) FieldC(field ViewField) string {
 		} else {
 			c = cgup
 		}
-		return aligned(field, c.Sprint(fgpname))
+		return c.Sprint(fd.AlignedString(fgpname))
 	case ViewFieldGit:
 		rp := d.RelPath()
 		if rp != "." {
 			rp += "/"
 		}
-		return aligned(field, d.git.XYc(rp))
+		return fd.AlignedStringC(d.git.XYc(rp))
 	case ViewFieldName:
 		return cdip.Sprint(d.Name())
 	default:
-		return field.Color().Sprint(value)
+		return fd.Color().Sprint(fd.AlignedString(d.Field(fd)))
 	}
 }
 
@@ -530,13 +530,13 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 		n = totalEntry
 	}
 
-	dirEntries := make([]DirEntryX, 0, n)
+	dxs := make([]DirEntryX, 0, n)
 	dirs := make([]DirEntryX, 0)
 	files := make([]DirEntryX, 0)
 	for i := d.idx; i < n && i < totalEntry; i++ {
 		child := d.children[names[i]]
 		if d.opt.Grouping == GroupNone {
-			dirEntries = append(dirEntries, child)
+			dxs = append(dxs, child)
 		} else { //grouping items
 			if child.IsDir() {
 				dirs = append(dirs, child)
@@ -549,32 +549,32 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 
 	// 2. sort items
 	if d.opt.Grouping == GroupNone {
-		d.opt.Sort(dirEntries)
+		d.opt.Sort(dxs)
 	} else { //grouping items
 		d.opt.Sort(dirs)
 		d.opt.Sort(files)
 		switch d.opt.Grouping {
 		case Grouped:
-			dirEntries = append(dirs, files...)
+			dxs = append(dirs, files...)
 		case GroupedR:
-			dirEntries = append(files, dirs...)
+			dxs = append(files, dirs...)
 		}
 	}
-	// d.opt.By.Sort(dirEntries)
+	// d.opt.By.Sort(dxs)
 
-	// sort.Sort(ByLowerName{dirEntries})
-	// sort.Sort(DirEntryXA(dirEntries).SetLessFunc(ByLowerNameFunc))
-	// ByLowerNameFunc.Sort(dirEntries)
+	// sort.Sort(ByLowerName{dxs})
+	// sort.Sort(DirEntryXA(dxs).SetLessFunc(ByLowerNameFunc))
+	// ByLowerNameFunc.Sort(dxs)
 
-	return dirEntries, nil
+	return dxs, nil
 }
 
 // ====================================================================
 
 func (d *Dir) ReadDirAll() ([]DirEntryX, error) {
-	dirEntries, err := d.ReadDir(-1)
+	dxs, err := d.ReadDir(-1)
 	d.ReadDirClose()
-	return dirEntries, err
+	return dxs, err
 }
 
 func (d *Dir) ResetIndex() {
@@ -604,17 +604,7 @@ func setDirOption(cur *Dir, opt *VFSOption) {
 }
 
 func (d *Dir) SetViewType(viewType ViewType) {
-	setViewType(d, viewType)
-}
-
-func setViewType(cur *Dir, viewType ViewType) {
-	cur.opt.ViewType = viewType
-	for _, dx := range cur.children {
-		if dx.IsDir() {
-			child := dx.(*Dir)
-			setViewType(child, viewType)
-		}
-	}
+	d.opt.ViewType = viewType
 }
 
 func (d *Dir) SetSortField(sortField SortKey) {
@@ -632,7 +622,7 @@ func (d *Dir) Errors(pad string) string {
 }
 
 func (d *Dir) FprintErrors(w io.Writer, pad string) {
-	if d.errors != nil && len(d.errors) > 0 {
+	if len(d.errors) > 0 {
 		for _, err := range d.errors {
 			fmt.Fprintf(w, "%s%v\n", pad, cerror.Sprint(err))
 		}

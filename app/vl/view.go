@@ -103,16 +103,11 @@ func (opt *option) viewPaths() error {
 			} else {
 				nf++
 			}
-			for _, field := range fields {
-				var value string
-				if field&vfs.ViewFieldName != 0 {
-					value = rooti + de.FieldC(field)
-				} else {
-					value = de.FieldC(field) + " "
-				}
-				fmt.Fprintf(w, "%v", value)
-			}
-			fmt.Fprintln(w)
+
+			// print fields of de
+			fmt.Fprintf(w, "%v", opt.viewFields.RowStringXNameC(de))
+			fmt.Fprintf(w, "%v\n", rooti+de.FieldC(vfs.ViewFieldName))
+
 			if hasX {
 				vfs.FprintXattrs(w, wdmeta, de.Xattibutes())
 			}

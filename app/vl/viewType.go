@@ -150,18 +150,28 @@ func (opt *option) checkViewType() {
 			opt.depth = -1
 		}
 		opt.viewType = vfs.ViewListTree
-	} else if opt.isViewTree {
+		opt.isViewList = false
+	}
+	if opt.isViewTree {
 		if opt.depth == 0 {
 			opt.depth = -1
 		}
 		opt.viewType = vfs.ViewTree
-	} else if opt.isViewTable {
+		opt.isViewList = false
+	}
+	if opt.isViewTable {
 		opt.viewType = vfs.ViewTable
-	} else if opt.isViewLevel {
+		opt.isViewList = false
+	}
+	if opt.isViewLevel {
 		opt.viewType = vfs.ViewLevel
-	} else if opt.isViewClassify {
+		opt.isViewList = false
+	}
+	if opt.isViewClassify {
 		opt.viewType = vfs.ViewClassify
-	} else if opt.isViewList {
+		opt.isViewList = false
+	}
+	if opt.isViewList {
 		opt.viewType = vfs.ViewList
 	}
 	lg.WithField("viewType", opt.viewType).Trace()
@@ -181,11 +191,13 @@ func (opt *option) checkViewType() {
 		"isViewGroup":  opt.isViewGroup,
 		"isViewGroupR": opt.isViewGroupR,
 	}).Trace()
-	if opt.isViewGroup && !opt.isViewGroupR {
+	if opt.isViewGroup {
 		opt.grouping = vfs.Grouped
-	} else if !opt.isViewGroup && opt.isViewGroupR {
+	}
+	if opt.isViewGroupR {
 		opt.grouping = vfs.GroupedR
-	} else {
+	}
+	if !opt.isViewGroup && !opt.isViewGroupR {
 		opt.grouping = vfs.GroupNone
 	}
 
@@ -210,7 +222,6 @@ func (opt *option) checkViewType() {
 		}
 		lg.WithField("> viewType", opt.viewType).Trace()
 	}
-	// lg.Debugf("viewType: %v [%d]; ViewLevelXNoFiles: %v [%d]", opt.viewType, opt.viewType, vfs.ViewLevelXNoFiles, vfs.ViewLevelXNoFiles)
 
 	// Depth
 	lg.WithField("depth", opt.depth).Trace()

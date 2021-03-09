@@ -38,12 +38,12 @@ var (
 		Usage:       "list each file's all fields, except git and md5",
 		Destination: &opt.hasAllNoGitMd5,
 	}
-	fg_hasBasicPSUGN = &cli.BoolFlag{
+	fg_hasBasicPSUGMN = &cli.BoolFlag{
 		Name:        "basic",
 		Aliases:     []string{"6"},
 		Value:       false,
 		Usage:       "list each file's basic fields: inode, permission, user, group, modified, and name (required field)",
-		Destination: &opt.hasBasicPSUGN,
+		Destination: &opt.hasBasicPSUGMN,
 	}
 	fg_hasINode = &cli.BoolFlag{
 		Name:        "inode",
@@ -138,7 +138,7 @@ var (
 		Flags: []cli.Flag{
 			// ViewFields
 			fg_hasAll, fg_hasAllNoGit, fg_hasAllNoMd5, fg_hasAllNoGitMd5,
-			fg_hasBasicPSUGN,
+			fg_hasBasicPSUGMN,
 			fg_hasINode,
 			fg_hasPermission,
 			fg_hasHDLinks, fg_hasSize, fg_hasBlocks,
@@ -188,7 +188,7 @@ var (
 				Aliases: []string{"6"},
 				Usage:   "show basic fields: inode, permission, user, group, modified, and name (required field)",
 				Action: func(c *cli.Context) error {
-					opt.hasBasicPSUGN = true
+					opt.hasBasicPSUGMN = true
 					return appAction(c)
 				},
 			},
@@ -203,7 +203,7 @@ func (opt *option) checkViewFields() {
 	var (
 		viewFields vfs.ViewField
 		isOk       bool = false
-		hasBasic        = opt.hasBasicPSUGN
+		hasBasic        = opt.hasBasicPSUGMN
 	)
 
 	if opt.hasAll {
@@ -303,7 +303,7 @@ func (opt *option) checkViewFields() {
 		// 	opt.viewFields = viewFields
 		// }
 	} else {
-		opt.viewFields = vfs.DefaultViewField
+		opt.viewFields = vfs.ViewFieldPSUGMN
 	}
 END:
 	info(paw.NewValuePair("View fields", opt.viewFields))

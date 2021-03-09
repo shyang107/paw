@@ -102,13 +102,17 @@ func init() {
 			// Depth
 			fg_Depth, fg_isDepthRecurse, fg_isDepthScanAllSub,
 			// ByField (sort)
-			fg_isSortNo, fg_isSortReverse, fg_sortByField, fg_isSortByName, fg_isSortBySize, fg_isSortByMTime,
+			fg_isSortNo, fg_isSortReverse, fg_sortByField, fg_isSortByName,
+			fg_isSortByINode, fg_isSortBySize, fg_isSortByHDLinks, fg_isSortByBlocks,
+			fg_isSortByUser, fg_isSortByGroup,
+			fg_isSortByMTime, fg_isSortByATime, fg_isSortByCTime,
+			fg_isSortByMd5,
 			// SkipConds
 			fg_isNoSkip, fg_reIncludePattern, fg_reExcludePattern,
 			fg_withNoPrefix, fg_withNoSufix, fg_psDelimiter,
 			// ViewFields
 			fg_hasAll, fg_hasAllNoGit, fg_hasAllNoMd5, fg_hasAllNoGitMd5,
-			fg_hasBasicPSUGN,
+			fg_hasBasicPSUGMN,
 			fg_hasINode,
 			fg_hasPermission,
 			fg_hasHDLinks, fg_hasSize, fg_hasBlocks,

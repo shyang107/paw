@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
+	"github.com/spf13/cast"
 )
 
 type ViewField int
@@ -45,6 +47,8 @@ const (
 
 	// ViewFieldDefault useas default fields
 	DefaultViewField = ViewFieldPermissions | ViewFieldSize | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldName
+
+	ViewFieldPSUGMN = DefaultViewField
 
 	DefaultViewFieldAll = ViewFieldINode | ViewFieldPermissions | ViewFieldLinks | ViewFieldSize | ViewFieldBlocks | ViewFieldUser | ViewFieldGroup | ViewFieldModified | ViewFieldAccessed | ViewFieldCreated | ViewFieldGit | ViewFieldMd5 | ViewFieldName
 
@@ -86,22 +90,22 @@ var (
 	}
 
 	ViewFieldWidths = map[ViewField]int{
-		ViewFieldNo:          3,
-		ViewFieldINode:       5,
-		ViewFieldPermissions: 11,
-		ViewFieldLinks:       2,
-		ViewFieldSize:        4,
+		ViewFieldNo:          len(ViewFieldNames[ViewFieldNo]),
+		ViewFieldINode:       len(ViewFieldNames[ViewFieldINode]),
+		ViewFieldPermissions: len(ViewFieldNames[ViewFieldPermissions]),
+		ViewFieldLinks:       len(ViewFieldNames[ViewFieldLinks]),
+		ViewFieldSize:        len(ViewFieldNames[ViewFieldSize]),
 		ViewFieldMajor:       0,
 		ViewFieldMinor:       0,
-		ViewFieldBlocks:      6,
-		ViewFieldUser:        4,
-		ViewFieldGroup:       5,
-		ViewFieldModified:    11,
-		ViewFieldAccessed:    11,
-		ViewFieldCreated:     11,
-		ViewFieldGit:         3,
+		ViewFieldBlocks:      len(ViewFieldNames[ViewFieldBlocks]),
+		ViewFieldUser:        len(ViewFieldNames[ViewFieldUser]),
+		ViewFieldGroup:       len(ViewFieldNames[ViewFieldGroup]),
+		ViewFieldModified:    len(dateS(time.Now())),
+		ViewFieldAccessed:    len(dateS(time.Now())),
+		ViewFieldCreated:     len(dateS(time.Now())),
+		ViewFieldGit:         paw.MaxInt(3, len(ViewFieldNames[ViewFieldGit])),
 		ViewFieldMd5:         32,
-		ViewFieldName:        4,
+		ViewFieldName:        len(ViewFieldNames[ViewFieldName]),
 	}
 
 	ViewFieldColors = map[ViewField]*color.Color{
@@ -184,36 +188,6 @@ func (f ViewField) Width() int {
 	} else {
 		return wd
 	}
-	// switch f {
-	// case ViewFieldINode:
-	// 	return paw.MaxInt(5, wd)
-	// case ViewFieldPermissions:
-	// 	return paw.MaxInt(11, wd)
-	// case ViewFieldLinks:
-	// 	return paw.MaxInt(2, wd)
-	// case ViewFieldSize:
-	// 	return paw.MaxInt(4, wd)
-	// case ViewFieldBlocks:
-	// 	return paw.MaxInt(6, wd)
-	// case ViewFieldUser:
-	// 	return paw.MaxInt(4, wd)
-	// case ViewFieldGroup:
-	// 	return paw.MaxInt(5, wd)
-	// case ViewFieldModified:
-	// 	return paw.MaxInt(11, wd)
-	// case ViewFieldCreated:
-	// 	return paw.MaxInt(11, wd)
-	// case ViewFieldAccessed:
-	// 	return paw.MaxInt(11, wd)
-	// case ViewFieldGit:
-	// 	return paw.MaxInt(2, wd)
-	// case ViewFieldMd5:
-	// 	return paw.MaxInt(32, wd)
-	// case ViewFieldName:
-	// 	return paw.MaxInt(4, wd)
-	// default:
-	// 	return 0
-	// }
 }
 
 func (f ViewField) SetAlign(align paw.Align) {
@@ -238,36 +212,6 @@ func (f ViewField) Color() *color.Color {
 	} else {
 		return cdashp
 	}
-	// switch f {
-	// case ViewFieldINode:
-	// 	return cinp
-	// case ViewFieldPermissions:
-	// 	return cpms
-	// case ViewFieldLinks:
-	// 	return clkp
-	// case ViewFieldSize:
-	// 	return csnp
-	// case ViewFieldBlocks:
-	// 	return cbkp
-	// case ViewFieldUser:
-	// 	return cuup
-	// case ViewFieldGroup:
-	// 	return cgup
-	// case ViewFieldModified:
-	// 	return cdap
-	// case ViewFieldCreated:
-	// 	return cdap
-	// case ViewFieldAccessed:
-	// 	return cdap
-	// case ViewFieldGit:
-	// 	return cgitp
-	// case ViewFieldMd5:
-	// 	return cmd5p
-	// case ViewFieldName:
-	// 	return cnop
-	// default:
-	// 	return cdashp
-	// }
 }
 
 func (f ViewField) SetValue(value interface{}) {
@@ -390,6 +334,92 @@ func (f ViewField) IsOk() (ok bool) {
 	}
 }
 
+// AlignedString return aligned string of value according to ViewField.Align()
+func (v ViewField) AlignedString(value interface{}) string {
+	var (
+		align = v.Align()
+		s     = cast.ToString(value)
+		wd    = paw.StringWidth(s)
+		width = paw.MaxInt(wd, v.Width())
+		sp    = paw.Spaces(width - wd)
+	)
+
+	if v&ViewFieldName == ViewFieldName {
+		return s
+	}
+	switch align {
+	case paw.AlignLeft:
+		return s + sp
+	default:
+		return sp + s
+	}
+}
+
+// AlignedStringC will strip ANSI code of cvalue, then return aligned string as AlignedString
+func (v ViewField) AlignedStringC(cvalue interface{}) string {
+	var (
+		align = v.Align()
+		s     = cast.ToString(cvalue)
+		wd    = paw.StringWidth(paw.StripANSI(s))
+		width = paw.MaxInt(wd, v.Width())
+		sp    = paw.Spaces(width - wd)
+	)
+
+	if v&ViewFieldName == ViewFieldName {
+		return s
+	}
+	switch align {
+	case paw.AlignLeft:
+		return s + sp
+	default:
+		return sp + s
+	}
+}
+
+func (v ViewField) RowString(de DirEntryX) string {
+	sb := new(strings.Builder)
+	for _, field := range v.Fields() {
+		if field&ViewFieldName != 0 {
+			sb.WriteString(field.AlignedString(de.Field(field)))
+			continue
+		}
+		sb.WriteString(field.AlignedString(de.Field(field)) + " ")
+	}
+	return sb.String()
+}
+func (v ViewField) RowStringXName(de DirEntryX) string {
+	sb := new(strings.Builder)
+	for _, field := range v.Fields() {
+		if field&ViewFieldName != 0 {
+			continue
+		}
+		sb.WriteString(field.AlignedString(de.Field(field)) + " ")
+	}
+	return sb.String()
+}
+func (v ViewField) RowStringC(de DirEntryX) string {
+	sb := new(strings.Builder)
+	for _, field := range v.Fields() {
+		if field&ViewFieldName != 0 {
+			sb.WriteString(de.FieldC(field))
+			continue
+		}
+		sb.WriteString(de.FieldC(field) + " ")
+	}
+	return sb.String()
+}
+
+func (v ViewField) RowStringXNameC(de DirEntryX) string {
+	sb := new(strings.Builder)
+	for _, field := range v.Fields() {
+		if field&ViewFieldName != 0 {
+			continue
+		}
+		sb.WriteString(de.FieldC(field) + " ")
+	}
+	return sb.String()
+}
+
 func GetPFHeadS(c *color.Color, fields ...ViewField) string {
 	var sprintf func(string, ...interface{}) string
 	if c != nil {
@@ -404,7 +434,7 @@ func GetPFHeadS(c *color.Color, fields ...ViewField) string {
 			hd += sprintf("%-[1]*[2]s", f.Width(), f.Name())
 			continue
 		}
-		value := aligned(f, f.Name())
+		value := f.AlignedString(f.Name())
 		hd += sprintf("%v", value) + " "
 	}
 	return hd

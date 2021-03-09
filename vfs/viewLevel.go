@@ -56,6 +56,7 @@ func viewLevel(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 		roothead         = GetRootHeadC(cur, wdstty)
 		// head      = getPFHeadS(chdp, fields...)
 		totalsize int64
+		vfields   = cur.opt.ViewFields
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
@@ -132,9 +133,10 @@ func viewLevel(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 			}
 			ViewFieldNo.SetValue(sidx)
 			fmt.Fprintf(w, "%s", pad)
-			for _, field := range fields {
-				fmt.Fprintf(w, "%v ", de.FieldC(field))
-			}
+
+			// print fields of de
+			fmt.Fprintf(w, "%v ", vfields.RowStringC(de))
+
 			fmt.Println()
 			if hasX {
 				FprintXattrs(w, wdpad+wdmeta, de.Xattibutes())
