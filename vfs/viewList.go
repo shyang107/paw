@@ -16,26 +16,17 @@ func (v *VFS) ViewList(w io.Writer) {
 func VFSViewList(w io.Writer, v *VFS) {
 	paw.Logger.WithFields(logrus.Fields{"View type": v.opt.ViewType}).Debug("view...")
 
-	var (
-		fields                            = v.opt.ViewFields.Fields()
-		hasX, isViewNoDirs, isViewNoFiles = v.hasX_NoDir_NoFiles()
-	)
+	hasX, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
+	viewList(w, v.RootDir(), hasX, isViewNoDirs, isViewNoFiles)
 
-	cur := v.RootDir()
-
-	if fields == nil {
-		fields = DefaultViewFieldSlice
-	}
-	fields = checkFieldsHasGit(fields, cur.git.NoGit)
-	modFieldWidths(cur, fields)
-
-	viewList(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
+func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	// paw.Logger.Debug()
 	var (
+		vfields        = cur.opt.ViewFields
+		fields         = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
 		wdstty         = sttyWidth - 2
 		tnd, _, nitems = cur.NItems()
 		nd, nf         int
@@ -43,7 +34,6 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 		roothead       = GetRootHeadC(cur, wdstty)
 		head           = GetPFHeadS(chdp, fields...)
 		totalsize      int64
-		vfields        = cur.opt.ViewFields
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
@@ -55,7 +45,7 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 	}
 	// paw.Logger.Trace("cur.relpaths")
 	for _, rp := range cur.relpaths {
-		if cur.opt.IsNotViewRelPath(rp) {
+		if cur.opt.IsRelPathNotView(rp) {
 			continue
 		}
 		var (
@@ -79,8 +69,7 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 
 		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
-			cdir = cdirp.Sprint("./") + cdir
-			cpath = cdir + cname
+			cpath = cdirp.Sprint("./") + cdir + cname
 			fmt.Fprintf(w, "%v\n", cpath)
 		}
 

@@ -17,36 +17,22 @@ func (v *VFS) ViewLevel(w io.Writer) {
 func VFSViewLevel(w io.Writer, v *VFS) {
 	paw.Logger.WithFields(logrus.Fields{"View type": v.opt.ViewType}).Debug("view...")
 
-	var (
-		cur                               = v.RootDir()
-		vfields                           = v.opt.ViewFields
-		fields                            []ViewField
-		hasX, isViewNoDirs, isViewNoFiles = v.hasX_NoDir_NoFiles()
-		nd, nf, _                         = cur.NItems()
-		wdidx                             = GetMaxWidthOf(nd, nf)
-	)
-
-	paw.Logger.WithFields(logrus.Fields{
-		"nd":     nd,
-		"nf":     nf,
-		"wididx": wdidx,
-	}).Debug()
-
+	tmpfields := v.opt.ViewFields
 	if v.opt.ViewFields&ViewFieldNo == 0 {
 		v.opt.ViewFields = ViewFieldNo | v.opt.ViewFields
 	}
 
-	fields = checkFieldsHasGit(v.opt.ViewFields.Fields(), cur.git.NoGit)
-	modFieldWidths(cur, fields)
-
-	viewLevel(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
+	hasX, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
+	viewLevel(w, v.RootDir(), hasX, isViewNoDirs, isViewNoFiles)
 
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
-	v.opt.ViewFields = vfields
+	v.opt.ViewFields = tmpfields
 }
 
-func viewLevel(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
+func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
+		vfields          = cur.opt.ViewFields
+		fields           = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
 		wdname           = ViewFieldName.Width()
 		wdstty           = sttyWidth - 2
 		tnd, tnf, nitems = cur.NItems()
@@ -54,9 +40,7 @@ func viewLevel(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 		nd, nf           int
 		wdmeta           = 0
 		roothead         = GetRootHeadC(cur, wdstty)
-		// head      = getPFHeadS(chdp, fields...)
-		totalsize int64
-		vfields   = cur.opt.ViewFields
+		totalsize        int64
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
@@ -66,7 +50,7 @@ func viewLevel(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 		wdmeta = GetViewFieldWidthWithoutName(cur.opt.ViewFields)
 	}
 	for _, rp := range cur.relpaths {
-		if cur.opt.IsNotViewRelPath(rp) {
+		if cur.opt.IsRelPathNotView(rp) {
 			continue
 		}
 		var (
@@ -100,8 +84,7 @@ func viewLevel(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 
 		cdir, cname, cpath := GetPathC(rp)
 		if level > 0 {
-			cdir = cdirp.Sprint("./") + cdir
-			cpath = cdir + cname
+			cpath = cdirp.Sprint("./") + cdir + cname
 		}
 		fmt.Fprintf(w, "%sL%d: %v\n", pad, level, cpath)
 

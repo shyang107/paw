@@ -15,43 +15,29 @@ func (v *VFS) ViewListTree(w io.Writer) {
 func VFSViewListTree(w io.Writer, v *VFS) {
 	paw.Logger.WithFields(logrus.Fields{"View type": v.opt.ViewType}).Debug("view...")
 
-	var (
-		fields        = v.opt.ViewFields.Fields()
-		hasList, hasX = v.hasList_hasX()
-	)
-
-	cur := v.RootDir()
-
-	if fields == nil {
-		fields = DefaultViewFieldSlice
-	}
-	if hasList {
-		fields = checkFieldsHasGit(fields, cur.git.NoGit)
-		modFieldWidths(cur, fields)
-	} else {
-		fields = []ViewField{ViewFieldName}
-	}
-
-	viewListTree(w, cur, fields, hasX, hasList)
+	hasList, hasX := v.hasList_hasX()
+	viewListTree(w, v.RootDir(), hasX, hasList)
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 
 }
 
-func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, hasList bool) {
+func viewListTree(w io.Writer, cur *Dir, hasX, hasList bool) {
 	var (
-		wdstty = sttyWidth - 2
-		// wdmeta   = 0
-		roothead = GetRootHeadC(cur, wdstty)
-		head     = GetPFHeadS(chdp, fields...)
 		vfields  = cur.opt.ViewFields
+		fields   []ViewField
+		wdstty   = sttyWidth - 2
+		roothead = GetRootHeadC(cur, wdstty)
 	)
+	if hasList {
+		fields = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
+	} else {
+		fields = []ViewField{ViewFieldName}
+	}
 
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
-	// if hasX {
-	// 	wdmeta = GetViewFieldWidthWithoutName(cur.opt.ViewFields)
-	// }
+	head := GetPFHeadS(chdp, fields...)
 	fmt.Fprintf(w, "%v\n", head)
 
 	fmt.Fprintf(w, "%v ", vfields.RowStringXNameC(cur))

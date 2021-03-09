@@ -99,7 +99,7 @@ func (v ValuePairA) String() string {
 	for _, vp := range v {
 		sb.WriteString(vp.String())
 	}
-	return sb.String()
+	return sb.String() ///
 }
 
 func MesageFieldAndValueC(field string, value interface{}, level logrus.Level, cf, cv *color.Color) string {

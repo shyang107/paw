@@ -6,7 +6,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
 )
@@ -18,28 +17,22 @@ func (v *VFS) ViewTable(w io.Writer) {
 func VFSViewTable(w io.Writer, v *VFS) {
 	paw.Logger.WithFields(logrus.Fields{"View type": v.opt.ViewType}).Debug("view...")
 
-	var (
-		cur                               = v.RootDir()
-		vfields                           = v.opt.ViewFields
-		fields                            []ViewField
-		hasX, isViewNoDirs, isViewNoFiles = v.hasX_NoDir_NoFiles()
-	)
-
-	if vfields&ViewFieldNo == 0 {
-		vfields = ViewFieldNo | vfields
+	tmpfields := v.opt.ViewFields
+	if v.opt.ViewFields&ViewFieldNo == 0 {
+		v.opt.ViewFields = ViewFieldNo | v.opt.ViewFields
 	}
 
-	fields = checkFieldsHasGit(vfields.Fields(), cur.git.NoGit)
-
-	modFieldWidths(cur, fields)
-
-	viewTable(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
+	hasX, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
+	viewTable(w, v.RootDir(), hasX, isViewNoDirs, isViewNoFiles)
 
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
+	v.opt.ViewFields = tmpfields
 }
 
-func viewTable(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
+func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
 	var (
+		vfields        = cur.opt.ViewFields
+		fields         = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
 		wdstty         = sttyWidth - 2
 		tnd, _, nitems = cur.NItems()
 		wdidx          = ViewFieldNo.Width()
@@ -47,26 +40,23 @@ func viewTable(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 		// wdmeta         = 0
 		roothead = GetRootHeadC(cur, wdstty)
 		banner   = strings.Repeat("-", wdstty)
+		tf       = &paw.TableFormat{
+			Fields:            make([]string, 0, len(fields)),
+			LenFields:         make([]int, 0, len(fields)),
+			Aligns:            make([]paw.Align, 0, len(fields)),
+			Padding:           "",
+			IsWrapped:         false,
+			IsColorful:        true,
+			XAttributeSymbol:  paw.XAttrSymbol,
+			XAttributeSymbol2: paw.XAttrSymbol2,
+		}
+		values []interface{}
 	)
 
-	heads := make([]string, 0, len(fields))
-	aligns := make([]paw.Align, 0, len(fields))
-	widths := make([]int, 0, len(fields))
 	for _, fd := range fields {
-		heads = append(heads, fd.Name())
-		widths = append(widths, fd.Width())
-		aligns = append(aligns, fd.Align())
-	}
-
-	tf := &paw.TableFormat{
-		Fields:            heads,
-		LenFields:         widths,
-		Aligns:            aligns,
-		Padding:           "",
-		IsWrapped:         false,
-		IsColorful:        true,
-		XAttributeSymbol:  paw.XAttrSymbol,
-		XAttributeSymbol2: paw.XAttrSymbol2,
+		tf.Fields = append(tf.Fields, fd.Name())
+		tf.LenFields = append(tf.LenFields, fd.Width())
+		tf.Aligns = append(tf.Aligns, fd.Align())
 	}
 
 	tf.Prepare(w)
@@ -81,7 +71,7 @@ func viewTable(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 	tf.PrintSart()
 
 	for i, rp := range cur.RelPaths() {
-		if cur.opt.IsNotViewRelPath(rp) {
+		if cur.opt.IsRelPathNotView(rp) {
 			continue
 		}
 		var (
@@ -109,8 +99,7 @@ func viewTable(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 
 		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
-			cdir = cdirp.Sprint("./") + cdir
-			cpath = cdir + cname
+			cpath = cdirp.Sprint("./") + cdir + cname
 			tf.PrintLineln(cidx + cpath)
 		}
 		if len(cur.errors) > 0 {
@@ -141,7 +130,7 @@ func viewTable(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 				jdx = fmt.Sprintf("F%d", nf)
 			}
 			ViewFieldNo.SetValue(jdx)
-			values := setTableValues(de, tf, fields)
+			values, tf.FieldsColorString, tf.Colors = vfields.GetAllValues(de)
 			tf.PrintRow(values...)
 			if hasX {
 				xattrs := de.Xattibutes()
@@ -174,20 +163,20 @@ func viewTable(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 	return totalsize
 }
 
-func setTableValues(de DirEntryX, tf *paw.TableFormat, fields []ViewField) (values []interface{}) {
-	values = make([]interface{}, 0, len(fields))
-	cvalues := make([]string, 0, len(fields))
-	colors := make([]*color.Color, 0, len(fields))
-	for _, field := range fields {
-		values = append(values, de.Field(field))
-		cvalues = append(cvalues, de.FieldC(field))
-		if field&ViewFieldName != 0 {
-			colors = append(colors, de.LSColor())
-		} else {
-			colors = append(colors, field.Color())
-		}
-	}
-	tf.Colors = colors
-	tf.FieldsColorString = cvalues
-	return values
-}
+// func setTableValues(de DirEntryX, tf *paw.TableFormat, fields []ViewField) (values []interface{}) {
+// 	values = make([]interface{}, 0, len(fields))
+// 	cvalues := make([]string, 0, len(fields))
+// 	colors := make([]*color.Color, 0, len(fields))
+// 	for _, field := range fields {
+// 		values = append(values, de.Field(field))
+// 		cvalues = append(cvalues, de.FieldC(field))
+// 		if field&ViewFieldName != 0 {
+// 			colors = append(colors, de.LSColor())
+// 		} else {
+// 			colors = append(colors, field.Color())
+// 		}
+// 	}
+// 	tf.Colors = colors
+// 	tf.FieldsColorString = cvalues
+// 	return values
+// }

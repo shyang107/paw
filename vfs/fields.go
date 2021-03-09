@@ -295,6 +295,18 @@ func (f ViewField) Slice() (fields []ViewField, names []string, nameWidths []int
 	return fields, names, nameWidths
 }
 
+func (f ViewField) FieldsNoGit(isNoGit bool) (fds []ViewField) {
+	fields := f.Fields()
+	fds = make([]ViewField, 0, len(fields))
+	for _, fd := range fields {
+		if fd&ViewFieldGit != 0 && isNoGit {
+			continue
+		}
+		fds = append(fds, fd)
+	}
+	return fds
+}
+
 func (f ViewField) Fields() (fields []ViewField) {
 	fields, _, _ = f.Slice()
 	return fields
@@ -332,6 +344,41 @@ func (f ViewField) IsOk() (ok bool) {
 	} else {
 		return false
 	}
+}
+
+func (v ViewField) GetAllValues(de DirEntryX) (values []interface{}, cvalues []string, colors []*color.Color) {
+	fields := v.Fields()
+	values = make([]interface{}, 0, len(fields))
+	cvalues = make([]string, 0, len(fields))
+	colors = make([]*color.Color, 0, len(fields))
+	for _, field := range fields {
+		values = append(values, de.Field(field))
+		cvalues = append(cvalues, de.FieldC(field))
+		if field&ViewFieldName != 0 {
+			colors = append(colors, de.LSColor())
+		} else {
+			colors = append(colors, field.Color())
+		}
+	}
+	return values, cvalues, colors
+}
+
+func (v ViewField) GetValues(de DirEntryX) (values []interface{}) {
+	fields := v.Fields()
+	values = make([]interface{}, 0, len(fields))
+	for _, field := range fields {
+		values = append(values, de.Field(field))
+	}
+	return values
+}
+
+func (v ViewField) GetValuesS(de DirEntryX) (values []string) {
+	fields := v.Fields()
+	values = make([]string, 0, len(fields))
+	for _, field := range fields {
+		values = append(values, de.Field(field))
+	}
+	return values
 }
 
 // AlignedString return aligned string of value according to ViewField.Align()
@@ -418,6 +465,66 @@ func (v ViewField) RowStringXNameC(de DirEntryX) string {
 		sb.WriteString(de.FieldC(field) + " ")
 	}
 	return sb.String()
+}
+
+func (v ViewField) GetModifyWidthsNoGitFields(d *Dir, isNoGit bool) []ViewField {
+	fields := v.FieldsNoGit(isNoGit)
+	modFieldWidths(d, fields)
+	return fields
+}
+
+func (v ViewField) ModifyWidths(d *Dir, isNoGit bool) {
+	fields := v.FieldsNoGit(isNoGit)
+	modFieldWidths(d, fields)
+}
+
+func modFieldWidths(d *Dir, fields []ViewField) {
+	childWidths(d, fields)
+	hasFieldNo := false
+	for _, fd := range fields {
+		if !hasFieldNo && fd&ViewFieldNo != 0 {
+			hasFieldNo = true
+			break
+		}
+	}
+	if hasFieldNo {
+		nd, nf, _ := d.NItems()
+		wdidx := GetMaxWidthOf(nd, nf)
+		ViewFieldNo.SetWidth(wdidx + 1)
+	}
+	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
+}
+
+func childWidths(d *Dir, fields []ViewField) {
+	ds, _ := d.ReadDirAll()
+	var (
+		wd, dwd int
+	)
+	for _, de := range ds {
+		for _, fd := range fields {
+			wd = de.WidthOf(fd)
+			dwd = fd.Width()
+			if !de.IsDir() && fd&ViewFieldSize == ViewFieldSize {
+				if de.IsCharDev() || de.IsDev() {
+					fmajor := ViewFieldMajor.Width()
+					fminor := ViewFieldMinor.Width()
+					major, minor := de.DevNumber()
+					wdmajor := len(fmt.Sprint(major))
+					wdminor := len(fmt.Sprint(minor))
+					ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
+					ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
+					wd = ViewFieldMajor.Width() +
+						ViewFieldMinor.Width() + 1
+				}
+			}
+			width := paw.MaxInt(dwd, wd)
+			fd.SetWidth(width)
+		}
+		if de.IsDir() {
+			child := de.(*Dir)
+			childWidths(child, fields)
+		}
+	}
 }
 
 func GetPFHeadS(c *color.Color, fields ...ViewField) string {

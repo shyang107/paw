@@ -405,56 +405,6 @@ func checkFieldsHasGit(fields []ViewField, isNoGit bool) []ViewField {
 	return fds
 }
 
-func modFieldWidths(d *Dir, fields []ViewField) {
-	childWidths(d, fields)
-	hasFieldNo := false
-	for _, fd := range fields {
-		if !hasFieldNo && fd&ViewFieldNo != 0 {
-			hasFieldNo = true
-			break
-		}
-	}
-	if hasFieldNo {
-		nd, nf, _ := d.NItems()
-		wdidx := GetMaxWidthOf(nd, nf)
-		ViewFieldNo.SetWidth(wdidx + 1)
-	}
-	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
-}
-
-func childWidths(d *Dir, fields []ViewField) {
-	ds, _ := d.ReadDirAll()
-	var (
-		wd, dwd int
-	)
-	for _, de := range ds {
-		for _, fd := range fields {
-			wd = de.WidthOf(fd)
-			dwd = fd.Width()
-			if !de.IsDir() && fd&ViewFieldSize == ViewFieldSize {
-				if de.IsCharDev() || de.IsDev() {
-					fmajor := ViewFieldMajor.Width()
-					fminor := ViewFieldMinor.Width()
-					major, minor := de.DevNumber()
-					wdmajor := len(fmt.Sprint(major))
-					wdminor := len(fmt.Sprint(minor))
-					ViewFieldMajor.SetWidth(paw.MaxInt(fmajor, wdmajor))
-					ViewFieldMinor.SetWidth(paw.MaxInt(fminor, wdminor))
-					wd = ViewFieldMajor.Width() +
-						ViewFieldMinor.Width() + 1
-				}
-			}
-			width := paw.MaxInt(dwd, wd)
-			fd.SetWidth(width)
-		}
-		if de.IsDir() {
-			child := de.(*Dir)
-			childWidths(child, fields)
-		}
-	}
-
-}
-
 func dirSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) string {
 	var (
 		ss  = bytefmt.ByteSize(sumsize)

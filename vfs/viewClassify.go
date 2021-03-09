@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/shyang107/paw"
@@ -19,15 +18,11 @@ func VFSViewClassify(w io.Writer, v *VFS) {
 
 	_, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
 
-	cur := v.RootDir()
-
-	fields := []ViewField{ViewFieldName}
-
-	viewClassify(w, cur, 0, fields, isViewNoDirs, isViewNoFiles)
+	viewClassify(w, v.RootDir(), isViewNoDirs, isViewNoFiles)
 
 }
 
-func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, isViewNoDirs, isViewNoFiles bool) {
+func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		wdstty       = sttyWidth - 2
 		_, _, nitems = cur.NItems()
@@ -39,7 +34,7 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, isViewNo
 	fmt.Fprintf(w, "%v\n", roothead)
 
 	for _, rp := range cur.relpaths {
-		if cur.opt.IsNotViewRelPath(rp) {
+		if cur.opt.IsRelPathNotView(rp) {
 			continue
 		}
 		var (
@@ -63,12 +58,10 @@ func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, isViewNo
 			continue
 		}
 
-		cdir, cname := filepath.Split(rp)
-		cname = cdip.Sprint(cname)
-		cdir = cdirp.Sprint(cdir)
+		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
-			cdir = cdirp.Sprint("./") + cdir
-			fmt.Fprintf(w, "%v\n", cdir+cname)
+			cpath = cdirp.Sprint("./") + cdir + cname
+			fmt.Fprintf(w, "%v\n", cpath)
 		}
 
 		if len(cur.errors) > 0 {

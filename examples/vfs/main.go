@@ -156,27 +156,27 @@ func test() {
 		"1_name":           rd.Name(),
 		"3_RelPath":        rd.RelPath(),
 		"4_curlevel":       curlevel,
-		"IsNotScanRelPath": opt.IsNotScanRelPath(rd.RelPath()),
-		"IsNotViewRelPath": opt.IsNotViewRelPath(rd.RelPath()),
+		"IsRelPathNotScan": opt.IsRelPathNotScan(rd.RelPath()),
+		"IsRelPathNotView": opt.IsRelPathNotView(rd.RelPath()),
 	}).Debug()
 	for _, rp := range rd.RelPaths() {
 		curlevel := len(strings.Split(rp, "/"))
-		isscan := cast.ToString(!opt.IsNotScanRelPath(rp))
-		if !opt.IsNotScanRelPath(rp) {
-			isscan = paw.Cwarn.Sprint(!opt.IsNotScanRelPath(rp))
+		isscan := cast.ToString(!opt.IsRelPathNotScan(rp))
+		if !opt.IsRelPathNotScan(rp) {
+			isscan = paw.Cwarn.Sprint(!opt.IsRelPathNotScan(rp))
 		} else {
-			isscan = paw.CEven.Sprint(!opt.IsNotScanRelPath(rp))
+			isscan = paw.CEven.Sprint(!opt.IsRelPathNotScan(rp))
 		}
-		isview := cast.ToString(!opt.IsNotViewRelPath(rp))
-		if !opt.IsNotViewRelPath(rp) {
-			isview = paw.Cwarn.Sprint(!opt.IsNotViewRelPath(rp))
+		isview := cast.ToString(!opt.IsRelPathNotView(rp))
+		if !opt.IsRelPathNotView(rp) {
+			isview = paw.Cwarn.Sprint(!opt.IsRelPathNotView(rp))
 		} else {
-			isview = paw.CEven.Sprint(!opt.IsNotViewRelPath(rp))
+			isview = paw.CEven.Sprint(!opt.IsRelPathNotView(rp))
 		}
 		fv := paw.MesageFieldAndValue("scan", isscan, logrus.InfoLevel)
 		fv += paw.MesageFieldAndValue("view", isview, logrus.InfoLevel)
 		infof("%v; level= %d; %q", fv, curlevel, rp)
-		if opt.IsNotViewRelPath(rp) {
+		if opt.IsRelPathNotView(rp) {
 			fmt.Println()
 			continue
 		}
@@ -191,8 +191,8 @@ func test() {
 		paw.Logger.WithFields(logrus.Fields{
 			"2_RelPath":        rp,
 			"3_curlevel":       curlevel,
-			"IsNotScanRelPath": opt.IsNotScanRelPath(rp),
-			"IsNotViewRelPath": opt.IsNotViewRelPath(rp),
+			"IsRelPathNotScan": opt.IsRelPathNotScan(rp),
+			"IsRelPathNotView": opt.IsRelPathNotView(rp),
 		}).Debug()
 		fmt.Println()
 	}
