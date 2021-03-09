@@ -135,24 +135,23 @@ func main() {
 }
 
 func info(args ...interface{}) {
-	// paw.Info.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
 	if lg.IsLevelEnabled(logrus.InfoLevel) {
-		fmt.Fprintf(os.Stderr, "%s %v\n", cInfoPrefix, fmt.Sprint(args...))
+		paw.Info.Print(args...)
 	}
 }
+
 func infof(f string, args ...interface{}) {
-	// paw.Info.Printf(programName + ": " + fmt.Sprintf(f, args...) + "\n")
 	if lg.IsLevelEnabled(logrus.InfoLevel) {
-		fmt.Fprintf(os.Stderr, "%s %v\n", cInfoPrefix, fmt.Sprintf(f, args...))
+		paw.Info.Printf(f, args...)
 	}
 }
 
 func stderr(args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "%s %v\n", cErrorPrefix, fmt.Sprint(args...))
+	paw.Error.Print(args...)
 }
 
 func stderrf(f string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "%s %v\n", cErrorPrefix, fmt.Sprintf(f, args...))
+	paw.Error.Printf(f, args...)
 }
 
 func fatal(args ...interface{}) {
@@ -166,11 +165,11 @@ func fatalf(f string, args ...interface{}) {
 
 func warning(args ...interface{}) {
 	if lg.IsLevelEnabled(logrus.WarnLevel) {
-		fmt.Fprintf(os.Stderr, "%s %v\n", cWarnPrefix, fmt.Sprint(args...))
+		paw.Warning.Print(args...)
 	}
 }
 func warningf(f string, args ...interface{}) {
 	if lg.IsLevelEnabled(logrus.WarnLevel) {
-		fmt.Fprintf(os.Stderr, "%s %v\n", cWarnPrefix, fmt.Sprintf(f, args...))
+		paw.Warning.Printf(f, args...)
 	}
 }

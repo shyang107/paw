@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
@@ -29,7 +28,6 @@ func VFSViewList(w io.Writer, v *VFS) {
 	}
 	fields = checkFieldsHasGit(fields, cur.git.NoGit)
 	modFieldWidths(cur, fields)
-	// ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
 
 	viewList(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
@@ -38,14 +36,13 @@ func VFSViewList(w io.Writer, v *VFS) {
 func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
 	// paw.Logger.Debug()
 	var (
-		wdstty    = sttyWidth - 2
-		tnd, tnf  = cur.NItems()
-		nitems    = tnd + tnf
-		nd, nf    int
-		wdmeta    = 0
-		roothead  = GetRootHeadC(cur, wdstty)
-		head      = GetPFHeadS(chdp, fields...)
-		totalsize int64
+		wdstty         = sttyWidth - 2
+		tnd, _, nitems = cur.NItems()
+		nd, nf         int
+		wdmeta         = 0
+		roothead       = GetRootHeadC(cur, wdstty)
+		head           = GetPFHeadS(chdp, fields...)
+		totalsize      int64
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
@@ -53,12 +50,7 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 
 	// paw.Logger.Trace("hasX")
 	if hasX {
-		for _, fd := range fields {
-			if fd&ViewFieldName == ViewFieldName {
-				continue
-			}
-			wdmeta += fd.Width() + 1
-		}
+		wdmeta = GetViewFieldWidthWithoutName(cur.opt.ViewFields)
 	}
 	// paw.Logger.Trace("cur.relpaths")
 	for _, rp := range cur.relpaths {
@@ -84,12 +76,11 @@ func viewList(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isV
 			continue
 		}
 
-		cdir, cname := filepath.Split(rp)
-		cname = cdip.Sprint(cname)
-		cdir = cdirp.Sprint(cdir)
+		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
 			cdir = cdirp.Sprint("./") + cdir
-			fmt.Fprintf(w, "%v\n", cdir+cname)
+			cpath = cdir + cname
+			fmt.Fprintf(w, "%v\n", cpath)
 		}
 
 		if len(cur.errors) > 0 {

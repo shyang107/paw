@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/shyang107/paw"
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -20,8 +19,7 @@ func (opt *option) checkArgs(c *cli.Context) {
 			paw.Error.Println(err)
 		}
 		opt.rootPath = path
-		// lg.WithField("rootPath", opt.rootPath).Info()
-		info(paw.MesageFieldAndValueC("Root", opt.rootPath, logrus.InfoLevel, paw.Cnop, nil))
+		info(paw.NewValuePair("Root", opt.rootPath))
 	case 1:
 		lg.WithField("arg", c.Args().Get(0)).Trace("no argument" + paw.Caller(1))
 		arg := c.Args().Get(0)
@@ -36,15 +34,16 @@ func (opt *option) checkArgs(c *cli.Context) {
 		}
 		if fi.IsDir() {
 			opt.rootPath = path
-			// lg.WithField("rootPath", opt.rootPath).Info()
-			info(paw.MesageFieldAndValueC("Root", opt.rootPath, logrus.InfoLevel, paw.Cnop, nil))
+			info(paw.NewValuePair("Root", opt.rootPath))
+			// info(paw.MesageFieldAndValueC("Root", opt.rootPath, logrus.InfoLevel, paw.Cnop, nil))
 		} else {
 			if opt.paths == nil {
 				opt.paths = make([]string, 0)
 			}
 			opt.paths = append(opt.paths, path)
 			// lg.WithField("paths", opt.paths).Info()
-			info(paw.MesageFieldAndValueC("Paths", opt.paths, logrus.InfoLevel, paw.Cnop, nil))
+			info(paw.NewValuePair("Paths", opt.paths))
+			// info(paw.MesageFieldAndValueC("Paths", opt.paths, logrus.InfoLevel, paw.Cnop, nil))
 		}
 	default: // > 1
 		lg.WithField("arg", c.Args()).Trace("multi-arguments" + paw.Caller(1))

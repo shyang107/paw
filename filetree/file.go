@@ -12,6 +12,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
+	"github.com/spf13/cast"
 )
 
 // filetree is tree structure of files
@@ -869,15 +870,15 @@ func (f *File) WidthOf(field PDFieldFlag) int {
 	var w int
 	switch field {
 	case PFieldINode:
-		w = len(fmt.Sprint(f.INode()))
+		w = len(cast.ToString(f.INode()))
 	case PFieldPermissions:
 		w = len(f.Permission())
 	case PFieldLinks:
-		w = len(fmt.Sprint(f.NLinks()))
+		w = len(cast.ToString(f.NLinks()))
 	case PFieldSize:
 		w, _, _ = f.widthOfSize()
 	case PFieldBlocks:
-		w = len(fmt.Sprint(f.Blocks()))
+		w = len(cast.ToString(f.Blocks()))
 	case PFieldUser:
 		w = paw.StringWidth(f.User())
 	case PFieldGroup:

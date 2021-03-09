@@ -158,13 +158,13 @@ func test() {
 	}).Debug()
 	for _, rp := range rd.RelPaths() {
 		curlevel := len(strings.Split(rp, "/"))
-		isscan := fmt.Sprint(!opt.IsNotScanRelPath(rp))
+		isscan := cast.ToString(!opt.IsNotScanRelPath(rp))
 		if !opt.IsNotScanRelPath(rp) {
 			isscan = paw.Cwarn.Sprint(!opt.IsNotScanRelPath(rp))
 		} else {
 			isscan = paw.CEven.Sprint(!opt.IsNotScanRelPath(rp))
 		}
-		isview := fmt.Sprint(!opt.IsNotViewRelPath(rp))
+		isview := cast.ToString(!opt.IsNotViewRelPath(rp))
 		if !opt.IsNotViewRelPath(rp) {
 			isview = paw.Cwarn.Sprint(!opt.IsNotViewRelPath(rp))
 		} else {

@@ -39,8 +39,8 @@ func VFSViewListTree(w io.Writer, v *VFS) {
 
 func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, hasList bool) {
 	var (
-		wdstty   = sttyWidth - 2
-		wdmeta   = 0
+		wdstty = sttyWidth - 2
+		// wdmeta   = 0
 		roothead = GetRootHeadC(cur, wdstty)
 		head     = GetPFHeadS(chdp, fields...)
 	)
@@ -48,14 +48,9 @@ func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, hasList bool)
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
-	if hasX {
-		for _, fd := range fields {
-			if fd&ViewFieldName == ViewFieldName {
-				continue
-			}
-			wdmeta += fd.Width() + 1
-		}
-	}
+	// if hasX {
+	// 	wdmeta = GetViewFieldWidthWithoutName(cur.opt.ViewFields)
+	// }
 	fmt.Fprintf(w, "%v\n", head)
 
 	cdinf, _ := cur.DirInfoC()
@@ -88,7 +83,7 @@ func viewListTree(w io.Writer, cur *Dir, fields []ViewField, hasX, hasList bool)
 
 	// print end message
 	FprintBanner(w, "", "=", wdstty)
-	tnd, tnf := cur.NItems()
+	tnd, tnf, _ := cur.NItems()
 	FprintTotalSummary(w, "", tnd, tnf, cur.TotalSize(), wdstty)
 }
 
@@ -103,13 +98,7 @@ func vltFile(w io.Writer, level int, levelsEnded []int, edge EdgeType, de DirEnt
 	)
 	// 1. print all fields except Name
 	if hasList {
-		for _, field := range fields {
-			if field&ViewFieldName != 0 {
-				continue
-			}
-			wdmeta += field.Width() + 1
-			meta += fmt.Sprintf("%v ", de.FieldC(field))
-		}
+		meta, wdmeta = GetViewFieldWithoutNameA(fields, de)
 		padMeta = paw.Spaces(wdmeta)
 	}
 	fmt.Fprintf(w, "%s ", meta)

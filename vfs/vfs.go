@@ -207,7 +207,7 @@ func buildFS(cur *Dir, root string, level int) {
 
 func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 	ds, _ := cur.ReadDirAll()
-	nd, _ := cur.NItems()
+	nd, _, _ := cur.NItems()
 	relpaths = make([]string, 0, nd) //
 	for _, d := range ds {
 		if d.IsDir() {
@@ -234,25 +234,4 @@ func (v *VFS) DumpFS(w io.Writer) {
 // getDir 通過一個路徑獲取其 dir 類型實例
 func (v *VFS) getDir(path string) (*Dir, error) {
 	return v.Dir.getDir(path)
-	// if path == "." {
-	// 	return &v.Dir, nil
-	// }
-	// parts := strings.Split(path, "/")
-
-	// cur := &v.Dir
-	// for _, part := range parts {
-	// 	child := cur.children[part]
-	// 	if child == nil {
-	// 		return nil, fmt.Errorf("%s is not exists", path)
-	// 	}
-
-	// 	childDir, ok := child.(*Dir)
-	// 	if !ok {
-	// 		return nil, fmt.Errorf("%s is not directory", path)
-	// 	}
-
-	// 	cur = childDir
-	// }
-
-	// return cur, nil
 }

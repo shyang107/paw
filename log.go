@@ -90,7 +90,7 @@ func GologInit(
 	}
 
 	Trace = log.New(infoHandle,
-		color.New(color.FgCyan).Add(color.Bold).Sprint("[TRAC] "),
+		color.New(color.FgCyan).Sprint("[TRAC] "),
 		log.Ldate|log.Ltime|log.Lshortfile)
 
 	Debug = log.New(infoHandle,
@@ -98,7 +98,7 @@ func GologInit(
 		log.Ldate|log.Ltime|log.Lshortfile)
 
 	Info = log.New(infoHandle,
-		color.New(color.FgYellow).Add(color.Bold).Sprint("[INFO] "),
+		color.New(color.FgYellow).Sprint("[INFO] "),
 		log.Ldate|log.Ltime)
 
 	Warning = log.New(warnHandle,

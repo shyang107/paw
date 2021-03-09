@@ -29,12 +29,11 @@ func VFSViewClassify(w io.Writer, v *VFS) {
 
 func viewClassify(w io.Writer, cur *Dir, wdidx int, fields []ViewField, isViewNoDirs, isViewNoFiles bool) {
 	var (
-		wdstty    = sttyWidth - 2
-		tnd, tnf  = cur.NItems()
-		nitems    = tnd + tnf
-		nd, nf    int
-		roothead  = GetRootHeadC(cur, wdstty)
-		totalsize int64
+		wdstty       = sttyWidth - 2
+		_, _, nitems = cur.NItems()
+		nd, nf       int
+		roothead     = GetRootHeadC(cur, wdstty)
+		totalsize    int64
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)

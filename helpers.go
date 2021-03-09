@@ -14,7 +14,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
-	// log "github.com/sirupsen/logrus"
 )
 
 func Caller(skip int) string {
@@ -55,6 +54,54 @@ func GetDate() string {
 
 }
 
+type ValuePair struct {
+	Field      string
+	Value      interface{}
+	FieldColor *color.Color
+	ValueColor *color.Color
+}
+
+func NewValuePair(field string, value interface{}) *ValuePair {
+	return &ValuePair{
+		Field:      field,
+		Value:      value,
+		FieldColor: Cnop,
+		ValueColor: Cvalue,
+	}
+}
+
+func (v ValuePair) String() string {
+	return MesageFieldAndValueC(
+		v.Field,
+		v.Value,
+		Logger.GetLevel(),
+		v.FieldColor,
+		v.ValueColor,
+	)
+}
+
+type ValuePairA []*ValuePair
+
+func NewValuePairA(cap int) ValuePairA {
+	if cap < 0 {
+		cap = 0
+	}
+	return make(ValuePairA, 0, cap)
+}
+
+func (v *ValuePairA) Add(field string, value interface{}) *ValuePairA {
+	(*v) = append((*v), NewValuePair(field, value))
+	return v
+}
+
+func (v ValuePairA) String() string {
+	sb := new(strings.Builder)
+	for _, vp := range v {
+		sb.WriteString(vp.String())
+	}
+	return sb.String()
+}
+
 func MesageFieldAndValueC(field string, value interface{}, level logrus.Level, cf, cv *color.Color) string {
 	if cf == nil {
 		cf = LogLevelColor(level)
@@ -70,10 +117,7 @@ func MesageFieldAndValueC(field string, value interface{}, level logrus.Level, c
 }
 
 func MesageFieldAndValue(field string, value interface{}, level logrus.Level) string {
-	msg := "[" + fmt.Sprintf("%s: ", field)
-	msg += fmt.Sprintf("%v", value)
-	msg += "]"
-	return msg
+	return "[" + field + ": " + cast.ToString(value) + "]"
 }
 
 func indirect(a interface{}) interface{} {

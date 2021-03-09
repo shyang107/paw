@@ -121,8 +121,9 @@ func (opt *option) checkByField() {
 	}
 
 END:
+	info(paw.NewValuePair("Sort", opt.byField))
 	// lg.WithFields(logrus.Fields{
 	// 	"byField": opt.byField,
 	// }).Info()
-	info(paw.MesageFieldAndValueC("Sort", opt.byField, logrus.InfoLevel, paw.Cnop, nil))
+	// info(paw.MesageFieldAndValueC("Sort", opt.byField, logrus.InfoLevel, paw.Cnop, nil))
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/shyang107/paw"
@@ -23,9 +22,8 @@ func VFSViewLevel(w io.Writer, v *VFS) {
 		vfields                           = v.opt.ViewFields
 		fields                            []ViewField
 		hasX, isViewNoDirs, isViewNoFiles = v.hasX_NoDir_NoFiles()
-		nd, nf                            = cur.NItems()
-		snd, snf                          = fmt.Sprint(nd), fmt.Sprint(nf)
-		wdidx                             = paw.MaxInt(len(snd), len(snf))
+		nd, nf, _                         = cur.NItems()
+		wdidx                             = GetMaxWidthOf(nd, nf)
 	)
 
 	paw.Logger.WithFields(logrus.Fields{
@@ -34,29 +32,28 @@ func VFSViewLevel(w io.Writer, v *VFS) {
 		"wididx": wdidx,
 	}).Debug()
 
-	if vfields&ViewFieldNo == 0 {
-		vfields = ViewFieldNo | vfields
+	if v.opt.ViewFields&ViewFieldNo == 0 {
+		v.opt.ViewFields = ViewFieldNo | v.opt.ViewFields
 	}
 
-	fields = checkFieldsHasGit(vfields.Fields(), cur.git.NoGit)
+	fields = checkFieldsHasGit(v.opt.ViewFields.Fields(), cur.git.NoGit)
 	modFieldWidths(cur, fields)
 
 	viewLevel(w, cur, fields, hasX, isViewNoDirs, isViewNoFiles)
 
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
+	v.opt.ViewFields = vfields
 }
 
 func viewLevel(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
-		wdname     = ViewFieldName.Width()
-		wdstty     = sttyWidth - 2
-		tnd, tnf   = cur.NItems()
-		stnd, stnf = fmt.Sprint(tnd), fmt.Sprint(tnf)
-		wdidx      = paw.MaxInt(len(stnd), len(stnf))
-		nitems     = tnd + tnf
-		nd, nf     int
-		wdmeta     = 0
-		roothead   = GetRootHeadC(cur, wdstty)
+		wdname           = ViewFieldName.Width()
+		wdstty           = sttyWidth - 2
+		tnd, tnf, nitems = cur.NItems()
+		wdidx            = GetMaxWidthOf(tnd, tnf)
+		nd, nf           int
+		wdmeta           = 0
+		roothead         = GetRootHeadC(cur, wdstty)
 		// head      = getPFHeadS(chdp, fields...)
 		totalsize int64
 	)
@@ -65,12 +62,7 @@ func viewLevel(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 	FprintBanner(w, "", "=", wdstty)
 
 	if hasX {
-		for _, fd := range fields {
-			if fd&ViewFieldName == ViewFieldName {
-				continue
-			}
-			wdmeta += fd.Width() + 1
-		}
+		wdmeta = GetViewFieldWidthWithoutName(cur.opt.ViewFields)
 	}
 	for _, rp := range cur.relpaths {
 		if cur.opt.IsNotViewRelPath(rp) {
@@ -105,14 +97,13 @@ func viewLevel(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 			continue
 		}
 
-		cdir, cname := filepath.Split(rp)
-		cname = cdip.Sprint(cname)
-		cdir = cdirp.Sprint(cdir)
+		cdir, cname, cpath := GetPathC(rp)
 		if level > 0 {
 			cdir = cdirp.Sprint("./") + cdir
+			cpath = cdir + cname
 		}
+		fmt.Fprintf(w, "%sL%d: %v\n", pad, level, cpath)
 
-		fmt.Fprintf(w, "%sL%d: %v\n", pad, level, cdir+cname)
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, pad)
 		}

@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/vfs"
-	"github.com/sirupsen/logrus"
 )
 
 func (opt *option) setVFSOption() {
@@ -17,14 +16,14 @@ func (opt *option) setVFSOption() {
 		ViewFields:   opt.viewFields,
 		ViewType:     opt.viewType,
 	}
-
-	lg.WithFields(logrus.Fields{
-		"Depth":        opt.vopt.Depth,
-		"IsScanAllSub": opt.vopt.IsScanAllSub,
-		"Grouping":     opt.vopt.Grouping,
-		"ByField":      opt.vopt.ByField,
-		"Skips":        opt.vopt.Skips,
-		"ViewFields":   opt.vopt.ViewFields,
-		"ViewType":     opt.vopt.ViewType,
-	}).Debug()
+	info("settings: {",
+		paw.ValuePairA([]*paw.ValuePair{
+			paw.NewValuePair("Depth", opt.vopt.Depth),
+			paw.NewValuePair("IsScanAllSub", opt.vopt.IsScanAllSub),
+			paw.NewValuePair("Grouping", opt.vopt.Grouping),
+			paw.NewValuePair("ByField", opt.vopt.ByField),
+			paw.NewValuePair("Skips", opt.vopt.Skips),
+			paw.NewValuePair("ViewFields", opt.vopt.ViewFields),
+			paw.NewValuePair("ViewType", opt.vopt.ViewType),
+		}), "}")
 }

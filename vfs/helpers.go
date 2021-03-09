@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/bytefmt"
+	"github.com/spf13/cast"
 )
 
 type EdgeType string
@@ -92,6 +93,14 @@ var (
 )
 
 // ===
+
+// GetPathC returns  cdip.Sprint(cname)+cdirp.Sprint(cdir)
+func GetPathC(path string) (cdir, cname, cpath string) {
+	cdir, cname = filepath.Split(path)
+	cname = cdip.Sprint(cname)
+	cdir = cdirp.Sprint(cdir)
+	return cdir, cname, cpath
+}
 
 func nameC(de DirEntryX) string {
 	return de.LSColor().Sprint(de.Name())
@@ -406,9 +415,8 @@ func modFieldWidths(d *Dir, fields []ViewField) {
 		}
 	}
 	if hasFieldNo {
-		nd, nf := d.NItems()
-		snd, snf := fmt.Sprint(nd), fmt.Sprint(nf)
-		wdidx := paw.MaxInt(len(snd), len(snf))
+		nd, nf, _ := d.NItems()
+		wdidx := GetMaxWidthOf(nd, nf)
 		ViewFieldNo.SetWidth(wdidx + 1)
 	}
 	ViewFieldName.SetWidth(GetViewFieldNameWidthOf(fields))
@@ -550,9 +558,30 @@ func FprintXattrs(w io.Writer, wdpad int, xattrs []string) {
 	}
 }
 
-func GetViewFieldNameWidth(vfields ViewField) int {
+func GetViewFieldWithoutName(vfields ViewField, de DirEntryX) (meta string, wdmeta int) {
+	meta, wdmeta = GetViewFieldWithoutNameA(vfields.Fields(), de)
+	return meta, wdmeta
+}
+
+func GetViewFieldWithoutNameA(fields []ViewField, de DirEntryX) (meta string, wdmeta int) {
+	for _, field := range fields {
+		if field&ViewFieldName != 0 {
+			continue
+		}
+		wdmeta += field.Width() + 1
+		meta += fmt.Sprintf("%v ", de.FieldC(field))
+	}
+	return meta, wdmeta
+}
+
+func GetViewFieldWidthWithoutName(vfields ViewField) int {
 	wds := vfields.Widths()
-	wdmeta := paw.SumInts(wds...) + len(wds) - 1 - ViewFieldName.Width()
+	wdmeta := paw.SumInts(wds[:len(wds)-1]...) + len(wds) - 1
+	return wdmeta
+}
+
+func GetViewFieldNameWidth(vfields ViewField) int {
+	wdmeta := GetViewFieldWidthWithoutName(vfields)
 	return sttyWidth - 2 - wdmeta
 }
 
@@ -565,4 +594,10 @@ func GetViewFieldNameWidthOf(fields []ViewField) int {
 		wdmeta += f.Width() + 1
 	}
 	return sttyWidth - 2 - wdmeta
+}
+
+func GetMaxWidthOf(a interface{}, b interface{}) int {
+	wda := len(cast.ToString(a))
+	wdb := len(cast.ToString(b))
+	return paw.MaxInt(wda, wdb)
 }

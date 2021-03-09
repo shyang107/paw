@@ -639,13 +639,13 @@ func (d *Dir) FprintErrors(w io.Writer, pad string) {
 	}
 }
 
-func (d *Dir) NItems() (ndirs, nfiles int) {
+func (d *Dir) NItems() (ndirs, nfiles, nitems int) {
 	level := 0
 	if d.RelPath() != "." {
 		level = len(strings.Split(d.RelPath(), "/"))
 	}
 	ndirs, nfiles = _NItems(d, level)
-	return ndirs, nfiles
+	return ndirs, nfiles, ndirs + nfiles
 }
 
 func _NItems(d *Dir, levle int) (ndirs, nfiles int) {
@@ -670,7 +670,7 @@ func _NItems(d *Dir, levle int) (ndirs, nfiles int) {
 
 // DirInfoC will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.
 func (d *Dir) DirInfoC() (cdinf string, wdinf int) {
-	nd, nf := d.NItems()
+	nd, nf, _ := d.NItems()
 	cnd := csnp.Sprint(nd)
 	cnf := csnp.Sprint(nf)
 	di := " dirs"

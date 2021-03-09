@@ -46,14 +46,6 @@ func (v VFSOption) String() string {
 	return s
 }
 
-// func (s *VFSOption) IsNotScan(curlevel int) bool {
-// 	return s.ScanDepth.IsNotScan(curlevel)
-// }
-
-// func (s *VFSOption) IsNotScanDir(cur *Dir) bool {
-// 	return s.ScanDepth.IsNotScanDir(cur)
-// }
-
 func (s *VFSOption) IsNotScanRelPath(relpath string) bool {
 	if relpath == "." ||
 		s.Depth <= 0 ||
@@ -153,11 +145,6 @@ func (s *ScanDepth) _IsNotScan(curlevel int) bool {
 	return isNoScan
 }
 
-// func (s *ScanDepth) IsNotScanDir(cur *Dir) bool {
-// 	curlevel := len(strings.Split(cur.RelPath(), "/"))
-// 	return s.IsNotScan(curlevel)
-// }
-
 func (s *ScanDepth) IsNotScanRelPath(relpath string) bool {
 	if relpath == "." {
 		return false
@@ -172,11 +159,6 @@ func (s *ScanDepth) _IsNotView(curlevel int) bool {
 	}
 	return curlevel > s.Depth
 }
-
-// func (s *ScanDepth) IsNotViewDir(cur *Dir) bool {
-// 	curlevel := len(strings.Split(cur.RelPath(), "/"))
-// 	return s.IsNotView(curlevel)
-// }
 
 func (s *ScanDepth) IsNotViewRelPath(relpath string) bool {
 	if relpath == "." {

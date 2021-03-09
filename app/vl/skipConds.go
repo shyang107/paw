@@ -181,7 +181,7 @@ func (opt *option) checkSkips() {
 			"delimiter": opt.psDelimiter,
 		}).Trace()
 	}
-
+	info(paw.NewValuePair("Skiper", opt.skips))
 	// paw.Logger.WithField("skips", opt.skips).Info()
-	info(paw.MesageFieldAndValueC("Skiper", opt.skips, logrus.InfoLevel, paw.Cnop, nil))
+	// info(paw.MesageFieldAndValueC("Skiper", opt.skips, logrus.InfoLevel, paw.Cnop, nil))
 }

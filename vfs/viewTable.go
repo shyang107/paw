@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"io"
-	"path/filepath"
 	"strings"
 
 	"github.com/fatih/color"
@@ -41,12 +40,11 @@ func VFSViewTable(w io.Writer, v *VFS) {
 
 func viewTable(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
 	var (
-		wdstty   = sttyWidth - 2
-		tnd, tnf = cur.NItems()
-		wdidx    = ViewFieldNo.Width()
-		nitems   = tnd + tnf
-		nd, nf   int
-		wdmeta   = 0
+		wdstty         = sttyWidth - 2
+		tnd, _, nitems = cur.NItems()
+		wdidx          = ViewFieldNo.Width()
+		nd, nf         int
+		// wdmeta         = 0
 		roothead = GetRootHeadC(cur, wdstty)
 		banner   = strings.Repeat("-", wdstty)
 	)
@@ -82,14 +80,6 @@ func viewTable(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 
 	tf.PrintSart()
 
-	if hasX {
-		for _, fd := range fields {
-			if fd&ViewFieldName == ViewFieldName {
-				continue
-			}
-			wdmeta += fd.Width() + 1
-		}
-	}
 	for i, rp := range cur.RelPaths() {
 		if cur.opt.IsNotViewRelPath(rp) {
 			continue
@@ -117,12 +107,11 @@ func viewTable(w io.Writer, cur *Dir, fields []ViewField, hasX, isViewNoDirs, is
 			continue
 		}
 
-		cdir, cname := filepath.Split(rp)
-		cdir = cdirp.Sprint(cdir)
-		cname = cdip.Sprint(cname)
+		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
 			cdir = cdirp.Sprint("./") + cdir
-			tf.PrintLineln(cidx + cdir + cname)
+			cpath = cdir + cname
+			tf.PrintLineln(cidx + cpath)
 		}
 		if len(cur.errors) > 0 {
 			errmsg := cur.Errors("")

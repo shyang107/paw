@@ -222,12 +222,9 @@ func (opt *option) checkViewType() {
 
 	lg.WithField("isDepthRecurse", opt.isDepthScanAllSub).Trace()
 
-	// lg.WithFields(logrus.Fields{
-	// 	"viewType": opt.viewType,
-	// 	"grouping": opt.grouping,
-	// 	"depth":    opt.depth,
-	// }).Info()
-	info(paw.MesageFieldAndValueC("View type:", opt.viewType, logrus.InfoLevel, paw.Cnop, nil))
-	info(paw.MesageFieldAndValueC("Groupe", opt.grouping, logrus.InfoLevel, paw.Cnop, nil))
-	info(paw.MesageFieldAndValueC("Searching depth", opt.depth, logrus.InfoLevel, paw.Cnop, nil))
+	info(paw.ValuePairA([]*paw.ValuePair{
+		paw.NewValuePair("View type", opt.viewType),
+		paw.NewValuePair("Groupe", opt.grouping),
+		paw.NewValuePair("Searching depth", opt.depth),
+	}))
 }
