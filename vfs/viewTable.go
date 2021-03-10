@@ -135,11 +135,12 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 			if hasX {
 				xattrs := de.Xattibutes()
 				if len(xattrs) > 0 {
-					cxvalues := make([]string, len(fields))
-					values := make([]interface{}, len(fields))
+					nfields := len(fields)
+					cxvalues := make([]string, nfields)
+					values := make([]interface{}, nfields)
 					for _, x := range xattrs {
-						values[len(fields)-1] = paw.XAttrSymbol + x
-						cxvalues[len(fields)-1] =
+						values[nfields-1] = paw.XAttrSymbol + x
+						cxvalues[nfields-1] =
 							cxbp.Sprint(paw.XAttrSymbol) +
 								cxap.Sprint(x)
 						tf.FieldsColorString = cxvalues

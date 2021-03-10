@@ -36,9 +36,9 @@ type option struct {
 	isViewNoFiles  bool
 	isViewNoDirs   bool
 	// Depth
-	depth             int
-	isDepthRecurse    bool
-	isDepthScanAllSub bool
+	depth          int
+	IsFindRecurse  bool
+	isForceRecurse bool
 	// ByField (sort)
 	byField         vfs.SortKey
 	isSortNo        bool

@@ -8,18 +8,18 @@ import (
 func (opt *option) setVFSOption() {
 	lg.Debug(paw.Caller(1))
 	opt.vopt = &vfs.VFSOption{
-		Depth:        opt.depth,
-		IsScanAllSub: opt.isDepthScanAllSub,
-		Grouping:     opt.grouping,
-		ByField:      opt.byField,
-		Skips:        opt.skips,
-		ViewFields:   opt.viewFields,
-		ViewType:     opt.viewType,
+		Depth:          opt.depth,
+		IsForceRecurse: opt.isForceRecurse,
+		Grouping:       opt.grouping,
+		ByField:        opt.byField,
+		Skips:          opt.skips,
+		ViewFields:     opt.viewFields,
+		ViewType:       opt.viewType,
 	}
 	info("settings: {",
 		paw.ValuePairA([]*paw.ValuePair{
 			paw.NewValuePair("Depth", opt.vopt.Depth),
-			paw.NewValuePair("IsScanAllSub", opt.vopt.IsScanAllSub),
+			paw.NewValuePair("IsForceRecurse", opt.vopt.IsForceRecurse),
 			paw.NewValuePair("Grouping", opt.vopt.Grouping),
 			paw.NewValuePair("ByField", opt.vopt.ByField),
 			paw.NewValuePair("Skips", opt.vopt.Skips),

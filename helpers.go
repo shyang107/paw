@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 )
 
@@ -52,72 +51,6 @@ func GetDate() string {
 	//		carbon.FormattedDateFormat = "Jan 2, 2006"
 	// return carbon.Now().Format(carbon.FormattedDateFormat)
 
-}
-
-type ValuePair struct {
-	Field      string
-	Value      interface{}
-	FieldColor *color.Color
-	ValueColor *color.Color
-}
-
-func NewValuePair(field string, value interface{}) *ValuePair {
-	return &ValuePair{
-		Field:      field,
-		Value:      value,
-		FieldColor: Cnop,
-		ValueColor: Cvalue,
-	}
-}
-
-func (v ValuePair) String() string {
-	return MesageFieldAndValueC(
-		v.Field,
-		v.Value,
-		Logger.GetLevel(),
-		v.FieldColor,
-		v.ValueColor,
-	)
-}
-
-type ValuePairA []*ValuePair
-
-func NewValuePairA(cap int) ValuePairA {
-	if cap < 0 {
-		cap = 0
-	}
-	return make(ValuePairA, 0, cap)
-}
-
-func (v *ValuePairA) Add(field string, value interface{}) *ValuePairA {
-	(*v) = append((*v), NewValuePair(field, value))
-	return v
-}
-
-func (v ValuePairA) String() string {
-	sb := new(strings.Builder)
-	for _, vp := range v {
-		sb.WriteString(vp.String())
-	}
-	return sb.String() ///
-}
-
-func MesageFieldAndValueC(field string, value interface{}, level logrus.Level, cf, cv *color.Color) string {
-	if cf == nil {
-		cf = LogLevelColor(level)
-	}
-
-	if cv == nil {
-		cv = Cvalue
-	}
-	msg := "[" + cf.Sprintf("%s: ", field)
-	msg += cv.Sprintf("%v", value)
-	msg += "]"
-	return msg
-}
-
-func MesageFieldAndValue(field string, value interface{}, level logrus.Level) string {
-	return "[" + field + ": " + cast.ToString(value) + "]"
 }
 
 func indirect(a interface{}) interface{} {
@@ -739,7 +672,7 @@ func ContainsUInt64(s []uint64, v uint64) bool {
 // ContainsString returns true if a string is present in a iteratee.
 func ContainsString(s []string, v string) bool {
 	for _, vv := range s {
-		if vv == v {
+		if strings.EqualFold(vv, v) {
 			return true
 		}
 	}
@@ -766,32 +699,32 @@ func ContainsFloat64(s []float64, v float64) bool {
 	return false
 }
 
-// ReverseStrings reverses an array of string
-func ReverseStrings(s []string) []string {
+// ReverseStringA reverses an array of string
+func ReverseStringA(s []string) []string {
 	for i, j := 0, len(s)-1; i < len(s)/2; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
 	return s
 }
 
-// ReverseInt reverses an array of int
-func ReverseInt(s []int) []int {
+// ReverseIntA reverses an array of int
+func ReverseIntA(s []int) []int {
 	for i, j := 0, len(s)-1; i < len(s)/2; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
 	return s
 }
 
-// ReverseInt32 reverses an array of int32
-func ReverseInt32(s []int32) []int32 {
+// ReverseInt32A reverses an array of int32
+func ReverseInt32A(s []int32) []int32 {
 	for i, j := 0, len(s)-1; i < len(s)/2; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
 	return s
 }
 
-// ReverseInt64 reverses an array of int64
-func ReverseInt64(s []int64) []int64 {
+// ReverseInt64A reverses an array of int64
+func ReverseInt64A(s []int64) []int64 {
 	for i, j := 0, len(s)-1; i < len(s)/2; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
@@ -799,7 +732,7 @@ func ReverseInt64(s []int64) []int64 {
 }
 
 // ReverseUInt reverses an array of int
-func ReverseUInt(s []uint) []uint {
+func ReverseUIntA(s []uint) []uint {
 	for i, j := 0, len(s)-1; i < len(s)/2; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
@@ -807,7 +740,7 @@ func ReverseUInt(s []uint) []uint {
 }
 
 // ReverseUInt32 reverses an array of uint32
-func ReverseUInt32(s []uint32) []uint32 {
+func ReverseUInt32A(s []uint32) []uint32 {
 	for i, j := 0, len(s)-1; i < len(s)/2; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
@@ -815,7 +748,7 @@ func ReverseUInt32(s []uint32) []uint32 {
 }
 
 // ReverseUInt64 reverses an array of uint64
-func ReverseUInt64(s []uint64) []uint64 {
+func ReverseUInt64A(s []uint64) []uint64 {
 	for i, j := 0, len(s)-1; i < len(s)/2; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
@@ -823,7 +756,7 @@ func ReverseUInt64(s []uint64) []uint64 {
 }
 
 // ReverseFloat64 reverses an array of float64
-func ReverseFloat64(s []float64) []float64 {
+func ReverseFloat64A(s []float64) []float64 {
 	for i, j := 0, len(s)-1; i < len(s)/2; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
@@ -831,7 +764,7 @@ func ReverseFloat64(s []float64) []float64 {
 }
 
 // ReverseFloat32 reverses an array of float32
-func ReverseFloat32(s []float32) []float32 {
+func ReverseFloat32A(s []float32) []float32 {
 	for i, j := 0, len(s)-1; i < len(s)/2; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}

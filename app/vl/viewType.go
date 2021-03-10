@@ -97,19 +97,19 @@ var (
 		Usage:       "set `value` of depth show the files (dirs) under root",
 		Destination: &opt.depth,
 	}
-	fg_isDepthRecurse = &cli.BoolFlag{
+	fg_IsFindRecurse = &cli.BoolFlag{
 		Name:        "recurse",
 		Aliases:     []string{"R"},
 		Value:       false,
 		Usage:       "recurse into directories (equivalent to --depth=-1)",
-		Destination: &opt.isDepthRecurse,
+		Destination: &opt.IsFindRecurse,
 	}
-	fg_isDepthScanAllSub = &cli.BoolFlag{
+	fg_isForceRecurse = &cli.BoolFlag{
 		Name:        "force-recurse",
 		Aliases:     []string{"S"},
 		Value:       false,
 		Usage:       "anyway, definitely recurse all sub-directories of root",
-		Destination: &opt.isDepthScanAllSub,
+		Destination: &opt.isForceRecurse,
 	}
 
 	cmd_ViewType = &cli.Command{
@@ -122,7 +122,7 @@ var (
 			fg_isViewX, fg_isViewGroup, fg_isViewGroupR,
 			fg_isViewNoDirs, fg_isViewNoFiles,
 			// Depth
-			fg_Depth, fg_isDepthRecurse, fg_isDepthScanAllSub,
+			fg_Depth, fg_IsFindRecurse, fg_isForceRecurse,
 		},
 		Subcommands: []*cli.Command{
 			{
@@ -226,12 +226,12 @@ func (opt *option) checkViewType() {
 	// Depth
 	lg.WithField("depth", opt.depth).Trace()
 
-	lg.WithField("isDepthRecurse", opt.isDepthRecurse).Trace()
-	if opt.isDepthRecurse {
+	lg.WithField("IsFindRecurse", opt.IsFindRecurse).Trace()
+	if opt.IsFindRecurse {
 		opt.depth = -1
 	}
 
-	lg.WithField("isDepthRecurse", opt.isDepthScanAllSub).Trace()
+	lg.WithField("IsFindRecurse", opt.IsFindRecurse).Trace()
 
 	info(paw.ValuePairA([]*paw.ValuePair{
 		paw.NewValuePair("View type", opt.viewType),

@@ -100,7 +100,7 @@ func init() {
 			fg_isViewX, fg_isViewGroup, fg_isViewGroupR,
 			fg_isViewNoDirs, fg_isViewNoFiles,
 			// Depth
-			fg_Depth, fg_isDepthRecurse, fg_isDepthScanAllSub,
+			fg_Depth, fg_IsFindRecurse, fg_isForceRecurse,
 			// ByField (sort)
 			fg_isSortNo, fg_isSortReverse, fg_sortByField, fg_isSortByName,
 			fg_isSortByINode, fg_isSortBySize, fg_isSortByHDLinks, fg_isSortByBlocks,

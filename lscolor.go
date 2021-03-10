@@ -866,54 +866,6 @@ func LogLevelColor(level logrus.Level) (c *color.Color) {
 	return c
 }
 
-// func colorstr(att []color.Attribute, s string) string {
-// 	cs := color.New(att...)
-// 	return cs.Sprint(s)
-// }
-
-// // getColorExt will return the color key of extention from `fullpath`
-// func getColorExt(fullpath string) (file, ext string) {
-// 	fi, err := os.Lstat(fullpath)
-// 	if err != nil {
-// 		return "", "no"
-// 	}
-// 	mode := fi.Mode()
-// 	sperm := fmt.Sprintf("%v", mode)
-// 	switch {
-// 	case mode.IsDir(): // d: is a directory 資料夾模式
-// 		ext = "di" // di = directory
-// 	case mode&os.ModeSymlink != 0: // L: symbolic link 象徵性的關聯
-// 		ext = "«link»"
-// 		// ext = "ln"
-// 		// link, err := filepath.EvalSymlinks(fullpath)
-// 		// if err != nil {
-// 		// 	ext = "or"
-// 		// } else {
-// 		// 	_, ext = getColorExt(link)
-// 		// }
-// 	// } else { // mi = non-existent file pointed to by a symbolic link (visible when you type ls -l)
-// 	// 	ext = "mi"
-// 	// }
-// 	case mode&os.ModeSocket != 0: // S: Unix domain socket Unix 主機 socket
-// 		ext = "so" // so = socket file
-// 	case mode&os.ModeNamedPipe != 0:
-// 		ext = "pi" //pi = fifo file
-// 	case mode&os.ModeDevice != 0:
-// 		ext = "cd"
-// 	// bd = block (buffered) special file
-// 	case mode&os.ModeCharDevice != 0:
-// 		// cd = character (unbuffered) special file
-// 		ext = "cd"
-// 	case mode.IsRegular() && !mode.IsDir() && strings.Contains(sperm, "x"):
-// 		// ex = file which is executable (ie. has 'x' set in permissions)
-// 		ext = "ex"
-// 	default: // fi = file
-// 		ext = filepath.Ext(fullpath)
-// 	}
-
-// 	return filepath.Base(fullpath), ext
-// }
-
 // NewLSColor will return `*color.Color` using `LSColors[key]`
 func NewLSColor(key string) *color.Color {
 	return color.New(LSColors[key]...)

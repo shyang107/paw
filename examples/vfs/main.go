@@ -64,8 +64,8 @@ func main() {
 	// skipcond := vfs.NewSkipConds().Add(vfs.DefaultSkip).Add(reSkip)
 	vfields := vfs.DefaultViewField | vfs.ViewFieldGit //| vfs.ViewFieldMd5
 	vopt := &vfs.VFSOption{
-		Depth:        opt.Depth,
-		IsScanAllSub: false,
+		Depth:          opt.Depth,
+		IsForceRecurse: false,
 		// Grouping: vfs.GroupedR, //vfs.GroupNone
 		ByField:    vfs.SortByNone,
 		Skips:      skipcond,
@@ -138,7 +138,7 @@ func test() {
 
 	opt := vfs.NewVFSOption()
 	opt.Depth = 1
-	opt.IsScanAllSub = true
+	opt.IsForceRecurse = true
 	opt.ViewFields = vfs.DefaultViewFieldAllNoMd5
 	opt.ViewType = vfs.ViewClassify
 
@@ -148,8 +148,8 @@ func test() {
 
 	lg.SetLevel(logrus.DebugLevel)
 	lg.WithFields(logrus.Fields{
-		"Depth":        opt.Depth,
-		"IsScanAllSub": opt.IsScanAllSub,
+		"Depth":          opt.Depth,
+		"IsForceRecurse": opt.IsForceRecurse,
 	}).Debug()
 	curlevel := len(strings.Split(rd.RelPath(), "/"))
 	paw.Logger.WithFields(logrus.Fields{

@@ -11,31 +11,31 @@ import (
 // VFSOption uses in VFS
 type VFSOption struct {
 	// ScanDepth *ScanDepth
-	Depth        int
-	IsScanAllSub bool
-	Grouping     Group
-	ByField      SortKey
-	Skips        *SkipConds
-	ViewFields   ViewField
-	ViewType     ViewType
+	Depth          int
+	IsForceRecurse bool
+	Grouping       Group
+	ByField        SortKey
+	Skips          *SkipConds
+	ViewFields     ViewField
+	ViewType       ViewType
 }
 
 // NewVFSOption creates a new instance of VFSOption
 func NewVFSOption() *VFSOption {
 	return &VFSOption{
-		Depth:        0,
-		IsScanAllSub: false,
-		Grouping:     GroupNone,
-		ByField:      SortByLowerName,
-		Skips:        NewSkipConds().Add(DefaultSkiper),
-		ViewFields:   DefaultViewField,
-		ViewType:     ViewList,
+		Depth:          0,
+		IsForceRecurse: false,
+		Grouping:       GroupNone,
+		ByField:        SortByLowerName,
+		Skips:          NewSkipConds().Add(DefaultSkiper),
+		ViewFields:     DefaultViewField,
+		ViewType:       ViewList,
 	}
 }
 
 func (v VFSOption) String() string {
 	depth := strconv.Itoa(v.Depth)
-	if v.IsScanAllSub && v.Depth >= 0 {
+	if v.IsForceRecurse && v.Depth >= 0 {
 		depth += "(but recurse to all directory)"
 	}
 	s := fmt.Sprintf("[Depth: %v]", depth)
@@ -50,7 +50,7 @@ func (v VFSOption) String() string {
 func (s *VFSOption) IsRelPathNotScan(relpath string) bool {
 	if relpath == "." ||
 		s.Depth <= 0 ||
-		s.IsScanAllSub {
+		s.IsForceRecurse {
 		return false
 	}
 
@@ -106,7 +106,7 @@ type ScanDependType int
 
 const (
 	ScanDependDepth = 1 << iota
-	ScanRecurse
+	ScanForceRecurse
 )
 
 type ScanDepth struct {
@@ -123,7 +123,7 @@ func NewScanDepth() *ScanDepth {
 
 func (s ScanDepth) String() string {
 	switch s.ScanDepend {
-	case ScanRecurse:
+	case ScanForceRecurse:
 		return fmt.Sprintf("%d (but recurse to all directory)", s.Depth)
 	// case ScanDependByDepth:
 	default:
@@ -137,7 +137,7 @@ func (s *ScanDepth) _IsNotScan(curlevel int) bool {
 		isNoScan = false
 	} else { // s.Depth >0
 		switch s.ScanDepend {
-		case ScanRecurse:
+		case ScanForceRecurse:
 			isNoScan = false
 		default:
 			return curlevel > s.Depth

@@ -46,13 +46,13 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 	opt.Check()
 
 	paw.Logger.WithFields(logrus.Fields{
-		"Depth":        opt.Depth,
-		"IsScanAllSub": opt.IsScanAllSub,
-		"Grouping":     opt.Grouping,
-		"ByField":      opt.ByField,
-		"Skips":        opt.Skips,
-		"ViewFields":   opt.ViewFields,
-		"ViewType":     opt.ViewType,
+		"Depth":          opt.Depth,
+		"IsForceRecurse": opt.IsForceRecurse,
+		"Grouping":       opt.Grouping,
+		"ByField":        opt.ByField,
+		"Skips":          opt.Skips,
+		"ViewFields":     opt.ViewFields,
+		"ViewType":       opt.ViewType,
 	}).Debug()
 
 	v := &VFS{
@@ -140,7 +140,7 @@ func buildFS(cur *Dir, root string, level int) {
 		git   = cur.git
 		skip  = cur.opt.Skips
 	)
-	if !cur.opt.IsScanAllSub &&
+	if !cur.opt.IsForceRecurse &&
 		cur.opt.Depth > 0 &&
 		level > cur.opt.Depth {
 		return
@@ -193,7 +193,7 @@ func buildFS(cur *Dir, root string, level int) {
 
 		cur.children[de.Name()] = child
 
-		if cur.opt.IsScanAllSub {
+		if cur.opt.IsForceRecurse {
 			if child.IsDir() {
 				buildFS(child.(*Dir), root, 0)
 			}

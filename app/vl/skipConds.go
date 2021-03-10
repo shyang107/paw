@@ -158,6 +158,8 @@ func (opt *option) checkSkips() {
 		})
 		opt.skips.Add(reSkiper)
 	}
+	// delimiter
+	lg.WithField("delimiter", opt.psDelimiter).Trace()
 
 	// prefix
 	if len(opt.withNoPrefix) > 0 {
@@ -166,8 +168,7 @@ func (opt *option) checkSkips() {
 			opt.skips.AddToSkipPrefix(prefix)
 		}
 		lg.WithFields(logrus.Fields{
-			"preifx":    prefixs,
-			"delimiter": opt.psDelimiter,
+			"preifx": prefixs,
 		}).Trace()
 	}
 	// suffix
@@ -177,10 +178,10 @@ func (opt *option) checkSkips() {
 			opt.skips.AddToSkipSuffix(suffix)
 		}
 		lg.WithFields(logrus.Fields{
-			"suffix":    suffixs,
-			"delimiter": opt.psDelimiter,
+			"suffix": suffixs,
 		}).Trace()
 	}
+
 	info(paw.NewValuePair("Skiper", opt.skips))
 	// paw.Logger.WithField("skips", opt.skips).Info()
 	// info(paw.MesageFieldAndValueC("Skiper", opt.skips, logrus.InfoLevel, paw.Cnop, nil))
