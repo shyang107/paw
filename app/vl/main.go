@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/cnested"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"github.com/urfave/cli"
@@ -136,44 +137,68 @@ func main() {
 	// elapsedTime := time.Since(start)
 	// fmt.Println()
 	// fmt.Println("Total time for excution:", elapsedTime.String())
+	// info()
+	// warning()
+	// stderr()
+	// fatal()
 }
+
+var (
+	traceLogo = cnested.Logos[logrus.TraceLevel]
+	debugLogo = cnested.Logos[logrus.DebugLevel]
+	infoLogo  = cnested.Logos[logrus.InfoLevel]
+	warnLogo  = cnested.Logos[logrus.WarnLevel]
+	errorLogo = cnested.Logos[logrus.ErrorLevel]
+	fatalLogo = cnested.Logos[logrus.FatalLevel]
+)
 
 func info(args ...interface{}) {
 	if lg.IsLevelEnabled(logrus.InfoLevel) {
+		fmt.Fprint(os.Stderr, infoLogo, " ")
 		paw.Info.Print(args...)
+		// fmt.Fprint(os.Stderr, msg)
 	}
 }
 
 func infof(f string, args ...interface{}) {
 	if lg.IsLevelEnabled(logrus.InfoLevel) {
+		fmt.Fprint(os.Stderr, infoLogo, " ")
 		paw.Info.Printf(f, args...)
 	}
 }
 
 func stderr(args ...interface{}) {
+	fmt.Fprint(os.Stderr, errorLogo, " ")
 	paw.Error.Print(args...)
 }
 
 func stderrf(f string, args ...interface{}) {
+	fmt.Fprint(os.Stderr, errorLogo, " ")
 	paw.Error.Printf(f, args...)
 }
 
 func fatal(args ...interface{}) {
-	stderr(args...)
+	// stderr(args...)
+	fmt.Fprint(os.Stderr, fatalLogo, " ")
+	paw.Error.Print(args...)
 	os.Exit(1)
 }
 func fatalf(f string, args ...interface{}) {
-	stderrf(f, args...)
+	// stderrf(f, args...)
+	fmt.Fprint(os.Stderr, fatalLogo, " ")
+	paw.Error.Printf(f, args...)
 	os.Exit(1)
 }
 
 func warning(args ...interface{}) {
 	if lg.IsLevelEnabled(logrus.WarnLevel) {
+		fmt.Fprint(os.Stderr, warnLogo, " ")
 		paw.Warning.Print(args...)
 	}
 }
 func warningf(f string, args ...interface{}) {
 	if lg.IsLevelEnabled(logrus.WarnLevel) {
+		fmt.Fprint(os.Stderr, warnLogo, " ")
 		paw.Warning.Printf(f, args...)
 	}
 }

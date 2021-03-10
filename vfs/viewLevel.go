@@ -85,8 +85,9 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 		cdir, cname, cpath := GetPathC(rp)
 		if level > 0 {
 			cpath = cdirp.Sprint("./") + cdir + cname
+			clevel := paw.Cfield.Sprintf("L%d:", level)
+			fmt.Fprintf(w, "%s%s %v\n", pad, clevel, cpath)
 		}
-		fmt.Fprintf(w, "%sL%d: %v\n", pad, level, cpath)
 
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, pad)

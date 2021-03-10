@@ -14,7 +14,7 @@ var (
 	fg_isViewList = &cli.BoolFlag{
 		Name:        "list",
 		Aliases:     []string{"li"},
-		Value:       true,
+		Value:       false,
 		Usage:       "print out in list view",
 		Destination: &opt.isViewList,
 	}
@@ -145,35 +145,32 @@ var (
 func (opt *option) checkViewType() {
 	lg.Debug(paw.Caller(1))
 	// 1. cehck basic ViewType
+	opt.viewType = vfs.ViewList
 	if opt.isViewListTree {
 		if opt.depth == 0 {
 			opt.depth = -1
 		}
 		opt.viewType = vfs.ViewListTree
-		opt.isViewList = false
 	}
 	if opt.isViewTree {
 		if opt.depth == 0 {
 			opt.depth = -1
 		}
 		opt.viewType = vfs.ViewTree
-		opt.isViewList = false
 	}
 	if opt.isViewTable {
 		opt.viewType = vfs.ViewTable
-		opt.isViewList = false
 	}
 	if opt.isViewLevel {
 		opt.viewType = vfs.ViewLevel
-		opt.isViewList = false
 	}
 	if opt.isViewClassify {
 		opt.viewType = vfs.ViewClassify
-		opt.isViewList = false
 	}
 	if opt.isViewList {
 		opt.viewType = vfs.ViewList
 	}
+
 	lg.WithField("viewType", opt.viewType).Trace()
 
 	// 2. cehck Extended view

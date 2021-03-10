@@ -334,7 +334,9 @@ func (opt *option) checkByField() {
 
 	if opt.byField, ok = vfs.SortShortNameKeys[sflag]; !ok {
 		opt.byField = vfs.SortByLowerName
+	} else {
 	}
+	opt.viewFields = vfs.SortKey2ViewField[opt.byField]
 
 END:
 	info(paw.NewValuePair("Sort", opt.byField))

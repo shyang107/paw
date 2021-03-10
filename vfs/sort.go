@@ -278,6 +278,26 @@ var (
 		"namer":   SortByNameR,
 		"lnamer":  SortByLowerNameR,
 	}
+	SortKey2ViewField = map[SortKey]ViewField{
+		SortByINode:      ViewFieldINode,
+		SortByHDLinks:    ViewFieldLinks,
+		SortBySize:       ViewFieldSize,
+		SortByBlocks:     ViewFieldBlocks,
+		SortByMTime:      ViewFieldModified,
+		SortByATime:      ViewFieldAccessed,
+		SortByCTime:      ViewFieldCreated,
+		SortByName:       ViewFieldName,
+		SortByLowerName:  ViewFieldName,
+		SortByINodeR:     ViewFieldINode,
+		SortByHDLinksR:   ViewFieldLinks,
+		SortBySizeR:      ViewFieldSize,
+		SortByBlocksR:    ViewFieldBlocks,
+		SortByMTimeR:     ViewFieldModified,
+		SortByATimeR:     ViewFieldAccessed,
+		SortByCTimeR:     ViewFieldCreated,
+		SortByNameR:      ViewFieldName,
+		SortByLowerNameR: ViewFieldName,
+	}
 )
 
 func (s SortKey) String() string {

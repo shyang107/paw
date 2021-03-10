@@ -49,6 +49,9 @@ type Formatter struct {
 
 	// CustomCallerFormatter - set custom formatter for caller info
 	CustomCallerFormatter func(*runtime.Frame) string
+
+	// IsLogo - true to add a logo as prefix of level
+	IsLogo bool
 }
 
 var DefaultFormat = &Formatter{
@@ -60,6 +63,7 @@ var DefaultFormat = &Formatter{
 	TimestampFormat: "060102-150405.000",
 	TrimMessages:    true,
 	CallerFirst:     true,
+	IsLogo:          false,
 	CustomCallerFormatter: func(f *runtime.Frame) string {
 		s := strings.Split(f.Function, ".")
 		funcName := s[len(s)-1]
@@ -73,7 +77,16 @@ var DefaultFormat = &Formatter{
 }
 
 var (
-	crp = color.New([]color.Attribute{38, 5, 193, 4}...)
+	crp   = color.New([]color.Attribute{38, 5, 193, 4}...)
+	Logos = map[logrus.Level]string{
+		logrus.PanicLevel: "😱",
+		logrus.FatalLevel: "😨",
+		logrus.ErrorLevel: "😥",
+		logrus.WarnLevel:  "😦",
+		logrus.InfoLevel:  "🔖",
+		logrus.DebugLevel: "🐞",
+		logrus.TraceLevel: "🐾",
+	}
 )
 
 // Format an log entry
@@ -91,6 +104,11 @@ func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 
 	// write level
 	var level string
+	var logo string
+	if f.IsLogo {
+		logo = Logos[entry.Level] + " "
+	}
+
 	if f.NoUppercaseLevel {
 		level = entry.Level.String()
 	} else {
@@ -106,7 +124,7 @@ func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	if f.NoColors {
 		fmt.Fprint(b, level)
 	} else {
-		cl.Fprint(b, level)
+		cl.Fprint(b, logo+level)
 	}
 	if !f.NoFieldsSpace {
 		b.WriteString(" ")

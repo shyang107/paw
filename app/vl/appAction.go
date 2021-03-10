@@ -7,9 +7,9 @@ import (
 )
 
 var appAction cli.ActionFunc = func(c *cli.Context) error {
-	lg.SetLevel(logrus.WarnLevel)
-
 	lg.Debug()
+
+	lg.SetLevel(logrus.WarnLevel)
 
 	if opt.isInfo {
 		lg.SetLevel(logrus.InfoLevel)

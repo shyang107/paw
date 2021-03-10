@@ -117,7 +117,7 @@ var (
 )
 
 func (opt *option) checkSkips() {
-	lg.Debug(paw.Caller(1))
+	lg.Debug()
 
 	opt.skips = vfs.NewSkipConds()
 

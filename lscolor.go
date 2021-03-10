@@ -782,9 +782,11 @@ var (
 	Cerror  = LogLevelColor(logrus.ErrorLevel)
 	Cfatal  = LogLevelColor(logrus.FatalLevel)
 	Cpanic  = LogLevelColor(logrus.PanicLevel)
-	Cvalue  = color.New([]color.Attribute{38, 5, 193, 4}...)
-	CEven   = color.New([]color.Attribute{38, 5, 251, 48, 5, 234}...)
-	COdd    = color.New([]color.Attribute{38, 5, 159, 48, 5, 234}...)
+	// Cfield  = COdd
+	Cfield = color.New([]color.Attribute{38, 5, 216}...)
+	Cvalue = color.New([]color.Attribute{38, 5, 193, 4}...)
+	CEven  = color.New([]color.Attribute{38, 5, 251, 48, 5, 234}...)
+	COdd   = color.New([]color.Attribute{38, 5, 159, 48, 5, 234}...)
 )
 
 func init() {

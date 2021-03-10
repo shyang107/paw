@@ -13,6 +13,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/cnested"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 )
@@ -624,7 +625,13 @@ func (d *Dir) Errors(pad string) string {
 func (d *Dir) FprintErrors(w io.Writer, pad string) {
 	if len(d.errors) > 0 {
 		for _, err := range d.errors {
-			fmt.Fprintf(w, "%s%v\n", pad, cerror.Sprint(err))
+			if paw.CnestedFMT.IsLogo {
+				fmt.Fprintf(w, "%s%s %v\n", pad,
+					cnested.Logos[logrus.ErrorLevel],
+					cerror.Sprint(err))
+			} else {
+				fmt.Fprintf(w, "%s%v\n", pad, cerror.Sprint(err))
+			}
 		}
 	}
 }

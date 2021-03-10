@@ -19,12 +19,12 @@ var (
 	Logger = &logrus.Logger{
 		Out:          os.Stdout, //os.Stderr,
 		ReportCaller: true,
-		Formatter:    cnestedFMT,
+		Formatter:    CnestedFMT,
 		// Level:        logrus.InfoLevel,
 		Level: logrus.WarnLevel,
 	}
 	// NestedFormatter ...
-	cnestedFMT = cnested.DefaultFormat
+	CnestedFMT = cnested.DefaultFormat
 	// cnestedFMT = &cnested.Formatter{
 	// 	HideKeys: false,
 	// 	// FieldsOrder:     []string{"component", "category"},
@@ -44,6 +44,38 @@ var (
 	// 		return fmt.Sprintf(" [%s:%s][%s]", cname, cln, cfuncName)
 	// 	},
 	// }
+	tracePrefix  = "[TRAC] "
+	debugPrefix  = "[DEBU] "
+	infoPrefix   = "[INFO] "
+	warnPrefix   = "[WARN] "
+	errorPrefix  = "[ERRO] "
+	fatalPrefix  = "[FATA] "
+	tracePrefixF = "[TRACE] "
+	debugPrefixF = "[DEBUG] "
+	infoPrefixF  = "[INFO] "
+	warnPrefixF  = "[WARNING] "
+	errorPrefixF = "[ERROR] "
+	fatalPrefixF = "[FATAL] "
+
+	tracePrefixC  = Ctrace.Sprint(tracePrefix) + " "
+	debugPrefixC  = Cdebug.Sprint(debugPrefix) + " "
+	infoPrefixC   = Cinfo.Sprint(infoPrefix) + " "
+	warnPrefixC   = Cwarn.Sprint(warnPrefix) + " "
+	errorPrefixC  = Cerror.Sprint(errorPrefix) + " "
+	fatalPrefixC  = Cerror.Sprint(fatalPrefix) + " "
+	tracePrefixFC = Ctrace.Sprint(tracePrefixF) + " "
+	debugPrefixFC = Cdebug.Sprint(debugPrefixF) + " "
+	infoPrefixFC  = Cinfo.Sprint(infoPrefixF) + " "
+	warnPrefixFC  = Cwarn.Sprint(warnPrefixF) + " "
+	errorPrefixFC = Cerror.Sprint(errorPrefixF) + " "
+	fatalPrefixFC = Cerror.Sprint(fatalPrefixF) + " "
+
+	traceLogo = cnested.Logos[logrus.TraceLevel] + " "
+	debugLogo = cnested.Logos[logrus.DebugLevel] + " "
+	infoLogo  = cnested.Logos[logrus.InfoLevel] + " "
+	warnLogo  = cnested.Logos[logrus.WarnLevel] + " "
+	errorLogo = cnested.Logos[logrus.ErrorLevel] + " "
+	fatalLogo = cnested.Logos[logrus.FatalLevel] + " "
 )
 
 var (
@@ -52,6 +84,7 @@ var (
 	Info    *log.Logger
 	Warning *log.Logger
 	Error   *log.Logger
+	Fatal   *log.Logger
 )
 
 func init() {
@@ -59,7 +92,8 @@ func init() {
 	// Logger.SetReportCaller(true)
 	// Logger.SetOutput(os.Stdout)
 	// Logger.SetFormatter(nestedFormatter)
-	GologInit(os.Stdout, os.Stdout, os.Stderr, true)
+	CnestedFMT.IsLogo = true
+	GologInit(os.Stderr, os.Stderr, os.Stderr, false)
 }
 
 // GologInit initializes logger
@@ -68,55 +102,64 @@ func GologInit(
 	warnHandle io.Writer,
 	errorHandle io.Writer,
 	isVerbose bool) {
+	// cnestedFMT.IsLogo = true
+	// if cnestedFMT.IsLogo {
+	// 	tracePrefixC = traceLogo + tracePrefixC
+	// 	debugPrefixC = debugLogo + debugPrefixC
+	// 	infoPrefixC = infoLogo + infoPrefixC
+	// 	warnPrefixC = warnLogo + warnPrefixC
+	// 	errorPrefixC = errorLogo + errorPrefixC
+	// 	tracePrefixFC = traceLogo + tracePrefixFC
+	// 	debugPrefixFC = debugLogo + debugPrefixFC
+	// 	infoPrefixFC = infoLogo + infoPrefixFC
+	// 	warnPrefixFC = warnLogo + warnPrefixFC
+	// 	errorPrefixFC = errorLogo + errorPrefixFC
+	// }
 	if isVerbose {
-		Trace = log.New(infoHandle,
-			Ctrace.Add(color.Bold).Sprint("[TRACE] "),
+		Trace = log.New(infoHandle, tracePrefixFC,
 			log.Ldate|log.Ltime|log.Lshortfile)
 
-		Debug = log.New(infoHandle,
-			Cdebug.Add(color.Bold).Sprint("[DEBUG] "),
+		Debug = log.New(infoHandle, debugPrefixFC,
 			log.Ldate|log.Ltime|log.Lshortfile)
 
-		Info = log.New(infoHandle,
-			Cinfo.Add(color.Bold).Sprint("[INFO] "),
+		Info = log.New(infoHandle, infoPrefixFC,
 			log.Ldate|log.Ltime|log.Lshortfile)
 
-		Warning = log.New(warnHandle,
-			Cwarn.Add(color.Bold).Sprint("[WARNING] "),
+		Warning = log.New(warnHandle, warnPrefixFC,
 			log.Ldate|log.Ltime|log.Lshortfile)
 
-		Error = log.New(errorHandle,
-			Cerror.Add(color.Bold).Sprint("[ERROR] "),
+		Error = log.New(errorHandle, errorPrefixFC,
 			log.Ldate|log.Ltime|log.Lshortfile)
+
+		Fatal = log.New(errorHandle, fatalPrefixFC,
+			log.Ldate|log.Ltime)
 		return
 	}
 
-	Trace = log.New(infoHandle,
-		color.New(color.FgCyan).Sprint("[TRAC] "),
+	Trace = log.New(infoHandle, tracePrefixC,
 		log.Ldate|log.Ltime|log.Lshortfile)
 
-	Debug = log.New(infoHandle,
-		color.New(color.FgMagenta).Add(color.Bold).Sprint("[DEBU] "),
+	Debug = log.New(infoHandle, debugPrefixC,
 		log.Ldate|log.Ltime|log.Lshortfile)
 
-	Info = log.New(infoHandle,
-		color.New(color.FgYellow).Sprint("[INFO] "),
+	Info = log.New(infoHandle, infoPrefixC,
 		log.Ldate|log.Ltime)
 
-	Warning = log.New(warnHandle,
-		color.New(color.FgHiMagenta).Add(color.Bold).Sprint("[WARN] "),
+	Warning = log.New(warnHandle, warnPrefixC,
 		log.Ldate|log.Ltime)
 
-	Error = log.New(errorHandle,
-		color.New(color.FgHiRed).Add(color.Bold).Sprint("[ERRO] "),
+	Error = log.New(errorHandle, errorPrefixC,
+		log.Ldate|log.Ltime)
+
+	Fatal = log.New(errorHandle, fatalPrefixC,
 		log.Ldate|log.Ltime)
 
 }
 
 // LoggerSetFieldsOrder set `nestedFormatter.FieldsOrder`
 func LoggerSetFieldsOrder(fields []string) {
-	cnestedFMT.FieldsOrder = fields
-	Logger.SetFormatter(cnestedFMT)
+	CnestedFMT.FieldsOrder = fields
+	Logger.SetFormatter(CnestedFMT)
 }
 
 // -------------------------------------
@@ -124,6 +167,7 @@ func LoggerSetFieldsOrder(fields []string) {
 type ValuePair struct {
 	Field      string
 	Value      interface{}
+	LeveL      logrus.Level
 	FieldColor *color.Color
 	ValueColor *color.Color
 }
@@ -132,19 +176,64 @@ func NewValuePair(field string, value interface{}) *ValuePair {
 	return &ValuePair{
 		Field:      field,
 		Value:      value,
-		FieldColor: Cnop,
+		LeveL:      logrus.InfoLevel,
+		FieldColor: nil,
+		ValueColor: Cvalue,
+	}
+}
+func NewValuePairWith(field string, value interface{}, level logrus.Level) *ValuePair {
+	return &ValuePair{
+		Field:      field,
+		Value:      value,
+		LeveL:      level,
+		FieldColor: nil,
 		ValueColor: Cvalue,
 	}
 }
 
 func (v ValuePair) String() string {
-	return MesageFieldAndValueC(
-		v.Field,
-		v.Value,
-		Logger.GetLevel(),
-		v.FieldColor,
-		v.ValueColor,
-	)
+	if v.FieldColor == nil {
+		switch v.LeveL {
+		case logrus.InfoLevel:
+			v.FieldColor = Cfield
+		default:
+			v.FieldColor = LogLevelColor(v.LeveL)
+		}
+	}
+	if v.ValueColor == nil {
+		v.ValueColor = Cvalue
+	}
+	msg := "[" + v.FieldColor.Sprintf("%s:", v.Field)
+	msg += v.ValueColor.Sprintf("%v", v.Value)
+	msg += "]"
+	return msg
+	// return MesageFieldAndValueC(
+	// 	v.Field,
+	// 	v.Value,
+	// 	v.LeveL, //Logger.GetLevel(),
+	// 	v.FieldColor,
+	// 	v.ValueColor,
+	// )
+}
+
+func (v *ValuePair) SetLevel(level logrus.Level) *ValuePair {
+	v.LeveL = level
+	return v
+}
+
+func (v *ValuePair) SetFieldLevelColor(level logrus.Level) *ValuePair {
+	v.FieldColor = LogLevelColor(level)
+	return v
+}
+
+func (v *ValuePair) SetFieldColor(c *color.Color) *ValuePair {
+	v.FieldColor = c
+	return v
+}
+
+func (v *ValuePair) SetValueColor(c *color.Color) *ValuePair {
+	v.FieldColor = c.Add([]color.Attribute{4}...)
+	return v
 }
 
 type ValuePairA []*ValuePair
@@ -156,11 +245,6 @@ func NewValuePairA(cap int) ValuePairA {
 	return make(ValuePairA, 0, cap)
 }
 
-func (v *ValuePairA) Add(field string, value interface{}) *ValuePairA {
-	(*v) = append((*v), NewValuePair(field, value))
-	return v
-}
-
 func (v ValuePairA) String() string {
 	sb := new(strings.Builder)
 	for _, vp := range v {
@@ -169,15 +253,32 @@ func (v ValuePairA) String() string {
 	return sb.String() ///
 }
 
+func (v ValuePairA) Add(field string, value interface{}) ValuePairA {
+	v = append(v, NewValuePair(field, value))
+	return v
+}
+
+func (v ValuePairA) SetLevel(level logrus.Level) ValuePairA {
+	for _, vp := range v {
+		vp.LeveL = level
+	}
+	return v
+}
+
 func MesageFieldAndValueC(field string, value interface{}, level logrus.Level, cf, cv *color.Color) string {
 	if cf == nil {
 		cf = LogLevelColor(level)
+		// if level == logrus.InfoLevel {
+		// 	cf = COdd
+		// } else {
+		// 	cf = LogLevelColor(level)
+		// }
 	}
 
 	if cv == nil {
 		cv = Cvalue
 	}
-	msg := "[" + cf.Sprintf("%s: ", field)
+	msg := "[" + cf.Sprintf("%s:", field)
 	msg += cv.Sprintf("%v", value)
 	msg += "]"
 	return msg

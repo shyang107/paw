@@ -201,7 +201,7 @@ func (opt *option) checkViewFields() {
 	lg.Debug(paw.Caller(1))
 
 	var (
-		viewFields vfs.ViewField
+		viewFields      = opt.viewFields
 		isOk       bool = false
 		hasBasic        = opt.hasBasicPSUGMN
 	)
@@ -211,15 +211,15 @@ func (opt *option) checkViewFields() {
 		goto END
 	}
 	if opt.hasAllNoMd5 {
-		opt.viewFields = vfs.DefaultViewFieldAllNoMd5
+		opt.viewFields |= vfs.DefaultViewFieldAllNoMd5
 		goto END
 	}
 	if opt.hasAllNoGit {
-		opt.viewFields = vfs.DefaultViewFieldAllNoGit
+		opt.viewFields |= vfs.DefaultViewFieldAllNoGit
 		goto END
 	}
 	if opt.hasAllNoGitMd5 {
-		opt.viewFields = vfs.DefaultViewFieldAllNoGitMd5
+		opt.viewFields |= vfs.DefaultViewFieldAllNoGitMd5
 		goto END
 	}
 
@@ -296,14 +296,9 @@ func (opt *option) checkViewFields() {
 	}).Debug()
 
 	if isOk {
-		opt.viewFields = viewFields
-		// if viewFields == vfs.ViewFieldName {
-		// 	opt.viewFields = vfs.DefaultViewField
-		// } else {
-		// 	opt.viewFields = viewFields
-		// }
+		opt.viewFields |= viewFields
 	} else {
-		opt.viewFields = vfs.ViewFieldPSUGMN
+		opt.viewFields |= vfs.ViewFieldPSUGMN
 	}
 END:
 	info(paw.NewValuePair("View fields", opt.viewFields))

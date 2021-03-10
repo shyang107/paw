@@ -78,7 +78,7 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 			curnd, curnf int
 			size         int64
 			idx          = fmt.Sprintf("G%-[1]*[2]d ", wdidx, i)
-			cidx         = cdip.Sprint(idx)
+			cidx         = paw.Cfield.Sprint(idx)
 		)
 
 		paw.Logger.WithFields(logrus.Fields{
