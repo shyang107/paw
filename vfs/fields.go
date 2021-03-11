@@ -109,20 +109,20 @@ var (
 	}
 
 	ViewFieldColors = map[ViewField]*color.Color{
-		ViewFieldNo:          cnop,
-		ViewFieldINode:       cinp,
-		ViewFieldPermissions: cpms,
-		ViewFieldLinks:       clkp,
-		ViewFieldSize:        csnp,
-		ViewFieldBlocks:      cbkp,
-		ViewFieldUser:        cuup,
-		ViewFieldGroup:       cgup,
-		ViewFieldModified:    cdap,
-		ViewFieldCreated:     cdap,
-		ViewFieldAccessed:    cdap,
-		ViewFieldGit:         cgitp,
-		ViewFieldMd5:         cmd5p,
-		ViewFieldName:        cnop,
+		ViewFieldNo:          paw.Cnop,
+		ViewFieldINode:       paw.Cinp,
+		ViewFieldPermissions: paw.Cpms,
+		ViewFieldLinks:       paw.Clkp,
+		ViewFieldSize:        paw.Csnp,
+		ViewFieldBlocks:      paw.Cbkp,
+		ViewFieldUser:        paw.Cuup,
+		ViewFieldGroup:       paw.Cgup,
+		ViewFieldModified:    paw.Cdap,
+		ViewFieldCreated:     paw.Cdap,
+		ViewFieldAccessed:    paw.Cdap,
+		ViewFieldGit:         paw.Cgitp,
+		ViewFieldMd5:         paw.Cmd5p,
+		ViewFieldName:        paw.Cnop,
 	}
 
 	ViewFieldAligns = map[ViewField]paw.Align{
@@ -210,7 +210,7 @@ func (f ViewField) Color() *color.Color {
 	if c, ok := ViewFieldColors[f]; ok {
 		return c
 	} else {
-		return cdashp
+		return paw.Cdashp
 	}
 }
 

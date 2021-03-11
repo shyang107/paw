@@ -84,7 +84,7 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 
 		cdir, cname, cpath := GetPathC(rp)
 		if level > 0 {
-			cpath = cdirp.Sprint("./") + cdir + cname
+			cpath = paw.Cdirp.Sprint("./") + cdir + cname
 			clevel := paw.Cfield.Sprintf("L%d:", level)
 			fmt.Fprintf(w, "%s%s %v\n", pad, clevel, cpath)
 		}
@@ -93,7 +93,7 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 			cur.FprintErrors(os.Stderr, pad)
 		}
 		ViewFieldName.SetWidth(wdname - wdpad)
-		head := GetPFHeadS(chdp, fields...)
+		head := GetPFHeadS(paw.Chdp, fields...)
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
 			var sidx string

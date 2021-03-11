@@ -99,7 +99,7 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 
 		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
-			cpath = cdirp.Sprint("./") + cdir + cname
+			cpath = paw.Cdirp.Sprint("./") + cdir + cname
 			tf.PrintLineln(cidx + cpath)
 		}
 		if len(cur.errors) > 0 {
@@ -141,8 +141,8 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 					for _, x := range xattrs {
 						values[nfields-1] = paw.XAttrSymbol + x
 						cxvalues[nfields-1] =
-							cxbp.Sprint(paw.XAttrSymbol) +
-								cxap.Sprint(x)
+							paw.Cxbp.Sprint(paw.XAttrSymbol) +
+								paw.Cxap.Sprint(x)
 						tf.FieldsColorString = cxvalues
 						tf.PrintRow(values...)
 					}

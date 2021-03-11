@@ -37,12 +37,12 @@ func viewListTree(w io.Writer, cur *Dir, hasX, hasList bool) {
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
-	head := GetPFHeadS(chdp, fields...)
+	head := GetPFHeadS(paw.Chdp, fields...)
 	fmt.Fprintf(w, "%v\n", head)
 
 	fmt.Fprintf(w, "%v ", vfields.RowStringXNameC(cur))
 	cdinf, _ := cur.DirInfoC()
-	fmt.Fprintf(w, "%v %v\n", cdinf, cdip.Sprint("."))
+	fmt.Fprintf(w, "%v %v\n", cdinf, paw.Cdip.Sprint("."))
 
 	des, _ := cur.ReadDirAll()
 	// print files in the root dir
@@ -92,7 +92,7 @@ func vltFile(w io.Writer, level int, levelsEnded []int, edge EdgeType, de DirEnt
 			wdmeta += IndentSize + 1
 			continue
 		}
-		cedge := cdashp.Sprint(EdgeTypeLink)
+		cedge := paw.Cdashp.Sprint(EdgeTypeLink)
 		fmt.Fprintf(w, "%s%s", cedge, SpaceIndentSize)
 		padMeta += fmt.Sprintf("%s%s", cedge, SpaceIndentSize)
 		wdmeta += edgeWidth[EdgeTypeLink] + IndentSize
@@ -101,31 +101,31 @@ func vltFile(w io.Writer, level int, levelsEnded []int, edge EdgeType, de DirEnt
 	xattrs := de.Xattibutes()
 	cname := de.FieldC(ViewFieldName)
 	if !hasList && !hasX && len(xattrs) > 0 {
-		cname += cdashp.Sprint("@")
+		cname += paw.Cdashp.Sprint("@")
 	}
 	// 2. print out Name field
 	if de.IsDir() {
 		cdinf, wdinf = de.(*Dir).DirInfoC()
 	}
 	if wdinf == 0 {
-		fmt.Fprintln(w, cdashp.Sprint(edge), cname)
+		fmt.Fprintln(w, paw.Cdashp.Sprint(edge), cname)
 	} else {
-		fmt.Fprintln(w, cdashp.Sprint(edge), cdinf, cname)
+		fmt.Fprintln(w, paw.Cdashp.Sprint(edge), cdinf, cname)
 	}
 
 	// 3. print out extended attributes
 	if hasX && len(xattrs) > 0 {
 		switch edge {
 		case EdgeTypeMid:
-			cedge = padMeta + cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
+			cedge = padMeta + paw.Cdashp.Sprint(EdgeTypeLink) + SpaceIndentSize
 		case EdgeTypeEnd:
 			cedge = padMeta + paw.Spaces(IndentSize+1)
 		}
 		for _, x := range xattrs {
 			fmt.Fprintf(w, " %s%v%v\n",
 				cedge,
-				cxbp.Sprint("@ "),
-				cxap.Sprint(x))
+				paw.Cxbp.Sprint("@ "),
+				paw.Cxap.Sprint(x))
 		}
 	}
 }

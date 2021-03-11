@@ -381,7 +381,7 @@ func (d *Dir) Field(field ViewField) string {
 func (d *Dir) FieldC(fd ViewField) string {
 	switch fd {
 	case ViewFieldNo:
-		return cdip.Sprint(fd.AlignedString(fd.Value()))
+		return paw.Cdip.Sprint(fd.AlignedString(fd.Value()))
 	case ViewFieldPermissions:
 		return fd.AlignedStringC(permissionC(d))
 	case ViewFieldSize:
@@ -392,18 +392,18 @@ func (d *Dir) FieldC(fd ViewField) string {
 		furname := d.User()
 		var c *color.Color
 		if furname != urname {
-			c = cunp
+			c = paw.Cunp
 		} else {
-			c = cuup
+			c = paw.Cuup
 		}
 		return c.Sprint(fd.AlignedString(furname))
 	case ViewFieldGroup: //"Group",
 		fgpname := d.Group()
 		var c *color.Color
 		if fgpname != gpname {
-			c = cgnp
+			c = paw.Cgnp
 		} else {
-			c = cgup
+			c = paw.Cgup
 		}
 		return c.Sprint(fd.AlignedString(fgpname))
 	case ViewFieldGit:
@@ -413,7 +413,7 @@ func (d *Dir) FieldC(fd ViewField) string {
 		}
 		return fd.AlignedStringC(d.git.XYc(rp))
 	case ViewFieldName:
-		return cdip.Sprint(d.Name())
+		return paw.Cdip.Sprint(d.Name())
 	default:
 		return fd.Color().Sprint(fd.AlignedString(d.Field(fd)))
 	}
@@ -628,9 +628,9 @@ func (d *Dir) FprintErrors(w io.Writer, pad string) {
 			if paw.CnestedFMT.IsLogo {
 				fmt.Fprintf(w, "%s%s %v\n", pad,
 					cnested.Logos[logrus.ErrorLevel],
-					cerror.Sprint(err))
+					paw.Cerror.Sprint(err))
 			} else {
-				fmt.Fprintf(w, "%s%v\n", pad, cerror.Sprint(err))
+				fmt.Fprintf(w, "%s%v\n", pad, paw.Cerror.Sprint(err))
 			}
 		}
 	}
@@ -668,12 +668,12 @@ func _NItems(d *Dir, levle int) (ndirs, nfiles int) {
 // DirInfoC will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.
 func (d *Dir) DirInfoC() (cdinf string, wdinf int) {
 	nd, nf, _ := d.NItems()
-	cnd := csnp.Sprint(nd)
-	cnf := csnp.Sprint(nf)
+	cnd := paw.Csnp.Sprint(nd)
+	cnf := paw.Csnp.Sprint(nf)
 	di := " dirs"
 	fi := " files"
-	cdi := cdirp.Sprintf(di)
-	cfi := cdirp.Sprintf(fi)
+	cdi := paw.Cdirp.Sprintf(di)
+	cfi := paw.Cdirp.Sprintf(fi)
 	wdinf = len(di) + len(fi) + 4
 	cdinf = fmt.Sprintf("[%v%v, %v%v]", cnd, cdi, cnf, cfi)
 	return cdinf, wdinf

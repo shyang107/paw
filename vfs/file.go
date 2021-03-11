@@ -379,7 +379,7 @@ func (f *File) FieldC(fd ViewField) string {
 
 	switch fd {
 	case ViewFieldNo:
-		return cfip.Sprint(fd.AlignedString(fd.Value()))
+		return paw.Cfip.Sprint(fd.AlignedString(fd.Value()))
 	case ViewFieldPermissions:
 		return fd.AlignedStringC(permissionC(f))
 	case ViewFieldSize:
@@ -387,12 +387,12 @@ func (f *File) FieldC(fd ViewField) string {
 			major, minor := f.DevNumber()
 			wdmajor := ViewFieldMajor.Width()
 			wdminor := ViewFieldMinor.Width()
-			csj := csnp.Sprintf("%[1]*[2]v", wdmajor, major)
-			csn := csnp.Sprintf("%[1]*[2]v", wdminor, minor)
-			cdev := csj + cdirp.Sprint(",") + csn
+			csj := paw.Csnp.Sprintf("%[1]*[2]v", wdmajor, major)
+			csn := paw.Csnp.Sprintf("%[1]*[2]v", wdminor, minor)
+			cdev := csj + paw.Cdirp.Sprint(",") + csn
 			wdev := wdmajor + wdminor + 1 //len(paw.StripANSI(cdev))
 			if wdev < fd.Width() {
-				cdev = csj + cdirp.Sprint(",") + paw.Spaces(fd.Width()-wdev) + csn
+				cdev = csj + paw.Cdirp.Sprint(",") + paw.Spaces(fd.Width()-wdev) + csn
 			}
 			return cdev
 		} else {
@@ -402,18 +402,18 @@ func (f *File) FieldC(fd ViewField) string {
 		furname := f.User()
 		var c *color.Color
 		if furname != urname {
-			c = cunp
+			c = paw.Cunp
 		} else {
-			c = cuup
+			c = paw.Cuup
 		}
 		return c.Sprint(fd.AlignedString(furname))
 	case ViewFieldGroup: //"Group",
 		fgpname := f.Group()
 		var c *color.Color
 		if fgpname != gpname {
-			c = cgnp
+			c = paw.Cgnp
 		} else {
-			c = cgup
+			c = paw.Cgup
 		}
 		return c.Sprint(fd.AlignedString(fgpname))
 	case ViewFieldGit:

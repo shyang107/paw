@@ -32,7 +32,7 @@ func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 		nd, nf         int
 		wdmeta         = 0
 		roothead       = GetRootHeadC(cur, wdstty)
-		head           = GetPFHeadS(chdp, fields...)
+		head           = GetPFHeadS(paw.Chdp, fields...)
 		totalsize      int64
 	)
 
@@ -69,7 +69,7 @@ func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 
 		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
-			cpath = cdirp.Sprint("./") + cdir + cname
+			cpath = paw.Cdirp.Sprint("./") + cdir + cname
 			fmt.Fprintf(w, "%v\n", cpath)
 		}
 

@@ -60,7 +60,7 @@ func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 
 		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
-			cpath = cdirp.Sprint("./") + cdir + cname
+			cpath = paw.Cdirp.Sprint("./") + cdir + cname
 			fmt.Fprintf(w, "%v\n", cpath)
 		}
 
@@ -136,13 +136,13 @@ func tailNames(xattrs, names, cnames []string, name, cname string, isAppendName 
 	if xattrs == nil {
 		if isAppendName {
 			tnames = append(names, name+"?")
-			tcnames = append(cnames, cname+cdashp.Sprint("?"))
+			tcnames = append(cnames, cname+paw.Cdashp.Sprint("?"))
 		}
 	} else {
 		if len(xattrs) > 0 {
 			if isAppendName {
 				tnames = append(names, name+"@")
-				tcnames = append(cnames, cname+cdashp.Sprint("@"))
+				tcnames = append(cnames, cname+paw.Cdashp.Sprint("@"))
 			}
 		} else {
 			if isAppendName {

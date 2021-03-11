@@ -110,15 +110,15 @@ func (s GitStatusCode) String() string {
 
 func (s GitStatusCode) Color() *color.Color {
 	if c, ok := cgitmap[s]; !ok {
-		return cdashp
+		return paw.Cdashp
 	} else {
 		return c
 	}
 }
 
 var cgitmap = map[GitStatusCode]*color.Color{
-	GitNo:                 cdashp,
-	GitUnmodified:         cdashp,
+	GitNo:                 paw.Cdashp,
+	GitUnmodified:         paw.Cdashp,
 	GitUntracked:          paw.NewEXAColor("gm"),
 	GitModified:           paw.NewEXAColor("gm"),
 	GitAdded:              paw.NewEXAColor("ga"),
@@ -126,9 +126,9 @@ var cgitmap = map[GitStatusCode]*color.Color{
 	GitRenamed:            paw.NewEXAColor("gv"),
 	GitCopied:             paw.NewEXAColor("gv"),
 	GitUpdatedButUnmerged: paw.NewEXAColor("gt"),
-	GitIgnored:            cdashp,
+	GitIgnored:            paw.Cdashp,
 	GitChanged:            paw.NewEXAColor("ga"),
-	GitUnChanged:          cdashp,
+	GitUnChanged:          paw.Cdashp,
 }
 
 // GitStatus stores git status of `Branch`

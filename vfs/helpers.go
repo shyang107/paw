@@ -44,61 +44,21 @@ var (
 	urname                = currentuser.Username
 	usergp, _             = user.LookupGroupId(currentuser.Gid)
 	gpname                = usergp.Name
-	curname               = cuup.Sprint(urname)
-	cgpname               = cgup.Sprint(gpname)
+	curname               = paw.Cuup.Sprint(urname)
+	cgpname               = paw.Cgup.Sprint(gpname)
 	now                   = time.Now()
 	thisYear              = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local)
 	SpaceIndentSize       = paw.Spaces(IndentSize)
-	chdp                  = paw.Chdp  // head
-	cdirp                 = paw.Cdirp // pre-dir part of path
-	cdip                  = paw.Cdip  // directory
-	cfip                  = paw.Cfip  // file
-	corp                  = paw.Corp  // orphan file
-	cNop                  = paw.CNop  // serial number
-	cinp                  = paw.Cinp  // inode
-	cpms                  = paw.Cpms  // permission
-	csnp                  = paw.Csnp  // size number
-	csup                  = paw.Csup  // size unit
-	cuup                  = paw.Cuup  // user
-	cgup                  = paw.Cgup  // group
-	cunp                  = paw.Cunp  // user is not you
-	cgnp                  = paw.Cgnp  // group without you
-	clkp                  = paw.Clkp  // symlink
-	cbkp                  = paw.Cbkp  // blocks
-	cdap                  = paw.Cdap  // date
-	cgitp                 = paw.Cgitp // git
-	cmd5p                 = paw.Cmd5p // md5
-	cxap                  = paw.Cxap  // extended attributes
-	cxbp                  = paw.Cxbp  // extended attributes
-	cdashp                = paw.Cdashp
-	cnop                  = paw.CNop    // no this file kind
-	cbdp                  = paw.Cbdp    // device
-	ccdp                  = paw.Ccdp    // CharDevice
-	cpip                  = paw.Cpip    // named pipe
-	csop                  = paw.Csop    // socket
-	cexp                  = paw.Cexp    // execution
-	clnp                  = paw.Clnp    // symlink
-	cpmpt                 = paw.Cpmpt   // prompt
-	cpmptSn               = paw.CpmptSn // number in prompt
-	cpmptSu               = paw.CpmptSu // unit in prompt
-	bgpmpt                = []color.Attribute{48, 5, 236}
-	ctrace                = paw.Ctrace
-	cdebug                = paw.Cdebug
-	cinfo                 = paw.Cinfo
-	cwarn                 = paw.Cwarn
-	cerror                = paw.Cerror
-	cfatal                = paw.Cfatal
-	cpanic                = paw.Cpanic
 	sttyHeight, sttyWidth = paw.GetTerminalSize()
 )
 
 // ===
 
-// GetPathC returns  cdip.Sprint(cname)+cdirp.Sprint(cdir)
+// GetPathC returns  paw.Cdip.Sprint(cname)+paw.Cdirp.Sprint(cdir)
 func GetPathC(path string) (cdir, cname, cpath string) {
 	cdir, cname = filepath.Split(path)
-	cname = cdip.Sprint(cname)
-	cdir = cdirp.Sprint(cdir)
+	cname = paw.Cdip.Sprint(cname)
+	cdir = paw.Cdirp.Sprint(cdir)
 	return cdir, cname, cpath
 }
 
@@ -112,16 +72,16 @@ func linkC(de DirEntryX) string {
 		dir, name := filepath.Split(link)
 		_, err := os.Stat(link)
 		if err != nil {
-			return cdirp.Sprint(dir) + corp.Sprint(name)
+			return paw.Cdirp.Sprint(dir) + paw.Corp.Sprint(name)
 		}
-		return cdirp.Sprint(dir) + paw.FileLSColor(link).Sprint(name)
+		return paw.Cdirp.Sprint(dir) + paw.FileLSColor(link).Sprint(name)
 	}
 	return ""
 }
 
 func nameToLinkC(de DirEntryX) string {
 	if de.IsLink() {
-		return nameC(de) + cdashp.Sprint(" -> ") + linkC(de)
+		return nameC(de) + paw.Cdashp.Sprint(" -> ") + linkC(de)
 	} else {
 		return nameC(de)
 	}
@@ -131,16 +91,16 @@ func PathToLinkC(de DirEntryX, bgc []color.Attribute) string {
 	if bgc == nil {
 		dir, name := filepath.Split(de.Path())
 		if de.IsLink() {
-			return cdirp.Sprint(dir) + de.LSColor().Sprint(name) + cdashp.Sprint(" -> ") + linkC(de)
+			return paw.Cdirp.Sprint(dir) + de.LSColor().Sprint(name) + paw.Cdashp.Sprint(" -> ") + linkC(de)
 		} else {
-			return cdirp.Sprint(dir) + de.LSColor().Sprint(name)
+			return paw.Cdirp.Sprint(dir) + de.LSColor().Sprint(name)
 		}
 	} else {
 		dir, name := filepath.Split(de.Path())
 		var (
-			ccdirp  = (*cdirp)
+			ccdirp  = (*paw.Cdirp)
 			cnamep  = (*de.LSColor())
-			ccdashp = (*cdashp)
+			ccdashp = (*paw.Cdashp)
 		)
 		ccdirp.Add(bgc...)
 		cnamep.Add(bgc...)
@@ -154,7 +114,7 @@ func PathToLinkC(de DirEntryX, bgc []color.Attribute) string {
 }
 
 func iNodeC(de DirEntryX) string {
-	return cinp.Sprint(de.INode())
+	return paw.Cinp.Sprint(de.INode())
 }
 
 func GetXattr(path string) ([]string, error) {
@@ -190,7 +150,7 @@ func permissionS(de DirEntryX) string {
 func permissionC(de DirEntryX) string {
 	sperm := permissionS(de)
 	ns := len(sperm)
-	cxmark := cdashp.Sprint(string(sperm[ns-1]))
+	cxmark := paw.Cdashp.Sprint(string(sperm[ns-1]))
 	perm := sperm[ns-10 : ns-1]
 	abbr := string(sperm[:ns-10])
 	cabbr := ""
@@ -269,12 +229,12 @@ func sizeS(de DirEntryX) string {
 func sizeC(de DirEntryX) (csize string) {
 	ss := sizeS(de)
 	if ss == "-" {
-		return cdashp.Sprint(ss)
+		return paw.Cdashp.Sprint(ss)
 	}
 	nss := len(ss)
 	sn := fmt.Sprintf("%s", ss[:nss-1])
 	su := ss[nss-1:]
-	csize = csnp.Sprint(sn) + csup.Sprint(su)
+	csize = paw.Csnp.Sprint(sn) + paw.Csup.Sprint(su)
 	return csize
 }
 
@@ -284,11 +244,11 @@ func sizeCaligned(de DirEntryX) (csize string) {
 		nss = len(ss)
 	)
 	if ss == "-" {
-		csize = cdashp.Sprint("-")
+		csize = paw.Cdashp.Sprint("-")
 	} else {
 		sn := fmt.Sprintf("%s", ss[:nss-1])
 		su := ss[nss-1:]
-		csize = csnp.Sprint(sn) + csup.Sprint(su)
+		csize = paw.Csnp.Sprint(sn) + paw.Csup.Sprint(su)
 	}
 	var (
 		width = paw.MaxInt(nss, ViewFieldSize.Width())
@@ -302,7 +262,7 @@ func blocksCaligned(de DirEntryX) (cb string) {
 		ss  = "-"
 		nss = 1
 	)
-	cb = cdashp.Sprint(ss)
+	cb = paw.Cdashp.Sprint(ss)
 	var (
 		width = paw.MaxInt(nss, ViewFieldBlocks.Width())
 		sp    = paw.Spaces(width - nss)
@@ -325,7 +285,7 @@ func dateS(date time.Time) (sdate string) {
 
 func deLSColor(de DirEntryX) *color.Color {
 	if de.IsDir() {
-		return cdip
+		return paw.Cdip
 	}
 
 	if de.IsLink() { // os.ModeSymlink
@@ -333,26 +293,26 @@ func deLSColor(de DirEntryX) *color.Color {
 		if err != nil {
 			return paw.NewLSColor("or")
 		}
-		return clnp
+		return paw.Clnp
 	}
 
 	if de.IsCharDev() { // os.ModeDevice | os.ModeCharDevice
-		return ccdp
+		return paw.Ccdp
 	}
 
 	if de.IsDev() { //
-		return cbdp
+		return paw.Cbdp
 	}
 
 	if de.IsFIFO() { //os.ModeNamedPipe
-		return cpip
+		return paw.Cpip
 	}
 	if de.IsSocket() { //os.ModeSocket
-		return csop
+		return paw.Csop
 	}
 
 	if de.IsExecutable() && !de.IsDir() {
-		return cexp
+		return paw.Cexp
 	}
 
 	name := de.Name()
@@ -370,7 +330,7 @@ func deLSColor(de DirEntryX) *color.Color {
 		}
 	}
 
-	return cfip
+	return paw.Cfip
 }
 
 // func aligned(field ViewField, value interface{}) string {
@@ -412,18 +372,18 @@ func dirSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) st
 		sn  = fmt.Sprintf("%s", ss[:nss-1])
 		su  = strings.ToLower(ss[nss-1:])
 	)
-	cndirs := cpmptSn.Sprint(ndirs)
-	cnfiles := cpmptSn.Sprint(nfiles)
-	csumsize := cpmptSn.Sprint(sn) + cpmptSu.Sprint(su)
+	cndirs := paw.CpmptSn.Sprint(ndirs)
+	cnfiles := paw.CpmptSn.Sprint(nfiles)
+	csumsize := paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
 	msg := pad +
 		cndirs +
-		cpmpt.Sprint(" directories, ") +
+		paw.Cpmpt.Sprint(" directories, ") +
 		cnfiles +
-		cpmpt.Sprint(" files, size ≈ ") +
+		paw.Cpmpt.Sprint(" files, size ≈ ") +
 		csumsize +
-		cpmpt.Sprint(". ")
+		paw.Cpmpt.Sprint(". ")
 	nmsg := paw.StringWidth(paw.StripANSI(msg))
-	msg += cpmpt.Sprint(paw.Spaces(wdstty + 1 - nmsg))
+	msg += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - nmsg))
 	// msg := fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return msg
 }
@@ -439,19 +399,19 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) 
 		sn  = fmt.Sprintf("%s", ss[:nss-1])
 		su  = strings.ToLower(ss[nss-1:])
 	)
-	cndirs := cpmptSn.Sprint(ndirs)
-	cnfiles := cpmptSn.Sprint(nfiles)
-	csumsize := cpmptSn.Sprint(sn) + cpmptSu.Sprint(su)
+	cndirs := paw.CpmptSn.Sprint(ndirs)
+	cnfiles := paw.CpmptSn.Sprint(nfiles)
+	csumsize := paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
 	summary := pad +
-		cpmpt.Sprint("Accumulated ") +
+		paw.Cpmpt.Sprint("Accumulated ") +
 		cndirs +
-		cpmpt.Sprint(" directories, ") +
+		paw.Cpmpt.Sprint(" directories, ") +
 		cnfiles +
-		cpmpt.Sprint(" files, total size ≈ ") +
+		paw.Cpmpt.Sprint(" files, total size ≈ ") +
 		csumsize +
-		cpmpt.Sprint(".")
+		paw.Cpmpt.Sprint(".")
 	nsummary := paw.StringWidth(paw.StripANSI(summary))
-	summary += cpmpt.Sprint(paw.Spaces(wdstty + 1 - nsummary))
+	summary += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - nsummary))
 	// fmt.Sprintf("%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return summary
 }
@@ -467,21 +427,13 @@ func GetRootHeadC(de DirEntryX, wdstty int) string {
 		sn  = ss[:nss-1] // fmt.Sprintf("%s", ss[:nss-1])
 		su  = strings.ToLower(ss[nss-1:])
 	)
-	// if pdOpt != nil && pdOpt.File != nil {
-	// 	if pdOpt.File.IsLink() {
-	// 		root = pdOpt.File.Path
-	// 	}
-	// }
-	// "prompt":   {38, 5, 251, 48, 5, 236}
-	chead := cpmpt.Sprint("Root directory: ")
-	chead += PathToLinkC(de, bgpmpt)
-	chead += cpmpt.Sprint(", size ≈ ")
-	chead += cpmptSn.Sprint(sn) + cpmptSu.Sprint(su)
-	chead += cpmpt.Sprint(".")
 
-	chead += cpmpt.Sprint(paw.Spaces(wdstty + 1 - paw.StringWidth(paw.StripANSI(chead))))
-
-	// chead := fmt.Sprintf("%sRoot directory: %v, size ≈ %v", pad, GetColorizedPath(root, ""), GetColorizedSize(size))
+	chead := paw.Cpmpt.Sprint("Root directory: ")
+	chead += PathToLinkC(de, paw.EXAColors["bgprompt"])
+	chead += paw.Cpmpt.Sprint(", size ≈ ")
+	chead += paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
+	chead += paw.Cpmpt.Sprint(".")
+	chead += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - paw.StringWidth(paw.StripANSI(chead))))
 	return chead
 }
 
@@ -491,7 +443,7 @@ func FprintTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize 
 }
 
 func FprintBanner(w io.Writer, pad string, mark string, length int) {
-	banner := cdashp.Sprintf("%s%s\n", pad, strings.Repeat(mark, length))
+	banner := paw.Cdashp.Sprintf("%s%s\n", pad, strings.Repeat(mark, length))
 	fmt.Fprint(w, banner)
 }
 
@@ -503,8 +455,8 @@ func FprintXattrs(w io.Writer, wdpad int, xattrs []string) {
 	for _, x := range xattrs {
 		fmt.Fprintf(w, "%s%v%v\n",
 			sp,
-			cxbp.Sprint(XattrSymbol),
-			cxap.Sprint(x))
+			paw.Cxbp.Sprint(XattrSymbol),
+			paw.Cxap.Sprint(x))
 	}
 }
 
