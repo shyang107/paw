@@ -77,7 +77,7 @@ var DefaultFormat = &Formatter{
 }
 
 var (
-	crp   = color.New([]color.Attribute{38, 5, 193, 4}...)
+	cvp   = color.New([]color.Attribute{38, 5, 222, 4}...)
 	Logos = map[logrus.Level]string{
 		logrus.PanicLevel: "😱",
 		logrus.FatalLevel: "😨",
@@ -259,7 +259,7 @@ func (f *Formatter) sField(entry *logrus.Entry, field string) (s string) {
 		csbr := cl.Sprint(sbr)
 		cfield := cl.Sprint(field)
 		ccolon := cl.Sprint(colon)
-		cvalue := crp.Sprint(value)
+		cvalue := cvp.Sprint(value)
 		if f.HideKeys {
 			s = csbl + cvalue + csbr // fmt.Sprintf("[%v]", value)
 		} else {

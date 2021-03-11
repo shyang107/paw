@@ -176,7 +176,7 @@ func NewValuePair(field string, value interface{}) *ValuePair {
 	return &ValuePair{
 		Field:      field,
 		Value:      value,
-		LeveL:      logrus.InfoLevel,
+		LeveL:      Logger.GetLevel(),
 		FieldColor: nil,
 		ValueColor: Cvalue,
 	}
@@ -193,12 +193,13 @@ func NewValuePairWith(field string, value interface{}, level logrus.Level) *Valu
 
 func (v ValuePair) String() string {
 	if v.FieldColor == nil {
-		switch v.LeveL {
-		case logrus.InfoLevel:
-			v.FieldColor = Cfield
-		default:
-			v.FieldColor = LogLevelColor(v.LeveL)
-		}
+		v.FieldColor = LogLevelColor(v.LeveL)
+		// switch v.LeveL {
+		// case logrus.InfoLevel:
+		// 	v.FieldColor = Cfield
+		// default:
+		// 	v.FieldColor = LogLevelColor(v.LeveL)
+		// }
 	}
 	if v.ValueColor == nil {
 		v.ValueColor = Cvalue
