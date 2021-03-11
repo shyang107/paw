@@ -32,8 +32,8 @@ var (
 		Destination: &opt.hasAllNoMd5,
 	}
 	fg_hasAllNoGitMd5 = &cli.BoolFlag{
-		Name:        "xgitmd5",
-		Aliases:     []string{"xg5"},
+		Name:        "xmd5git",
+		Aliases:     []string{"x5g"},
 		Value:       false,
 		Usage:       "list each file's all fields, except git and md5",
 		Destination: &opt.hasAllNoGitMd5,
@@ -175,8 +175,8 @@ var (
 				},
 			},
 			{
-				Name:    "allxgitmd5",
-				Aliases: []string{"xg5"},
+				Name:    "allxmd5git",
+				Aliases: []string{"x5g"},
 				Usage:   "show all fields, except git and md5",
 				Action: func(c *cli.Context) error {
 					opt.hasAllNoGitMd5 = true
