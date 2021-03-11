@@ -9,8 +9,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/mattn/go-runewidth"
-
+	"github.com/shyang107/paw/runewidth"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/encoding/traditionalchinese"
 
@@ -221,33 +220,7 @@ func TrimFrontEndSpaceLine(content string) string {
 	return strings.Join(lines, "\n")
 }
 
-// // type StringBuilder strings.Builder
-
-// // NewStringBuilder will return `*strings.Builder`
-// //
-// // A Builder is used to efficiently build a string using Write methods. It minimizes memory copying. The zero value is ready to use. Do not copy a non-zero Builder.
-// func NewStringBuilder() *strings.Builder {
-// 	return new(strings.Builder)
-// }
-
-// // NewStringReader returns a new Reader reading from s. It is similar to bytes.NewBufferString but more efficient and read-only.
-// func NewStringReader(s string) *strings.Reader {
-// 	return strings.NewReader(s)
-// }
-
-// // NewBuffer creates and initializes a new Buffer using buf as its initial contents. The new Buffer takes ownership of buf, and the caller should not use buf after this call. NewBuffer is intended to prepare a Buffer to read existing data. It can also be used to set the initial size of the internal buffer for writing. To do that, buf should have the desired capacity but a length of zero.
-// //
-// // In most cases, new(Buffer) (or just declaring a Buffer variable) is sufficient to initialize a Buffer.
-// func NewBuffer(buf []byte) *bytes.Buffer {
-// 	return bytes.NewBuffer(buf)
-// }
-
-// // NewReader returns a new Reader whose buffer has the default size.
-// func NewBufioReader(s string) *bufio.Reader {
-// 	// return bufio.NewReader(NewReader(s))
-// 	return bufio.NewReader(NewBuffer([]byte(s)))
-// }
-
+// -----------------------------------------------------------
 // The following is adopted from github.com/mattn/go-runewidth
 
 // FillLeft return string filled in left by spaces in w cells
