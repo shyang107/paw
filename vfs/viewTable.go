@@ -32,7 +32,7 @@ func VFSViewTable(w io.Writer, v *VFS) {
 func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
 	var (
 		vfields        = cur.opt.ViewFields
-		fields         = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
+		fields         = vfields.GetModifyWidthsNoGitFields(cur)
 		wdstty         = sttyWidth - 2
 		tnd, _, nitems = cur.NItems()
 		wdidx          = ViewFieldNo.Width()

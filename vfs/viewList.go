@@ -26,15 +26,16 @@ func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	// paw.Logger.Debug()
 	var (
 		vfields        = cur.opt.ViewFields
-		fields         = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
 		wdstty         = sttyWidth - 2
 		tnd, _, nitems = cur.NItems()
 		nd, nf         int
 		wdmeta         = 0
 		roothead       = GetRootHeadC(cur, wdstty)
-		head           = GetPFHeadS(paw.Chdp, fields...)
-		totalsize      int64
+		// head           = GetPFHeadS(paw.Chdp, fields...)
+		totalsize int64
 	)
+	vfields.ModifyWidths(cur)
+	head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
 
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)

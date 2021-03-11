@@ -29,7 +29,7 @@ func viewListTree(w io.Writer, cur *Dir, hasX, hasList bool) {
 		roothead = GetRootHeadC(cur, wdstty)
 	)
 	if hasList {
-		fields = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
+		fields = vfields.GetModifyWidthsNoGitFields(cur)
 	} else {
 		fields = []ViewField{ViewFieldName}
 	}
@@ -37,7 +37,7 @@ func viewListTree(w io.Writer, cur *Dir, hasX, hasList bool) {
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
-	head := GetPFHeadS(paw.Chdp, fields...)
+	head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
 	fmt.Fprintf(w, "%v\n", head)
 
 	fmt.Fprintf(w, "%v ", vfields.RowStringXNameC(cur))

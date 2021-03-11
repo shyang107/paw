@@ -31,8 +31,8 @@ func VFSViewLevel(w io.Writer, v *VFS) {
 
 func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
-		vfields          = cur.opt.ViewFields
-		fields           = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
+		vfields = cur.opt.ViewFields
+		// fields           = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
 		wdname           = ViewFieldName.Width()
 		wdstty           = sttyWidth - 2
 		tnd, tnf, nitems = cur.NItems()
@@ -42,6 +42,8 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 		roothead         = GetRootHeadC(cur, wdstty)
 		totalsize        int64
 	)
+	vfields.ModifyWidths(cur)
+	head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
 
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
@@ -93,7 +95,7 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 			cur.FprintErrors(os.Stderr, pad)
 		}
 		ViewFieldName.SetWidth(wdname - wdpad)
-		head := GetPFHeadS(paw.Chdp, fields...)
+		// head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
 			var sidx string

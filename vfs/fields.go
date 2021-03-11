@@ -381,6 +381,26 @@ func (v ViewField) GetValuesS(de DirEntryX) (values []string) {
 	return values
 }
 
+func (v ViewField) GetHead(c *color.Color, isNoGit bool) string {
+	var sprintf func(string, ...interface{}) string
+	if c != nil {
+		sprintf = c.Sprintf
+	} else {
+		sprintf = fmt.Sprintf
+	}
+
+	hd := ""
+	for _, f := range v.FieldsNoGit(isNoGit) {
+		if f&ViewFieldName != 0 {
+			hd += sprintf("%-[1]*[2]s", f.Width(), f.Name())
+			continue
+		}
+		value := f.AlignedString(f.Name())
+		hd += sprintf("%v", value) + " "
+	}
+	return hd
+}
+
 // AlignedString return aligned string of value according to ViewField.Align()
 func (v ViewField) AlignedString(value interface{}) string {
 	var (
@@ -467,14 +487,14 @@ func (v ViewField) RowStringXNameC(de DirEntryX) string {
 	return sb.String()
 }
 
-func (v ViewField) GetModifyWidthsNoGitFields(d *Dir, isNoGit bool) []ViewField {
-	fields := v.FieldsNoGit(isNoGit)
+func (v ViewField) GetModifyWidthsNoGitFields(d *Dir) []ViewField {
+	fields := v.FieldsNoGit(d.git.NoGit)
 	modFieldWidths(d, fields)
 	return fields
 }
 
-func (v ViewField) ModifyWidths(d *Dir, isNoGit bool) {
-	fields := v.FieldsNoGit(isNoGit)
+func (v ViewField) ModifyWidths(d *Dir) {
+	fields := v.FieldsNoGit(d.git.NoGit)
 	modFieldWidths(d, fields)
 }
 
@@ -523,22 +543,22 @@ func childWidths(d *Dir, fields []ViewField) {
 	}
 }
 
-func GetPFHeadS(c *color.Color, fields ...ViewField) string {
-	var sprintf func(string, ...interface{}) string
-	if c != nil {
-		sprintf = c.Sprintf
-	} else {
-		sprintf = fmt.Sprintf
-	}
+// func GetPFHeadS(c *color.Color, fields ...ViewField) string {
+// 	var sprintf func(string, ...interface{}) string
+// 	if c != nil {
+// 		sprintf = c.Sprintf
+// 	} else {
+// 		sprintf = fmt.Sprintf
+// 	}
 
-	hd := ""
-	for _, f := range fields {
-		if f&ViewFieldName != 0 {
-			hd += sprintf("%-[1]*[2]s", f.Width(), f.Name())
-			continue
-		}
-		value := f.AlignedString(f.Name())
-		hd += sprintf("%v", value) + " "
-	}
-	return hd
-}
+// 	hd := ""
+// 	for _, f := range fields {
+// 		if f&ViewFieldName != 0 {
+// 			hd += sprintf("%-[1]*[2]s", f.Width(), f.Name())
+// 			continue
+// 		}
+// 		value := f.AlignedString(f.Name())
+// 		hd += sprintf("%v", value) + " "
+// 	}
+// 	return hd
+// }
