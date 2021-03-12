@@ -8,9 +8,9 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/vfs"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cast"
 )
 
 func main() {

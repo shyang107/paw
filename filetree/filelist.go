@@ -609,11 +609,11 @@ func (f *FileList) FprintAllErrs(w io.Writer, pad string) {
 }
 
 func (f *FileList) DisableColor() {
-	paw.SetNoColor()
+	paw.DisableColor()
 }
 
 func (f *FileList) EnableColor() {
-	paw.DefaultNoColor()
+	paw.EnableColor()
 }
 
 // SkipThis is used as a return value indicate that the regular path

@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/bytefmt"
-	"github.com/spf13/cast"
+	"github.com/shyang107/paw/cast"
 )
 
 type EdgeType string
@@ -332,27 +332,6 @@ func deLSColor(de DirEntryX) *color.Color {
 
 	return paw.Cfip
 }
-
-// func aligned(field ViewField, value interface{}) string {
-// 	var (
-// 		align = field.Align()
-// 		s     = fmt.Sprintf("%v", value)
-// 		wd    = paw.StringWidth(paw.StripANSI(s))
-// 		width = paw.MaxInt(wd, field.Width())
-// 		sp    = paw.Spaces(width - wd)
-// 	)
-
-// 	if field&ViewFieldName == ViewFieldName {
-// 		return s
-// 	}
-
-// 	switch align {
-// 	case paw.AlignLeft:
-// 		return s + sp
-// 	default:
-// 		return sp + s
-// 	}
-// }
 
 func checkFieldsHasGit(fields []ViewField, isNoGit bool) []ViewField {
 	fds := []ViewField{}

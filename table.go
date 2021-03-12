@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/spf13/cast"
+	"github.com/shyang107/paw/cast"
 )
 
 // TableFormat define the format used to print out
@@ -463,7 +463,7 @@ func (t *TableFormat) getAlignString(col int, al Align, width int, value string)
 		s := getColorField(value, c, r, al, width)
 		return s
 	} else {
-		return StringWithWidth(al, value, width)
+		return AlignWithWidth(al, value, width)
 		// var s string
 		// switch al {
 		// case AlignLeft:

@@ -7,8 +7,8 @@ import (
 	"sort"
 
 	"github.com/fatih/color"
+	"github.com/shyang107/paw/cast"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cast"
 
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/vfs"

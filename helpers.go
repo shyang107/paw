@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/spf13/cast"
+	"github.com/shyang107/paw/cast"
 )
 
 func Caller(skip int) string {

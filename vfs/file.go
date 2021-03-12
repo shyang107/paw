@@ -13,7 +13,7 @@ import (
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
-	"github.com/spf13/cast"
+	"github.com/shyang107/paw/cast"
 )
 
 // file 代表一個文件

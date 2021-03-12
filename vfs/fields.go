@@ -8,7 +8,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
-	"github.com/spf13/cast"
+	"github.com/shyang107/paw/cast"
 )
 
 type ViewField int
@@ -404,22 +404,28 @@ func (v ViewField) GetHead(c *color.Color, isNoGit bool) string {
 // AlignedString return aligned string of value according to ViewField.Align()
 func (v ViewField) AlignedString(value interface{}) string {
 	var (
-		align = v.Align()
 		s     = cast.ToString(value)
 		wd    = paw.StringWidth(s)
 		width = paw.MaxInt(wd, v.Width())
-		sp    = paw.Spaces(width - wd)
 	)
+	return paw.AlignWithWidth(v.Align(), s, width)
+	// var (
+	// 	align = v.Align()
+	// 	s     = cast.ToString(value)
+	// 	wd    = paw.StringWidth(s)
+	// 	width = paw.MaxInt(wd, v.Width())
+	// 	sp    = paw.Spaces(width - wd)
+	// )
 
-	if v&ViewFieldName == ViewFieldName {
-		return s
-	}
-	switch align {
-	case paw.AlignLeft:
-		return s + sp
-	default:
-		return sp + s
-	}
+	// if v&ViewFieldName == ViewFieldName {
+	// 	return s
+	// }
+	// switch align {
+	// case paw.AlignLeft:
+	// 	return s + sp
+	// default:
+	// 	return sp + s
+	// }
 }
 
 // AlignedStringC will strip ANSI code of cvalue, then return aligned string as AlignedString

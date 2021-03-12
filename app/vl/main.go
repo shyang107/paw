@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/cnested"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cast"
 	"github.com/urfave/cli"
 )
 

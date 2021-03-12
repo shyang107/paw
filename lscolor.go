@@ -9,8 +9,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
+	"github.com/shyang107/paw/cast"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cast"
 )
 
 var (
@@ -43,6 +43,7 @@ var (
 		"ow":          "other-writable (o+w) and not sticky directory",
 		"*.extension": "every file using this extension e.g. *.jpg",
 	}
+
 	EXAColors = map[string][]color.Attribute{
 		"ca": LSColors["ca"],
 		"cd": LSColors["cd"],
@@ -74,35 +75,35 @@ var (
 		"tw": {38, 5, 209, 1},    // others +w bit
 		"tx": {38, 5, 156, 1, 4}, // others +x bit
 		"sn": {38, 5, 156, 1},    // size number
-		"sb": {38, 5, 156},       // size unit
+		"sb": FgColor256A(156),   //{38, 5, 156},       // size unit
 		"uu": {38, 5, 229, 1},    // user is you + 1 -> bold
 		// "un": {38, 5, 214},    // user is not you
-		"un": {38, 5, 251},    // user is not you
-		"gu": {38, 5, 229, 1}, // group with you in it
+		"un": FgColor256A(251), //{38, 5, 251},    // user is not you
+		"gu": {38, 5, 229, 1},  // group with you in it
 		// "gn": {38, 5, 214},    // group without you
-		"gn": {38, 5, 251}, // group without you
-		"da": {38, 5, 153}, // timestamp + 8 -> concealed
+		"gn": FgColor256A(251), //{38, 5, 251}, // group without you
+		"da": FgColor256A(153), //{38, 5, 153}, // timestamp + 8 -> concealed
 		// "hd": {4, 38, 5, 15}, // head
 		"hd":  {38, 5, 251, 4, 48, 5, 236}, // head + 4-> underline
-		"-":   {38, 5, 8},                  // Concealed
-		".":   {38, 5, 8},                  // Concealed
-		" ":   {38, 5, 8},                  // Concealed
-		"ga":  {38, 5, 156},                // git new
-		"gm":  {38, 5, 39},                 // git modified
-		"gd":  {38, 5, 196},                // git deleted
-		"gv":  {38, 5, 186},                // git renamed
-		"gt":  {38, 5, 207},                // git type change
-		"dir": {38, 5, 189},                //addition 'dir'
+		"-":   FgColor256A(8),              //{38, 5, 8}, // Concealed
+		".":   FgColor256A(8),              //{38, 5, 8}, // Concealed
+		" ":   FgColor256A(8),              //{38, 5, 8}, // Concealed
+		"ga":  FgColor256A(156),            //{38, 5, 156}, // git new
+		"gm":  FgColor256A(39),             //{38, 5, 39}, // git modified
+		"gd":  FgColor256A(196),            //{38, 5, 196}, // git deleted
+		"gv":  FgColor256A(186),            //{38, 5, 186}, // git renamed
+		"gt":  FgColor256A(207),            //{38, 5, 207}, // git type change
+		"dir": FgColor256A(189),            //{38, 5, 189}, //addition 'dir'
 		// "xattr": {38, 5, 249, 4}, //addition 'xattr'+ 4-> underline
 		"xattr":    {38, 5, 8, 4, 48, 5, 234},
 		"xsymb":    {38, 5, 8, 48, 5, 234},
-		"in":       {38, 5, 213},    // inode
-		"lk":       {38, 5, 209, 1}, // links
-		"bk":       {38, 5, 189},    // blocks
-		"prompt":   {38, 5, 251, 48, 5, 236},
-		"bgprompt": {48, 5, 236},
+		"in":       FgColor256A(213),                          // {38, 5, 213}, // inode
+		"lk":       FgColor256A(209).Add(color.Bold),          //{38, 5, 209, 1}, // links
+		"bk":       FgColor256A(189),                          // {38, 5, 189},                                              // blocks
+		"prompt":   FgColor256A(251).Add(BgColor256A(236)...), //{38, 5, 251, 48, 5, 236},
+		"bgprompt": BgColor256A(236),                          //{48, 5, 236},
 		"promptsn": {38, 5, 156, 1, 48, 5, 236},
-		"promptsu": {38, 5, 156, 48, 5, 236},
+		"promptsu": FgColor256A(156).Add(BgColor256A(236)...), //{38, 5, 156, 48, 5, 236},
 		"trace":    LogLevelColorAttributes(logrus.TraceLevel),
 		"debug":    LogLevelColorAttributes(logrus.DebugLevel),
 		"info":     LogLevelColorAttributes(logrus.InfoLevel),
@@ -110,12 +111,12 @@ var (
 		"error":    LogLevelColorAttributes(logrus.ErrorLevel),
 		"fatal":    LogLevelColorAttributes(logrus.FatalLevel),
 		"panic":    LogLevelColorAttributes(logrus.PanicLevel),
-		"md5":      LSColors["no"], //LSColors[".md5"],
-		"field":    {38, 5, 216},
-		"value":    {38, 5, 222, 4},
+		"md5":      LSColors["no"],                        //LSColors[".md5"],
+		"field":    FgColor256A(216),                      // {38, 5, 216},
+		"value":    FgColor256A(222).Add(color.Underline), //{38, 5, 222, 4},
 		// Cvalue :{38, 5, 193, 4},
-		"even": {38, 5, 251, 48, 5, 236},
-		"odd":  {38, 5, 159, 48, 5, 238},
+		"even": FgColor256A(251).Add(BgColor256A(236)...), //{38, 5, 251, 48, 5, 236},
+		"odd":  FgColor256A(159).Add(BgColor256A(238)...), //{38, 5, 159, 48, 5, 238},
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file
@@ -711,9 +712,9 @@ var (
 	}
 	// ReExtLSColors is LS_COLORS code for specific pattern of file extentions
 	ReExtLSColors = map[*regexp.Regexp][]color.Attribute{
-		regexp.MustCompile(`r[0-9]{0,2}$`):  {38, 5, 239},
-		regexp.MustCompile(`zx[0-9]{0,2}$`): {38, 5, 239},
-		regexp.MustCompile(`z[0-9]{0,2}$`):  {38, 5, 239},
+		regexp.MustCompile(`r[0-9]{0,2}$`):  FgColor256A(239), //{38, 5, 239},
+		regexp.MustCompile(`zx[0-9]{0,2}$`): FgColor256A(239), //{38, 5, 239},
+		regexp.MustCompile(`z[0-9]{0,2}$`):  FgColor256A(239), //{38, 5, 239},
 	}
 
 	// Chdp is default color use for head
@@ -793,10 +794,6 @@ var (
 	COdd    = NewEXAColor("odd")
 )
 
-func init() {
-
-}
-
 const ansi = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
 
 var reANSI = regexp.MustCompile(ansi)
@@ -806,9 +803,15 @@ func StripANSI(str string) string {
 	return reANSI.ReplaceAllString(str, "")
 }
 
-// SetNoColor will set `true` to `NoColor`
-func SetNoColor() {
+// DisableColor will set `true` to `NoColor`
+func DisableColor() {
 	NoColor = true
+	color.NoColor = NoColor
+}
+
+// EnableColor will set `true` to `NoColor`
+func EnableColor() {
+	NoColor = false
 	color.NoColor = NoColor
 }
 
@@ -863,7 +866,8 @@ func LogLevelColorAttributes(level logrus.Level) (a []color.Attribute) {
 	case logrus.DebugLevel:
 		a = []color.Attribute{color.FgHiRed}
 	case logrus.WarnLevel:
-		a = []color.Attribute{38, 5, 220, 1, 48, 5, 160}
+		a = FgColor256A(220).Add(color.Bold).Add(BgColor256A(160)...)
+		// a = []color.Attribute{38, 5, 220, 1, 48, 5, 160}
 	case logrus.ErrorLevel, logrus.FatalLevel, logrus.PanicLevel:
 	default: //info
 		a = []color.Attribute{color.FgHiGreen}
@@ -944,3 +948,106 @@ func FileLSColor(fullpath string) *color.Color {
 	}
 	return Cnop
 }
+
+// var (
+// 	escape   = "\x1b"
+// 	fgcolors = "38;5;"
+// 	bgcolors = "48;5;"
+// )
+
+func FgGray(level int) *color.Color {
+	if level < 0 {
+		level = 0
+	}
+	if level > 23 {
+		level = 23
+	}
+	level += 232
+	g := color.Attribute(level)
+	return color.New([]color.Attribute{38, 5, g}...)
+}
+
+func BgGray(level int) *color.Color {
+	if level < 0 {
+		level = 0
+	}
+	if level > 23 {
+		level = 23
+	}
+	level += 232
+	g := color.Attribute(level)
+	return color.New([]color.Attribute{48, 5, g}...)
+}
+
+// Color256 return foreground Color (use fatih.color)
+//      0-  7：标准颜色（同ESC [ 30–37 m）
+//      8- 15：高强度颜色（同ESC [ 90–97 m）
+//     16-231：6 × 6 × 6 立方（216色）: 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
+//    232-255：从黑到白的24阶灰度色
+func FgColor256(i int) *color.Color {
+	return color.New(FgColor256A(i)...)
+}
+
+// Color256 return attributes of foreground Color (use fatih.color)
+//      0-  7：标准颜色（同ESC [ 30–37 m）
+//      8- 15：高强度颜色（同ESC [ 90–97 m）
+//     16-231：6 × 6 × 6 立方（216色）: 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
+//    232-255：从黑到白的24阶灰度色
+func FgColor256A(i int) AttributeA {
+	as := []color.Attribute{38, 5}
+	var a color.Attribute
+	switch idx := i; {
+	case idx < 0:
+		a = color.Attribute(0)
+	case idx > 255:
+		a = color.Attribute(255)
+	default:
+		a = color.Attribute(idx)
+	}
+	as = append(as, a)
+	return as
+}
+
+// Color256 return foreground Color (use fatih.color)
+//      0-  7：标准颜色（同ESC [ 30–37 m）
+//      8- 15：高强度颜色（同ESC [ 90–97 m）
+//     16-231：6 × 6 × 6 立方（216色）: 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
+//    232-255：从黑到白的24阶灰度色
+func BgColor256(i int) *color.Color {
+	return color.New(BgColor256A(i)...)
+}
+
+// Color256 return attributes of foreground Color (use fatih.color)
+//      0-  7：标准颜色（同ESC [ 30–37 m）
+//      8- 15：高强度颜色（同ESC [ 90–97 m）
+//     16-231：6 × 6 × 6 立方（216色）: 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
+//    232-255：从黑到白的24阶灰度色
+func BgColor256A(i int) AttributeA {
+	as := []color.Attribute{48, 5}
+	var a color.Attribute
+	switch idx := i; {
+	case idx < 0:
+		a = color.Attribute(0)
+	case idx > 255:
+		a = color.Attribute(255)
+	default:
+		a = color.Attribute(idx)
+	}
+	as = append(as, a)
+	return as
+}
+
+type AttributeA []color.Attribute
+
+func NewAttributeA() AttributeA {
+	return make(AttributeA, 0)
+}
+
+func (a AttributeA) Add(p ...color.Attribute) AttributeA {
+	a = append(a, p...)
+	return a
+}
+
+// func (a AttributeA) To() []color.Attribute {
+// 	return []color.Attribute(a)
+// }

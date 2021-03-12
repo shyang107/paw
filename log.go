@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/cnested"
-	"github.com/spf13/cast"
 
 	"github.com/sirupsen/logrus"
 )

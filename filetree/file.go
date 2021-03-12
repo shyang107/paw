@@ -12,7 +12,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
-	"github.com/spf13/cast"
+	"github.com/shyang107/paw/cast"
 )
 
 // filetree is tree structure of files
