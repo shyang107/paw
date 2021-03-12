@@ -381,9 +381,9 @@ func (d *Dir) Field(field ViewField) string {
 func (d *Dir) FieldC(fd ViewField) string {
 	switch fd {
 	case ViewFieldNo:
-		return paw.Cdip.Sprint(fd.AlignedString(fd.Value()))
+		return paw.Cdip.Sprint(fd.AlignedS(fd.Value()))
 	case ViewFieldPermissions:
-		return fd.AlignedStringC(permissionC(d))
+		return fd.AlignedSC(permissionC(d))
 	case ViewFieldSize:
 		return sizeCaligned(d)
 	case ViewFieldBlocks:
@@ -396,7 +396,7 @@ func (d *Dir) FieldC(fd ViewField) string {
 		} else {
 			c = paw.Cuup
 		}
-		return c.Sprint(fd.AlignedString(furname))
+		return c.Sprint(fd.AlignedS(furname))
 	case ViewFieldGroup: //"Group",
 		fgpname := d.Group()
 		var c *color.Color
@@ -405,17 +405,17 @@ func (d *Dir) FieldC(fd ViewField) string {
 		} else {
 			c = paw.Cgup
 		}
-		return c.Sprint(fd.AlignedString(fgpname))
+		return c.Sprint(fd.AlignedS(fgpname))
 	case ViewFieldGit:
 		rp := d.RelPath()
 		if rp != "." {
 			rp += "/"
 		}
-		return fd.AlignedStringC(d.git.XYc(rp))
+		return fd.AlignedSC(d.git.XYc(rp))
 	case ViewFieldName:
 		return paw.Cdip.Sprint(d.Name())
 	default:
-		return fd.Color().Sprint(fd.AlignedString(d.Field(fd)))
+		return fd.Color().Sprint(fd.AlignedS(d.Field(fd)))
 	}
 }
 

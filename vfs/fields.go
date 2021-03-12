@@ -395,14 +395,14 @@ func (v ViewField) GetHead(c *color.Color, isNoGit bool) string {
 			hd += sprintf("%-[1]*[2]s", f.Width(), f.Name())
 			continue
 		}
-		value := f.AlignedString(f.Name())
+		value := f.AlignedS(f.Name())
 		hd += sprintf("%v", value) + " "
 	}
 	return hd
 }
 
-// AlignedString return aligned string of value according to ViewField.Align()
-func (v ViewField) AlignedString(value interface{}) string {
+// AlignedS return aligned string of value according to ViewField.Align()
+func (v ViewField) AlignedS(value interface{}) string {
 	var (
 		s     = cast.ToString(value)
 		wd    = paw.StringWidth(s)
@@ -428,8 +428,8 @@ func (v ViewField) AlignedString(value interface{}) string {
 	// }
 }
 
-// AlignedStringC will strip ANSI code of cvalue, then return aligned string as AlignedString
-func (v ViewField) AlignedStringC(cvalue interface{}) string {
+// AlignedSC will strip ANSI code of cvalue, then return aligned string as AlignedS
+func (v ViewField) AlignedSC(cvalue interface{}) string {
 	var (
 		align = v.Align()
 		s     = cast.ToString(cvalue)
@@ -453,10 +453,10 @@ func (v ViewField) RowString(de DirEntryX) string {
 	sb := new(strings.Builder)
 	for _, field := range v.Fields() {
 		if field&ViewFieldName != 0 {
-			sb.WriteString(field.AlignedString(de.Field(field)))
+			sb.WriteString(field.AlignedS(de.Field(field)))
 			continue
 		}
-		sb.WriteString(field.AlignedString(de.Field(field)) + " ")
+		sb.WriteString(field.AlignedS(de.Field(field)) + " ")
 	}
 	return sb.String()
 }
@@ -466,7 +466,7 @@ func (v ViewField) RowStringXName(de DirEntryX) string {
 		if field&ViewFieldName != 0 {
 			continue
 		}
-		sb.WriteString(field.AlignedString(de.Field(field)) + " ")
+		sb.WriteString(field.AlignedS(de.Field(field)) + " ")
 	}
 	return sb.String()
 }
@@ -563,7 +563,7 @@ func childWidths(d *Dir, fields []ViewField) {
 // 			hd += sprintf("%-[1]*[2]s", f.Width(), f.Name())
 // 			continue
 // 		}
-// 		value := f.AlignedString(f.Name())
+// 		value := f.AlignedS(f.Name())
 // 		hd += sprintf("%v", value) + " "
 // 	}
 // 	return hd

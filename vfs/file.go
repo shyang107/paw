@@ -379,9 +379,9 @@ func (f *File) FieldC(fd ViewField) string {
 
 	switch fd {
 	case ViewFieldNo:
-		return paw.Cfip.Sprint(fd.AlignedString(fd.Value()))
+		return paw.Cfip.Sprint(fd.AlignedS(fd.Value()))
 	case ViewFieldPermissions:
-		return fd.AlignedStringC(permissionC(f))
+		return fd.AlignedSC(permissionC(f))
 	case ViewFieldSize:
 		if f.IsCharDev() || f.IsDev() {
 			major, minor := f.DevNumber()
@@ -406,7 +406,7 @@ func (f *File) FieldC(fd ViewField) string {
 		} else {
 			c = paw.Cuup
 		}
-		return c.Sprint(fd.AlignedString(furname))
+		return c.Sprint(fd.AlignedS(furname))
 	case ViewFieldGroup: //"Group",
 		fgpname := f.Group()
 		var c *color.Color
@@ -415,13 +415,13 @@ func (f *File) FieldC(fd ViewField) string {
 		} else {
 			c = paw.Cgup
 		}
-		return c.Sprint(fd.AlignedString(fgpname))
+		return c.Sprint(fd.AlignedS(fgpname))
 	case ViewFieldGit:
-		return fd.AlignedStringC(f.git.XYc(f.RelPath()))
+		return fd.AlignedSC(f.git.XYc(f.RelPath()))
 	case ViewFieldName:
 		return nameToLinkC(f)
 	default:
-		return fd.Color().Sprint(fd.AlignedString(f.Field(fd)))
+		return fd.Color().Sprint(fd.AlignedS(f.Field(fd)))
 	}
 }
 
