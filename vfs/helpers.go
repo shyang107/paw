@@ -323,7 +323,10 @@ func deLSColor(de DirEntryX) *color.Color {
 	if att, ok := paw.LSColors[ext]; ok {
 		return color.New(att...)
 	}
-
+	file := strings.TrimSuffix(name, ext)
+	if att, ok := paw.LSColors[file]; ok {
+		return color.New(att...)
+	}
 	for re, att := range paw.ReExtLSColors {
 		if re.MatchString(name) {
 			return color.New(att...)
