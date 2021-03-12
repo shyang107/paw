@@ -78,7 +78,7 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 			curnd, curnf int
 			size         int64
 			idx          = fmt.Sprintf("G%-[1]*[2]d ", wdidx, i)
-			cidx         = paw.Cfield.Sprint(idx)
+			// cidx         = paw.Cfield.Sprint(idx)
 		)
 
 		paw.Logger.WithFields(logrus.Fields{
@@ -97,10 +97,8 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 			continue
 		}
 
-		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
-			cpath = paw.Cdirp.Sprint("./") + cdir + cname
-			tf.PrintLineln(cidx + cpath)
+			tf.PrintLineln(GetRelPath("", idx, rp, false))
 		}
 		if len(cur.errors) > 0 {
 			errmsg := cur.Errors("")

@@ -68,10 +68,8 @@ func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 			continue
 		}
 
-		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
-			cpath = paw.Cdirp.Sprint("./") + cdir + cname
-			fmt.Fprintf(w, "%v\n", cpath)
+			FprintRelPath(w, "", "", rp, false)
 		}
 
 		if len(cur.errors) > 0 {

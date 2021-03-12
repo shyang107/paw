@@ -33,7 +33,6 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		vfields = cur.opt.ViewFields
 		// fields           = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
-		wdname           = ViewFieldName.Width()
 		wdstty           = sttyWidth - 2
 		tnd, tnf, nitems = cur.NItems()
 		wdidx            = GetMaxWidthOf(tnd, tnf)
@@ -43,7 +42,8 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 		totalsize        int64
 	)
 	vfields.ModifyWidths(cur)
-	head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
+	wdname := ViewFieldName.Width()
+	// head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
 
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
@@ -84,18 +84,16 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 			continue
 		}
 
-		cdir, cname, cpath := GetPathC(rp)
 		if level > 0 {
-			cpath = paw.Cdirp.Sprint("./") + cdir + cname
-			clevel := paw.Cfield.Sprintf("L%d:", level)
-			fmt.Fprintf(w, "%s%s %v\n", pad, clevel, cpath)
+			slevel := fmt.Sprintf("L%d: ", level)
+			FprintRelPath(w, pad, slevel, rp, false)
 		}
 
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, pad)
 		}
 		ViewFieldName.SetWidth(wdname - wdpad)
-		// head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
+		head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
 			var sidx string

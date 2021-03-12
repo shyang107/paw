@@ -58,10 +58,8 @@ func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 			continue
 		}
 
-		cdir, cname, cpath := GetPathC(rp)
 		if rp != "." {
-			cpath = paw.Cdirp.Sprint("./") + cdir + cname
-			fmt.Fprintf(w, "%v\n", cpath)
+			FprintRelPath(w, "", "", rp, false)
 		}
 
 		if len(cur.errors) > 0 {
@@ -72,7 +70,7 @@ func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 		cnames := make([]string, 0, nfiles)
 		for _, de := range des {
 			name := de.Name()
-			cname = de.LSColor().Sprint(strings.TrimSpace(name))
+			cname := de.LSColor().Sprint(strings.TrimSpace(name))
 			isAppendName := true
 			if de.IsDir() && isViewNoDirs {
 				isAppendName = false
@@ -118,7 +116,7 @@ func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 		totalsize += size
 		fprintDirSummary(w, "", curnd, curnf, size, wdstty)
 
-		if nfiles < nitems {
+		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}
 		if cur.opt.Depth == 0 {

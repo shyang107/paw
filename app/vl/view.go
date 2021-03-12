@@ -161,7 +161,7 @@ func rcolor(i int) *color.Color {
 		// return paw.Cdirp
 	default:
 		return paw.COdd
-		// return paw.Cdirp.Add(paw.EXAColors["bgprompt"]...)
+		// return paw.Cdirp.Add(paw.EXAColors["bgpmpt"]...)
 	}
 }
 

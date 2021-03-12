@@ -392,7 +392,8 @@ func (v ViewField) GetHead(c *color.Color, isNoGit bool) string {
 	hd := ""
 	for _, f := range v.FieldsNoGit(isNoGit) {
 		if f&ViewFieldName != 0 {
-			hd += sprintf("%-[1]*[2]s", f.Width(), f.Name())
+			value := paw.AlignWithWidth(f.Align(), f.Name(), f.Width())
+			hd += sprintf("%v", value)
 			continue
 		}
 		value := f.AlignedS(f.Name())

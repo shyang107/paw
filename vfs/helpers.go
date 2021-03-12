@@ -50,17 +50,44 @@ var (
 	thisYear              = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local)
 	SpaceIndentSize       = paw.Spaces(IndentSize)
 	sttyHeight, sttyWidth = paw.GetTerminalSize()
+
+	cdip    = (*paw.Cdip)
+	cdirp   = (*paw.Cdirp)
+	clevelp = (*paw.Cfield)
 )
 
 // ===
 
-// GetPathC returns  paw.Cdip.Sprint(cname)+paw.Cdirp.Sprint(cdir)
-func GetPathC(path string) (cdir, cname, cpath string) {
+// GetPathC return color string of path
+func GetPathC(path string, bgc []color.Attribute) (cdir, cname, cpath string) {
+	var dirs, dis func(...interface{}) string
+	if bgc == nil {
+		dirs = cdirp.Sprint
+		dis = cdip.Sprint
+	} else {
+		dirs = cdirp.Add(bgc...).Sprint
+		dis = cdip.Add(bgc...).Sprint
+		clevelp.Add(bgc...)
+	}
 	cdir, cname = filepath.Split(path)
-	cname = paw.Cdip.Sprint(cname)
-	cdir = paw.Cdirp.Sprint(cdir)
+	if len(cname) > 0 {
+		cdir = dirs(cdir)
+		cname = dis(cname)
+	} else {
+		cdir = dis(cdir)
+	}
+	cpath = cdir + cname
 	return cdir, cname, cpath
 }
+
+// // GetPath returns  cname+dir
+// func GetPath(path string) (cdir, cname, cpath string) {
+// 	cdir, cname = filepath.Split(path)
+// 	cname = fmt.Sprint(cname)
+// 	cdir = fmt.Sprint(cdir)
+// 	cpath = cdir + cname
+// 	return cdir, cname, cpath
+// }
 
 func nameC(de DirEntryX) string {
 	return de.LSColor().Sprint(de.Name())
@@ -411,12 +438,34 @@ func GetRootHeadC(de DirEntryX, wdstty int) string {
 	)
 
 	chead := paw.Cpmpt.Sprint("Root directory: ")
-	chead += PathToLinkC(de, paw.EXAColors["bgprompt"])
+	chead += PathToLinkC(de, paw.EXAColors["bgpmpt"])
 	chead += paw.Cpmpt.Sprint(", size ≈ ")
 	chead += paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
 	chead += paw.Cpmpt.Sprint(".")
 	chead += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - paw.StringWidth(paw.StripANSI(chead))))
 	return chead
+}
+
+func FprintRelPath(w io.Writer, pad, slevel, rp string, isBg bool) {
+	var bgc []color.Attribute
+	if isBg {
+		bgc = paw.EXAColors["bgpmpt"]
+	}
+	cdir, cname, cpath := GetPathC(rp, bgc)
+	cpath = cdirp.Sprint("./") + cdir + cname
+	clevel := clevelp.Sprintf("%s", slevel)
+	fmt.Fprintf(w, "%s%s%v\n", pad, clevel, cpath)
+}
+
+func GetRelPath(pad, slevel, rp string, isBg bool) string {
+	var bgc []color.Attribute
+	if isBg {
+		bgc = paw.EXAColors["bgpmpt"]
+	}
+	cdir, cname, cpath := GetPathC(rp, bgc)
+	cpath = cdirp.Sprint("./") + cdir + cname
+	clevel := clevelp.Sprintf("%s", slevel)
+	return fmt.Sprintf("%s%s%v", pad, clevel, cpath)
 }
 
 func FprintTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize int64, wdstty int) {

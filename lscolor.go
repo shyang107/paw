@@ -184,7 +184,7 @@ var (
 		//{38, 5, 251}, // group without you
 		"da": FgColor256A(153),
 		//{38, 5, 153}, // timestamp + 8 -> concealed
-		"hd": NewAttributeA().Add(BgGrayA(4)...).Add(color.Underline),
+		"hd": NewAttributeA().Add(BgGrayA(3)...).Add(color.Underline),
 		// "hd": FgGrayA(16).Add(BgGrayA(4)...).Add(color.Bold, color.Underline),
 		// "hd": {4, 38, 5, 15}, // head
 		// head + 4-> underline
@@ -220,12 +220,12 @@ var (
 		"pmpt": FgGrayA(19).Add(BgGrayA(4)...),
 		// "prompt": FgColor256A(Grays[19]).Add(BgColor256A(Grays[4])...),
 		//{38, 5, 251, 48, 5, 236},
-		"bgpmpt": BgGrayA(4),
+		"bgpmpt": BgGrayA(3),
 		//{48, 5, 236},
-		"pmptsn": FgColor256A(156).Add(BgGrayA(4)...).Add(color.Bold),
+		"pmptsn": FgColor256A(156).Add(BgGrayA(3)...).Add(color.Bold),
 		// "pmptsn": FgColor256A(156).Add(BgColor256A(Grays[4])...).Add(color.Bold),
 		//{38, 5, 156, color.Bold, 48, 5, Grays[6]},
-		"pmptsu": FgColor256A(156).Add(BgGrayA(4)...),
+		"pmptsu": FgColor256A(156).Add(BgGrayA(3)...),
 		// "pmptsu": FgColor256A(156).Add(BgColor256A(Grays[4])...),
 		//{38, 5, 156, 48, 5, 236},
 		"trace": LogLevelColorA(logrus.TraceLevel),
