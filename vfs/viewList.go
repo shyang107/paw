@@ -35,7 +35,7 @@ func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 		totalsize int64
 	)
 	vfields.ModifyWidths(cur)
-	head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
+	head := vfields.GetHead(paw.Chdp)
 
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)

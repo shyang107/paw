@@ -310,17 +310,17 @@ func (f ViewField) Slice() (fields []ViewField, names []string, nameWidths []int
 	return fields, names, nameWidths
 }
 
-func (f ViewField) FieldsNoGit(isNoGit bool) (fds []ViewField) {
-	fields := f.Fields()
-	fds = make([]ViewField, 0, len(fields))
-	for _, fd := range fields {
-		if fd&ViewFieldGit != 0 && isNoGit {
-			continue
-		}
-		fds = append(fds, fd)
-	}
-	return fds
-}
+// func (f ViewField) FieldsNoGit(isNoGit bool) (fds []ViewField) {
+// 	fields := f.Fields()
+// 	fds = make([]ViewField, 0, len(fields))
+// 	for _, fd := range fields {
+// 		if fd&ViewFieldGit != 0 && isNoGit {
+// 			continue
+// 		}
+// 		fds = append(fds, fd)
+// 	}
+// 	return fds
+// }
 
 func (f ViewField) Fields() (fields []ViewField) {
 	fields, _, _ = f.Slice()
@@ -363,6 +363,19 @@ func (f ViewField) IsOk() (ok bool) {
 	} else {
 		return false
 	}
+}
+
+func (v ViewField) RemoveGit(isNoGit bool) (vfields ViewField) {
+	if v&ViewFieldGit == 0 {
+		return v
+	}
+	for _, f := range v.Fields() {
+		if f&ViewFieldGit != 0 {
+			continue
+		}
+		vfields += f
+	}
+	return vfields
 }
 
 func (v ViewField) GetAllValues(de DirEntryX) (values []interface{}, cvalues []string, colors []*color.Color) {
@@ -408,7 +421,7 @@ func (v ViewField) GetValuesS(de DirEntryX) (values []string) {
 	return values
 }
 
-func (v ViewField) GetHead(c *color.Color, isNoGit bool) string {
+func (v ViewField) GetHead(c *color.Color) string {
 	var sprintf func(string, ...interface{}) string
 	if c != nil {
 		sprintf = c.Sprintf
@@ -417,7 +430,7 @@ func (v ViewField) GetHead(c *color.Color, isNoGit bool) string {
 	}
 
 	hd := ""
-	for _, f := range v.FieldsNoGit(isNoGit) {
+	for _, f := range v.Fields() {
 		if f&ViewFieldName != 0 {
 			value := paw.AlignWithWidth(f.Align(), f.Name(), f.Width())
 			hd += sprintf("%v", value)
@@ -428,14 +441,14 @@ func (v ViewField) GetHead(c *color.Color, isNoGit bool) string {
 	}
 	return hd
 }
-func (v ViewField) GetHeadA(c *color.Color, isNoGit bool) (values []string) {
+func (v ViewField) GetHeadA(c *color.Color) (values []string) {
 	var sprint func(...interface{}) string
 	if c != nil {
 		sprint = c.Sprint
 	} else {
 		sprint = fmt.Sprint
 	}
-	fields := v.FieldsNoGit(isNoGit)
+	fields := v.Fields()
 	values = make([]string, 0, len(fields))
 	for _, f := range fields {
 		v := sprint(f.AlignedS(f.Name()))
@@ -556,13 +569,13 @@ func (v ViewField) RowStringXNameC(de DirEntryX) string {
 }
 
 func (v ViewField) GetModifyWidthsNoGitFields(d *Dir) []ViewField {
-	fields := v.FieldsNoGit(d.git.NoGit)
+	fields := v.Fields()
 	modFieldWidths(d, fields)
 	return fields
 }
 
 func (v ViewField) ModifyWidths(d *Dir) {
-	fields := v.FieldsNoGit(d.git.NoGit)
+	fields := v.Fields()
 	modFieldWidths(d, fields)
 }
 

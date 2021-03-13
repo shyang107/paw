@@ -37,7 +37,7 @@ func viewListTree(w io.Writer, cur *Dir, hasX, hasList bool) {
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
-	head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
+	head := vfields.GetHead(paw.Chdp)
 	fmt.Fprintf(w, "%v\n", head)
 
 	fmt.Fprintf(w, "%v ", vfields.RowStringXNameC(cur))

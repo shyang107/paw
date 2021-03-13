@@ -86,7 +86,7 @@ func (opt *option) viewPaths() error {
 	}
 
 	vfs.FprintBanner(w, "", "=", wdstty)
-	head := opt.vopt.ViewFields.GetHead(paw.Chdp, false)
+	head := opt.vopt.ViewFields.GetHead(paw.Chdp)
 	fmt.Fprintln(w, head)
 	for i, dir := range dirs {
 		if len(dirs) == 1 {

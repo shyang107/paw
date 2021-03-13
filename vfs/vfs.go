@@ -39,7 +39,10 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 	if !info.IsDir() {
 		return nil
 	}
+
 	git := NewGitStatus(aroot)
+	opt.ViewFields = opt.ViewFields.RemoveGit(git.NoGit)
+
 	relpath, _ := filepath.Rel(aroot, aroot)
 	name := filepath.Base(aroot)
 

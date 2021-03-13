@@ -48,15 +48,14 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 		_MIN_PADDING = tabulate.MIN_PADDING
 	)
 	tabulate.MIN_PADDING = 2
-	vfields.ModifyWidths(cur)
-	ViewFieldNo.SetWidth(wdidx + 1)
-	ViewFieldName.SetWidth(ViewFieldName.Width() - vfields.Count()*2)
-	// _AlignA := vfields.AlignSA()
-	_Widths := vfields.Widths()
 
 	fmt.Fprintf(w, "%v\n", roothead)
 
-	heads := vfields.GetHeadA(nil, cur.git.NoGit)
+	vfields.ModifyWidths(cur)
+	ViewFieldNo.SetWidth(wdidx + 1)
+	ViewFieldName.SetWidth(ViewFieldName.Width() - vfields.Count()*2)
+	_Widths := vfields.Widths()
+	heads := vfields.GetHeadA(nil)
 	for i, rp := range cur.RelPaths() {
 		if cur.opt.IsRelPathNotView(rp) {
 			continue
@@ -121,11 +120,18 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 				xattrs := de.Xattibutes()
 				if len(xattrs) > 0 {
 					nv := len(values)
-					xvalues := make([]string, nv)
+					cxs := make([]string, nv)
 					for _, x := range xattrs {
-						xvalues[nv-1] = "@ " + x
-						rows = append(rows, xvalues)
+						sp := paw.Spaces(ViewFieldName.Width() - 2 - paw.StringWidth(x))
+						cxs[nv-1] = paw.Cxbp.Sprint("@ ") + paw.Cxap.Sprint(x) + sp
+						rows = append(rows, cxs)
 					}
+					// xvalues := make([]string, nv)
+					// for _, x := range xattrs {
+					// 	sp := paw.Spaces(ViewFieldName.Width() - 2 - paw.StringWidth(x))
+					// 	xvalues[nv-1] = "@ " + x + sp
+					// 	rows = append(rows, xvalues)
+					// }
 				}
 			}
 		}

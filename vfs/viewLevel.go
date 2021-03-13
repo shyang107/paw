@@ -93,7 +93,7 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 			cur.FprintErrors(os.Stderr, pad)
 		}
 		ViewFieldName.SetWidth(wdname - wdpad)
-		head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
+		head := vfields.GetHead(paw.Chdp)
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
 			var sidx string
