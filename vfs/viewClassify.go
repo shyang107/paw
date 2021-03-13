@@ -114,7 +114,7 @@ func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 			fmt.Fprintln(w)
 		}
 		totalsize += size
-		fprintDirSummary(w, "", curnd, curnf, size, wdstty)
+		FprintDirSummary(w, "", curnd, curnf, size, wdstty)
 
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)

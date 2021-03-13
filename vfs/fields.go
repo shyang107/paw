@@ -201,6 +201,21 @@ func (f ViewField) Align() paw.Align {
 		return paw.AlignLeft
 	}
 }
+func (f ViewField) AlignS() string {
+	if a, ok := ViewFieldAligns[f]; ok {
+		return a.String()
+	} else {
+		return paw.AlignLeft.String()
+	}
+}
+func (f ViewField) AlignSA() []string {
+	fields := f.Fields()
+	aligns := make([]string, 0, len(fields))
+	for _, f := range fields {
+		aligns = append(aligns, f.AlignS())
+	}
+	return aligns
+}
 
 func (f ViewField) SetColor(color *color.Color) {
 	ViewFieldColors[f] = color
@@ -322,6 +337,10 @@ func (f ViewField) Widths() (widths []int) {
 	return widths
 }
 
+func (f ViewField) Count() int {
+	return len(f.Fields())
+}
+
 // IsOk returns true for effective and otherwise not. In genernal, use it in checking.
 func (f ViewField) IsOk() (ok bool) {
 	paw.Logger.Debug("checking ViewField..." + paw.Caller(1))
@@ -371,6 +390,14 @@ func (v ViewField) GetValues(de DirEntryX) (values []interface{}) {
 	}
 	return values
 }
+func (v ViewField) GetValuesC(de DirEntryX) (values []string) {
+	fields := v.Fields()
+	values = make([]string, 0, len(fields))
+	for _, field := range fields {
+		values = append(values, de.FieldC(field))
+	}
+	return values
+}
 
 func (v ViewField) GetValuesS(de DirEntryX) (values []string) {
 	fields := v.Fields()
@@ -400,6 +427,21 @@ func (v ViewField) GetHead(c *color.Color, isNoGit bool) string {
 		hd += sprintf("%v", value) + " "
 	}
 	return hd
+}
+func (v ViewField) GetHeadA(c *color.Color, isNoGit bool) (values []string) {
+	var sprint func(...interface{}) string
+	if c != nil {
+		sprint = c.Sprint
+	} else {
+		sprint = fmt.Sprint
+	}
+	fields := v.FieldsNoGit(isNoGit)
+	values = make([]string, 0, len(fields))
+	for _, f := range fields {
+		v := sprint(f.AlignedS(f.Name()))
+		values = append(values, v)
+	}
+	return values
 }
 
 // AlignedS return aligned string of value according to ViewField.Align()
@@ -439,9 +481,9 @@ func (v ViewField) AlignedSC(cvalue interface{}) string {
 		sp    = paw.Spaces(width - wd)
 	)
 
-	if v&ViewFieldName == ViewFieldName {
-		return s
-	}
+	// if v&ViewFieldName == ViewFieldName {
+	// 	return s
+	// }
 	switch align {
 	case paw.AlignLeft:
 		return s + sp
@@ -461,6 +503,15 @@ func (v ViewField) RowString(de DirEntryX) string {
 	}
 	return sb.String()
 }
+func (v ViewField) Rows(de DirEntryX) (values []string) {
+	fields := v.Fields()
+	values = make([]string, 0, len(fields))
+	for _, field := range fields {
+		values = append(values, field.AlignedS(de.Field(field)))
+	}
+	return values
+}
+
 func (v ViewField) RowStringXName(de DirEntryX) string {
 	sb := new(strings.Builder)
 	for _, field := range v.Fields() {
@@ -471,6 +522,7 @@ func (v ViewField) RowStringXName(de DirEntryX) string {
 	}
 	return sb.String()
 }
+
 func (v ViewField) RowStringC(de DirEntryX) string {
 	sb := new(strings.Builder)
 	for _, field := range v.Fields() {
@@ -481,6 +533,15 @@ func (v ViewField) RowStringC(de DirEntryX) string {
 		sb.WriteString(de.FieldC(field) + " ")
 	}
 	return sb.String()
+}
+
+func (v ViewField) RowsC(de DirEntryX) (values []string) {
+	fields := v.Fields()
+	values = make([]string, 0, len(fields))
+	for _, field := range fields {
+		values = append(values, de.FieldC(field))
+	}
+	return values
 }
 
 func (v ViewField) RowStringXNameC(de DirEntryX) string {

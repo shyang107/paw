@@ -60,30 +60,30 @@ const (
 
 var sb = new(strings.Builder)
 
-// Align is id that indicate alignment of head-column
-type Align int
+// // Align is id that indicate alignment of head-column
+// type Align int
 
-const (
-	// AlignLeft align left
-	AlignLeft Align = iota + 1
-	// AlignCenter align center
-	AlignCenter
-	// AlignRight align right
-	AlignRight
-)
+// const (
+// 	// AlignLeft align left
+// 	AlignLeft Align = iota + 1
+// 	// AlignCenter align center
+// 	AlignCenter
+// 	// AlignRight align right
+// 	AlignRight
+// )
 
-func (a Align) String() string {
-	switch a {
-	case AlignLeft:
-		return "AlignLeft"
-	case AlignCenter:
-		return "AlignCenter"
-	case AlignRight:
-		return "AlignRight"
-	default:
-		return "Unknown"
-	}
-}
+// func (a Align) String() string {
+// 	switch a {
+// 	case AlignLeft:
+// 		return "left"
+// 	case AlignCenter:
+// 		return "center"
+// 	case AlignRight:
+// 		return "right"
+// 	default:
+// 		return "Unknown"
+// 	}
+// }
 
 // NewTableFormat return a instance of TableFormat
 func NewTableFormat() *TableFormat {
@@ -496,8 +496,8 @@ func (t *TableFormat) PrintSart() error {
 	fmt.Fprintln(t.writer, t.topBanner)
 
 	// fmt.Fprintln(t.writer, t.getRowString(t.Fields))
+	// fmt.Fprintln(t.writer, t.midBanner)
 	t.PrintHeads()
-
 	// fmt.Fprintln(t.writer, t.midBanner)
 	return nil
 }
@@ -508,6 +508,7 @@ func (t *TableFormat) PrintHeads() {
 	cs := t.Colors
 	t.Colors = nil
 	t.FieldsColorString = nil
+	fmt.Fprintln(t.writer, t.midBanner)
 	fmt.Fprintln(t.writer, t.getRowString(t.Fields))
 	fmt.Fprintln(t.writer, t.midBanner)
 	t.FieldsColorString = fcs

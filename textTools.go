@@ -220,6 +220,18 @@ func TrimFrontEndSpaceLine(content string) string {
 	return strings.Join(lines, "\n")
 }
 
+// RemoveEmptyLine remove empty lines of `content` and return
+func RemoveEmptyLine(content string) string {
+	srclines := strings.Split(content, "\n")
+	lines := make([]string, 0, len(srclines))
+	for _, line := range srclines {
+		if len(line) > 0 {
+			lines = append(lines, line)
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 // -----------------------------------------------------------
 // The following is adopted from github.com/mattn/go-runewidth
 

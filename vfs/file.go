@@ -419,7 +419,8 @@ func (f *File) FieldC(fd ViewField) string {
 	case ViewFieldGit:
 		return fd.AlignedSC(f.git.XYc(f.RelPath()))
 	case ViewFieldName:
-		return nameToLinkC(f)
+		return fd.AlignedSC(nameToLinkC(f))
+		// return nameToLinkC(f)
 	default:
 		return fd.Color().Sprint(fd.AlignedS(f.Field(fd)))
 	}

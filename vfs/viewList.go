@@ -104,7 +104,7 @@ func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 			}
 		}
 		totalsize += size
-		fprintDirSummary(w, "", curnd, curnf, size, wdstty)
+		FprintDirSummary(w, "", curnd, curnf, size, wdstty)
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}

@@ -397,8 +397,14 @@ func dirSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) st
 	return msg
 }
 
-func fprintDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize int64, wdstty int) {
+func FprintDirSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize int64, wdstty int) {
 	fmt.Fprintln(w, dirSummary(pad, ndirs, nfiles, sumsize, wdstty))
+}
+
+func FprintDirSummaryNoColor(w io.Writer, pad string, ndirs int, nfiles int, sumsize int64, wdstty int) {
+	s := dirSummary(pad, ndirs, nfiles, sumsize, wdstty)
+	s = paw.StripANSI(s)
+	fmt.Fprintln(w, s)
 }
 
 func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) string {
@@ -469,8 +475,13 @@ func GetRelPath(pad, slevel, rp string, isBg bool) string {
 }
 
 func FprintTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize int64, wdstty int) {
-
 	fmt.Fprintln(w, totalSummary(pad, ndirs, nfiles, sumsize, wdstty))
+}
+
+func FprintTotalSummaryNoColor(w io.Writer, pad string, ndirs int, nfiles int, sumsize int64, wdstty int) {
+	s := totalSummary(pad, ndirs, nfiles, sumsize, wdstty)
+	s = paw.StripANSI(s)
+	fmt.Fprintln(w, s)
 }
 
 func FprintBanner(w io.Writer, pad string, mark string, length int) {

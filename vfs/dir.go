@@ -413,7 +413,8 @@ func (d *Dir) FieldC(fd ViewField) string {
 		}
 		return fd.AlignedSC(d.git.XYc(rp))
 	case ViewFieldName:
-		return paw.Cdip.Sprint(d.Name())
+		return fd.AlignedSC(paw.Cdip.Sprint(d.Name()))
+		// return paw.Cdip.Sprint(d.Name())
 	default:
 		return fd.Color().Sprint(fd.AlignedS(d.Field(fd)))
 	}

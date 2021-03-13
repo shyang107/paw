@@ -35,3 +35,4 @@ pd
 test/
 afero/sftpfs/file1
 afero/sftpfs/test/
+tabulate/_tests/
