@@ -37,12 +37,13 @@ func viewListTree(w io.Writer, cur *Dir, hasX, hasList bool) {
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
-	head := vfields.GetHead(paw.Chdp)
-	fmt.Fprintf(w, "%v\n", head)
-
-	fmt.Fprintf(w, "%v ", vfields.RowStringXNameC(cur))
+	if hasList {
+		head := vfields.GetHead(paw.Chdp)
+		fmt.Fprintf(w, "%v\n", head)
+		fmt.Fprintf(w, "%v", vfields.RowStringXNameC(cur))
+	}
 	cdinf, _ := cur.DirInfoC()
-	fmt.Fprintf(w, "%v %v\n", cdinf, paw.Cdip.Sprint("."))
+	fmt.Fprintf(w, " %v %v\n", cdinf, paw.Cdip.Sprint("."))
 
 	des, _ := cur.ReadDirAll()
 	// print files in the root dir

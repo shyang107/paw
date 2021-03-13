@@ -413,8 +413,8 @@ func (d *Dir) FieldC(fd ViewField) string {
 		}
 		return fd.AlignedSC(d.git.XYc(rp))
 	case ViewFieldName:
-		return fd.AlignedSC(paw.Cdip.Sprint(d.Name()))
-		// return paw.Cdip.Sprint(d.Name())
+		// return fd.AlignedSC(paw.Cdip.Sprint(d.Name()))
+		return paw.Cdip.Sprint(d.Name())
 	default:
 		return fd.Color().Sprint(fd.AlignedS(d.Field(fd)))
 	}
@@ -562,11 +562,6 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 			dxs = append(files, dirs...)
 		}
 	}
-	// d.opt.By.Sort(dxs)
-
-	// sort.Sort(ByLowerName{dxs})
-	// sort.Sort(DirEntryXA(dxs).SetLessFunc(ByLowerNameFunc))
-	// ByLowerNameFunc.Sort(dxs)
 
 	return dxs, nil
 }

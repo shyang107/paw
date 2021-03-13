@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
@@ -29,11 +28,11 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 
 	aroot, err := filepath.Abs(root)
 	if err != nil {
-		return nil
+		paw.Error.Fatal(err)
 	}
-	info, err := os.Lstat(aroot)
+	info, err := os.Stat(aroot)
 	if err != nil {
-		return nil
+		paw.Error.Fatal(err)
 	}
 
 	if !info.IsDir() {
@@ -222,9 +221,9 @@ func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 		}
 	}
 	cur.relpaths = append(cur.relpaths, relpaths...)
-	if len(cur.relpaths) > 0 {
-		sort.Sort(ByLowerString(cur.relpaths))
-	}
+	// if len(cur.relpaths) > 0 {
+	// 	sort.Sort(ByLowerString(cur.relpaths))
+	// }
 	return relpaths
 }
 

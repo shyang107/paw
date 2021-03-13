@@ -56,15 +56,17 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 	ViewFieldName.SetWidth(ViewFieldName.Width() - vfields.Count()*2)
 	_Widths := vfields.Widths()
 	heads := vfields.GetHeadA(nil)
-	for i, rp := range cur.RelPaths() {
+	idxmap := make(map[string]string)
+	for _, rp := range cur.RelPaths() {
 		if cur.opt.IsRelPathNotView(rp) {
 			continue
 		}
 		var (
 			curnd, curnf int
 			size         int64
-			idx          = fmt.Sprintf("D%-[1]*[2]d ", wdidx, i)
-			// cidx         = paw.Cfield.Sprint(idx)
+			idx          = idxmap[rp]
+			cidx         = paw.Cfield.Sprintf(idx) + " "
+			// idx          = fmt.Sprintf("G%-[1]*[2]d ", wdidx, i)
 		)
 
 		paw.Logger.WithFields(logrus.Fields{
@@ -84,7 +86,7 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 		}
 
 		if rp != "." {
-			FprintRelPath(w, "", idx, rp, false)
+			FprintRelPath(w, "", "", cidx, rp, false)
 		}
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, "")
@@ -102,6 +104,7 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 				nd++
 				curnd++
 				jdx = fmt.Sprintf("D%d", nd)
+				idxmap[de.RelPath()] = jdx
 			} else {
 				if isViewNoDirs {
 					nitems--
@@ -115,6 +118,10 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 			ViewFieldNo.SetValue(jdx)
 			// values := vfields.GetValuesS(de)
 			values := vfields.GetValuesC(de)
+			wdname := paw.StringWidth(de.Field(ViewFieldName))
+			if wdname < ViewFieldName.Width() {
+				values[len(values)-1] += paw.Spaces(ViewFieldName.Width() - wdname)
+			}
 			rows = append(rows, values)
 			if hasX {
 				xattrs := de.Xattibutes()
@@ -124,14 +131,9 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 					for _, x := range xattrs {
 						sp := paw.Spaces(ViewFieldName.Width() - 2 - paw.StringWidth(x))
 						cxs[nv-1] = paw.Cxbp.Sprint("@ ") + paw.Cxap.Sprint(x) + sp
+						// cxs[nv-1] = "@ " + x + sp
 						rows = append(rows, cxs)
 					}
-					// xvalues := make([]string, nv)
-					// for _, x := range xattrs {
-					// 	sp := paw.Spaces(ViewFieldName.Width() - 2 - paw.StringWidth(x))
-					// 	xvalues[nv-1] = "@ " + x + sp
-					// 	rows = append(rows, xvalues)
-					// }
 				}
 			}
 		}

@@ -376,7 +376,6 @@ func (f *File) Field(field ViewField) string {
 
 // FieldC returns the specified colorful value of File according to ViewField
 func (f *File) FieldC(fd ViewField) string {
-
 	switch fd {
 	case ViewFieldNo:
 		return paw.Cfip.Sprint(fd.AlignedS(fd.Value()))
@@ -419,8 +418,8 @@ func (f *File) FieldC(fd ViewField) string {
 	case ViewFieldGit:
 		return fd.AlignedSC(f.git.XYc(f.RelPath()))
 	case ViewFieldName:
-		return fd.AlignedSC(nameToLinkC(f))
-		// return nameToLinkC(f)
+		// return fd.AlignedSC(nameToLinkC(f))
+		return nameToLinkC(f)
 	default:
 		return fd.Color().Sprint(fd.AlignedS(f.Field(fd)))
 	}

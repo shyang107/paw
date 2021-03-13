@@ -366,7 +366,7 @@ func (f ViewField) IsOk() (ok bool) {
 }
 
 func (v ViewField) RemoveGit(isNoGit bool) (vfields ViewField) {
-	if v&ViewFieldGit == 0 {
+	if !isNoGit || v&ViewFieldGit == 0 {
 		return v
 	}
 	for _, f := range v.Fields() {

@@ -59,7 +59,7 @@ func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 		}
 
 		if rp != "." {
-			FprintRelPath(w, "", "", rp, false)
+			FprintRelPath(w, "", "", "", rp, false)
 		}
 
 		if len(cur.errors) > 0 {

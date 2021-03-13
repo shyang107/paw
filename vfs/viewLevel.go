@@ -51,6 +51,7 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	if hasX {
 		wdmeta = GetViewFieldWidthWithoutName(cur.opt.ViewFields)
 	}
+	idxmap := make(map[string]string)
 	for _, rp := range cur.relpaths {
 		if cur.opt.IsRelPathNotView(rp) {
 			continue
@@ -59,6 +60,9 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 			level        int
 			curnd, curnf int
 			size         int64
+			idx          = idxmap[rp]
+			cidx         = paw.Cfield.Sprintf(" %s ", idx)
+			// cidx         = paw.Cfield.Sprintf(" G%-[1]*[2]d ", wdidx, i)
 		)
 		if rp == "." {
 			level = 0
@@ -86,7 +90,7 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 
 		if level > 0 {
 			slevel := fmt.Sprintf("L%d: ", level)
-			FprintRelPath(w, pad, slevel, rp, false)
+			FprintRelPath(w, pad, slevel, cidx, rp, false)
 		}
 
 		if len(cur.errors) > 0 {
@@ -105,6 +109,7 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 				nd++
 				curnd++
 				sidx = fmt.Sprintf("D%-[1]*[2]d", wdidx, nd)
+				idxmap[de.RelPath()] = sidx
 			} else {
 				if isViewNoFiles {
 					nitems--

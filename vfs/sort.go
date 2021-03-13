@@ -204,15 +204,15 @@ var (
 		SortByCTime:      "CTime",
 		SortByName:       "Name",
 		SortByLowerName:  "LowerName",
-		SortByINodeR:     "reverse INode",
-		SortByHDLinksR:   "reverse HDLinks",
-		SortBySizeR:      "reverse Size",
-		SortByBlocksR:    "reverse Blocks",
-		SortByMTimeR:     "reverse MTime",
-		SortByATimeR:     "reverse ATime",
-		SortByCTimeR:     "reverse CTime",
-		SortByNameR:      "reverse Name",
-		SortByLowerNameR: "reverse LowerName",
+		SortByINodeR:     "INodeR",
+		SortByHDLinksR:   "HDLinksR",
+		SortBySizeR:      "SizeR",
+		SortByBlocksR:    "BlocksR",
+		SortByMTimeR:     "MTimeR",
+		SortByATimeR:     "ATimeR",
+		SortByCTimeR:     "CTimeR",
+		SortByNameR:      "NameR",
+		SortByLowerNameR: "LowerNameR",
 	}
 	SortKeyNames = map[SortKey]string{
 		SortByNone:       "SortByNone",
@@ -308,24 +308,30 @@ func (s SortKey) Name() string {
 	if s&SortByNone != 0 {
 		return "not sort"
 	}
-	field, ok := SortFuncFields[s]
+	key, ok := SortFuncFields[s]
 	if !ok {
 		return "[Error] use default sort field: by " + SortFuncFields[SortByLowerName]
 	}
-	return "by " + field
+	return key
 }
 
 // Sort is a method on the function type, By, that sorts the argument slice according to the function.
 func (s SortKey) Sort(dxs []DirEntryX) {
 	dxa := DirEntryXA(dxs).SetLessFunc(s)
-	switch s {
-	case SortByINodeR, SortByHDLinksR, SortBySizeR, SortByBlocksR, SortByMTimeR, SortByATimeR, SortByCTimeR, SortByNameR, SortByLowerNameR:
+	key := s.String()
+	if strings.HasSuffix(key, "R") {
 		sort.Sort(sort.Reverse(dxa))
-	case SortByNone:
-		return
-	default:
+	} else {
 		sort.Sort(dxa)
 	}
+	// switch s {
+	// case SortByINodeR, SortByHDLinksR, SortBySizeR, SortByBlocksR, SortByMTimeR, SortByATimeR, SortByCTimeR, SortByNameR, SortByLowerNameR:
+	// 	sort.Sort(sort.Reverse(dxa))
+	// case SortByNone:
+	// 	return
+	// default:
+	// 	sort.Sort(dxa)
+	// }
 }
 
 // IsOk returns true for effective and otherwise not. In genernal, use it in checking.

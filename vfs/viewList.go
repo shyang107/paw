@@ -69,7 +69,7 @@ func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 		}
 
 		if rp != "." {
-			FprintRelPath(w, "", "", rp, false)
+			FprintRelPath(w, "", "", "", rp, false)
 		}
 
 		if len(cur.errors) > 0 {

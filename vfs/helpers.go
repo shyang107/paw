@@ -452,7 +452,7 @@ func GetRootHeadC(de DirEntryX, wdstty int) string {
 	return chead
 }
 
-func FprintRelPath(w io.Writer, pad, slevel, rp string, isBg bool) {
+func FprintRelPath(w io.Writer, pad, slevel, cidx, rp string, isBg bool) {
 	var bgc []color.Attribute
 	if isBg {
 		bgc = paw.EXAColors["bgpmpt"]
@@ -460,7 +460,7 @@ func FprintRelPath(w io.Writer, pad, slevel, rp string, isBg bool) {
 	cdir, cname, cpath := GetPathC(rp, bgc)
 	cpath = cdirp.Sprint("./") + cdir + cname
 	clevel := clevelp.Sprintf("%s", slevel)
-	fmt.Fprintf(w, "%s%s%v\n", pad, clevel, cpath)
+	fmt.Fprintf(w, "%s%s%s%v\n", pad, clevel, cidx, cpath)
 }
 
 func GetRelPath(pad, slevel, rp string, isBg bool) string {
