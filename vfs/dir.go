@@ -51,12 +51,16 @@ func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) *Dir {
 		return nil
 	}
 
-	var linkPath string
+	var link string
 	isLink := false
 	if info.Mode()&os.ModeSymlink != 0 {
 		info, _ = os.Stat(aroot)
 		isLink = true
-		linkPath = GetLinkPath(aroot)
+		link = GetLinkPath(aroot)
+		if !filepath.IsAbs(link) {
+			dir := filepath.Dir(aroot)
+			link = filepath.Join(dir, link)
+		}
 	}
 
 	if !info.IsDir() {
@@ -83,7 +87,7 @@ func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) *Dir {
 		children: make(map[string]DirEntryX),
 		opt:      opt,
 		isLink:   isLink,
-		linkPath: linkPath,
+		linkPath: link,
 	}
 }
 

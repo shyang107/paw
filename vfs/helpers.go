@@ -51,30 +51,30 @@ var (
 	SpaceIndentSize       = paw.Spaces(IndentSize)
 	sttyHeight, sttyWidth = paw.GetTerminalSize()
 
-	cdip    = (*paw.Cdip)
-	cdirp   = (*paw.Cdirp)
-	clevelp = (*paw.Cfield)
+	// cdip    = (*paw.Cdip)
+	// cdirp   = (*paw.Cdirp)
+	// clevelp = (*paw.Cfield)
 )
 
 // ===
 
 // GetPathC return color string of path
 func GetPathC(path string, bgc []color.Attribute) (cdir, cname, cpath string) {
-	var dirs, dis func(...interface{}) string
-	if bgc == nil {
-		dirs = cdirp.Sprint
-		dis = cdip.Sprint
-	} else {
-		dirs = cdirp.Add(bgc...).Sprint
-		dis = cdip.Add(bgc...).Sprint
-		clevelp.Add(bgc...)
+	var (
+		cdirp = paw.CloneColor(paw.Cdirp)
+		cdip  = paw.CloneColor(paw.Cdip)
+	)
+
+	if bgc != nil {
+		cdirp = cdirp.Add(bgc...)
+		cdip = cdip.Add(bgc...)
 	}
 	cdir, cname = filepath.Split(path)
 	if len(cname) > 0 {
-		cdir = dirs(cdir)
-		cname = dis(cname)
+		cdir = cdirp.Sprint(cdir)
+		cname = cdip.Sprint(cname)
 	} else {
-		cdir = dis(cdir)
+		cdir = cdip.Sprint(cdir)
 	}
 	cpath = cdir + cname
 	return cdir, cname, cpath
@@ -95,13 +95,18 @@ func nameC(de DirEntryX) string {
 
 func linkC(de DirEntryX) string {
 	if de.IsLink() {
-		link := de.LinkPath()
+		alink := de.LinkPath()
+		dir := filepath.Dir(de.Path())
+		link := alink
+		if filepath.IsAbs(link) {
+			link, _ = filepath.Rel(dir, alink)
+		}
 		dir, name := filepath.Split(link)
-		_, err := os.Stat(link)
-		if err != nil {
+		if _, err := os.Stat(alink); os.IsNotExist(err) {
+			fmt.Println(err)
 			return paw.Cdirp.Sprint(dir) + paw.Corp.Sprint(name)
 		}
-		return paw.Cdirp.Sprint(dir) + paw.FileLSColor(link).Sprint(name)
+		return paw.Cdirp.Sprint(dir) + paw.FileLSColor(alink).Sprint(name)
 	}
 	return ""
 }
@@ -114,30 +119,34 @@ func nameToLinkC(de DirEntryX) string {
 	}
 }
 
-func PathToLinkC(de DirEntryX, bgc []color.Attribute) string {
-	if bgc == nil {
-		dir, name := filepath.Split(de.Path())
-		if de.IsLink() {
-			return paw.Cdirp.Sprint(dir) + de.LSColor().Sprint(name) + paw.Cdashp.Sprint(" -> ") + linkC(de)
-		} else {
-			return paw.Cdirp.Sprint(dir) + de.LSColor().Sprint(name)
-		}
-	} else {
-		dir, name := filepath.Split(de.Path())
-		var (
-			ccdirp  = (*paw.Cdirp)
-			cnamep  = (*de.LSColor())
-			ccdashp = (*paw.Cdashp)
-		)
-		ccdirp.Add(bgc...)
-		cnamep.Add(bgc...)
-		ccdashp.Add(bgc...)
-		if de.IsLink() {
-			return ccdirp.Sprint(dir) + cnamep.Sprint(name) + ccdashp.Sprint(" -> ") + PathToLinkC(de, bgc)
-		} else {
-			return ccdirp.Sprint(dir) + cnamep.Sprint(name)
-		}
+func GetLinkPath(path string) string {
+	alink, err := os.Readlink(path)
+	if err != nil {
+		return err.Error()
 	}
+	return alink
+}
+
+func PathToLinkC(de DirEntryX, bgc []color.Attribute) (cpath string) {
+	var (
+		cdirp  = paw.CloneColor(paw.Cdirp)
+		cnamep = paw.CloneColor(de.LSColor())
+		cdashp = paw.CloneColor(paw.Cdashp)
+		// clnamep *color.Color
+	)
+	if bgc != nil {
+		cdirp = cdirp.Add(bgc...)
+		cnamep = cnamep.Add(bgc...)
+		cdashp = cdashp.Add(bgc...)
+	}
+
+	dir, name := filepath.Split(de.Path())
+	cpath = cdirp.Sprint(dir) + cnamep.Sprint(name)
+	if de.IsLink() {
+		_, _, lpath := GetPathC(de.LinkPath(), bgc)
+		cpath += cdashp.Sprint(" -> ") + lpath
+	}
+	return cpath
 }
 
 func iNodeC(de DirEntryX) string {
@@ -431,42 +440,49 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) 
 	return summary
 }
 func GetRootHeadC(de DirEntryX, wdstty int) string {
-	var size int64
+	var (
+		size  int64
+		csize string
+	)
 
 	if de.IsDir() {
 		size = de.(*Dir).TotalSize()
 	}
-	var (
-		ss  = bytefmt.ByteSize(size)
-		nss = len(ss)
-		sn  = ss[:nss-1] // fmt.Sprintf("%s", ss[:nss-1])
-		su  = strings.ToLower(ss[nss-1:])
-	)
-
+	if size > 0 {
+		ss := bytefmt.ByteSize(size)
+		nss := len(ss)
+		sn := ss[:nss-1] // fmt.Sprintf("%s", ss[:nss-1])
+		su := strings.ToLower(ss[nss-1:])
+		csize = paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
+	} else {
+		csize = paw.CpmptDashp.Sprint("-")
+	}
 	chead := paw.Cpmpt.Sprint("Root directory: ")
 	chead += PathToLinkC(de, paw.EXAColors["bgpmpt"])
 	chead += paw.Cpmpt.Sprint(", size ≈ ")
-	chead += paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
+	chead += csize
 	chead += paw.Cpmpt.Sprint(".")
 	chead += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - paw.StringWidth(paw.StripANSI(chead))))
 	return chead
 }
 
 func FprintRelPath(w io.Writer, pad, slevel, cidx, rp string, isBg bool) {
-	var bgc []color.Attribute
-	if isBg {
-		bgc = paw.EXAColors["bgpmpt"]
-	}
-	cdir, cname, cpath := GetPathC(rp, bgc)
-	cpath = cdirp.Sprint("./") + cdir + cname
-	clevel := clevelp.Sprintf("%s", slevel)
-	fmt.Fprintf(w, "%s%s%s%v\n", pad, clevel, cidx, cpath)
+	fmt.Fprintln(w, GetRelPath(pad, slevel, rp, isBg))
 }
 
 func GetRelPath(pad, slevel, rp string, isBg bool) string {
 	var bgc []color.Attribute
+	var (
+		cdirp   = paw.CloneColor(paw.Cdirp)
+		cdip    = paw.CloneColor(paw.Cdip)
+		clevelp = paw.CloneColor(paw.Cfield)
+	)
+
 	if isBg {
 		bgc = paw.EXAColors["bgpmpt"]
+		cdirp = cdirp.Add(bgc...)
+		cdip = cdip.Add(bgc...)
+		clevelp = clevelp.Add(bgc...)
 	}
 	cdir, cname, cpath := GetPathC(rp, bgc)
 	cpath = cdirp.Sprint("./") + cdir + cname

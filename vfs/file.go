@@ -41,12 +41,16 @@ func NewFile(path, root string, git *GitStatus) *File {
 		return nil
 	}
 
-	var linkPath string
+	var link string
 	isLink := false
 	if info.Mode()&os.ModeSymlink != 0 {
 		// info, _ = os.Stat(apath)
 		isLink = true
-		linkPath = GetLinkPath(apath)
+		link = GetLinkPath(apath)
+		if !filepath.IsAbs(link) {
+			dir := filepath.Dir(apath)
+			link = filepath.Join(dir, link)
+		}
 	}
 
 	if info.IsDir() {
@@ -69,7 +73,7 @@ func NewFile(path, root string, git *GitStatus) *File {
 		xattrs:   xattrs,
 		git:      git,
 		isLink:   isLink,
-		linkPath: linkPath,
+		linkPath: link,
 	}
 }
 

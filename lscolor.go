@@ -220,22 +220,23 @@ var (
 		"pmpt": FgGrayA(19).Add(BgGrayA(4)...),
 		// "prompt": FgColor256A(Grays[19]).Add(BgColor256A(Grays[4])...),
 		//{38, 5, 251, 48, 5, 236},
-		"bgpmpt": BgGrayA(3),
+		"bgpmpt": BgGrayA(4),
 		//{48, 5, 236},
-		"pmptsn": FgColor256A(156).Add(BgGrayA(3)...).Add(color.Bold),
+		"pmptsn": FgColor256A(156).Add(BgGrayA(4)...).Add(color.Bold),
 		// "pmptsn": FgColor256A(156).Add(BgColor256A(Grays[4])...).Add(color.Bold),
 		//{38, 5, 156, color.Bold, 48, 5, Grays[6]},
-		"pmptsu": FgColor256A(156).Add(BgGrayA(3)...),
+		"pmptsu": FgColor256A(156).Add(BgGrayA(4)...),
 		// "pmptsu": FgColor256A(156).Add(BgColor256A(Grays[4])...),
 		//{38, 5, 156, 48, 5, 236},
-		"trace": LogLevelColorA(logrus.TraceLevel),
-		"debug": LogLevelColorA(logrus.DebugLevel),
-		"info":  LogLevelColorA(logrus.InfoLevel),
-		"warn":  LogLevelColorA(logrus.WarnLevel),
-		"error": LogLevelColorA(logrus.ErrorLevel),
-		"fatal": LogLevelColorA(logrus.FatalLevel),
-		"panic": LogLevelColorA(logrus.PanicLevel),
-		"md5":   LSColors["no"],
+		"pmptdash": FgColor256A(8).Add(BgGrayA(4)...),
+		"trace":    LogLevelColorA(logrus.TraceLevel),
+		"debug":    LogLevelColorA(logrus.DebugLevel),
+		"info":     LogLevelColorA(logrus.InfoLevel),
+		"warn":     LogLevelColorA(logrus.WarnLevel),
+		"error":    LogLevelColorA(logrus.ErrorLevel),
+		"fatal":    LogLevelColorA(logrus.FatalLevel),
+		"panic":    LogLevelColorA(logrus.PanicLevel),
+		"md5":      LSColors["no"],
 		//LSColors[".md5"],
 		"field": FgColor256A(216),
 		// {38, 5, 216},
@@ -1476,19 +1477,25 @@ var (
 	// CpmptSn is default color use for number in prompt
 	CpmptSn = NewEXAColor("pmptsn")
 	// CpmptSu is default color use for unit in prompt
-	CpmptSu = NewEXAColor("pmptsu")
-	Ctrace  = NewEXAColor("trace")
-	Cdebug  = NewEXAColor("debug")
-	Cinfo   = NewEXAColor("info")
-	Cwarn   = NewEXAColor("warn")
-	Cerror  = NewEXAColor("error")
-	Cfatal  = NewEXAColor("fatal")
-	Cpanic  = NewEXAColor("panic")
-	Cfield  = NewEXAColor("field")
-	Cvalue  = NewEXAColor("value")
-	CEven   = NewEXAColor("even")
-	COdd    = NewEXAColor("odd")
+	CpmptSu    = NewEXAColor("pmptsu")
+	CpmptDashp = NewEXAColor("pmptdash")
+	Ctrace     = NewEXAColor("trace")
+	Cdebug     = NewEXAColor("debug")
+	Cinfo      = NewEXAColor("info")
+	Cwarn      = NewEXAColor("warn")
+	Cerror     = NewEXAColor("error")
+	Cfatal     = NewEXAColor("fatal")
+	Cpanic     = NewEXAColor("panic")
+	Cfield     = NewEXAColor("field")
+	Cvalue     = NewEXAColor("value")
+	CEven      = NewEXAColor("even")
+	COdd       = NewEXAColor("odd")
 )
+
+func CloneColor(color *color.Color) *color.Color {
+	c := *color
+	return &c
+}
 
 const ansi = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
 

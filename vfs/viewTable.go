@@ -50,6 +50,7 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 	tabulate.MIN_PADDING = 2
 
 	fmt.Fprintf(w, "%v\n", roothead)
+	FprintBanner(w, "", "=", wdstty)
 
 	vfields.ModifyWidths(cur)
 	ViewFieldNo.SetWidth(wdidx + 1)
@@ -147,7 +148,9 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 		fmt.Fprint(w, renders)
 
 		totalsize += size
-		FprintDirSummary(w, "", curnd, curnf, size, wdstty)
+		if cur.opt.Depth != 0 {
+			FprintDirSummary(w, "", curnd, curnf, size, wdstty)
+		}
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}

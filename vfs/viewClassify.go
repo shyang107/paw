@@ -32,6 +32,7 @@ func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 	)
 
 	fmt.Fprintf(w, "%v\n", roothead)
+	FprintBanner(w, "", "=", wdstty)
 
 	for _, rp := range cur.relpaths {
 		if cur.opt.IsRelPathNotView(rp) {
@@ -114,8 +115,9 @@ func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 			fmt.Fprintln(w)
 		}
 		totalsize += size
-		FprintDirSummary(w, "", curnd, curnf, size, wdstty)
-
+		if cur.opt.Depth != 0 {
+			FprintDirSummary(w, "", curnd, curnf, size, wdstty)
+		}
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}
