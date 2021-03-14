@@ -43,7 +43,7 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 	opt.ViewFields = opt.ViewFields.RemoveGit(git.NoGit)
 
 	relpath, _ := filepath.Rel(aroot, aroot)
-	name := filepath.Base(aroot)
+	// name := filepath.Base(aroot)
 
 	opt.Check()
 
@@ -58,16 +58,7 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 	}).Debug()
 
 	v := &VFS{
-		Dir: Dir{
-			path:     aroot,
-			relpath:  relpath,
-			name:     name,
-			info:     info,
-			git:      git,
-			relpaths: []string{relpath},
-			children: make(map[string]DirEntryX),
-			opt:      opt,
-		},
+		Dir:      *NewDir(aroot, aroot, git, opt),
 		relpaths: []string{relpath},
 		opt:      opt,
 	}
@@ -151,7 +142,7 @@ func buildFS(cur *Dir, root string, level int) {
 	des, _ := os.ReadDir(dpath)
 	for _, de := range des {
 		path := filepath.Join(dpath, de.Name())
-		info, err := os.Lstat(path)
+		_, err := os.Lstat(path)
 		if err != nil {
 			if cur.errors == nil {
 				cur.errors = []error{}
@@ -164,30 +155,13 @@ func buildFS(cur *Dir, root string, level int) {
 			// })
 			continue
 		}
-		relpath, _ := filepath.Rel(root, path)
-		xattrs, _ := GetXattr(path)
+		// relpath, _ := filepath.Rel(root, path)
+		// xattrs, _ := GetXattr(path)
 		var child DirEntryX
 		if !de.IsDir() {
-			child = &File{
-				path:    path,
-				relpath: relpath,
-				name:    de.Name(),
-				info:    info,
-				xattrs:  xattrs,
-				git:     git,
-			}
+			child = NewFile(path, root, git)
 		} else {
-			child = &Dir{
-				path:     path,
-				relpath:  relpath,
-				name:     de.Name(),
-				info:     info,
-				xattrs:   xattrs,
-				git:      git,
-				relpaths: make([]string, 0),
-				children: make(map[string]DirEntryX),
-				opt:      cur.opt,
-			}
+			child = NewDir(path, root, git, cur.opt)
 		}
 		if skip.IsSkip(child) {
 			continue
@@ -195,6 +169,11 @@ func buildFS(cur *Dir, root string, level int) {
 
 		cur.children[de.Name()] = child
 
+		// paw.Logger.WithFields(logrus.Fields{
+		// 	"name":  child.Name(),
+		// 	"IsDir": child.IsDir(),
+		// 	"depth": cur.opt.Depth,
+		// }).Trace()
 		if cur.opt.IsForceRecurse {
 			if child.IsDir() {
 				buildFS(child.(*Dir), root, 0)

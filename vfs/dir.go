@@ -35,16 +35,28 @@ type Dir struct {
 	// ReadDir 遍歷用
 	idx int
 	opt *VFSOption
+	//
+	linkPath string
+	isLink   bool
 }
 
-func NewDir(dirpath, root string, git *GitStatus) *Dir {
+func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) *Dir {
 	aroot, err := filepath.Abs(dirpath)
 	if err != nil {
 		return nil
 	}
-	info, err := os.Lstat(aroot)
+	var info fs.FileInfo
+	info, err = os.Lstat(aroot)
 	if err != nil {
 		return nil
+	}
+
+	var linkPath string
+	isLink := false
+	if info.Mode()&os.ModeSymlink != 0 {
+		info, _ = os.Stat(aroot)
+		isLink = true
+		linkPath = GetLinkPath(aroot)
 	}
 
 	if !info.IsDir() {
@@ -57,6 +69,9 @@ func NewDir(dirpath, root string, git *GitStatus) *Dir {
 	}
 	name := filepath.Base(aroot)
 	xattrs, _ := GetXattr(aroot)
+	if opt == nil {
+		opt = NewVFSOption()
+	}
 	return &Dir{
 		path:     aroot,
 		relpath:  relpath,
@@ -66,7 +81,9 @@ func NewDir(dirpath, root string, git *GitStatus) *Dir {
 		git:      git,
 		relpaths: []string{relpath},
 		children: make(map[string]DirEntryX),
-		opt:      NewVFSOption(),
+		opt:      opt,
+		isLink:   isLink,
+		linkPath: linkPath,
 	}
 }
 
@@ -199,15 +216,16 @@ func (d *Dir) NameToLink() string {
 
 // LinkPath report far-end path of a symbolic link.
 func (d *Dir) LinkPath() string {
-	if d.IsLink() {
-		// alink, err := filepath.EvalSymlinks(f.Path)
-		alink, err := os.Readlink(d.path)
-		if err != nil {
-			return err.Error()
-		}
-		return alink
-	}
-	return ""
+	return d.linkPath
+	// if d.IsLink() {
+	// 	// alink, err := filepath.EvalSymlinks(f.Path)
+	// 	alink, err := os.Readlink(d.path)
+	// 	if err != nil {
+	// 		return err.Error()
+	// 	}
+	// 	return alink
+	// }
+	// return ""
 }
 
 // INode will return the inode number of File
@@ -447,7 +465,8 @@ func (d *Dir) WidthOf(field ViewField) int {
 
 // IsLink() report whether File describes a symbolic link.
 func (d *Dir) IsLink() bool {
-	return d.info.Mode()&os.ModeSymlink != 0
+	return d.isLink
+	// return d.info.Mode()&os.ModeSymlink != 0
 }
 
 // IsFile reports whether File describes a regular file.
@@ -689,7 +708,9 @@ func calcSize(cur *Dir, level int) (size int64) {
 			continue
 		}
 		if !de.IsDir() {
-			size += de.Size()
+			if de.Mode().IsRegular() {
+				size += de.Size()
+			}
 		} else {
 			next := de.(*Dir)
 			size += calcSize(next, level+1)

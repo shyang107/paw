@@ -48,9 +48,10 @@ func (opt *option) viewPaths() error {
 		totalsize, size int64
 		nd, nf          int
 		tnd, tnf        int
-		dxs, rm, dirs   = createBasepaths(paths)
 		c               *color.Color
 	)
+
+	dxs, rm, dirs := createBasepaths(paths)
 	for i, dir := range dirs {
 		if len(dirs) == 1 {
 			c = paw.Cdirp
@@ -74,7 +75,6 @@ func (opt *option) viewPaths() error {
 		fields = append(fields, f)
 	}
 	opt.vopt.ViewFields = tmpFields
-
 	modFieldWidths(dxs, fields)
 	vfs.ViewFieldName.SetWidth(vfs.GetViewFieldNameWidthOf(fields))
 	wdmeta = wdstty - vfs.ViewFieldName.Width()
@@ -175,13 +175,14 @@ type pathinfo struct {
 // pathmap is map[path]{*pathrep}
 type pathmap map[string][]pathinfo
 
-// demap is map[dir][]vfs
+// demap is map[dir][]vfs.DirEntryX
 type demap map[string][]vfs.DirEntryX
 
 // srmap is map[dir]path
 type srmap map[string]vfs.DirEntryX
 
 func createBasepaths(paths []string) (dxs demap, srm srmap, dirs []string) {
+	// paw.Logger.Debug()
 	if len(paths) == 0 {
 		return nil, nil, nil
 	}
@@ -193,10 +194,14 @@ func createBasepaths(paths []string) (dxs demap, srm srmap, dirs []string) {
 		sm  = make(map[string]string)
 	)
 
+	paw.Logger.WithFields(logrus.Fields{
+		"paths": paths,
+	}).Trace()
 	for _, path := range paths {
 		info, err := os.Lstat(path)
 		if err != nil {
 			viewPaths_errors = append(viewPaths_errors, err)
+			paw.Logger.Error(err)
 			continue
 		}
 		dir := filepath.Dir(path)
@@ -205,14 +210,14 @@ func createBasepaths(paths []string) (dxs demap, srm srmap, dirs []string) {
 			idx++
 			shortroot = fmt.Sprintf("root%d", idx)
 			sm[dir] = shortroot
-			rde := vfs.NewDir(dir, "", nil)
+			rde := vfs.NewDir(dir, "", nil, nil)
 			srm[dir] = rde
 			dxs[dir] = make([]vfs.DirEntryX, 0, len(paths))
 			dirs = append(dirs, dir)
 		}
 		var de vfs.DirEntryX
 		if info.IsDir() {
-			de = vfs.NewDir(path, "", nil)
+			de = vfs.NewDir(path, "", nil, nil)
 		} else {
 			de = vfs.NewFile(path, "", nil)
 		}

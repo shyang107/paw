@@ -24,6 +24,9 @@ type File struct {
 	info    fs.FileInfo
 	xattrs  []string
 	git     *GitStatus
+	//
+	linkPath string
+	isLink   bool
 }
 
 func NewFile(path, root string, git *GitStatus) *File {
@@ -37,6 +40,15 @@ func NewFile(path, root string, git *GitStatus) *File {
 		paw.Logger.Error(err)
 		return nil
 	}
+
+	var linkPath string
+	isLink := false
+	if info.Mode()&os.ModeSymlink != 0 {
+		// info, _ = os.Stat(apath)
+		isLink = true
+		linkPath = GetLinkPath(apath)
+	}
+
 	if info.IsDir() {
 		paw.Logger.Error(err)
 		return nil
@@ -50,12 +62,14 @@ func NewFile(path, root string, git *GitStatus) *File {
 	name := filepath.Base(apath)
 	xattrs, _ := GetXattr(apath)
 	return &File{
-		path:    apath,
-		relpath: relpath,
-		name:    name,
-		info:    info,
-		xattrs:  xattrs,
-		git:     git,
+		path:     apath,
+		relpath:  relpath,
+		name:     name,
+		info:     info,
+		xattrs:   xattrs,
+		git:      git,
+		isLink:   isLink,
+		linkPath: linkPath,
 	}
 }
 
@@ -189,15 +203,16 @@ func (f *File) NameToLink() string {
 
 // LinkPath report far-end path of a symbolic link.
 func (f *File) LinkPath() string {
-	if f.IsLink() {
-		// alink, err := filepath.EvalSymlinks(f.Path)
-		alink, err := os.Readlink(f.path)
-		if err != nil {
-			return err.Error()
-		}
-		return alink
-	}
-	return ""
+	return f.linkPath
+	// if f.IsLink() {
+	// 	// alink, err := filepath.EvalSymlinks(f.Path)
+	// 	alink, err := os.Readlink(f.path)
+	// 	if err != nil {
+	// 		return err.Error()
+	// 	}
+	// 	return alink
+	// }
+	// return ""
 }
 
 // INode will return the inode number of File
@@ -459,7 +474,8 @@ func (f *File) WidthOf(field ViewField) int {
 
 // IsLink() report whether File describes a symbolic link.
 func (f *File) IsLink() bool {
-	return f.info.Mode()&os.ModeSymlink != 0
+	return f.isLink
+	// return f.info.Mode()&os.ModeSymlink != 0
 }
 
 // IsFile reports whether File describes a regular file.
