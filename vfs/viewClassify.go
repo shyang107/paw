@@ -22,45 +22,38 @@ func VFSViewClassify(w io.Writer, v *VFS) {
 
 }
 
-func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
+func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		wdstty       = sttyWidth - 2
-		_, _, nitems = cur.NItems()
+		_, _, nitems = rootdir.NItems(true)
 		nd, nf       int
-		roothead     = GetRootHeadC(cur, wdstty)
-		totalsize    int64
+		// roothead     = GetRootHeadC(rootdir, wdstty)
+		_, _, crootpath = GetPathC(rootdir.Path(), nil)
 	)
 
-	fmt.Fprintf(w, "%v\n", roothead)
-	FprintBanner(w, "", "=", wdstty)
+	fmt.Fprintln(w, crootpath+":")
+	// fmt.Fprintf(w, "%v\n", roothead)
+	// FprintBanner(w, "", "=", wdstty)
 
-	for _, rp := range cur.relpaths {
-		if cur.opt.IsRelPathNotView(rp) {
+	for _, rp := range rootdir.relpaths {
+		if rootdir.opt.IsRelPathNotView(rp) {
 			continue
 		}
-		var (
-			curnd, curnf int
-			size         int64
-		)
-
-		paw.Logger.WithFields(logrus.Fields{
-			"rp": rp,
-		}).Trace("getDir")
-		cur, err := cur.getDir(rp)
+		paw.Logger.WithFields(logrus.Fields{"rp": rp}).Trace("getDir")
+		cur, err := rootdir.getDir(rp)
 		if err != nil {
-			paw.Logger.WithFields(logrus.Fields{
-				"rp": rp,
-			}).Fatal(err)
+			paw.Logger.WithFields(logrus.Fields{"rp": rp}).Fatal(err)
 		}
 
 		des, _ := cur.ReadDirAll()
 		if len(des) < 1 {
-			// nitems--
 			continue
 		}
 
 		if rp != "." {
-			FprintRelPath(w, "", "", "", rp, false)
+			cur.FprintlnRelPathC(w, "", false)
+			// fmt.Fprintln(w, cur.RelPathC("", false)+":")
+			// FprintRelPath(w, "", "", "", rp, false)
 		}
 
 		if len(cur.errors) > 0 {
@@ -88,12 +81,9 @@ func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 
 			if de.IsDir() && !isViewNoDirs {
 				nd++
-				curnd++
 			}
 			if !de.IsDir() && !isViewNoFiles {
-				size += de.Size()
 				nf++
-				curnf++
 			}
 		}
 		wdcols := vcGridWidths(names, wdstty)
@@ -114,20 +104,23 @@ func viewClassify(w io.Writer, cur *Dir, isViewNoDirs, isViewNoFiles bool) {
 			}
 			fmt.Fprintln(w)
 		}
-		totalsize += size
-		if cur.opt.Depth != 0 {
-			FprintDirSummary(w, "", curnd, curnf, size, wdstty)
-		}
+		// if rootdir.opt.Depth != 0 {
+		// cur.FprintlnSummaryC(w, "", wdstty, false)
+		// 	fmt.Fprintln(w, cur.SummaryC("", wdstty, false))
+		// }
 		if nd+nf < nitems {
-			FprintBanner(w, "", "-", wdstty)
+			fmt.Fprintln(w)
+			// FprintBanner(w, "", "-", wdstty)
 		}
-		if cur.opt.Depth == 0 {
+		if rootdir.opt.Depth == 0 {
 			break
 		}
 	}
 
-	FprintBanner(w, "", "=", wdstty)
-	FprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
+	fmt.Fprintln(w)
+	// FprintBanner(w, "", "=", wdstty)
+	rootdir.FprintlnSummaryC(w, "", wdstty, true)
+	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
 }
 
 func tailNames(xattrs, names, cnames []string, name, cname string, isAppendName bool) (tnames, tcnames []string) {

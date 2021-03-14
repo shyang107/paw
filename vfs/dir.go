@@ -3,7 +3,6 @@ package vfs
 import (
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"code.cloudfoundry.org/bytefmt"
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/cast"
@@ -23,7 +23,7 @@ type Dir struct {
 	path    string // full path = filepath.Join(root, relpath, name)
 	relpath string
 	name    string // basename
-	info    fs.FileInfo
+	info    FileInfo
 	xattrs  []string
 	git     *GitStatus
 
@@ -45,7 +45,7 @@ func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) *Dir {
 	if err != nil {
 		return nil
 	}
-	var info fs.FileInfo
+	var info FileInfo
 	info, err = os.Lstat(aroot)
 	if err != nil {
 		return nil
@@ -136,7 +136,7 @@ func (d *Dir) Size() int64 {
 }
 
 // Mode returns file mode bits
-func (d *Dir) Mode() fs.FileMode {
+func (d *Dir) Mode() FileMode {
 	return d.info.Mode()
 }
 
@@ -159,7 +159,7 @@ func (d *Dir) Sys() interface{} {
 
 // Type returns the type bits for the entry.
 // The type bits are a subset of the usual FileMode bits, those returned by the FileMode.Type method.
-func (d *Dir) Type() fs.FileMode {
+func (d *Dir) Type() FileMode {
 	return d.Mode()
 }
 
@@ -169,7 +169,7 @@ func (d *Dir) Type() fs.FileMode {
 // since the directory read, Info may return an error satisfying errors.Is(err, ErrNotExist).
 // If the entry denotes a symbolic link, Info reports the information about the link itself,
 // not the link's target.
-func (d *Dir) Info() (fs.FileInfo, error) {
+func (d *Dir) Info() (FileInfo, error) {
 	return d.info, nil
 }
 
@@ -207,7 +207,7 @@ func (d *Dir) RelDir() string {
 // LSColor will return LS_COLORS color of File
 // 	implements the interface of DirEntryX
 func (d *Dir) LSColor() *color.Color {
-	return deLSColor(d)
+	return GetDxLSColor(d)
 }
 
 // NameToLink return colorized name & symlink
@@ -655,16 +655,17 @@ func (d *Dir) FprintErrors(w io.Writer, pad string) {
 	}
 }
 
-func (d *Dir) NItems() (ndirs, nfiles, nitems int) {
+// NItems returns numbers of dirs and files of resurse this dir if isRecurse is true; otherwise, returns just this dir.
+func (d *Dir) NItems(isRecurse bool) (ndirs, nfiles, nitems int) {
 	level := 0
 	if d.RelPath() != "." {
 		level = len(strings.Split(d.RelPath(), "/"))
 	}
-	ndirs, nfiles = _NItems(d, level)
+	ndirs, nfiles = _NItems(d, level, true)
 	return ndirs, nfiles, ndirs + nfiles
 }
 
-func _NItems(d *Dir, levle int) (ndirs, nfiles int) {
+func _NItems(d *Dir, levle int, isRecurse bool) (ndirs, nfiles int) {
 	if d.opt.Depth > 0 &&
 		levle > d.opt.Depth {
 		return
@@ -676,9 +677,11 @@ func _NItems(d *Dir, levle int) (ndirs, nfiles int) {
 		} else {
 			ndirs++
 			child := de.(*Dir)
-			nd, nf := _NItems(child, levle+1)
-			ndirs += nd
-			nfiles += nf
+			if isRecurse {
+				nd, nf := _NItems(child, levle+1, isRecurse)
+				ndirs += nd
+				nfiles += nf
+			}
 		}
 	}
 	return ndirs, nfiles
@@ -686,7 +689,7 @@ func _NItems(d *Dir, levle int) (ndirs, nfiles int) {
 
 // DirInfoC will return the colorful string of sub-dir ( file.IsDir is true) and the width on console.
 func (d *Dir) DirInfoC() (cdinf string, wdinf int) {
-	nd, nf, _ := d.NItems()
+	nd, nf, _ := d.NItems(true)
 	cnd := paw.Csnp.Sprint(nd)
 	cnf := paw.Csnp.Sprint(nf)
 	di := " dirs"
@@ -904,4 +907,49 @@ func (d *Dir) getDir(relpath string) (*Dir, error) {
 	}
 
 	return cur, nil
+}
+
+func (d *Dir) FprintlnSummaryC(w io.Writer, pad string, wdstty int, isRecurse bool) {
+	fmt.Fprintln(w, d.SummaryC(pad, wdstty, isRecurse))
+}
+
+func (d *Dir) SummaryC(pad string, wdstty int, isRecurse bool) string {
+	var (
+		ndirs, nfiles, _ = d.NItems(isRecurse)
+		ss               = bytefmt.ByteSize(uint64(d.TotalSize()))
+		nss              = len(ss)
+		sn               = fmt.Sprintf("%s", ss[:nss-1])
+		su               = strings.ToLower(ss[nss-1:])
+	)
+	stotal := ""
+	ssize := ""
+	if isRecurse {
+		stotal = "Accumulated "
+		ssize = " total"
+	}
+	cndirs := paw.CpmptSn.Sprint(ndirs)
+	cnfiles := paw.CpmptSn.Sprint(nfiles)
+	csumsize := paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
+	msg := pad +
+		paw.Cpmpt.Sprint(stotal) +
+		cndirs +
+		paw.Cpmpt.Sprint(" directories, ") +
+		cnfiles +
+		paw.Cpmpt.Sprint(" files,") +
+		paw.Cpmpt.Sprint(ssize+" size ≈ ") +
+		csumsize +
+		paw.Cpmpt.Sprint(". ")
+	nmsg := paw.StringWidth(paw.StripANSI(msg))
+	msg += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - nmsg))
+
+	return msg
+}
+
+func (d *Dir) FprintlnRelPathC(w io.Writer, pad string, isBg bool) {
+	fmt.Fprintf(w, "%s:\n", d.RelPathC(pad, isBg))
+}
+
+func (d *Dir) RelPathC(pad string, isBg bool) string {
+	rp := d.RelPath()
+	return GetRelPath(pad, "", rp, isBg)
 }

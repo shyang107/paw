@@ -33,51 +33,50 @@ func VFSViewTable(w io.Writer, v *VFS) {
 	v.opt.ViewFields = tmpfields
 }
 
-func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
+func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	isNoColor := color.NoColor
 	// color.NoColor = true
 	var (
-		vfields          = cur.opt.ViewFields
+		vfields          = rootdir.opt.ViewFields
 		wdstty           = sttyWidth - 2
-		tnd, tnf, nitems = cur.NItems()
+		tnd, tnf, nitems = rootdir.NItems(true)
 		wdidx            = GetMaxWidthOf(tnd, tnf)
-		// wdidx          = ViewFieldNo.Width()
-		nd, nf       int
-		roothead     = GetRootHeadC(cur, wdstty)
-		totalsize    int64
-		_MIN_PADDING = tabulate.MIN_PADDING
+		nd, nf           int
+		roothead         = GetRootHeadC(rootdir, wdstty)
+		_MIN_PADDING     = tabulate.MIN_PADDING
 	)
 	tabulate.MIN_PADDING = 2
 
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
-	vfields.ModifyWidths(cur)
+	vfields.ModifyWidths(rootdir)
 	ViewFieldNo.SetWidth(wdidx + 1)
 	ViewFieldName.SetWidth(ViewFieldName.Width() - vfields.Count()*2)
 	_Widths := vfields.Widths()
-	heads := vfields.GetHeadA(nil)
+	heads := vfields.GetHeadFuncA(func(i int) *Color {
+		if i%2 == 0 {
+			return paw.CEven
+		} else {
+			return paw.COdd
+		}
+	})
+	// heads := vfields.GetHeadA(paw.Cpmpt)
 	idxmap := make(map[string]string)
-	for _, rp := range cur.RelPaths() {
-		if cur.opt.IsRelPathNotView(rp) {
+	for _, rp := range rootdir.RelPaths() {
+		if rootdir.opt.IsRelPathNotView(rp) {
 			continue
 		}
 		var (
-			curnd, curnf int
-			size         int64
-			idx          = idxmap[rp]
-			cidx         = paw.Cfield.Sprintf(idx) + " "
+			idx  = idxmap[rp]
+			cidx = "[" + paw.Cvalue.Sprintf(idx) + "] "
 			// idx          = fmt.Sprintf("G%-[1]*[2]d ", wdidx, i)
 		)
 
-		paw.Logger.WithFields(logrus.Fields{
-			"rp": rp,
-		}).Trace("getDir")
-		cur, err := cur.getDir(rp)
+		paw.Logger.WithFields(logrus.Fields{"rp": rp}).Trace("getDir")
+		cur, err := rootdir.getDir(rp)
 		if err != nil {
-			paw.Logger.WithFields(logrus.Fields{
-				"rp": rp,
-			}).Fatal(err)
+			paw.Logger.WithFields(logrus.Fields{"rp": rp}).Fatal(err)
 		}
 
 		des, _ := cur.ReadDirAll()
@@ -87,7 +86,9 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 		}
 
 		if rp != "." {
-			FprintRelPath(w, "", "", cidx, rp, false)
+			cur.FprintlnRelPathC(w, cidx, false)
+			// fmt.Fprintln(w, cur.RelPathC(cidx, false))
+			// FprintRelPath(w, "", "", cidx, rp, false)
 		}
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, "")
@@ -103,7 +104,6 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 					continue
 				}
 				nd++
-				curnd++
 				jdx = fmt.Sprintf("D%d", nd)
 				idxmap[de.RelPath()] = jdx
 			} else {
@@ -112,12 +112,9 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 					continue
 				}
 				nf++
-				curnf++
-				size += de.Size()
 				jdx = fmt.Sprintf("F%d", nf)
 			}
 			ViewFieldNo.SetValue(jdx)
-			// values := vfields.GetValuesS(de)
 			values := vfields.GetValuesC(de)
 			wdname := paw.StringWidth(de.Field(ViewFieldName))
 			if wdname < ViewFieldName.Width() {
@@ -147,35 +144,36 @@ func viewTableByTabulate(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFile
 		renders := t.Render("simple")
 		fmt.Fprint(w, renders)
 
-		totalsize += size
-		if cur.opt.Depth != 0 {
-			FprintDirSummary(w, "", curnd, curnf, size, wdstty)
+		if rootdir.opt.Depth != 0 {
+			cur.FprintlnSummaryC(w, "", wdstty, false)
+			// fmt.Fprintln(w, cur.SummaryC("", wdstty, false))
 		}
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}
-		if cur.opt.Depth == 0 {
+		if rootdir.opt.Depth == 0 {
 			break
 		}
 	}
 
 	FprintBanner(w, "", "=", wdstty)
-	FprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
+	rootdir.FprintlnSummaryC(w, "", wdstty, true)
+	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
 
 	tabulate.MIN_PADDING = _MIN_PADDING
 	color.NoColor = isNoColor
 }
 
-func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (totalsize int64) {
+func viewTable(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
-		vfields        = cur.opt.ViewFields
-		fields         = vfields.GetModifyWidthsNoGitFields(cur)
+		vfields        = rootdir.opt.ViewFields
+		fields         = vfields.GetModifyWidthsNoGitFields(rootdir)
 		wdstty         = sttyWidth - 2
-		tnd, _, nitems = cur.NItems()
+		tnd, _, nitems = rootdir.NItems(true)
 		wdidx          = ViewFieldNo.Width()
 		nd, nf         int
 		// wdmeta         = 0
-		roothead = GetRootHeadC(cur, wdstty)
+		roothead = GetRootHeadC(rootdir, wdstty)
 		banner   = strings.Repeat("-", wdstty)
 		tf       = &paw.TableFormat{
 			Fields:            make([]string, 0, len(fields)),
@@ -197,7 +195,7 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 	}
 
 	tf.Prepare(w)
-	errmsg := cur.Errors("")
+	errmsg := rootdir.Errors("")
 	if len(errmsg) > 0 {
 		errmsg = strings.TrimSuffix(errmsg, "\n")
 		tf.SetBeforeMessage(fmt.Sprintf("%v\n%v", roothead, errmsg))
@@ -207,21 +205,19 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 
 	tf.PrintSart()
 
-	for i, rp := range cur.RelPaths() {
-		if cur.opt.IsRelPathNotView(rp) {
+	for i, rp := range rootdir.RelPaths() {
+		if rootdir.opt.IsRelPathNotView(rp) {
 			continue
 		}
 		var (
-			curnd, curnf int
-			size         int64
-			idx          = fmt.Sprintf("D%-[1]*[2]d ", wdidx, i)
+			idx = fmt.Sprintf("D%-[1]*[2]d ", wdidx, i)
 			// cidx         = paw.Cfield.Sprint(idx)
 		)
 
 		paw.Logger.WithFields(logrus.Fields{
 			"rp": rp,
 		}).Trace("getDir")
-		cur, err := cur.getDir(rp)
+		cur, err := rootdir.getDir(rp)
 		if err != nil {
 			paw.Logger.WithFields(logrus.Fields{
 				"rp": rp,
@@ -253,7 +249,6 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 					continue
 				}
 				nd++
-				curnd++
 				jdx = fmt.Sprintf("D%d", nd)
 			} else {
 				if isViewNoDirs {
@@ -261,8 +256,6 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 					continue
 				}
 				nf++
-				curnf++
-				size += de.Size()
 				jdx = fmt.Sprintf("F%d", nf)
 			}
 			ViewFieldNo.SetValue(jdx)
@@ -285,18 +278,16 @@ func viewTable(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) (t
 				}
 			}
 		}
-		totalsize += size
 		tf.PrintMiddleSepLine()
-		tf.PrintLineln(dirSummary("", curnd, curnf, size, wdstty))
+		tf.PrintLineln(cur.SummaryC("", wdstty, false))
 		if nd+nf < nitems {
 			tf.PrintLineln(banner)
 		}
-		if cur.opt.Depth == 0 {
+		if rootdir.opt.Depth == 0 {
 			break
 		}
 	}
 
-	tf.SetAfterMessage(totalSummary("", nd, nf, totalsize, wdstty))
+	tf.SetAfterMessage(rootdir.SummaryC("", wdstty, true))
 	tf.PrintEnd()
-	return totalsize
 }

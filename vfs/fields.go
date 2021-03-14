@@ -457,6 +457,30 @@ func (v ViewField) GetHeadA(c *color.Color) (values []string) {
 	return values
 }
 
+func (v ViewField) GetHeadFunc(fc func(i int) *Color) (head string) {
+	heads := v.GetHeadFuncA(fc)
+	return strings.Join(heads, " ")
+}
+
+func (v ViewField) GetHeadFuncA(fc func(i int) *Color) (values []string) {
+	var sprint func(...interface{}) string
+	fields := v.Fields()
+	values = make([]string, 0, len(fields))
+	if fc == nil {
+		sprint = fmt.Sprint
+		for _, f := range fields {
+			v := sprint(f.AlignedS(f.Name()))
+			values = append(values, v)
+		}
+	} else {
+		for i, f := range fields {
+			v := fc(i).Sprint(f.AlignedS(f.Name()))
+			values = append(values, v)
+		}
+	}
+	return values
+}
+
 // AlignedS return aligned string of value according to ViewField.Align()
 func (v ViewField) AlignedS(value interface{}) string {
 	var (
@@ -589,7 +613,7 @@ func modFieldWidths(d *Dir, fields []ViewField) {
 		}
 	}
 	if hasFieldNo {
-		nd, nf, _ := d.NItems()
+		nd, nf, _ := d.NItems(true)
 		wdidx := GetMaxWidthOf(nd, nf)
 		ViewFieldNo.SetWidth(wdidx + 1)
 	}

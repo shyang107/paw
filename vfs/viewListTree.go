@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
 )
@@ -21,15 +22,15 @@ func VFSViewListTree(w io.Writer, v *VFS) {
 
 }
 
-func viewListTree(w io.Writer, cur *Dir, hasX, hasList bool) {
+func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 	var (
-		vfields  = cur.opt.ViewFields
+		vfields  = rootdir.opt.ViewFields
 		fields   []ViewField
 		wdstty   = sttyWidth - 2
-		roothead = GetRootHeadC(cur, wdstty)
+		roothead = GetRootHeadC(rootdir, wdstty)
 	)
 	if hasList {
-		fields = vfields.GetModifyWidthsNoGitFields(cur)
+		fields = vfields.GetModifyWidthsNoGitFields(rootdir)
 	} else {
 		fields = []ViewField{ViewFieldName}
 	}
@@ -38,14 +39,23 @@ func viewListTree(w io.Writer, cur *Dir, hasX, hasList bool) {
 	FprintBanner(w, "", "=", wdstty)
 
 	if hasList {
-		head := vfields.GetHead(paw.Chdp)
+		ceven := paw.CloneColor(paw.CEven).Add(color.Underline)
+		codd := paw.CloneColor(paw.COdd).Add(color.Underline)
+		head := vfields.GetHeadFunc(func(i int) *Color {
+			if i%2 == 0 {
+				return ceven
+			} else {
+				return codd
+			}
+		})
+		// head := vfields.GetHead(paw.Chdp)
 		fmt.Fprintf(w, "%v\n", head)
-		fmt.Fprintf(w, "%v", vfields.RowStringXNameC(cur))
+		fmt.Fprintf(w, "%v", vfields.RowStringXNameC(rootdir))
 	}
-	cdinf, _ := cur.DirInfoC()
+	cdinf, _ := rootdir.DirInfoC()
 	fmt.Fprintf(w, " %v %v\n", cdinf, paw.Cdip.Sprint("."))
 
-	des, _ := cur.ReadDirAll()
+	des, _ := rootdir.ReadDirAll()
 	// print files in the root dir
 	level := 0
 	var levelsEnded []int
@@ -66,8 +76,8 @@ func viewListTree(w io.Writer, cur *Dir, hasX, hasList bool) {
 
 	// print end message
 	FprintBanner(w, "", "=", wdstty)
-	tnd, tnf, _ := cur.NItems()
-	FprintTotalSummary(w, "", tnd, tnf, cur.TotalSize(), wdstty)
+	rootdir.FprintlnSummaryC(w, "", wdstty, true)
+	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
 }
 
 func vltFile(w io.Writer, level int, levelsEnded []int, edge EdgeType, de DirEntryX, fields []ViewField, hasX bool, hasList bool, wdstty int) {

@@ -13,8 +13,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type Color = color.Color
+type Attribute = color.Attribute
+
 const (
-	Gray0 color.Attribute = iota + 232
+	Gray0 Attribute = iota + 232
 	Gray1
 	Gray2
 	Gray3
@@ -73,7 +76,7 @@ var (
 
 	// Grays: 0-23 gradient (color.Attribute) of gray
 	// 	 232-255：從黑到白的24階灰度色
-	Grays = map[int]color.Attribute{
+	Grays = map[int]Attribute{
 		0:  Gray0,
 		1:  Gray1,
 		2:  Gray2,
@@ -128,7 +131,7 @@ var (
 		23: int(Gray23),
 	}
 
-	EXAColors = map[string][]color.Attribute{
+	EXAColors = map[string][]Attribute{
 		"ca": LSColors["ca"],
 		"cd": LSColors["cd"],
 		"di": LSColors["di"],
@@ -243,14 +246,15 @@ var (
 		"value": FgColor256A(222).Add(color.Underline),
 		//{38, 5, 222, 4},
 		// Cvalue :{38, 5, 193, 4},
-		"even": FgGrayA(19).Add(BgGrayA(4)...),
+		"even": FgColor256A(231).Add(BgGrayA(4)...),
+		// "even": FgGrayA(19).Add(BgGrayA(4)...),
 		//{38, 5, 251, 48, 5, 236},
-		"odd": FgColor256A(159).Add(BgGrayA(4)...),
+		"odd": FgColor256A(223).Add(BgGrayA(4)...),
 		//{38, 5, 159, 48, 5, 238},
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
 	// extention of file
-	LSColors = map[string][]color.Attribute{
+	LSColors = map[string][]Attribute{
 		"bd": FgColor256A(68),
 		//{38, 5, 68},
 		"ca": FgColor256A(17),
@@ -1405,7 +1409,7 @@ var (
 		//{38, 5, 166},
 	}
 	// ReExtLSColors is LS_COLORS code for specific pattern of file extentions
-	ReExtLSColors = map[*regexp.Regexp][]color.Attribute{
+	ReExtLSColors = map[*regexp.Regexp][]Attribute{
 		regexp.MustCompile(`r[0-9]{0,2}$`): FgColor256A(GraysI[7]),
 		//{38, 5, 239},
 		regexp.MustCompile(`zx[0-9]{0,2}$`): FgColor256A(GraysI[7]),
@@ -1492,7 +1496,7 @@ var (
 	COdd       = NewEXAColor("odd")
 )
 
-func CloneColor(color *color.Color) *color.Color {
+func CloneColor(color *Color) *Color {
 	c := *color
 	return &c
 }
@@ -1537,10 +1541,10 @@ func GetLSColors() {
 	}
 }
 
-func getLSColorAttribute(code string) []color.Attribute {
-	att := []color.Attribute{}
+func getLSColorAttribute(code string) []Attribute {
+	att := []Attribute{}
 	for _, a := range strings.Split(code, ";") {
-		att = append(att, color.Attribute(cast.ToInt(a)))
+		att = append(att, Attribute(cast.ToInt(a)))
 	}
 	return att
 }
@@ -1562,39 +1566,39 @@ func KindEXAColorString(kind, s string) string {
 	return color.New(att...).Sprint(s)
 }
 
-func LogLevelColorA(level logrus.Level) (a []color.Attribute) {
+func LogLevelColorA(level logrus.Level) (a []Attribute) {
 	switch level {
 	case logrus.TraceLevel:
-		a = []color.Attribute{color.FgCyan}
+		a = []Attribute{color.FgCyan}
 	case logrus.DebugLevel:
-		a = []color.Attribute{color.FgHiRed}
+		a = []Attribute{color.FgHiRed}
 	case logrus.WarnLevel:
-		a = []color.Attribute{color.FgHiRed}
+		a = []Attribute{color.FgHiRed}
 	case logrus.ErrorLevel, logrus.FatalLevel, logrus.PanicLevel:
 		// a = FgColor256A(220).Add(color.Bold).Add(BgColor256A(160)...)
-		a = []color.Attribute{38, 5, 220, 1, 48, 5, 160}
+		a = []Attribute{38, 5, 220, 1, 48, 5, 160}
 	default: //info
-		a = []color.Attribute{color.FgHiGreen}
+		a = []Attribute{color.FgHiGreen}
 	}
 	return a
 }
-func LogLevelColor(level logrus.Level) (c *color.Color) {
+func LogLevelColor(level logrus.Level) (c *Color) {
 	a := LogLevelColorA(level)
 	return color.New(a...)
 }
 
 // NewLSColor will return `*color.Color` using `LSColors[key]`
-func NewLSColor(key string) *color.Color {
+func NewLSColor(key string) *Color {
 	return color.New(LSColors[key]...)
 }
 
 // NewEXAColor will return `*color.Color` using `EXAColors[key]`
-func NewEXAColor(key string) *color.Color {
+func NewEXAColor(key string) *Color {
 	return color.New(EXAColors[key]...)
 }
 
 // FileLSColor returns color of file (fullpath) according to LS_COLORS
-func FileLSColor(fullpath string) *color.Color {
+func FileLSColor(fullpath string) *Color {
 	fi, err := os.Lstat(fullpath)
 	if err != nil {
 		return Cnop
@@ -1658,7 +1662,7 @@ func FileLSColor(fullpath string) *color.Color {
 // 	range of level:
 //  level <-> 256 color code
 //   0-24 <->  232-255：從黑到白的24階灰度色
-func FgGray(level int) *color.Color {
+func FgGray(level int) *Color {
 	return color.New(FgGrayA(level)...)
 }
 
@@ -1667,7 +1671,7 @@ func FgGray(level int) *color.Color {
 // 	range of level:
 //  level <-> 256 color code
 //   0-24 <->  232-255：從黑到白的24階灰度色
-func BgGray(level int) *color.Color {
+func BgGray(level int) *Color {
 	return color.New(FgGrayA(level)...)
 }
 func getGrayCode(level int) (code int) {
@@ -1709,7 +1713,7 @@ func BgGrayA(level int) AttributeA {
 //      8- 15：高强度颜色（同ESC [ 90–97 m）
 //     16-231：6 × 6 × 6 立方（216色）: 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
 //    232-255：從黑到白的24階灰度色
-func FgColor256(code interface{}) *color.Color {
+func FgColor256(code interface{}) *Color {
 	return color.New(FgColor256A(code)...)
 }
 
@@ -1722,25 +1726,25 @@ func FgColor256(code interface{}) *color.Color {
 //    232-255：從黑到白的24階灰度色
 func FgColor256A(code interface{}) AttributeA {
 	a := getColorAttribute(code)
-	as := []color.Attribute{38, 5}
+	as := []Attribute{38, 5}
 	as = append(as, a)
 	return as
 }
 
-func getColorAttribute(code interface{}) (a color.Attribute) {
+func getColorAttribute(code interface{}) (a Attribute) {
 	x := indirect(code)
 	switch x.(type) {
 	case int:
 		switch idx := x.(int); {
 		case idx < 0:
-			a = color.Attribute(0)
+			a = Attribute(0)
 		case idx > 255:
-			a = color.Attribute(255)
+			a = Attribute(255)
 		default:
-			a = color.Attribute(idx)
+			a = Attribute(idx)
 		}
-	case color.Attribute:
-		a = x.(color.Attribute)
+	case Attribute:
+		a = x.(Attribute)
 	}
 	return a
 }
@@ -1752,7 +1756,7 @@ func getColorAttribute(code interface{}) (a color.Attribute) {
 //      8- 15：高强度颜色（同ESC [ 90–97 m）
 //     16-231：6 × 6 × 6 立方（216色）: 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
 //    232-255：從黑到白的24階灰度色
-func BgColor256(code interface{}) *color.Color {
+func BgColor256(code interface{}) *Color {
 	return color.New(BgColor256A(code)...)
 }
 
@@ -1765,18 +1769,18 @@ func BgColor256(code interface{}) *color.Color {
 //    232-255：從黑到白的24階灰度色
 func BgColor256A(code interface{}) AttributeA {
 	a := getColorAttribute(code)
-	as := []color.Attribute{48, 5}
+	as := []Attribute{48, 5}
 	as = append(as, a)
 	return as
 }
 
-type AttributeA []color.Attribute
+type AttributeA []Attribute
 
 func NewAttributeA() AttributeA {
 	return make(AttributeA, 0)
 }
 
-func (a AttributeA) Add(p ...color.Attribute) AttributeA {
+func (a AttributeA) Add(p ...Attribute) AttributeA {
 	a = append(a, p...)
 	return a
 }

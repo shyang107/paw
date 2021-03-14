@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
 )
@@ -22,41 +23,45 @@ func VFSViewList(w io.Writer, v *VFS) {
 	ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 }
 
-func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
+func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	// paw.Logger.Debug()
 	var (
-		vfields        = cur.opt.ViewFields
+		vfields        = rootdir.opt.ViewFields
 		wdstty         = sttyWidth - 2
-		tnd, _, nitems = cur.NItems()
+		tnd, _, nitems = rootdir.NItems(true)
 		nd, nf         int
 		wdmeta         = 0
-		roothead       = GetRootHeadC(cur, wdstty)
+		roothead       = GetRootHeadC(rootdir, wdstty)
 		// head           = GetPFHeadS(paw.Chdp, fields...)
-		totalsize int64
 	)
-	vfields.ModifyWidths(cur)
-	head := vfields.GetHead(paw.Chdp)
+	vfields.ModifyWidths(rootdir)
+	ceven := paw.CloneColor(paw.CEven).Add(color.Underline)
+	codd := paw.CloneColor(paw.COdd).Add(color.Underline)
+	head := vfields.GetHeadFunc(func(i int) *Color {
+		if i%2 == 0 {
+			return ceven
+		} else {
+			return codd
+		}
+	})
+	// head := vfields.GetHead(paw.Chdp)
 
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
 	// paw.Logger.Trace("hasX")
 	if hasX {
-		wdmeta = GetViewFieldWidthWithoutName(cur.opt.ViewFields)
+		wdmeta = GetViewFieldWidthWithoutName(rootdir.opt.ViewFields)
 	}
 	// paw.Logger.Trace("cur.relpaths")
-	for _, rp := range cur.relpaths {
-		if cur.opt.IsRelPathNotView(rp) {
+	for _, rp := range rootdir.relpaths {
+		if rootdir.opt.IsRelPathNotView(rp) {
 			continue
 		}
-		var (
-			curnd, curnf int
-			size         int64
-		)
 		paw.Logger.WithFields(logrus.Fields{
 			"rp": rp,
 		}).Trace("getDir")
-		cur, err := cur.getDir(rp)
+		cur, err := rootdir.getDir(rp)
 		if err != nil {
 			paw.Logger.WithFields(logrus.Fields{
 				"rp": rp,
@@ -69,7 +74,9 @@ func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 		}
 
 		if rp != "." {
-			FprintRelPath(w, "", "", "", rp, false)
+			cur.FprintlnRelPathC(w, "", false)
+			// fmt.Fprintln(w, cur.RelPathC("", false))
+			// FprintRelPath(w, "", "", "", rp, false)
 		}
 
 		if len(cur.errors) > 0 {
@@ -84,15 +91,12 @@ func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 					continue
 				}
 				nd++
-				curnd++
 			} else {
 				if isViewNoFiles {
 					nitems--
 					continue
 				}
 				nf++
-				curnf++
-				size += de.Size()
 			}
 
 			// print fields of de
@@ -103,18 +107,20 @@ func viewList(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 				FprintXattrs(w, wdmeta, de.Xattibutes())
 			}
 		}
-		totalsize += size
-		if cur.opt.Depth != 0 {
-			FprintDirSummary(w, "", curnd, curnf, size, wdstty)
+		if rootdir.opt.Depth != 0 {
+			cur.FprintlnSummaryC(w, "", wdstty, false)
+			// fmt.Fprintln(w, cur.SummaryC("", wdstty, false))
+
 		}
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}
-		if cur.opt.Depth == 0 {
+		if rootdir.opt.Depth == 0 {
 			break
 		}
 	}
 
 	FprintBanner(w, "", "=", wdstty)
-	FprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
+	rootdir.FprintlnSummaryC(w, "", wdstty, true)
+	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
 }

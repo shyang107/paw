@@ -7,6 +7,10 @@ import (
 	"github.com/fatih/color"
 )
 
+type FileMode = fs.FileMode
+type FileInfo = fs.FileInfo
+type DirEntry = fs.DirEntry
+
 // Extended is a interface to get extended attributes from Dir or File
 type Extendeder interface {
 	Xattibutes() []string
@@ -58,8 +62,8 @@ type ISer interface {
 }
 
 type DirEntryX interface {
-	fs.FileInfo
-	fs.DirEntry
+	FileInfo
+	DirEntry
 	Extendeder
 	Fielder
 	ISer

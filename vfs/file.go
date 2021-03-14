@@ -3,7 +3,6 @@ package vfs
 import (
 	"fmt"
 
-	"io/fs"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -21,7 +20,7 @@ type File struct {
 	path    string // full path = filepath.Join(root, relpath, name)
 	relpath string
 	name    string // basename
-	info    fs.FileInfo
+	info    FileInfo
 	xattrs  []string
 	git     *GitStatus
 	//
@@ -47,7 +46,7 @@ func NewFile(path, root string, git *GitStatus) *File {
 		// info, _ = os.Stat(apath)
 		isLink = true
 		link = GetLinkPath(apath)
-		if !filepath.IsAbs(link) {
+		if !filepath.IsAbs(link) { // get absolute path of link
 			dir := filepath.Dir(apath)
 			link = filepath.Join(dir, link)
 		}
@@ -123,7 +122,7 @@ func (f *File) Size() int64 {
 }
 
 // Mode returns file mode bits
-func (f *File) Mode() fs.FileMode {
+func (f *File) Mode() FileMode {
 	return f.info.Mode()
 }
 
@@ -146,7 +145,7 @@ func (f *File) Sys() interface{} {
 
 // Type returns the type bits for the entry.
 // The type bits are a subset of the usual FileMode bits, those returned by the FileMode.Type method.
-func (f *File) Type() fs.FileMode {
+func (f *File) Type() FileMode {
 	return f.Mode()
 }
 
@@ -156,7 +155,7 @@ func (f *File) Type() fs.FileMode {
 // since the directory read, Info may return an error satisfying errors.Is(err, ErrNotExist).
 // If the entry denotes a symbolic link, Info reports the information about the link itself,
 // not the link's target.
-func (f *File) Info() (fs.FileInfo, error) {
+func (f *File) Info() (FileInfo, error) {
 	return f.info, nil
 }
 
@@ -194,7 +193,7 @@ func (f *File) RelDir() string {
 // LSColor will return LS_COLORS color of File
 // 	implements the interface of DirEntryX
 func (f *File) LSColor() *color.Color {
-	return deLSColor(f)
+	return GetDxLSColor(f)
 }
 
 // NameToLink return colorized name & symlink

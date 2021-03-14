@@ -142,7 +142,7 @@ func (opt *option) viewPaths() error {
 			fs := vfs.NewVFS(de.Path(), opt.vopt)
 			fs.BuildFS()
 			fs.View(os.Stdout)
-			nd, nf, _ = fs.RootDir().NItems()
+			nd, nf, _ = fs.RootDir().NItems(true)
 			tnd += nd
 			tnf += nf
 			totalsize += fs.TotalSize()

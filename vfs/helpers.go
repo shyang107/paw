@@ -17,6 +17,9 @@ import (
 	"github.com/shyang107/paw/cast"
 )
 
+type Color = color.Color
+type Attribute = color.Attribute
+
 type EdgeType string
 
 const (
@@ -50,16 +53,12 @@ var (
 	thisYear              = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local)
 	SpaceIndentSize       = paw.Spaces(IndentSize)
 	sttyHeight, sttyWidth = paw.GetTerminalSize()
-
-	// cdip    = (*paw.Cdip)
-	// cdirp   = (*paw.Cdirp)
-	// clevelp = (*paw.Cfield)
 )
 
 // ===
 
 // GetPathC return color string of path
-func GetPathC(path string, bgc []color.Attribute) (cdir, cname, cpath string) {
+func GetPathC(path string, bgc []Attribute) (cdir, cname, cpath string) {
 	var (
 		cdirp = paw.CloneColor(paw.Cdirp)
 		cdip  = paw.CloneColor(paw.Cdip)
@@ -80,15 +79,6 @@ func GetPathC(path string, bgc []color.Attribute) (cdir, cname, cpath string) {
 	return cdir, cname, cpath
 }
 
-// // GetPath returns  cname+dir
-// func GetPath(path string) (cdir, cname, cpath string) {
-// 	cdir, cname = filepath.Split(path)
-// 	cname = fmt.Sprint(cname)
-// 	cdir = fmt.Sprint(cdir)
-// 	cpath = cdir + cname
-// 	return cdir, cname, cpath
-// }
-
 func nameC(de DirEntryX) string {
 	return de.LSColor().Sprint(de.Name())
 }
@@ -98,7 +88,7 @@ func linkC(de DirEntryX) string {
 		alink := de.LinkPath()
 		dir := filepath.Dir(de.Path())
 		link := alink
-		if filepath.IsAbs(link) {
+		if filepath.IsAbs(link) { // get rel path from absolute path
 			link, _ = filepath.Rel(dir, alink)
 		}
 		dir, name := filepath.Split(link)
@@ -127,7 +117,7 @@ func GetLinkPath(path string) string {
 	return alink
 }
 
-func PathToLinkC(de DirEntryX, bgc []color.Attribute) (cpath string) {
+func PathToLinkC(de DirEntryX, bgc []Attribute) (cpath string) {
 	var (
 		cdirp  = paw.CloneColor(paw.Cdirp)
 		cnamep = paw.CloneColor(de.LSColor())
@@ -319,7 +309,7 @@ func dateS(date time.Time) (sdate string) {
 	// return paw.FillLeft(sdate, 11)
 }
 
-func deLSColor(de DirEntryX) *color.Color {
+func GetDxLSColor(de DirEntryX) *Color {
 	if de.IsDir() {
 		return paw.Cdip
 	}
@@ -402,7 +392,6 @@ func dirSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) st
 		paw.Cpmpt.Sprint(". ")
 	nmsg := paw.StringWidth(paw.StripANSI(msg))
 	msg += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - nmsg))
-	// msg := fmt.Sprintf("%s%v directories; %v files, size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return msg
 }
 
@@ -436,7 +425,6 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) 
 		paw.Cpmpt.Sprint(".")
 	nsummary := paw.StringWidth(paw.StripANSI(summary))
 	summary += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - nsummary))
-	// fmt.Sprintf("%sAccumulated %v directories, %v files, total size ≈ %v.\n", pad, cndirs, cnfiles, csumsize)
 	return summary
 }
 func GetRootHeadC(de DirEntryX, wdstty int) string {
@@ -467,11 +455,11 @@ func GetRootHeadC(de DirEntryX, wdstty int) string {
 }
 
 func FprintRelPath(w io.Writer, pad, slevel, cidx, rp string, isBg bool) {
-	fmt.Fprintln(w, GetRelPath(pad, slevel, rp, isBg))
+	fmt.Fprintln(w, GetRelPath(pad, slevel+" "+cidx, rp, isBg))
 }
 
 func GetRelPath(pad, slevel, rp string, isBg bool) string {
-	var bgc []color.Attribute
+	var bgc []Attribute
 	var (
 		cdirp   = paw.CloneColor(paw.Cdirp)
 		cdip    = paw.CloneColor(paw.Cdip)

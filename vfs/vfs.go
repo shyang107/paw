@@ -188,7 +188,7 @@ func buildFS(cur *Dir, root string, level int) {
 
 func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 	ds, _ := cur.ReadDirAll()
-	nd, _, _ := cur.NItems()
+	nd, _, _ := cur.NItems(true)
 	relpaths = make([]string, 0, nd) //
 	for _, d := range ds {
 		if d.IsDir() {

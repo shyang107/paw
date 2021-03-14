@@ -6,7 +6,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/cast"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,40 +31,36 @@ func VFSViewLevel(w io.Writer, v *VFS) {
 	v.opt.ViewFields = tmpfields
 }
 
-func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
+func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	var (
-		vfields = cur.opt.ViewFields
-		// fields           = vfields.GetModifyWidthsNoGitFields(cur, cur.git.NoGit)
+		vfields          = rootdir.opt.ViewFields
 		wdstty           = sttyWidth - 2
-		tnd, tnf, nitems = cur.NItems()
+		tnd, tnf, nitems = rootdir.NItems(true)
 		wdidx            = GetMaxWidthOf(tnd, tnf)
 		nd, nf           int
 		wdmeta           = 0
-		roothead         = GetRootHeadC(cur, wdstty)
-		totalsize        int64
+		roothead         = GetRootHeadC(rootdir, wdstty)
+		ceven            = paw.CloneColor(paw.CEven).Add(color.Underline)
+		codd             = paw.CloneColor(paw.COdd).Add(color.Underline)
 	)
-	vfields.ModifyWidths(cur)
+	vfields.ModifyWidths(rootdir)
 	wdname := ViewFieldName.Width()
-	// head := vfields.GetHead(paw.Chdp, cur.git.NoGit)
 
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
 	if hasX {
-		wdmeta = GetViewFieldWidthWithoutName(cur.opt.ViewFields)
+		wdmeta = GetViewFieldWidthWithoutName(rootdir.opt.ViewFields)
 	}
 	idxmap := make(map[string]string)
-	for _, rp := range cur.relpaths {
-		if cur.opt.IsRelPathNotView(rp) {
+	for _, rp := range rootdir.relpaths {
+		if rootdir.opt.IsRelPathNotView(rp) {
 			continue
 		}
 		var (
-			level        int
-			curnd, curnf int
-			size         int64
-			idx          = idxmap[rp]
-			cidx         = paw.Cfield.Sprintf(" %s ", idx)
-			// cidx         = paw.Cfield.Sprintf(" G%-[1]*[2]d ", wdidx, i)
+			level int
+			idx   = idxmap[rp]
+			cidx  = " [" + paw.Cvalue.Sprintf("%s", idx) + "] "
 		)
 		if rp == "." {
 			level = 0
@@ -72,14 +70,10 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 		wdpad := level * 3
 		pad := paw.Spaces(wdpad)
 
-		paw.Logger.WithFields(logrus.Fields{
-			"rp": rp,
-		}).Trace("getDir")
-		cur, err := cur.getDir(rp)
+		paw.Logger.WithFields(logrus.Fields{"rp": rp}).Trace("getDir")
+		cur, err := rootdir.getDir(rp)
 		if err != nil {
-			paw.Logger.WithFields(logrus.Fields{
-				"rp": rp,
-			}).Fatal(err)
+			paw.Logger.WithFields(logrus.Fields{"rp": rp}).Fatal(err)
 		}
 
 		des, _ := cur.ReadDirAll()
@@ -89,15 +83,25 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 		}
 
 		if level > 0 {
-			slevel := fmt.Sprintf("L%d: ", level)
-			FprintRelPath(w, pad, slevel, cidx, rp, false)
+			slevel := paw.Cfield.Sprintf("L%d", level) + cidx
+			cur.FprintlnRelPathC(w, pad+slevel, false)
+			// fmt.Fprintln(w, cur.RelPathC(pad+slevel, false))
+			// FprintRelPath(w, pad, slevel, "", rp, false)
 		}
 
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, pad)
 		}
 		ViewFieldName.SetWidth(wdname - wdpad)
-		head := vfields.GetHead(paw.Chdp)
+
+		head := vfields.GetHeadFunc(func(i int) *Color {
+			if i%2 == 0 {
+				return ceven
+			} else {
+				return codd
+			}
+		})
+		// head := vfields.GetHead(paw.Chdp)
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
 			var sidx string
@@ -107,17 +111,14 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 					continue
 				}
 				nd++
-				curnd++
 				sidx = fmt.Sprintf("D%-[1]*[2]d", wdidx, nd)
-				idxmap[de.RelPath()] = sidx
+				idxmap[de.RelPath()] = "D" + cast.ToString(nd)
 			} else {
 				if isViewNoFiles {
 					nitems--
 					continue
 				}
 				nf++
-				curnf++
-				size += de.Size()
 				sidx = fmt.Sprintf("F%-[1]*[2]d", wdidx, nf)
 			}
 			ViewFieldNo.SetValue(sidx)
@@ -131,19 +132,21 @@ func viewLevel(w io.Writer, cur *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 				FprintXattrs(w, wdpad+wdmeta, de.Xattibutes())
 			}
 		}
-		totalsize += size
-		if cur.opt.Depth != 0 {
-			FprintDirSummary(w, pad, curnd, curnf, size, wdstty)
+		// totalsize += size
+		if rootdir.opt.Depth != 0 {
+			cur.FprintlnSummaryC(w, pad, wdstty, false)
+			// fmt.Fprintln(w, cur.SummaryC(pad, wdstty, false))
 		}
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}
-		if cur.opt.Depth == 0 {
+		if rootdir.opt.Depth == 0 {
 			break
 		}
 		ViewFieldName.SetWidth(paw.StringWidth(ViewFieldName.Name()))
 	}
 
 	FprintBanner(w, "", "=", wdstty)
-	FprintTotalSummary(w, "", nd, nf, totalsize, wdstty)
+	rootdir.FprintlnSummaryC(w, "", wdstty, true)
+	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
 }
