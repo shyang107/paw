@@ -35,8 +35,8 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 		// head           = GetPFHeadS(paw.Chdp, fields...)
 	)
 	vfields.ModifyWidths(rootdir)
-	ceven := paw.CloneColor(paw.CEven).Add(color.Underline)
-	codd := paw.CloneColor(paw.COdd).Add(color.Underline)
+	ceven := paw.CloneColor(paw.CEvenH).Add(color.Underline)
+	codd := paw.CloneColor(paw.COddH).Add(color.Underline)
 	head := vfields.GetHeadFunc(func(i int) *Color {
 		if i%2 == 0 {
 			return ceven

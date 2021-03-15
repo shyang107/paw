@@ -44,6 +44,8 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 		nd, nf           int
 		roothead         = GetRootHeadC(rootdir, wdstty)
 		_MIN_PADDING     = tabulate.MIN_PADDING
+		cevenH           = paw.CloneColor(paw.CEven).Add(paw.EXAColors["bgpmpt"]...)
+		coddH            = paw.CloneColor(paw.COdd).Add(paw.EXAColors["bgpmpt"]...)
 	)
 	tabulate.MIN_PADDING = 2
 
@@ -56,9 +58,9 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 	_Widths := vfields.Widths()
 	heads := vfields.GetHeadFuncA(func(i int) *Color {
 		if i%2 == 0 {
-			return paw.CEven
+			return cevenH
 		} else {
-			return paw.COdd
+			return coddH
 		}
 	})
 	// heads := vfields.GetHeadA(paw.Cpmpt)

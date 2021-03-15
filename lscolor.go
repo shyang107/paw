@@ -246,10 +246,12 @@ var (
 		"value": FgColor256A(222).Add(color.Underline),
 		//{38, 5, 222, 4},
 		// Cvalue :{38, 5, 193, 4},
-		"even": FgColor256A(231).Add(BgGrayA(4)...),
+		"evenH": FgColor256A(231).Add(BgGrayA(4)...).Add(color.Underline),
+		"even":  FgColor256A(231),
 		// "even": FgGrayA(19).Add(BgGrayA(4)...),
 		//{38, 5, 251, 48, 5, 236},
-		"odd": FgColor256A(223).Add(BgGrayA(4)...),
+		"oddH": FgColor256A(223).Add(BgGrayA(4)...).Add(color.Underline),
+		"odd":  FgColor256A(223),
 		//{38, 5, 159, 48, 5, 238},
 	}
 	// LSColors = make(map[string]string) is LS_COLORS code according to
@@ -1492,9 +1494,29 @@ var (
 	Cpanic     = NewEXAColor("panic")
 	Cfield     = NewEXAColor("field")
 	Cvalue     = NewEXAColor("value")
+	CEvenH     = NewEXAColor("evenH")
+	COddH      = NewEXAColor("oddH")
 	CEven      = NewEXAColor("even")
 	COdd       = NewEXAColor("odd")
 )
+
+func ChoseColor(i int) *color.Color {
+	switch i % 2 {
+	case 0:
+		return CEven
+	default:
+		return COdd
+	}
+}
+
+func ChoseColorH(i int) *color.Color {
+	switch i % 2 {
+	case 0:
+		return CEvenH
+	default:
+		return COddH
+	}
+}
 
 func CloneColor(color *Color) *Color {
 	c := *color

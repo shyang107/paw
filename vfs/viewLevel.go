@@ -40,8 +40,8 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		nd, nf           int
 		wdmeta           = 0
 		roothead         = GetRootHeadC(rootdir, wdstty)
-		ceven            = paw.CloneColor(paw.CEven).Add(color.Underline)
-		codd             = paw.CloneColor(paw.COdd).Add(color.Underline)
+		ceven            = paw.CloneColor(paw.CEvenH).Add(color.Underline)
+		codd             = paw.CloneColor(paw.COddH).Add(color.Underline)
 	)
 	vfields.ModifyWidths(rootdir)
 	wdname := ViewFieldName.Width()

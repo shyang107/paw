@@ -463,6 +463,9 @@ func (v ViewField) GetHeadFunc(fc func(i int) *Color) (head string) {
 }
 
 func (v ViewField) GetHeadFuncA(fc func(i int) *Color) (values []string) {
+	if fc == nil {
+		fc = paw.ChoseColorH
+	}
 	var sprint func(...interface{}) string
 	fields := v.Fields()
 	values = make([]string, 0, len(fields))

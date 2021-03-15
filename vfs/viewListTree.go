@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
 )
@@ -39,15 +38,7 @@ func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 	FprintBanner(w, "", "=", wdstty)
 
 	if hasList {
-		ceven := paw.CloneColor(paw.CEven).Add(color.Underline)
-		codd := paw.CloneColor(paw.COdd).Add(color.Underline)
-		head := vfields.GetHeadFunc(func(i int) *Color {
-			if i%2 == 0 {
-				return ceven
-			} else {
-				return codd
-			}
-		})
+		head := vfields.GetHeadFunc(paw.ChoseColorH)
 		// head := vfields.GetHead(paw.Chdp)
 		fmt.Fprintf(w, "%v\n", head)
 		fmt.Fprintf(w, "%v", vfields.RowStringXNameC(rootdir))

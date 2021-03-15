@@ -40,10 +40,11 @@ func (opt *option) viewPaths() error {
 	lg.Debug()
 
 	var (
-		w               = os.Stdout
-		wdstty          = sttyWidth - 2
-		paths           = opt.paths
-		vfields         = opt.viewFields.Fields()
+		w       = os.Stdout
+		wdstty  = sttyWidth - 2
+		paths   = opt.paths
+		vfields = opt.viewFields
+		// vfields         = opt.viewFields.Fields()
 		wdmeta          = 0
 		totalsize, size int64
 		nd, nf          int
@@ -53,29 +54,16 @@ func (opt *option) viewPaths() error {
 
 	dxs, rm, dirs := createBasepaths(paths)
 	for i, dir := range dirs {
-		if len(dirs) == 1 {
-			c = paw.Cdirp
-		} else {
-			c = rcolor(i)
-		}
+		c = paw.ChoseColor(i)
 		de := rm[dir]
 		rhead := c.Sprintf("«root%d»", i+1)
 		rhead += " directory: "
 		rhead += vfs.PathToLinkC(de, nil)
 		fmt.Fprintf(w, "%s\n", rhead)
 	}
-
-	fields := make([]vfs.ViewField, 0, len(vfields))
-	var tmpFields vfs.ViewField
-	for _, f := range vfields {
-		if f&vfs.ViewFieldGit != 0 {
-			continue
-		}
-		tmpFields |= f
-		fields = append(fields, f)
-	}
-	opt.vopt.ViewFields = tmpFields
-	modFieldWidths(dxs, fields)
+	vfields.RemoveGit(true)
+	fields := vfields.Fields()
+	dxs.modFieldWidths(fields)
 	vfs.ViewFieldName.SetWidth(vfs.GetViewFieldNameWidthOf(fields))
 	wdmeta = wdstty - vfs.ViewFieldName.Width()
 
@@ -86,15 +74,11 @@ func (opt *option) viewPaths() error {
 	}
 
 	vfs.FprintBanner(w, "", "=", wdstty)
-	head := opt.vopt.ViewFields.GetHead(paw.Chdp)
+	head := vfields.GetHeadFunc(paw.ChoseColorH)
 	fmt.Fprintln(w, head)
 	for i, dir := range dirs {
-		if len(dirs) == 1 {
-			c = paw.Cdirp
-		} else {
-			c = rcolor(i)
-		}
-		rooti := c.Sprintf("«root%d»", i+1) + paw.Cdirp.Sprint("/")
+		c = paw.ChoseColor(i)
+		rooti := c.Sprintf("«root%d»/", i+1)
 		des := dxs[dir]
 		opt.vopt.ByField.Sort(des)
 		for _, de := range des {
@@ -104,9 +88,8 @@ func (opt *option) viewPaths() error {
 			} else {
 				nf++
 			}
-
 			// print fields of de
-			fmt.Fprintf(w, "%v", opt.viewFields.RowStringXNameC(de))
+			fmt.Fprintf(w, "%v", vfields.RowStringXNameC(de))
 			fmt.Fprintf(w, "%v\n", rooti+de.FieldC(vfs.ViewFieldName))
 
 			if hasX {
@@ -154,16 +137,29 @@ func (opt *option) viewPaths() error {
 	return nil
 }
 
-func rcolor(i int) *color.Color {
-	switch i % 2 {
-	case 0:
-		return paw.CEven
-		// return paw.Cdirp
-	default:
-		return paw.COdd
-		// return paw.Cdirp.Add(paw.EXAColors["bgpmpt"]...)
-	}
-}
+// var (
+// 	cevenH = paw.CloneColor(paw.CEvenH).Add(color.Underline)
+// 	coddH  = paw.CloneColor(paw.COddH).Add(color.Underline)
+// 	ceven  = paw.CloneColor(paw.CEven)
+// 	codd   = paw.CloneColor(paw.COdd)
+// )
+
+// func rcolor(i int) *color.Color {
+// 	switch i % 2 {
+// 	case 0:
+// 		return ceven
+// 	default:
+// 		return codd
+// 	}
+// }
+// func rcolorH(i int) *color.Color {
+// 	switch i % 2 {
+// 	case 0:
+// 		return cevenH
+// 	default:
+// 		return coddH
+// 	}
+// }
 
 type pathinfo struct {
 	shortroot string
@@ -228,8 +224,9 @@ func createBasepaths(paths []string) (dxs demap, srm srmap, dirs []string) {
 	return dxs, srm, dirs
 }
 
-func modFieldWidths(dxm demap, fields []vfs.ViewField) {
-	for _, des := range dxm {
+func (d *demap) modFieldWidths(fields []vfs.ViewField) {
+	// func (d *demap) modFieldWidths(dxm demap, fields []vfs.ViewField) {
+	for _, des := range *d {
 		var (
 			wd, dwd int
 		)
