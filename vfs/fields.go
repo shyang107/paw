@@ -403,6 +403,7 @@ func (v ViewField) GetValues(de DirEntryX) (values []interface{}) {
 	}
 	return values
 }
+
 func (v ViewField) GetValuesC(de DirEntryX) (values []string) {
 	fields := v.Fields()
 	values = make([]string, 0, len(fields))
@@ -441,6 +442,7 @@ func (v ViewField) GetHead(c *color.Color) string {
 	}
 	return hd
 }
+
 func (v ViewField) GetHeadA(c *color.Color) (values []string) {
 	var sprint func(...interface{}) string
 	if c != nil {
@@ -492,26 +494,9 @@ func (v ViewField) AlignedS(value interface{}) string {
 		width = paw.MaxInt(wd, v.Width())
 	)
 	return paw.AlignWithWidth(v.Align(), s, width)
-	// var (
-	// 	align = v.Align()
-	// 	s     = cast.ToString(value)
-	// 	wd    = paw.StringWidth(s)
-	// 	width = paw.MaxInt(wd, v.Width())
-	// 	sp    = paw.Spaces(width - wd)
-	// )
-
-	// if v&ViewFieldName == ViewFieldName {
-	// 	return s
-	// }
-	// switch align {
-	// case paw.AlignLeft:
-	// 	return s + sp
-	// default:
-	// 	return sp + s
-	// }
 }
 
-// AlignedSC will strip ANSI code of cvalue, then return aligned string as AlignedS
+// AlignedSC returns the aligned colorful string
 func (v ViewField) AlignedSC(cvalue interface{}) string {
 	var (
 		align = v.Align()
@@ -543,11 +528,82 @@ func (v ViewField) RowString(de DirEntryX) string {
 	}
 	return sb.String()
 }
+
 func (v ViewField) Rows(de DirEntryX) (values []string) {
 	fields := v.Fields()
 	values = make([]string, 0, len(fields))
 	for _, field := range fields {
 		values = append(values, field.AlignedS(de.Field(field)))
+	}
+	return values
+}
+func (v ViewField) XattibutesRowsC(de DirEntryX) (rows [][]string) {
+	xattrs := de.Xattibutes()
+	if len(xattrs) == 0 {
+		return nil
+	}
+	fields := v.Fields()
+	rows = make([][]string, 0, len(xattrs))
+	cxs := make([]string, len(fields))
+	for i, f := range fields {
+		if f&ViewFieldName == 0 {
+			cxs[i] = paw.Spaces(f.Width())
+		}
+	}
+	idx := len(fields) - 1
+	xsymb := "@ "
+	wdname := ViewFieldName.Width() - len(xsymb)
+	for _, x := range xattrs {
+		sp := paw.Spaces(wdname - paw.StringWidth(x))
+		cxs[idx] = paw.Cxbp.Sprint(xsymb) + paw.Cxap.Sprint(x) + sp
+		rows = append(rows, cxs)
+	}
+	return rows
+}
+
+func (v ViewField) XattibutesRowsSC(de DirEntryX) (rows []string) {
+	xrows := v.XattibutesRowsC(de)
+	if len(xrows) == 0 {
+		return nil
+	}
+	rows = make([]string, 0, len(xrows))
+	for _, rowa := range xrows {
+		rows = append(rows, strings.Join(rowa, " "))
+	}
+	return rows
+}
+
+func (v ViewField) Rows2D(des []DirEntryX, isViewNoFiles, isViewNoDirs bool) (values [][]string) {
+	if len(des) < 1 {
+		return nil
+	}
+	hasNo := false
+	if v&ViewFieldNo != 0 {
+		hasNo = true
+	}
+	values = make([][]string, 0, len(des))
+	var (
+		nd, nf int
+		idx    string
+	)
+	for _, de := range des {
+		if hasNo {
+			if de.IsDir() {
+				if isViewNoFiles {
+					continue
+				}
+				nd++
+				idx = fmt.Sprintf("D%d", nd)
+			} else {
+				if isViewNoDirs {
+					continue
+				}
+				nf++
+				idx = fmt.Sprintf("F%d", nf)
+			}
+			ViewFieldNo.SetValue(idx)
+		}
+		values = append(values, v.Rows(de))
 	}
 	return values
 }

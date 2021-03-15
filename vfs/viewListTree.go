@@ -38,8 +38,8 @@ func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 	FprintBanner(w, "", "=", wdstty)
 
 	if hasList {
-		head := vfields.GetHeadFunc(paw.ChoseColorH)
-		// head := vfields.GetHead(paw.Chdp)
+		// head := vfields.GetHeadFunc(paw.ChoseColorH)
+		head := vfields.GetHead(paw.Chdp)
 		fmt.Fprintf(w, "%v\n", head)
 		fmt.Fprintf(w, "%v", vfields.RowStringXNameC(rootdir))
 	}

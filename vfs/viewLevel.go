@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/cast"
 	"github.com/sirupsen/logrus"
@@ -38,10 +37,7 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		tnd, tnf, nitems = rootdir.NItems(true)
 		wdidx            = GetMaxWidthOf(tnd, tnf)
 		nd, nf           int
-		wdmeta           = 0
 		roothead         = GetRootHeadC(rootdir, wdstty)
-		ceven            = paw.CloneColor(paw.CEvenH).Add(color.Underline)
-		codd             = paw.CloneColor(paw.COddH).Add(color.Underline)
 	)
 	vfields.ModifyWidths(rootdir)
 	wdname := ViewFieldName.Width()
@@ -49,9 +45,6 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
-	if hasX {
-		wdmeta = GetViewFieldWidthWithoutName(rootdir.opt.ViewFields)
-	}
 	idxmap := make(map[string]string)
 	for _, rp := range rootdir.relpaths {
 		if rootdir.opt.IsRelPathNotView(rp) {
@@ -85,8 +78,6 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		if level > 0 {
 			slevel := paw.Cfield.Sprintf("L%d", level) + cidx
 			cur.FprintlnRelPathC(w, pad+slevel, false)
-			// fmt.Fprintln(w, cur.RelPathC(pad+slevel, false))
-			// FprintRelPath(w, pad, slevel, "", rp, false)
 		}
 
 		if len(cur.errors) > 0 {
@@ -94,14 +85,8 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		}
 		ViewFieldName.SetWidth(wdname - wdpad)
 
-		head := vfields.GetHeadFunc(func(i int) *Color {
-			if i%2 == 0 {
-				return ceven
-			} else {
-				return codd
-			}
-		})
-		// head := vfields.GetHead(paw.Chdp)
+		// head := vfields.GetHeadFunc(paw.ChoseColorH)
+		head := vfields.GetHead(paw.Chdp)
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
 			var sidx string
@@ -127,17 +112,19 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 			// print fields of de
 			fmt.Fprintf(w, "%v ", vfields.RowStringC(de))
 
-			fmt.Println()
+			fmt.Fprintln(w)
 			if hasX {
-				FprintXattrs(w, wdpad+wdmeta, de.Xattibutes())
+				xrows := vfields.XattibutesRowsSC(de)
+				for _, row := range xrows {
+					fmt.Fprintf(w, "%s%s\n", pad, row)
+				}
 			}
 		}
-		// totalsize += size
 		if rootdir.opt.Depth != 0 {
 			cur.FprintlnSummaryC(w, pad, wdstty, false)
-			// fmt.Fprintln(w, cur.SummaryC(pad, wdstty, false))
 		}
 		if nd+nf < nitems {
+			// fmt.Fprintln(w)
 			FprintBanner(w, "", "-", wdstty)
 		}
 		if rootdir.opt.Depth == 0 {
@@ -148,5 +135,4 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 
 	FprintBanner(w, "", "=", wdstty)
 	rootdir.FprintlnSummaryC(w, "", wdstty, true)
-	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
 }

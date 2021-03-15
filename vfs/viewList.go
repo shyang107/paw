@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
 )
@@ -30,29 +29,16 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 		wdstty         = sttyWidth - 2
 		tnd, _, nitems = rootdir.NItems(true)
 		nd, nf         int
-		wdmeta         = 0
 		roothead       = GetRootHeadC(rootdir, wdstty)
-		// head           = GetPFHeadS(paw.Chdp, fields...)
 	)
+
 	vfields.ModifyWidths(rootdir)
-	ceven := paw.CloneColor(paw.CEvenH).Add(color.Underline)
-	codd := paw.CloneColor(paw.COddH).Add(color.Underline)
-	head := vfields.GetHeadFunc(func(i int) *Color {
-		if i%2 == 0 {
-			return ceven
-		} else {
-			return codd
-		}
-	})
-	// head := vfields.GetHead(paw.Chdp)
+	// head := vfields.GetHeadFunc(paw.ChoseColorH)
+	head := vfields.GetHead(paw.Chdp)
 
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
-	// paw.Logger.Trace("hasX")
-	if hasX {
-		wdmeta = GetViewFieldWidthWithoutName(rootdir.opt.ViewFields)
-	}
 	// paw.Logger.Trace("cur.relpaths")
 	for _, rp := range rootdir.relpaths {
 		if rootdir.opt.IsRelPathNotView(rp) {
@@ -75,8 +61,6 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 
 		if rp != "." {
 			cur.FprintlnRelPathC(w, "", false)
-			// fmt.Fprintln(w, cur.RelPathC("", false))
-			// FprintRelPath(w, "", "", "", rp, false)
 		}
 
 		if len(cur.errors) > 0 {
@@ -104,12 +88,14 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 
 			fmt.Println()
 			if hasX {
-				FprintXattrs(w, wdmeta, de.Xattibutes())
+				xrows := vfields.XattibutesRowsSC(de)
+				for _, row := range xrows {
+					fmt.Fprintln(w, row)
+				}
 			}
 		}
 		if rootdir.opt.Depth != 0 {
 			cur.FprintlnSummaryC(w, "", wdstty, false)
-			// fmt.Fprintln(w, cur.SummaryC("", wdstty, false))
 
 		}
 		if nd+nf < nitems {
@@ -122,5 +108,4 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 
 	FprintBanner(w, "", "=", wdstty)
 	rootdir.FprintlnSummaryC(w, "", wdstty, true)
-	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
 }

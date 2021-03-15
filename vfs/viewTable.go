@@ -44,8 +44,8 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 		nd, nf           int
 		roothead         = GetRootHeadC(rootdir, wdstty)
 		_MIN_PADDING     = tabulate.MIN_PADDING
-		cevenH           = paw.CloneColor(paw.CEven).Add(paw.EXAColors["bgpmpt"]...)
-		coddH            = paw.CloneColor(paw.COdd).Add(paw.EXAColors["bgpmpt"]...)
+		// cevenH           = paw.CloneColor(paw.CEven).Add(paw.EXAColors["bgpmpt"]...)
+		// coddH            = paw.CloneColor(paw.COdd).Add(paw.EXAColors["bgpmpt"]...)
 	)
 	tabulate.MIN_PADDING = 2
 
@@ -56,14 +56,14 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 	ViewFieldNo.SetWidth(wdidx + 1)
 	ViewFieldName.SetWidth(ViewFieldName.Width() - vfields.Count()*2)
 	_Widths := vfields.Widths()
-	heads := vfields.GetHeadFuncA(func(i int) *Color {
-		if i%2 == 0 {
-			return cevenH
-		} else {
-			return coddH
-		}
-	})
-	// heads := vfields.GetHeadA(paw.Cpmpt)
+	// heads := vfields.GetHeadFuncA(func(i int) *Color {
+	// 	if i%2 == 0 {
+	// 		return cevenH
+	// 	} else {
+	// 		return coddH
+	// 	}
+	// })
+	heads := vfields.GetHeadA(paw.Cpmpt)
 	idxmap := make(map[string]string)
 	for _, rp := range rootdir.RelPaths() {
 		if rootdir.opt.IsRelPathNotView(rp) {
@@ -89,8 +89,6 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 
 		if rp != "." {
 			cur.FprintlnRelPathC(w, cidx, false)
-			// fmt.Fprintln(w, cur.RelPathC(cidx, false))
-			// FprintRelPath(w, "", "", cidx, rp, false)
 		}
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, "")
@@ -124,17 +122,8 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 			}
 			rows = append(rows, values)
 			if hasX {
-				xattrs := de.Xattibutes()
-				if len(xattrs) > 0 {
-					nv := len(values)
-					cxs := make([]string, nv)
-					for _, x := range xattrs {
-						sp := paw.Spaces(ViewFieldName.Width() - 2 - paw.StringWidth(x))
-						cxs[nv-1] = paw.Cxbp.Sprint("@ ") + paw.Cxap.Sprint(x) + sp
-						// cxs[nv-1] = "@ " + x + sp
-						rows = append(rows, cxs)
-					}
-				}
+				xrows := vfields.XattibutesRowsC(de)
+				rows = append(rows, xrows...)
 			}
 		}
 		t := tabulate.Create(rows)
@@ -148,7 +137,6 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 
 		if rootdir.opt.Depth != 0 {
 			cur.FprintlnSummaryC(w, "", wdstty, false)
-			// fmt.Fprintln(w, cur.SummaryC("", wdstty, false))
 		}
 		if nd+nf < nitems {
 			FprintBanner(w, "", "-", wdstty)
@@ -160,7 +148,6 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 
 	FprintBanner(w, "", "=", wdstty)
 	rootdir.FprintlnSummaryC(w, "", wdstty, true)
-	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
 
 	tabulate.MIN_PADDING = _MIN_PADDING
 	color.NoColor = isNoColor
