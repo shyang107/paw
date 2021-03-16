@@ -36,9 +36,11 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		wdstty           = sttyWidth - 2
 		tnd, tnf, nitems = rootdir.NItems(true)
 		wdidx            = GetMaxWidthOf(tnd, tnf)
-		nd, nf           int
+		tsize            int64
+		count            int
 		roothead         = GetRootHeadC(rootdir, wdstty)
 	)
+	tnd, tnf = 0, 0
 	vfields.ModifyWidths(rootdir)
 	wdname := ViewFieldName.Width()
 
@@ -71,7 +73,6 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 
 		des, _ := cur.ReadDirAll()
 		if len(des) < 1 {
-			tnd--
 			continue
 		}
 
@@ -84,27 +85,37 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 			cur.FprintErrors(os.Stderr, pad)
 		}
 		ViewFieldName.SetWidth(wdname - wdpad)
-
+		var (
+			curnd, curnf int
+			size         int64
+			vnitems      = nitems
+			head         string
+		)
+		if isViewNoDirs || isViewNoFiles {
+			for _, de := range des {
+				if isSkipViewItem(de, isViewNoDirs, isViewNoFiles, &nitems, &curnd, &curnf, &size) {
+					continue
+				}
+			}
+			if curnd+curnf == 0 {
+				goto BAN
+			}
+			curnd, curnf, size, nitems = 0, 0, 0, vnitems
+		}
 		// head := vfields.GetHeadFunc(paw.ChoseColorH)
-		head := vfields.GetHead(paw.Chdp)
+		head = vfields.GetHead(paw.Chdp)
 		fmt.Fprintf(w, "%s%v\n", pad, head)
 		for _, de := range des {
+			if isSkipViewItem(de, isViewNoDirs, isViewNoFiles, &nitems, &curnd, &curnf, &size) {
+				continue
+			}
+			count++
 			var sidx string
 			if de.IsDir() {
-				if isViewNoDirs {
-					nitems--
-					continue
-				}
-				nd++
-				sidx = fmt.Sprintf("D%-[1]*[2]d", wdidx, nd)
-				idxmap[de.RelPath()] = "D" + cast.ToString(nd)
+				sidx = fmt.Sprintf("D%-[1]*[2]d", wdidx, tnd+curnd)
+				idxmap[de.RelPath()] = "D" + cast.ToString(tnd+curnd)
 			} else {
-				if isViewNoFiles {
-					nitems--
-					continue
-				}
-				nf++
-				sidx = fmt.Sprintf("F%-[1]*[2]d", wdidx, nf)
+				sidx = fmt.Sprintf("F%-[1]*[2]d", wdidx, tnf+curnf)
 			}
 			ViewFieldNo.SetValue(sidx)
 			fmt.Fprintf(w, "%s", pad)
@@ -120,13 +131,18 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 				}
 			}
 		}
+		tnd += curnd
+		tnf += curnf
+		tsize += size
 		if rootdir.opt.Depth != 0 {
-			cur.FprintlnSummaryC(w, pad, wdstty, false)
+			fmt.Fprintln(w, dirSummary(pad, curnd, curnf, size, wdstty))
+			// cur.FprintlnSummaryC(w, pad, wdstty, false)
 		}
-		if nd+nf < nitems {
+		if count < nitems {
 			// fmt.Fprintln(w)
 			FprintBanner(w, "", "-", wdstty)
 		}
+	BAN:
 		if rootdir.opt.Depth == 0 {
 			break
 		}
@@ -134,5 +150,6 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 	}
 
 	FprintBanner(w, "", "=", wdstty)
-	rootdir.FprintlnSummaryC(w, "", wdstty, true)
+	fmt.Fprintln(w, totalSummary("", tnd, tnf, tsize, wdstty))
+	// rootdir.FprintlnSummaryC(w, "", wdstty, true)
 }

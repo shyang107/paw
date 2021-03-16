@@ -549,3 +549,23 @@ func GetMaxWidthOf(a interface{}, b interface{}) int {
 	wdb := len(cast.ToString(b))
 	return paw.MaxInt(wda, wdb)
 }
+
+func isSkipViewItem(de DirEntryX, isViewNoDirs, isViewNoFiles bool, nitems, curnd, curnf *int, size *int64) bool {
+	if de.IsDir() {
+		if isViewNoDirs {
+			(*nitems)--
+			return true
+		}
+		(*curnd)++
+	} else {
+		if isViewNoFiles {
+			(*nitems)--
+			return true
+		}
+		(*curnf)++
+		if de.Mode().IsRegular() {
+			(*size) += de.Size()
+		}
+	}
+	return false
+}

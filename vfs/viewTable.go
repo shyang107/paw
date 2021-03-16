@@ -9,6 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
+	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/tabulate"
 	"github.com/sirupsen/logrus"
 )
@@ -41,13 +42,16 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 		wdstty           = sttyWidth - 2
 		tnd, tnf, nitems = rootdir.NItems(true)
 		wdidx            = GetMaxWidthOf(tnd, tnf)
-		nd, nf           int
-		roothead         = GetRootHeadC(rootdir, wdstty)
-		_MIN_PADDING     = tabulate.MIN_PADDING
+		// nd, nf           int
+		tsize        int64
+		count        int
+		roothead     = GetRootHeadC(rootdir, wdstty)
+		_MIN_PADDING = tabulate.MIN_PADDING
 		// cevenH           = paw.CloneColor(paw.CEven).Add(paw.EXAColors["bgpmpt"]...)
 		// coddH            = paw.CloneColor(paw.COdd).Add(paw.EXAColors["bgpmpt"]...)
 	)
 	tabulate.MIN_PADDING = 2
+	tnd, tnf = 0, 0
 
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
@@ -72,7 +76,6 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 		var (
 			idx  = idxmap[rp]
 			cidx = "[" + paw.Cvalue.Sprintf(idx) + "] "
-			// idx          = fmt.Sprintf("G%-[1]*[2]d ", wdidx, i)
 		)
 
 		paw.Logger.WithFields(logrus.Fields{"rp": rp}).Trace("getDir")
@@ -83,71 +86,93 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 
 		des, _ := cur.ReadDirAll()
 		if len(des) < 1 {
-			tnd--
 			continue
 		}
 
 		if rp != "." {
-			cur.FprintlnRelPathC(w, cidx, false)
+			if isViewNoDirs {
+				cur.FprintlnRelPathC(w, "", false)
+			} else {
+				cur.FprintlnRelPathC(w, cidx, false)
+			}
 		}
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, "")
 		}
-
-		rows := make([][]string, 0)
+		var (
+			curnd, curnf  int
+			size          int64
+			vnitems       = nitems
+			sidx, renders string
+			rows          = make([][]string, 0)
+			xrows         [][]string
+			values        []string
+			wdname        int
+			t             *tabulate.Tabulate
+		)
+		if isViewNoDirs || isViewNoFiles {
+			for _, de := range des {
+				if isSkipViewItem(de, isViewNoDirs, isViewNoFiles, &nitems, &curnd, &curnf, &size) {
+					continue
+				}
+			}
+			if curnd+curnf == 0 {
+				goto BAN
+			}
+			curnd, curnf, size, nitems = 0, 0, 0, vnitems
+		}
 		// rows := make([][]string, 0, len(des))
 		for _, de := range des {
-			jdx := ""
-			if de.IsDir() {
-				if isViewNoFiles {
-					nitems--
-					continue
-				}
-				nd++
-				jdx = fmt.Sprintf("D%d", nd)
-				idxmap[de.RelPath()] = jdx
-			} else {
-				if isViewNoDirs {
-					nitems--
-					continue
-				}
-				nf++
-				jdx = fmt.Sprintf("F%d", nf)
+			if isSkipViewItem(de, isViewNoDirs, isViewNoFiles, &nitems, &curnd, &curnf, &size) {
+				continue
 			}
-			ViewFieldNo.SetValue(jdx)
-			values := vfields.GetValuesC(de)
-			wdname := paw.StringWidth(de.Field(ViewFieldName))
+			count++
+			if de.IsDir() {
+				sidx = fmt.Sprintf("D%-[1]*[2]d", wdidx, tnd+curnd)
+				idxmap[de.RelPath()] = "D" + cast.ToString(tnd+curnd)
+			} else {
+				sidx = fmt.Sprintf("F%-[1]*[2]d", wdidx, tnf+curnf)
+			}
+			ViewFieldNo.SetValue(sidx)
+			values = vfields.GetValuesC(de)
+			wdname = paw.StringWidth(de.Field(ViewFieldName))
 			if wdname < ViewFieldName.Width() {
 				values[len(values)-1] += paw.Spaces(ViewFieldName.Width() - wdname)
 			}
 			rows = append(rows, values)
 			if hasX {
-				xrows := vfields.XattibutesRowsC(de)
+				xrows = vfields.XattibutesRowsC(de)
 				rows = append(rows, xrows...)
 			}
 		}
-		t := tabulate.Create(rows)
+		t = tabulate.Create(rows)
 		t.EnableRawOut(_Widths)
 		t.SetHeaders(heads)
 		// t.SetAlign("left")
 		t.SetDenseMode()
 
-		renders := t.Render("simple")
+		renders = t.Render("simple")
 		fmt.Fprint(w, renders)
 
+		tnd += curnd
+		tnf += curnf
+		tsize += size
 		if rootdir.opt.Depth != 0 {
-			cur.FprintlnSummaryC(w, "", wdstty, false)
+			fmt.Fprintln(w, dirSummary("", curnd, curnf, size, wdstty))
+			// cur.FprintlnSummaryC(w, "", wdstty, false)
 		}
-		if nd+nf < nitems {
+		if count < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}
+	BAN:
 		if rootdir.opt.Depth == 0 {
 			break
 		}
 	}
 
 	FprintBanner(w, "", "=", wdstty)
-	rootdir.FprintlnSummaryC(w, "", wdstty, true)
+	fmt.Fprintln(w, totalSummary("", tnd, tnf, tsize, wdstty))
+	// rootdir.FprintlnSummaryC(w, "", wdstty, true)
 
 	tabulate.MIN_PADDING = _MIN_PADDING
 	color.NoColor = isNoColor

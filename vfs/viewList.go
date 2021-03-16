@@ -25,11 +25,13 @@ func VFSViewList(w io.Writer, v *VFS) {
 func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool) {
 	// paw.Logger.Debug()
 	var (
-		vfields        = rootdir.opt.ViewFields
-		wdstty         = sttyWidth - 2
-		tnd, _, nitems = rootdir.NItems(true)
-		nd, nf         int
-		roothead       = GetRootHeadC(rootdir, wdstty)
+		vfields      = rootdir.opt.ViewFields
+		wdstty       = sttyWidth - 2
+		_, _, nitems = rootdir.NItems(true)
+		tnd, tnf     int
+		tsize        int64
+		count        int
+		roothead     = GetRootHeadC(rootdir, wdstty)
 	)
 
 	vfields.ModifyWidths(rootdir)
@@ -55,7 +57,6 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 		}
 		des, _ := cur.ReadDirAll()
 		if len(des) < 1 {
-			tnd--
 			continue
 		}
 
@@ -67,45 +68,55 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 			cur.FprintErrors(os.Stderr, "")
 		}
 
+		var (
+			curnd, curnf int
+			size         int64
+			vnitems      = nitems
+		)
+		if isViewNoDirs || isViewNoFiles {
+			for _, de := range des {
+				if isSkipViewItem(de, isViewNoDirs, isViewNoFiles, &nitems, &curnd, &curnf, &size) {
+					continue
+				}
+			}
+			if curnd+curnf == 0 {
+				goto BAN
+			}
+			curnd, curnf, size, nitems = 0, 0, 0, vnitems
+		}
 		fmt.Fprintf(w, "%v\n", head)
 		for _, de := range des {
-			if de.IsDir() {
-				if isViewNoDirs {
-					nitems--
-					continue
-				}
-				nd++
-			} else {
-				if isViewNoFiles {
-					nitems--
-					continue
-				}
-				nf++
+			if isSkipViewItem(de, isViewNoDirs, isViewNoFiles, &nitems, &curnd, &curnf, &size) {
+				continue
 			}
-
+			count++
 			// print fields of de
 			fmt.Fprintf(w, "%v ", vfields.RowStringC(de))
-
 			fmt.Println()
-			if hasX {
-				xrows := vfields.XattibutesRowsSC(de)
+			xrows := vfields.XattibutesRowsSC(de)
+			if hasX && len(xrows) > 0 {
 				for _, row := range xrows {
 					fmt.Fprintln(w, row)
 				}
 			}
 		}
+		tnd += curnd
+		tnf += curnf
+		tsize += size
 		if rootdir.opt.Depth != 0 {
-			cur.FprintlnSummaryC(w, "", wdstty, false)
-
+			// cur.FprintlnSummaryC(w, "", wdstty, false)
+			fmt.Fprintln(w, dirSummary("", curnd, curnf, size, wdstty))
 		}
-		if nd+nf < nitems {
+		if count < nitems {
 			FprintBanner(w, "", "-", wdstty)
 		}
+	BAN:
 		if rootdir.opt.Depth == 0 {
 			break
 		}
 	}
 
 	FprintBanner(w, "", "=", wdstty)
-	rootdir.FprintlnSummaryC(w, "", wdstty, true)
+	// rootdir.FprintlnSummaryC(w, "", wdstty, true)
+	fmt.Fprintln(w, totalSummary("", tnd, tnf, tsize, wdstty))
 }

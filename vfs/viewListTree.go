@@ -23,10 +23,11 @@ func VFSViewListTree(w io.Writer, v *VFS) {
 
 func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 	var (
-		vfields  = rootdir.opt.ViewFields
-		fields   []ViewField
-		wdstty   = sttyWidth - 2
-		roothead = GetRootHeadC(rootdir, wdstty)
+		vfields = rootdir.opt.ViewFields
+		fields  []ViewField
+		wdstty  = sttyWidth - 2
+		// roothead = GetRootHeadC(rootdir, wdstty)
+		rootpath = PathToLinkC(rootdir, nil)
 	)
 	if hasList {
 		fields = vfields.GetModifyWidthsNoGitFields(rootdir)
@@ -34,8 +35,8 @@ func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 		fields = []ViewField{ViewFieldName}
 	}
 
-	fmt.Fprintf(w, "%v\n", roothead)
-	FprintBanner(w, "", "=", wdstty)
+	// fmt.Fprintf(w, "%v\n", roothead)
+	// FprintBanner(w, "", "=", wdstty)
 
 	if hasList {
 		// head := vfields.GetHeadFunc(paw.ChoseColorH)
@@ -44,7 +45,8 @@ func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 		fmt.Fprintf(w, "%v", vfields.RowStringXNameC(rootdir))
 	}
 	cdinf, _ := rootdir.DirInfoC()
-	fmt.Fprintf(w, " %v %v\n", cdinf, paw.Cdip.Sprint("."))
+	fmt.Fprintf(w, " %v %v\n", cdinf, rootpath)
+	// fmt.Fprintf(w, " %v %v\n", cdinf, paw.Cdip.Sprint("."))
 
 	des, _ := rootdir.ReadDirAll()
 	// print files in the root dir
@@ -66,7 +68,8 @@ func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 	}
 
 	// print end message
-	FprintBanner(w, "", "=", wdstty)
+	fmt.Fprintln(w)
+	// FprintBanner(w, "", "=", wdstty)
 	rootdir.FprintlnSummaryC(w, "", wdstty, true)
 	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
 }

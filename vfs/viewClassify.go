@@ -26,9 +26,12 @@ func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 	var (
 		wdstty       = sttyWidth - 2
 		_, _, nitems = rootdir.NItems(true)
-		nd, nf       int
+		// nd, nf       int
 		// roothead     = GetRootHeadC(rootdir, wdstty)
 		_, _, crootpath = GetPathC(rootdir.Path(), nil)
+		tnd, tnf        int
+		tsize           int64
+		count           int
 	)
 
 	fmt.Fprintln(w, crootpath+":")
@@ -59,59 +62,80 @@ func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 		if len(cur.errors) > 0 {
 			cur.FprintErrors(os.Stderr, "")
 		}
-		nfiles := len(des)
-		names := make([]string, 0, nfiles)
-		cnames := make([]string, 0, nfiles)
+		var (
+			curnd, curnf    int
+			size            int64
+			vnitems         = nitems
+			nfiles          = len(des)
+			names           = make([]string, 0, nfiles)
+			cnames          = make([]string, 0, nfiles)
+			name, cname, sp string
+			wd, idx, ncols  int
+			wdcols          []int
+		)
+		if isViewNoDirs || isViewNoFiles {
+			for _, de := range des {
+				if isSkipViewItem(de, isViewNoDirs, isViewNoFiles, &nitems, &curnd, &curnf, &size) {
+					continue
+				}
+			}
+			if curnd+curnf == 0 {
+				goto BAN
+			}
+			curnd, curnf, size, nitems = 0, 0, 0, vnitems
+		}
 		for _, de := range des {
-			name := de.Name()
-			cname := de.LSColor().Sprint(strings.TrimSpace(name))
-			isAppendName := true
-			if de.IsDir() && isViewNoDirs {
-				isAppendName = false
-				nfiles--
-				nitems--
+			if isSkipViewItem(de, isViewNoDirs, isViewNoFiles, &nitems, &curnd, &curnf, &size) {
+				continue
 			}
-			if de.IsFile() && isViewNoFiles {
-				isAppendName = false
-				nfiles--
-				nitems--
-			}
-
-			names, cnames = tailNames(de.Xattibutes(), names, cnames, name, cname, isAppendName)
-
-			if de.IsDir() && !isViewNoDirs {
-				nd++
-			}
-			if !de.IsDir() && !isViewNoFiles {
-				nf++
+			count++
+			name = de.Name()
+			cname = de.LSColor().Sprint(strings.TrimSpace(name))
+			xattrs := de.Xattibutes()
+			if xattrs == nil {
+				names = append(names, name+"?")
+				cnames = append(cnames, cname+paw.Cdashp.Sprint("?"))
+			} else {
+				if len(xattrs) > 0 {
+					names = append(names, name+"@")
+					cnames = append(cnames, cname+paw.Cdashp.Sprint("@"))
+				} else {
+					names = append(names, name+" ")
+					cnames = append(cnames, cname+" ")
+				}
 			}
 		}
-		wdcols := vcGridWidths(names, wdstty)
-		ncols := len(wdcols)
+		nfiles = len(names)
+		wdcols = vcGridWidths(names, wdstty)
+		ncols = len(wdcols)
 		if nfiles < 1 {
 			continue
 		}
 		for i := 0; i < nfiles; i += ncols {
-			idx := i
+			idx = i
 			for j := 0; j < ncols; j++ {
 				if idx > nfiles-1 {
 					break
 				}
-				wd := paw.StringWidth(names[idx])
-				sp := paw.Spaces(wdcols[j] - wd)
+				wd = paw.StringWidth(names[idx])
+				sp = paw.Spaces(wdcols[j] - wd)
 				fmt.Fprintf(w, "%s%s", cnames[idx], sp)
 				idx++
 			}
 			fmt.Fprintln(w)
 		}
+		tnd += curnd
+		tnf += curnf
+		tsize += size
 		// if rootdir.opt.Depth != 0 {
 		// cur.FprintlnSummaryC(w, "", wdstty, false)
 		// 	fmt.Fprintln(w, cur.SummaryC("", wdstty, false))
 		// }
-		if nd+nf < nitems {
+		if count < nitems {
 			fmt.Fprintln(w)
 			// FprintBanner(w, "", "-", wdstty)
 		}
+	BAN:
 		if rootdir.opt.Depth == 0 {
 			break
 		}
@@ -119,32 +143,23 @@ func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 
 	fmt.Fprintln(w)
 	// FprintBanner(w, "", "=", wdstty)
-	rootdir.FprintlnSummaryC(w, "", wdstty, true)
-	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
+	fmt.Fprintln(w, totalSummary("", tnd, tnf, tsize, wdstty))
+	// rootdir.FprintlnSummaryC(w, "", wdstty, true)
 }
 
-func tailNames(xattrs, names, cnames []string, name, cname string, isAppendName bool) (tnames, tcnames []string) {
-	tnames = make([]string, 0, len(names)+1)
-	tcnames = make([]string, 0, len(cnames)+1)
+func appendNames(xattrs, names, cnames []string, name, cname string) {
 	if xattrs == nil {
-		if isAppendName {
-			tnames = append(names, name+"?")
-			tcnames = append(cnames, cname+paw.Cdashp.Sprint("?"))
-		}
+		names = append(names, name+"?")
+		cnames = append(cnames, cname+paw.Cdashp.Sprint("?"))
 	} else {
 		if len(xattrs) > 0 {
-			if isAppendName {
-				tnames = append(names, name+"@")
-				tcnames = append(cnames, cname+paw.Cdashp.Sprint("@"))
-			}
+			names = append(names, name+"@")
+			cnames = append(cnames, cname+paw.Cdashp.Sprint("@"))
 		} else {
-			if isAppendName {
-				tnames = append(names, name+" ")
-				tcnames = append(cnames, cname+" ")
-			}
+			names = append(names, name+" ")
+			cnames = append(cnames, cname+" ")
 		}
 	}
-	return tnames, tcnames
 }
 
 func vcGridWidths(names []string, wdstty int) (wdcols []int) {
