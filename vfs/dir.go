@@ -56,7 +56,7 @@ func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) *Dir {
 	if info.Mode()&os.ModeSymlink != 0 {
 		info, _ = os.Stat(aroot)
 		isLink = true
-		link = GetLinkPath(aroot)
+		link = getPathFromLink(aroot)
 		if !filepath.IsAbs(link) {
 			dir := filepath.Dir(aroot)
 			link = filepath.Join(dir, link)
@@ -207,7 +207,7 @@ func (d *Dir) RelDir() string {
 // LSColor will return LS_COLORS color of File
 // 	implements the interface of DirEntryX
 func (d *Dir) LSColor() *color.Color {
-	return GetDxLSColor(d)
+	return GetDexLSColor(d)
 }
 
 // NameToLink return colorized name & symlink
@@ -950,6 +950,12 @@ func (d *Dir) FprintlnRelPathC(w io.Writer, pad string, isBg bool) {
 }
 
 func (d *Dir) RelPathC(pad string, isBg bool) string {
-	rp := d.RelPath()
-	return GetRelPath(pad, "", rp, isBg)
+	var bgc []Attribute
+	if isBg {
+		bgc = paw.EXAColors["bgpmpt"]
+	}
+	rp := PathTo(d, &PathToOption{true, bgc, PRTRelPath})
+	return fmt.Sprintf("%s%s", pad, rp)
+	// rp := d.RelPath()
+	// return GetRelPath(pad, "", rp, isBg)
 }

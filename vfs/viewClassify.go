@@ -27,14 +27,13 @@ func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 		wdstty       = sttyWidth - 2
 		_, _, nitems = rootdir.NItems(true)
 		// nd, nf       int
-		// roothead     = GetRootHeadC(rootdir, wdstty)
-		_, _, crootpath = GetPathC(rootdir.Path(), nil)
-		tnd, tnf        int
-		tsize           int64
-		count           int
+		crootpath = PathTo(rootdir, &PathToOption{true, nil, PRTPathToLink})
+		tnd, tnf  int
+		tsize     int64
+		count     int
 	)
 
-	fmt.Fprintln(w, crootpath+":")
+	fmt.Fprintln(w, "Root ["+crootpath+"]:")
 	// fmt.Fprintf(w, "%v\n", roothead)
 	// FprintBanner(w, "", "=", wdstty)
 
@@ -63,15 +62,14 @@ func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 			cur.FprintErrors(os.Stderr, "")
 		}
 		var (
-			curnd, curnf    int
-			size            int64
-			vnitems         = nitems
-			nfiles          = len(des)
-			names           = make([]string, 0, nfiles)
-			cnames          = make([]string, 0, nfiles)
-			name, cname, sp string
-			wd, idx, ncols  int
-			wdcols          []int
+			curnd, curnf int
+			size         int64
+			vnitems      = nitems
+			nfiles       = len(des)
+			names        = make([]string, 0, nfiles)
+			cnames       = make([]string, 0, nfiles)
+			idx, ncols   int
+			wdcols       []int
 		)
 		if isViewNoDirs || isViewNoFiles {
 			for _, de := range des {
@@ -89,8 +87,8 @@ func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 				continue
 			}
 			count++
-			name = de.Name()
-			cname = de.LSColor().Sprint(strings.TrimSpace(name))
+			name := de.Name()
+			cname := de.LSColor().Sprint(strings.TrimSpace(name))
 			xattrs := de.Xattibutes()
 			if xattrs == nil {
 				names = append(names, name+"?")
@@ -117,8 +115,8 @@ func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 				if idx > nfiles-1 {
 					break
 				}
-				wd = paw.StringWidth(names[idx])
-				sp = paw.Spaces(wdcols[j] - wd)
+				wd := paw.StringWidth(names[idx])
+				sp := paw.Spaces(wdcols[j] - wd)
 				fmt.Fprintf(w, "%s%s", cnames[idx], sp)
 				idx++
 			}
@@ -145,21 +143,6 @@ func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 	// FprintBanner(w, "", "=", wdstty)
 	fmt.Fprintln(w, totalSummary("", tnd, tnf, tsize, wdstty))
 	// rootdir.FprintlnSummaryC(w, "", wdstty, true)
-}
-
-func appendNames(xattrs, names, cnames []string, name, cname string) {
-	if xattrs == nil {
-		names = append(names, name+"?")
-		cnames = append(cnames, cname+paw.Cdashp.Sprint("?"))
-	} else {
-		if len(xattrs) > 0 {
-			names = append(names, name+"@")
-			cnames = append(cnames, cname+paw.Cdashp.Sprint("@"))
-		} else {
-			names = append(names, name+" ")
-			cnames = append(cnames, cname+" ")
-		}
-	}
 }
 
 func vcGridWidths(names []string, wdstty int) (wdcols []int) {

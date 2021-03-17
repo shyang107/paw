@@ -58,7 +58,9 @@ func (opt *option) viewPaths() error {
 		de := rm[dir]
 		rhead := c.Sprintf("«root%d»", i+1)
 		rhead += " directory: "
-		rhead += vfs.PathToLinkC(de, nil)
+		// rhead += vfs.PathToLinkC(de, nil)
+		rhead += vfs.PathTo(de, &vfs.PathToOption{
+			IsColor: true, Bgc: nil, PathReturn: vfs.PRTPathToLink})
 		fmt.Fprintf(w, "%s\n", rhead)
 	}
 	vfields.RemoveGit(true)

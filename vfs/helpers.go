@@ -56,9 +56,96 @@ var (
 )
 
 // ===
+type PathReturnType int
 
-// GetPathC return color string of path
-func GetPathC(path string, bgc []Attribute) (cdir, cname, cpath string) {
+const (
+	PRTName PathReturnType = iota + 1
+	PRTNameToLink
+	PRTLink
+	PRTPath
+	PRTPathToLink
+	PRTRelPath
+	PRTRelPathToLink
+)
+
+type PathToOption struct {
+	IsColor    bool
+	Bgc        []Attribute
+	PathReturn PathReturnType
+}
+
+func PathTo(de DirEntryX, opt *PathToOption) (p string) {
+	switch opt.PathReturn {
+	case PRTName:
+		if opt.IsColor {
+			p = nameCbg(de, opt.Bgc)
+		} else {
+			p = de.Name()
+		}
+	case PRTNameToLink:
+		if opt.IsColor {
+			p = nameToLinkCbg(de, opt.Bgc)
+		} else {
+			p = de.NameToLink()
+		}
+	case PRTLink:
+		if opt.IsColor {
+			p = linkCbg(de, opt.Bgc)
+		} else {
+			p = de.LinkPath()
+		}
+	case PRTPath:
+		_, _, p = pathC(de.Path(), opt.Bgc)
+		if !opt.IsColor {
+			p = paw.StripANSI(p)
+		}
+	case PRTPathToLink:
+		p = pathToLinkC(de, opt.Bgc)
+		if !opt.IsColor {
+			p = paw.StripANSI(p)
+		}
+	case PRTRelPath:
+		p = relPathC(de.RelPath(), opt.Bgc)
+		if !opt.IsColor {
+			p = paw.StripANSI(p)
+		}
+	case PRTRelPathToLink:
+		if opt.IsColor {
+			_, _, p1 := pathC(de.RelPath(), opt.Bgc)
+			c := paw.CloneColor(paw.Cdashp)
+			if opt.Bgc != nil {
+				c = c.Add(opt.Bgc...)
+			}
+			p = p1 + c.Sprint(" -> ") + linkCbg(de, opt.Bgc)
+		} else {
+			p = de.RelPath() + " -> " + de.LinkPath()
+		}
+	}
+
+	return p
+}
+
+func choiceSprintf(opt *PathToOption) (dsprintf, nsprintf func(string, ...interface{}) string) {
+	var (
+		cdir  = paw.CloneColor(paw.Cdirp)
+		cname = paw.CloneColor(paw.Cdip)
+	)
+	if opt.IsColor {
+		if opt.Bgc != nil {
+			cdir.Add(opt.Bgc...)
+			cname.Add(opt.Bgc...)
+		}
+		dsprintf = cdir.Sprintf
+		nsprintf = cname.Sprintf
+	} else {
+		dsprintf = fmt.Sprintf
+		nsprintf = fmt.Sprintf
+	}
+	return dsprintf, nsprintf
+}
+
+// pathC return color string of path
+func pathC(path string, bgc []Attribute) (cdir, cname, cpath string) {
 	var (
 		cdirp = paw.CloneColor(paw.Cdirp)
 		cdip  = paw.CloneColor(paw.Cdip)
@@ -82,6 +169,13 @@ func GetPathC(path string, bgc []Attribute) (cdir, cname, cpath string) {
 func nameC(de DirEntryX) string {
 	return de.LSColor().Sprint(de.Name())
 }
+func nameCbg(de DirEntryX, bgc []Attribute) string {
+	c := paw.CloneColor(de.LSColor())
+	if bgc != nil {
+		c = c.Add(bgc...)
+	}
+	return c.Sprint(de.Name())
+}
 
 func linkC(de DirEntryX) string {
 	if de.IsLink() {
@@ -101,6 +195,43 @@ func linkC(de DirEntryX) string {
 	return ""
 }
 
+func linkCbg(de DirEntryX, bgc []Attribute) string {
+	var (
+		cdirp = paw.CloneColor(paw.Cdirp)
+		cdip  = paw.CloneColor(paw.Cdip)
+		corp  = paw.CloneColor(paw.Corp)
+		c     *Color
+	)
+
+	if bgc != nil {
+		cdirp = cdirp.Add(bgc...)
+		cdip = cdip.Add(bgc...)
+		corp = corp.Add(bgc...)
+	}
+	if de.IsLink() {
+		alink := de.LinkPath()
+		dir := filepath.Dir(de.Path())
+		link := alink
+		if filepath.IsAbs(link) { // get rel path from absolute path
+			link, _ = filepath.Rel(dir, alink)
+		}
+		// else {
+		// 	alink = filepath.Join(dir, alink)
+		// }
+		dir, name := filepath.Split(link)
+		if _, err := os.Stat(alink); os.IsNotExist(err) {
+			fmt.Println(err)
+			return cdirp.Sprint(dir) + corp.Sprint(name)
+		}
+		c = paw.FileLSColor(alink)
+		if bgc != nil {
+			c = c.Add(bgc...)
+		}
+		return cdirp.Sprint(dir) + c.Sprint(name)
+	}
+	return ""
+}
+
 func nameToLinkC(de DirEntryX) string {
 	if de.IsLink() {
 		return nameC(de) + paw.Cdashp.Sprint(" -> ") + linkC(de)
@@ -108,8 +239,19 @@ func nameToLinkC(de DirEntryX) string {
 		return nameC(de)
 	}
 }
+func nameToLinkCbg(de DirEntryX, bgc []Attribute) string {
+	c := paw.CloneColor(paw.Cdashp)
+	if bgc != nil {
+		c = c.Add(bgc...)
+	}
+	if de.IsLink() {
+		return nameCbg(de, bgc) + c.Sprint(" -> ") + linkCbg(de, bgc)
+	} else {
+		return nameCbg(de, bgc)
+	}
+}
 
-func GetLinkPath(path string) string {
+func getPathFromLink(path string) string {
 	alink, err := os.Readlink(path)
 	if err != nil {
 		return err.Error()
@@ -117,7 +259,7 @@ func GetLinkPath(path string) string {
 	return alink
 }
 
-func PathToLinkC(de DirEntryX, bgc []Attribute) (cpath string) {
+func pathToLinkC(de DirEntryX, bgc []Attribute) (cpath string) {
 	var (
 		cdirp  = paw.CloneColor(paw.Cdirp)
 		cnamep = paw.CloneColor(de.LSColor())
@@ -133,7 +275,7 @@ func PathToLinkC(de DirEntryX, bgc []Attribute) (cpath string) {
 	dir, name := filepath.Split(de.Path())
 	cpath = cdirp.Sprint(dir) + cnamep.Sprint(name)
 	if de.IsLink() {
-		_, _, lpath := GetPathC(de.LinkPath(), bgc)
+		_, _, lpath := pathC(de.LinkPath(), bgc)
 		cpath += cdashp.Sprint(" -> ") + lpath
 	}
 	return cpath
@@ -309,7 +451,7 @@ func dateS(date time.Time) (sdate string) {
 	// return paw.FillLeft(sdate, 11)
 }
 
-func GetDxLSColor(de DirEntryX) *Color {
+func GetDexLSColor(de DirEntryX) *Color {
 	if de.IsDir() {
 		return paw.Cdip
 	}
@@ -446,7 +588,7 @@ func GetRootHeadC(de DirEntryX, wdstty int) string {
 		csize = paw.CpmptDashp.Sprint("-")
 	}
 	chead := paw.Cpmpt.Sprint("Root directory: ")
-	chead += PathToLinkC(de, paw.EXAColors["bgpmpt"])
+	chead += PathTo(de, &PathToOption{true, paw.EXAColors["bgpmpt"], PRTPathToLink})
 	chead += paw.Cpmpt.Sprint(", size ≈ ")
 	chead += csize
 	chead += paw.Cpmpt.Sprint(".")
@@ -472,10 +614,27 @@ func GetRelPath(pad, slevel, rp string, isBg bool) string {
 		cdip = cdip.Add(bgc...)
 		clevelp = clevelp.Add(bgc...)
 	}
-	cdir, cname, cpath := GetPathC(rp, bgc)
+	cdir, cname, cpath := pathC(rp, bgc)
 	cpath = cdirp.Sprint("./") + cdir + cname
 	clevel := clevelp.Sprintf("%s", slevel)
 	return fmt.Sprintf("%s%s%v", pad, clevel, cpath)
+}
+func relPathC(rp string, bgc []Attribute) string {
+	var (
+		cdirp   = paw.CloneColor(paw.Cdirp)
+		cdip    = paw.CloneColor(paw.Cdip)
+		clevelp = paw.CloneColor(paw.Cfield)
+	)
+
+	if bgc != nil {
+		// bgc = paw.EXAColors["bgpmpt"]
+		cdirp = cdirp.Add(bgc...)
+		cdip = cdip.Add(bgc...)
+		clevelp = clevelp.Add(bgc...)
+	}
+	cdir, cname, cpath := pathC(rp, bgc)
+	cpath = cdirp.Sprint("./") + cdir + cname
+	return fmt.Sprintf("%v", cpath)
 }
 
 func FprintTotalSummary(w io.Writer, pad string, ndirs int, nfiles int, sumsize int64, wdstty int) {

@@ -116,3 +116,23 @@ func MakeAll(path string) error {
 	}
 	return nil
 }
+
+// GetPathFromLink return path of symblink.
+// 	If
+//  1. path is not a link or effective path, return ""
+// 	2. there is error, return error
+func GetPathFromLink(path string) string {
+	info, err := os.Stat(path)
+	if err != nil || os.IsNotExist(err) {
+		return ""
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		return ""
+	} else {
+		alink, err := os.Readlink(path)
+		if err != nil {
+			return err.Error()
+		}
+		return alink
+	}
+}

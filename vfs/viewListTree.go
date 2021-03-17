@@ -27,7 +27,8 @@ func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 		fields  []ViewField
 		wdstty  = sttyWidth - 2
 		// roothead = GetRootHeadC(rootdir, wdstty)
-		rootpath = PathToLinkC(rootdir, nil)
+		// rootpath = PathToLinkC(rootdir, nil)
+		rootpath = PathTo(rootdir, &PathToOption{true, nil, PRTPathToLink})
 	)
 	if hasList {
 		fields = vfields.GetModifyWidthsNoGitFields(rootdir)

@@ -310,18 +310,6 @@ func (f ViewField) Slice() (fields []ViewField, names []string, nameWidths []int
 	return fields, names, nameWidths
 }
 
-// func (f ViewField) FieldsNoGit(isNoGit bool) (fds []ViewField) {
-// 	fields := f.Fields()
-// 	fds = make([]ViewField, 0, len(fields))
-// 	for _, fd := range fields {
-// 		if fd&ViewFieldGit != 0 && isNoGit {
-// 			continue
-// 		}
-// 		fds = append(fds, fd)
-// 	}
-// 	return fds
-// }
-
 func (f ViewField) Fields() (fields []ViewField) {
 	fields, _, _ = f.Slice()
 	return fields

@@ -45,7 +45,7 @@ func NewFile(path, root string, git *GitStatus) *File {
 	if info.Mode()&os.ModeSymlink != 0 {
 		// info, _ = os.Stat(apath)
 		isLink = true
-		link = GetLinkPath(apath)
+		link = getPathFromLink(apath)
 		if !filepath.IsAbs(link) { // get absolute path of link
 			dir := filepath.Dir(apath)
 			link = filepath.Join(dir, link)
@@ -193,7 +193,7 @@ func (f *File) RelDir() string {
 // LSColor will return LS_COLORS color of File
 // 	implements the interface of DirEntryX
 func (f *File) LSColor() *color.Color {
-	return GetDxLSColor(f)
+	return GetDexLSColor(f)
 }
 
 // NameToLink return colorized name & symlink
@@ -437,7 +437,8 @@ func (f *File) FieldC(fd ViewField) string {
 		return fd.AlignedSC(f.git.XYc(f.RelPath()))
 	case ViewFieldName:
 		// return fd.AlignedSC(nameToLinkC(f))
-		return nameToLinkC(f)
+		return PathTo(f, &PathToOption{true, nil, PRTNameToLink})
+		// return nameToLinkC(f)
 	default:
 		return fd.Color().Sprint(fd.AlignedS(f.Field(fd)))
 	}
