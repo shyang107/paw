@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/cast"
 )
@@ -108,7 +107,7 @@ var (
 		ViewFieldName:        len(ViewFieldNames[ViewFieldName]),
 	}
 
-	ViewFieldColors = map[ViewField]*color.Color{
+	ViewFieldColors = map[ViewField]*Color{
 		ViewFieldNo:          paw.Cnop,
 		ViewFieldINode:       paw.Cinp,
 		ViewFieldPermissions: paw.Cpms,
@@ -217,11 +216,11 @@ func (f ViewField) AlignSA() []string {
 	return aligns
 }
 
-func (f ViewField) SetColor(color *color.Color) {
+func (f ViewField) SetColor(color *Color) {
 	ViewFieldColors[f] = color
 }
 
-func (f ViewField) Color() *color.Color {
+func (f ViewField) Color() *Color {
 	if c, ok := ViewFieldColors[f]; ok {
 		return c
 	} else {
@@ -366,11 +365,11 @@ func (v ViewField) RemoveGit(isNoGit bool) (vfields ViewField) {
 	return vfields
 }
 
-func (v ViewField) GetAllValues(de DirEntryX) (values []interface{}, cvalues []string, colors []*color.Color) {
+func (v ViewField) GetAllValues(de DirEntryX) (values []interface{}, cvalues []string, colors []*Color) {
 	fields := v.Fields()
 	values = make([]interface{}, 0, len(fields))
 	cvalues = make([]string, 0, len(fields))
-	colors = make([]*color.Color, 0, len(fields))
+	colors = make([]*Color, 0, len(fields))
 	for _, field := range fields {
 		values = append(values, de.Field(field))
 		cvalues = append(cvalues, de.FieldC(field))
@@ -410,7 +409,7 @@ func (v ViewField) GetValuesS(de DirEntryX) (values []string) {
 	return values
 }
 
-func (v ViewField) GetHead(c *color.Color) string {
+func (v ViewField) GetHead(c *Color) string {
 	var sprintf func(string, ...interface{}) string
 	if c != nil {
 		sprintf = c.Sprintf
@@ -431,7 +430,7 @@ func (v ViewField) GetHead(c *color.Color) string {
 	return hd
 }
 
-func (v ViewField) GetHeadA(c *color.Color) (values []string) {
+func (v ViewField) GetHeadA(c *Color) (values []string) {
 	var sprint func(...interface{}) string
 	if c != nil {
 		sprint = c.Sprint
@@ -674,7 +673,7 @@ func childWidths(d *Dir, fields []ViewField) {
 	}
 }
 
-// func GetPFHeadS(c *color.Color, fields ...ViewField) string {
+// func GetPFHeadS(c *Color, fields ...ViewField) string {
 // 	var sprintf func(string, ...interface{}) string
 // 	if c != nil {
 // 		sprintf = c.Sprintf

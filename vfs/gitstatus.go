@@ -10,8 +10,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/fatih/color"
-
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
 )
@@ -108,7 +106,7 @@ func (s GitStatusCode) String() string {
 	return string(s)
 }
 
-func (s GitStatusCode) Color() *color.Color {
+func (s GitStatusCode) Color() *Color {
 	if c, ok := cgitmap[s]; !ok {
 		return paw.Cdashp
 	} else {
@@ -116,7 +114,7 @@ func (s GitStatusCode) Color() *color.Color {
 	}
 }
 
-var cgitmap = map[GitStatusCode]*color.Color{
+var cgitmap = map[GitStatusCode]*Color{
 	GitNo:                 paw.Cdashp,
 	GitUnmodified:         paw.Cdashp,
 	GitUntracked:          paw.NewEXAColor("gm"),
@@ -297,7 +295,7 @@ func (g *GitStatus) XY(relpath string) string {
 	return g.XStagingS(relpath) + g.YWorktreeS(relpath)
 }
 
-func (g *GitStatus) XYc(relpath string) string {
+func (g *GitStatus) XYC(relpath string) string {
 	return g.XStagingC(relpath) + g.YWorktreeC(relpath)
 }
 

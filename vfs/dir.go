@@ -148,8 +148,8 @@ func (d *Dir) ModTime() time.Time {
 // IsDir is abbreviation for Mode().IsDir()
 // IsDir reports whether the entry describes a directory.
 func (d *Dir) IsDir() bool {
-	return d.Mode().IsDir()
-	// return true
+	// return d.Mode().IsDir()
+	return true
 }
 
 // Sys returns underlying data source (can return nil)
@@ -206,7 +206,7 @@ func (d *Dir) RelDir() string {
 
 // LSColor will return LS_COLORS color of File
 // 	implements the interface of DirEntryX
-func (d *Dir) LSColor() *color.Color {
+func (d *Dir) LSColor() *Color {
 	return GetDexLSColor(d)
 }
 
@@ -409,29 +409,11 @@ func (d *Dir) FieldC(fd ViewField) string {
 	case ViewFieldSize, ViewFieldBlocks:
 		return fd.AlignedSC(sizeC(d))
 	case ViewFieldUser: //"User",
-		furname := d.User()
-		var c *color.Color
-		if furname != urname {
-			c = paw.Cunp
-		} else {
-			c = paw.Cuup
-		}
-		return c.Sprint(fd.AlignedS(furname))
+		return d.UserC()
 	case ViewFieldGroup: //"Group",
-		fgpname := d.Group()
-		var c *color.Color
-		if fgpname != gpname {
-			c = paw.Cgnp
-		} else {
-			c = paw.Cgup
-		}
-		return c.Sprint(fd.AlignedS(fgpname))
+		return d.GroupC()
 	case ViewFieldGit:
-		rp := d.RelPath()
-		if rp != "." {
-			rp += "/"
-		}
-		return fd.AlignedSC(d.git.XYc(rp))
+		return " " + d.XYC()
 	case ViewFieldName:
 		// return fd.AlignedSC(paw.Cdip.Sprint(d.Name()))
 		return paw.Cdip.Sprint(d.Name())
@@ -473,8 +455,8 @@ func (d *Dir) IsLink() bool {
 
 // IsFile reports whether File describes a regular file.
 func (d *Dir) IsFile() bool {
-	return d.Mode().IsRegular()
-	// return false
+	// return d.Mode().IsRegular()
+	return false
 }
 
 // IsCharDev() report whether File describes a Unix character device, when ModeDevice is set.
@@ -879,6 +861,10 @@ func (d *Dir) getSubXYs() (xs, ys []GitStatusCode) {
 	return xs, ys
 }
 
+func (d *Dir) XYC() string {
+	return d.git.XYC(d.RelPath() + "/")
+}
+
 // getDir 通過一個路徑獲取其 dir 類型實例
 func (d *Dir) getDir(relpath string) (*Dir, error) {
 	if relpath == "." {
@@ -955,4 +941,26 @@ func (d *Dir) RelPathC(pad string, isBg bool) string {
 	rp := PathTo(d, &PathToOption{true, bgc, PRTRelPath})
 	return fmt.Sprintf("%s%s", pad, rp)
 	// return getRelPath(pad, "", d.RelPath(), isBg)
+}
+
+func (d *Dir) UserC() string {
+	furname := d.User()
+	var c *Color
+	if furname != urname {
+		c = paw.Cunp
+	} else {
+		c = paw.Cuup
+	}
+	return c.Sprint(ViewFieldUser.AlignedS(furname))
+}
+
+func (d *Dir) GroupC() string {
+	fgpname := d.Group()
+	var c *Color
+	if fgpname != gpname {
+		c = paw.Cgnp
+	} else {
+		c = paw.Cgup
+	}
+	return c.Sprint(ViewFieldGroup.AlignedS(fgpname))
 }

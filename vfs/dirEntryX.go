@@ -3,8 +3,6 @@ package vfs
 import (
 	"io/fs"
 	"time"
-
-	"github.com/fatih/color"
 )
 
 type FileMode = fs.FileMode
@@ -22,7 +20,7 @@ type Fielder interface {
 	RelDir() string
 	NameToLink() string
 	LinkPath() string
-	LSColor() *color.Color
+	LSColor() *Color
 	INode() uint64
 	HDLinks() uint64
 	Blocks() uint64

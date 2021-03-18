@@ -264,7 +264,7 @@ func pathToLinkC(de DirEntryX, bgc []Attribute) (cpath string) {
 		cdirp  = paw.CloneColor(paw.Cdirp)
 		cnamep = paw.CloneColor(de.LSColor())
 		cdashp = paw.CloneColor(paw.Cdashp)
-		// clnamep *color.Color
+		// clnamep *Color
 	)
 	if bgc != nil {
 		cdirp = cdirp.Add(bgc...)
@@ -386,6 +386,9 @@ func permissionC(de DirEntryX) string {
 func sizeS(de DirEntryX) string {
 	var s string
 	if !de.IsDir() && de.Mode().IsRegular() {
+		if de.Size() == 0 {
+			return "-"
+		}
 		s = bytefmt.ByteSize(de.Size())
 		// s= paw.FillLeft(bytefmt.ByteSize(uint64(f.Size())), 6)
 	} else {

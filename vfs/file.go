@@ -9,8 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"code.cloudfoundry.org/bytefmt"
-	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/cast"
 )
@@ -134,8 +132,8 @@ func (f *File) ModTime() time.Time {
 // IsDir is abbreviation for Mode().IsDir()
 // IsDir reports whether the entry describes a directory.
 func (f *File) IsDir() bool {
-	return f.Mode().IsDir()
-	// return false
+	// return f.Mode().IsDir()
+	return false
 }
 
 // Sys returns underlying data source (can return nil)
@@ -192,7 +190,7 @@ func (f *File) RelDir() string {
 
 // LSColor will return LS_COLORS color of File
 // 	implements the interface of DirEntryX
-func (f *File) LSColor() *color.Color {
+func (f *File) LSColor() *Color {
 	return GetDexLSColor(f)
 }
 
@@ -364,12 +362,11 @@ func (f *File) Field(field ViewField) string {
 	case ViewFieldLinks:
 		return cast.ToString(f.HDLinks())
 	case ViewFieldSize:
-		if f.IsCharDev() || f.IsDev() {
-			return f.DevNumberS()
-		} else {
-			return bytefmt.ByteSize(uint64(f.Size()))
-		}
+		return f.SizeS()
 	case ViewFieldBlocks:
+		if f.Blocks() == 0 {
+			return "-"
+		}
 		return cast.ToString(f.Blocks())
 	case ViewFieldUser:
 		return f.User()
@@ -400,41 +397,19 @@ func (f *File) FieldC(fd ViewField) string {
 	case ViewFieldPermissions:
 		return fd.AlignedSC(permissionC(f))
 	case ViewFieldSize:
-		if f.IsCharDev() || f.IsDev() {
-			major, minor := f.DevNumber()
-			wdmajor := ViewFieldMajor.Width()
-			wdminor := ViewFieldMinor.Width()
-			csj := paw.Csnp.Sprintf("%[1]*[2]v", wdmajor, major)
-			csn := paw.Csnp.Sprintf("%[1]*[2]v", wdminor, minor)
-			cdev := csj + paw.Cdirp.Sprint(",") + csn
-			wdev := wdmajor + wdminor + 1 //len(paw.StripANSI(cdev))
-			if wdev < fd.Width() {
-				cdev = csj + paw.Cdirp.Sprint(",") + paw.Spaces(fd.Width()-wdev) + csn
-			}
-			return cdev
-		} else {
-			return fd.AlignedSC(sizeC(f))
+		return f.SizeC()
+	case ViewFieldBlocks:
+		b := f.Field(fd)
+		if b == "-" {
+			return fd.AlignedSC(paw.Cdashp.Sprint("-"))
 		}
+		return fd.Color().Sprint(fd.AlignedS(b))
 	case ViewFieldUser: //"User",
-		furname := f.User()
-		var c *color.Color
-		if furname != urname {
-			c = paw.Cunp
-		} else {
-			c = paw.Cuup
-		}
-		return c.Sprint(fd.AlignedS(furname))
+		return f.UserC()
 	case ViewFieldGroup: //"Group",
-		fgpname := f.Group()
-		var c *color.Color
-		if fgpname != gpname {
-			c = paw.Cgnp
-		} else {
-			c = paw.Cgup
-		}
-		return c.Sprint(fd.AlignedS(fgpname))
+		return f.GroupC()
 	case ViewFieldGit:
-		return fd.AlignedSC(f.git.XYc(f.RelPath()))
+		return " " + f.XYC()
 	case ViewFieldName:
 		return fd.AlignedSC(PathTo(f, &PathToOption{true, nil, PRTNameToLink}))
 	default:
@@ -479,9 +454,10 @@ func (f *File) IsLink() bool {
 	// return f.info.Mode()&os.ModeSymlink != 0
 }
 
-// IsFile reports whether File describes a regular file.
+// IsFile reports whether File describes a file.
 func (f *File) IsFile() bool {
-	return f.Mode().IsRegular()
+	// return f.Mode().IsRegular()
+	return true
 }
 
 // IsCharDev() report whether File describes a Unix character device, when ModeDevice is set.
@@ -546,3 +522,67 @@ func (f *File) IsExecutable() bool {
 }
 
 // ====================================================================
+
+// IsRegularFile reports whether File describes a regular file.
+func (f *File) IsRegularFile() bool {
+	return f.Mode().IsRegular()
+}
+
+func (f *File) XYC() string {
+	return f.git.XYC(f.RelPath())
+}
+
+func (f *File) SizeS() string {
+	return _sizeSC(f, false)
+}
+
+func (f *File) SizeC() string {
+	return _sizeSC(f, true)
+}
+
+func _sizeSC(f *File, isColor bool) string {
+	fd := ViewFieldSize
+	if f.IsCharDev() || f.IsDev() {
+		if !isColor {
+			return f.DevNumberS()
+		}
+		major, minor := f.DevNumber()
+		wdmajor := ViewFieldMajor.Width()
+		wdminor := ViewFieldMinor.Width()
+		csj := paw.Csnp.Sprintf("%[1]*[2]v", wdmajor, major)
+		csn := paw.Csnp.Sprintf("%[1]*[2]v", wdminor, minor)
+		cdev := csj + paw.Cdirp.Sprintf(",") + csn
+		wdev := wdmajor + wdminor + 1 //len(paw.StripANSI(cdev))
+		if wdev < fd.Width() {
+			cdev = csj + paw.Cdirp.Sprintf(",") + paw.Spaces(fd.Width()-wdev) + csn
+		}
+		return cdev
+	} else {
+		if !isColor {
+			return sizeS(f)
+		}
+		return fd.AlignedSC(sizeC(f))
+	}
+}
+
+func (f *File) UserC() string {
+	furname := f.User()
+	var c *Color
+	if furname != urname {
+		c = paw.Cunp
+	} else {
+		c = paw.Cuup
+	}
+	return c.Sprint(ViewFieldUser.AlignedS(furname))
+}
+
+func (f *File) GroupC() string {
+	fgpname := f.Group()
+	var c *Color
+	if fgpname != gpname {
+		c = paw.Cgnp
+	} else {
+		c = paw.Cgup
+	}
+	return c.Sprint(ViewFieldGroup.AlignedS(fgpname))
+}
