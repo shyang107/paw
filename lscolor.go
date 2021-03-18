@@ -131,26 +131,26 @@ var (
 		23: int(Gray23),
 	}
 
-	EXAColors = map[string][]Attribute{
-		"ca": LSColors["ca"],
-		"cd": LSColors["cd"],
-		"di": LSColors["di"],
-		"do": LSColors["do"],
-		"ex": LSColors["ex"],
-		"pi": LSColors["pi"],
-		"fi": LSColors["fi"],
-		"ln": LSColors["ln"],
-		"mh": LSColors["mh"],
-		"no": LSColors["no"],
-		"or": LSColors["or"],
-		"ow": LSColors["ow"],
-		"sg": LSColors["sg"],
-		"su": LSColors["su"],
-		"so": LSColors["so"],
-		"st": LSColors["st"],
-		"bd": LSColors["bd"],
-		"rc": LSColors["rc"],
-		// "ur": LSColors["ex"],
+	EXAColorAttributes = map[string][]Attribute{
+		"ca": LSColorAttributes["ca"],
+		"cd": LSColorAttributes["cd"],
+		"di": LSColorAttributes["di"],
+		"do": LSColorAttributes["do"],
+		"ex": LSColorAttributes["ex"],
+		"pi": LSColorAttributes["pi"],
+		"fi": LSColorAttributes["fi"],
+		"ln": LSColorAttributes["ln"],
+		"mh": LSColorAttributes["mh"],
+		"no": LSColorAttributes["no"],
+		"or": LSColorAttributes["or"],
+		"ow": LSColorAttributes["ow"],
+		"sg": LSColorAttributes["sg"],
+		"su": LSColorAttributes["su"],
+		"so": LSColorAttributes["so"],
+		"st": LSColorAttributes["st"],
+		"bd": LSColorAttributes["bd"],
+		"rc": LSColorAttributes["rc"],
+		// "ur": LSColorAttributes["ex"],
 		"ur": FgColor256A(230).Add(color.Bold),
 		//{38, 5, 230, 1}, // user +r bit
 		"uw": FgColor256A(209).Add(color.Bold),
@@ -239,8 +239,8 @@ var (
 		"error":    LogLevelColorA(logrus.ErrorLevel),
 		"fatal":    LogLevelColorA(logrus.FatalLevel),
 		"panic":    LogLevelColorA(logrus.PanicLevel),
-		"md5":      LSColors["no"],
-		//LSColors[".md5"],
+		"md5":      LSColorAttributes["no"],
+		//LSColorAttributes[".md5"],
 		"field": FgColor256A(216),
 		// {38, 5, 216},
 		"value": FgColor256A(222).Add(color.Underline),
@@ -254,9 +254,9 @@ var (
 		"odd":  FgColor256A(223),
 		//{38, 5, 159, 48, 5, 238},
 	}
-	// LSColors = make(map[string]string) is LS_COLORS code according to
+	// LSColorAttributes = make(map[string]string) is LS_COLORS code according to
 	// extention of file
-	LSColors = map[string][]Attribute{
+	LSColorAttributes = map[string][]Attribute{
 		"bd": FgColor256A(68),
 		//{38, 5, 68},
 		"ca": FgColor256A(17),
@@ -1500,22 +1500,25 @@ var (
 	COdd       = NewEXAColor("odd")
 )
 
-func ChoseColor(i int) *color.Color {
-	switch i % 2 {
-	case 0:
-		return CEven
-	default:
-		return COdd
+func ChoseColors(i int, colors []*Color) *Color {
+	n := len(colors)
+	if n == 0 {
+		return Cnop
 	}
+	return colors[i%n]
 }
 
-func ChoseColorH(i int) *color.Color {
-	switch i % 2 {
-	case 0:
-		return CEvenH
-	default:
-		return COddH
-	}
+var (
+	_c2s  = []*Color{CEven, COdd}
+	_c2Hs = []*Color{CEvenH, COddH}
+)
+
+func ChoseColor(i int) *Color {
+	return _c2s[i%2]
+}
+
+func ChoseColorH(i int) *Color {
+	return _c2Hs[i%2]
 }
 
 func CloneColor(color *Color) *Color {
@@ -1558,7 +1561,7 @@ func GetLSColors() {
 	for _, a := range args {
 		kv := strings.Split(a, "=")
 		if len(kv) == 2 {
-			LSColors[kv[0]] = getLSColorAttribute(kv[1])
+			LSColorAttributes[kv[0]] = getLSColorAttribute(kv[1])
 		}
 	}
 }
@@ -1573,17 +1576,17 @@ func getLSColorAttribute(code string) []Attribute {
 
 // KindLSColorString will colorful string `s` using key `kind`
 func KindLSColorString(kind, s string) string {
-	att, ok := LSColors[kind]
+	att, ok := LSColorAttributes[kind]
 	if !ok {
-		att = LSColors["fi"]
+		att = LSColorAttributes["fi"]
 	}
 	return color.New(att...).Sprint(s)
 }
 
 func KindEXAColorString(kind, s string) string {
-	att, ok := EXAColors[kind]
+	att, ok := EXAColorAttributes[kind]
 	if !ok {
-		att = EXAColors["fi"]
+		att = EXAColorAttributes["fi"]
 	}
 	return color.New(att...).Sprint(s)
 }
@@ -1609,21 +1612,21 @@ func LogLevelColor(level logrus.Level) (c *Color) {
 	return color.New(a...)
 }
 
-// NewLSColor will return `*color.Color` using `LSColors[key]`
+// NewLSColor will return `*color.Color` using `LSColorAttributes[key]`
 func NewLSColor(key string) *Color {
-	return color.New(LSColors[key]...)
+	return color.New(LSColorAttributes[key]...)
 }
 
-// NewEXAColor will return `*color.Color` using `EXAColors[key]`
+// NewEXAColor will return `*color.Color` using `EXAColorAttributes[key]`
 func NewEXAColor(key string) *Color {
-	return color.New(EXAColors[key]...)
+	return color.New(EXAColorAttributes[key]...)
 }
 
 // FileLSColor returns color of file (fullpath) according to LS_COLORS
 func FileLSColor(fullpath string) *Color {
 	fi, err := os.Lstat(fullpath)
 	if err != nil {
-		return Cnop
+		return Cerror
 	}
 
 	if fi.IsDir() { // os.ModeDir
@@ -1660,15 +1663,15 @@ func FileLSColor(fullpath string) *Color {
 	}
 
 	base := filepath.Base(fullpath)
-	if att, ok := LSColors[base]; ok {
+	if att, ok := LSColorAttributes[base]; ok {
 		return color.New(att...)
 	}
 	ext := filepath.Ext(fullpath)
-	if att, ok := LSColors[ext]; ok {
+	if att, ok := LSColorAttributes[ext]; ok {
 		return color.New(att...)
 	}
 	file := strings.TrimSuffix(base, ext)
-	if att, ok := LSColors[file]; ok {
+	if att, ok := LSColorAttributes[file]; ok {
 		return color.New(att...)
 	}
 	for re, att := range ReExtLSColors {

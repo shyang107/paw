@@ -610,15 +610,15 @@ func (d *Dir) Option() *VFSOption {
 }
 
 func (d *Dir) SetOption(opt *VFSOption) {
-	setDirOption(d, opt)
+	_SetOption(d, opt)
 }
 
-func setDirOption(cur *Dir, opt *VFSOption) {
+func _SetOption(cur *Dir, opt *VFSOption) {
 	cur.opt = opt
 	for _, dx := range cur.children {
 		if dx.IsDir() {
 			child := dx.(*Dir)
-			setDirOption(child, opt)
+			_SetOption(child, opt)
 		}
 	}
 }
@@ -666,8 +666,7 @@ func (d *Dir) NItems(isRecurse bool) (ndirs, nfiles, nitems int) {
 }
 
 func _NItems(d *Dir, levle int, isRecurse bool) (ndirs, nfiles int) {
-	if d.opt.Depth > 0 &&
-		levle > d.opt.Depth {
+	if d.opt.Depth > 0 && levle > d.opt.Depth {
 		return
 	}
 	dxs, _ := d.ReadDirAll()
@@ -710,10 +709,11 @@ func (d *Dir) TotalSize() int64 {
 }
 
 func calcSize(cur *Dir, level int) (size int64) {
+	if cur.opt.Depth > 0 && level > cur.opt.Depth {
+		return size
+		// continue
+	}
 	for _, de := range cur.children {
-		if cur.opt.Depth > 0 && level > cur.opt.Depth {
-			continue
-		}
 		if !de.IsDir() {
 			if de.Mode().IsRegular() {
 				size += de.Size()
@@ -952,10 +952,9 @@ func (d *Dir) FprintlnRelPathC(w io.Writer, pad string, isBg bool) {
 func (d *Dir) RelPathC(pad string, isBg bool) string {
 	var bgc []Attribute
 	if isBg {
-		bgc = paw.EXAColors["bgpmpt"]
+		bgc = paw.EXAColorAttributes["bgpmpt"]
 	}
 	rp := PathTo(d, &PathToOption{true, bgc, PRTRelPath})
 	return fmt.Sprintf("%s%s", pad, rp)
-	// rp := d.RelPath()
-	// return GetRelPath(pad, "", rp, isBg)
+	// return getRelPath(pad, "", d.RelPath(), isBg)
 }

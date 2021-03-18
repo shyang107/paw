@@ -349,10 +349,10 @@ func GetFileLSColor(file *File) *color.Color {
 	}
 
 	if file.IsFile() { // 0
-		if att, ok := paw.LSColors[file.BaseName]; ok {
+		if att, ok := paw.LSColorAttributes[file.BaseName]; ok {
 			return color.New(att...)
 		}
-		if att, ok := paw.LSColors[file.Ext]; ok {
+		if att, ok := paw.LSColorAttributes[file.Ext]; ok {
 			return color.New(att...)
 		}
 		for re, att := range paw.ReExtLSColors {

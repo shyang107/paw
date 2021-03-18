@@ -35,7 +35,6 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		vfields          = rootdir.opt.ViewFields
 		wdstty           = sttyWidth - 2
 		tnd, tnf, nitems = rootdir.NItems(true)
-		wdidx            = GetMaxWidthOf(tnd, tnf)
 		tsize            int64
 		count            int
 		roothead         = GetRootHeadC(rootdir, wdstty)
@@ -55,7 +54,7 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		var (
 			level int
 			idx   = idxmap[rp]
-			cidx  = " [" + paw.Cvalue.Sprintf("%s", idx) + "] "
+			cidx  = " [" + paw.Cvalue.Sprint(idx) + "] "
 		)
 		if rp == "." {
 			level = 0
@@ -77,8 +76,8 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		}
 
 		if level > 0 {
-			slevel := paw.Cfield.Sprintf("L%d", level) + cidx
-			cur.FprintlnRelPathC(w, pad+slevel, false)
+			slevel := paw.Cfield.Sprintf("L%d", level)
+			cur.FprintlnRelPathC(w, pad+slevel+cidx, false)
 		}
 
 		if len(cur.errors) > 0 {
@@ -112,10 +111,10 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 			count++
 			var sidx string
 			if de.IsDir() {
-				sidx = fmt.Sprintf("D%-[1]*[2]d", wdidx, tnd+curnd)
-				idxmap[de.RelPath()] = "D" + cast.ToString(tnd+curnd)
+				sidx = "D" + cast.ToString(tnd+curnd)
+				idxmap[de.RelPath()] = sidx
 			} else {
-				sidx = fmt.Sprintf("F%-[1]*[2]d", wdidx, tnf+curnf)
+				sidx = "F" + cast.ToString(tnf+curnf)
 			}
 			ViewFieldNo.SetValue(sidx)
 			fmt.Fprintf(w, "%s", pad)

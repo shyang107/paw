@@ -52,12 +52,12 @@ func (opt *option) viewPaths() error {
 		c               *color.Color
 	)
 
-	dxs, rm, dirs := createBasepaths(paths)
+	dxs, srm, dirs := createBasepaths(paths)
 	for i, dir := range dirs {
 		c = paw.ChoseColor(i)
-		de := rm[dir]
-		rhead := c.Sprintf("«root%d»", i+1)
-		rhead += " directory: "
+		de := srm[dir]
+		rhead := c.Sprintf("{ R%d }: ", i+1)
+		// rhead += " directory: "
 		// rhead += vfs.PathToLinkC(de, nil)
 		rhead += vfs.PathTo(de, &vfs.PathToOption{
 			IsColor: true, Bgc: nil, PathReturn: vfs.PRTPathToLink})
@@ -76,11 +76,12 @@ func (opt *option) viewPaths() error {
 	}
 
 	vfs.FprintBanner(w, "", "=", wdstty)
-	head := vfields.GetHeadFunc(paw.ChoseColorH)
+	// head := vfields.GetHeadFunc(paw.ChoseColorH)
+	head := vfields.GetHead(paw.Chdp)
 	fmt.Fprintln(w, head)
 	for i, dir := range dirs {
 		c = paw.ChoseColor(i)
-		rooti := c.Sprintf("«root%d»/", i+1)
+		rooti := c.Sprintf("{ R%d }/", i+1)
 		des := dxs[dir]
 		opt.vopt.ByField.Sort(des)
 		for _, de := range des {
@@ -206,7 +207,7 @@ func createBasepaths(paths []string) (dxs demap, srm srmap, dirs []string) {
 		shortroot, ok := sm[dir]
 		if !ok {
 			idx++
-			shortroot = fmt.Sprintf("root%d", idx)
+			shortroot = fmt.Sprintf("R%d", idx)
 			sm[dir] = shortroot
 			rde := vfs.NewDir(dir, "", nil, nil)
 			srm[dir] = rde

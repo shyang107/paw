@@ -484,15 +484,15 @@ func GetDexLSColor(de DirEntryX) *Color {
 	}
 
 	name := de.Name()
-	if att, ok := paw.LSColors[name]; ok {
+	if att, ok := paw.LSColorAttributes[name]; ok {
 		return color.New(att...)
 	}
 	ext := filepath.Ext(name)
-	if att, ok := paw.LSColors[ext]; ok {
+	if att, ok := paw.LSColorAttributes[ext]; ok {
 		return color.New(att...)
 	}
 	file := strings.TrimSuffix(name, ext)
-	if att, ok := paw.LSColors[file]; ok {
+	if att, ok := paw.LSColorAttributes[file]; ok {
 		return color.New(att...)
 	}
 	for re, att := range paw.ReExtLSColors {
@@ -588,7 +588,7 @@ func GetRootHeadC(de DirEntryX, wdstty int) string {
 		csize = paw.CpmptDashp.Sprint("-")
 	}
 	chead := paw.Cpmpt.Sprint("Root directory: ")
-	chead += PathTo(de, &PathToOption{true, paw.EXAColors["bgpmpt"], PRTPathToLink})
+	chead += PathTo(de, &PathToOption{true, paw.EXAColorAttributes["bgpmpt"], PRTPathToLink})
 	chead += paw.Cpmpt.Sprint(", size ≈ ")
 	chead += csize
 	chead += paw.Cpmpt.Sprint(".")
@@ -597,10 +597,10 @@ func GetRootHeadC(de DirEntryX, wdstty int) string {
 }
 
 func FprintRelPath(w io.Writer, pad, slevel, cidx, rp string, isBg bool) {
-	fmt.Fprintln(w, GetRelPath(pad, slevel+" "+cidx, rp, isBg))
+	fmt.Fprintln(w, getRelPath(pad, slevel+" "+cidx, rp, isBg))
 }
 
-func GetRelPath(pad, slevel, rp string, isBg bool) string {
+func getRelPath(pad, slevel, rp string, isBg bool) string {
 	var bgc []Attribute
 	var (
 		cdirp   = paw.CloneColor(paw.Cdirp)
@@ -609,7 +609,7 @@ func GetRelPath(pad, slevel, rp string, isBg bool) string {
 	)
 
 	if isBg {
-		bgc = paw.EXAColors["bgpmpt"]
+		bgc = paw.EXAColorAttributes["bgpmpt"]
 		cdirp = cdirp.Add(bgc...)
 		cdip = cdip.Add(bgc...)
 		clevelp = clevelp.Add(bgc...)

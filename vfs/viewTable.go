@@ -245,7 +245,8 @@ func viewTable(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		}
 
 		if rp != "." {
-			tf.PrintLineln(GetRelPath("", idx, rp, false))
+			tf.PrintLineln(cur.RelPathC(idx, false))
+			// tf.PrintLineln(getRelPath("", idx, rp, false))
 		}
 		if len(cur.errors) > 0 {
 			errmsg := cur.Errors("")
