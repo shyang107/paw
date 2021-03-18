@@ -297,7 +297,12 @@ func Spaces(w int) string {
 	if w <= 0 {
 		return ""
 	}
-	return strings.Repeat(" ", w)
+	b := make([]byte, w)
+	for i := range b {
+		b[i] = ' '
+	}
+	return string(b)
+	// return strings.Repeat(" ", w)
 }
 
 // CheckIndex will check index idx whether is in range of slice. If not, return error

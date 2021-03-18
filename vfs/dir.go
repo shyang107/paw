@@ -406,10 +406,8 @@ func (d *Dir) FieldC(fd ViewField) string {
 		return paw.Cdip.Sprint(fd.AlignedS(fd.Value()))
 	case ViewFieldPermissions:
 		return fd.AlignedSC(permissionC(d))
-	case ViewFieldSize:
-		return sizeCaligned(d)
-	case ViewFieldBlocks:
-		return blocksCaligned(d)
+	case ViewFieldSize, ViewFieldBlocks:
+		return fd.AlignedSC(sizeC(d))
 	case ViewFieldUser: //"User",
 		furname := d.User()
 		var c *color.Color

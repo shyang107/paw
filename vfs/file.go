@@ -413,7 +413,7 @@ func (f *File) FieldC(fd ViewField) string {
 			}
 			return cdev
 		} else {
-			return sizeCaligned(f)
+			return fd.AlignedSC(sizeC(f))
 		}
 	case ViewFieldUser: //"User",
 		furname := f.User()
@@ -436,9 +436,7 @@ func (f *File) FieldC(fd ViewField) string {
 	case ViewFieldGit:
 		return fd.AlignedSC(f.git.XYc(f.RelPath()))
 	case ViewFieldName:
-		// return fd.AlignedSC(nameToLinkC(f))
-		return PathTo(f, &PathToOption{true, nil, PRTNameToLink})
-		// return nameToLinkC(f)
+		return fd.AlignedSC(PathTo(f, &PathToOption{true, nil, PRTNameToLink}))
 	default:
 		return fd.Color().Sprint(fd.AlignedS(f.Field(fd)))
 	}
@@ -449,7 +447,6 @@ func (f *File) widthOfSize() (width, wmajor, wminor int) {
 		major, minor := f.DevNumber()
 		wmajor = len(cast.ToString(major))
 		wminor = len(cast.ToString(minor))
-		// width = wmajor + wminor + 1
 		return wmajor + wminor + 1, wmajor, wminor
 	}
 	return len(f.Field(ViewFieldSize)), 0, 0

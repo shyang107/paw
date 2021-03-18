@@ -173,7 +173,7 @@ var (
 		//{38, 5, 156, 1, 4}, // others +x bit
 		"sn": FgColor256A(156).Add(color.Bold),
 		//{38, 5, 156, 1}, // size number
-		"sb": FgColor256A(156),
+		"snu": FgColor256A(156),
 		//{38, 5, 156}, // size unit
 		"uu": {38, 5, 229, 1},
 		// user is you + 1 -> bold
@@ -1437,7 +1437,7 @@ var (
 	// Csnp is default color use for number of size
 	Csnp = NewEXAColor("sn")
 	// Csup is default color use for unit of size
-	Csup = NewEXAColor("sn")
+	Csup = NewEXAColor("snu")
 	// Cuup is default color use for user field
 	Cuup = NewEXAColor("uu")
 	// Cgup is default color use for group field

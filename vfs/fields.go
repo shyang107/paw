@@ -476,33 +476,12 @@ func (v ViewField) GetHeadFuncA(fc func(i int) *Color) (values []string) {
 
 // AlignedS return aligned string of value according to ViewField.Align()
 func (v ViewField) AlignedS(value interface{}) string {
-	var (
-		s     = cast.ToString(value)
-		wd    = paw.StringWidth(s)
-		width = paw.MaxInt(wd, v.Width())
-	)
-	return paw.AlignWithWidth(v.Align(), s, width)
+	return v.Align().ToString(value, v.Width())
 }
 
 // AlignedSC returns the aligned colorful string
 func (v ViewField) AlignedSC(cvalue interface{}) string {
-	var (
-		align = v.Align()
-		s     = cast.ToString(cvalue)
-		wd    = paw.StringWidth(paw.StripANSI(s))
-		width = paw.MaxInt(wd, v.Width())
-		sp    = paw.Spaces(width - wd)
-	)
-
-	// if v&ViewFieldName == ViewFieldName {
-	// 	return s
-	// }
-	switch align {
-	case paw.AlignLeft:
-		return s + sp
-	default:
-		return sp + s
-	}
+	return v.Align().ToStringC(cvalue, v.Width())
 }
 
 func (v ViewField) RowString(de DirEntryX) string {

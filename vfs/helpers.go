@@ -406,37 +406,37 @@ func sizeC(de DirEntryX) (csize string) {
 	return csize
 }
 
-func sizeCaligned(de DirEntryX) (csize string) {
-	var (
-		ss  = sizeS(de)
-		nss = len(ss)
-	)
-	if ss == "-" {
-		csize = paw.Cdashp.Sprint("-")
-	} else {
-		sn := fmt.Sprintf("%s", ss[:nss-1])
-		su := ss[nss-1:]
-		csize = paw.Csnp.Sprint(sn) + paw.Csup.Sprint(su)
-	}
-	var (
-		width = paw.MaxInt(nss, ViewFieldSize.Width())
-		sp    = paw.Spaces(width - nss)
-	)
-	return sp + csize
-}
+// func sizeCaligned(de DirEntryX) (csize string) {
+// 	var (
+// 		ss  = sizeS(de)
+// 		nss = len(ss)
+// 	)
+// 	if ss == "-" {
+// 		csize = paw.Cdashp.Sprint("-")
+// 	} else {
+// 		sn := fmt.Sprintf("%s", ss[:nss-1])
+// 		su := ss[nss-1:]
+// 		csize = paw.Csnp.Sprint(sn) + paw.Csup.Sprint(su)
+// 	}
+// 	var (
+// 		width = paw.MaxInt(nss, ViewFieldSize.Width())
+// 		sp    = paw.Spaces(width - nss)
+// 	)
+// 	return sp + csize
+// }
 
-func blocksCaligned(de DirEntryX) (cb string) {
-	var (
-		ss  = "-"
-		nss = 1
-	)
-	cb = paw.Cdashp.Sprint(ss)
-	var (
-		width = paw.MaxInt(nss, ViewFieldBlocks.Width())
-		sp    = paw.Spaces(width - nss)
-	)
-	return sp + cb
-}
+// func blocksCaligned(de DirEntryX) (cb string) {
+// 	var (
+// 		ss  = "-"
+// 		nss = 1
+// 	)
+// 	cb = paw.Cdashp.Sprint(ss)
+// 	var (
+// 		width = paw.MaxInt(nss, ViewFieldBlocks.Width())
+// 		sp    = paw.Spaces(width - nss)
+// 	)
+// 	return sp + cb
+// }
 
 func timespecToTime(ts syscall.Timespec) time.Time {
 	return time.Unix(int64(ts.Sec), int64(ts.Nsec))
