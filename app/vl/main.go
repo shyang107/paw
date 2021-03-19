@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/cast"
@@ -95,7 +96,7 @@ func init() {
 
 		Flags: []cli.Flag{
 			// verbose
-			fg_isInfo, fg_isDebug, fg_isTrace,
+			fg_isInfo, fg_isDebug, fg_isTrace, fg_isDump,
 			//  ViewType
 			fg_isViewList, fg_isViewLevel, fg_isViewListTree, fg_isViewTree, fg_isViewTable, fg_isViewClassify,
 			fg_isViewX, fg_isViewGroup, fg_isViewGroupR,
@@ -127,16 +128,16 @@ func init() {
 }
 
 func main() {
-	// start := time.Now()
+	start := time.Now()
 
 	err := app.Run(os.Args)
 	if err != nil {
 		fatalf("run '%s' failed, error:%v", app.Name, err)
 	}
 
-	// elapsedTime := time.Since(start)
-	// fmt.Println()
-	// fmt.Println("Total time for excution:", elapsedTime.String())
+	elapsedTime := time.Since(start)
+	fmt.Println()
+	fmt.Println("Total time for excution:", elapsedTime.String())
 	// info()
 	// warning()
 	// stderr()

@@ -91,8 +91,7 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 			}
 			count++
 			// print fields of de
-			fmt.Fprintf(w, "%v ", vfields.RowStringC(de))
-			fmt.Println()
+			fmt.Fprintf(w, "%v\n", vfields.RowStringC(de))
 			xrows := vfields.XattibutesRowsSC(de)
 			if hasX && len(xrows) > 0 {
 				for _, row := range xrows {

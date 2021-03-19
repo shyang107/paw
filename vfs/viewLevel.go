@@ -120,9 +120,7 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 			fmt.Fprintf(w, "%s", pad)
 
 			// print fields of de
-			fmt.Fprintf(w, "%v ", vfields.RowStringC(de))
-
-			fmt.Fprintln(w)
+			fmt.Fprintf(w, "%v \n", vfields.RowStringC(de))
 			if hasX {
 				xrows := vfields.XattibutesRowsSC(de)
 				for _, row := range xrows {

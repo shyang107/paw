@@ -650,7 +650,7 @@ func childWidths(d *Dir, fields []ViewField) {
 	for _, de := range ds {
 		for _, fd := range fields {
 			wd := de.WidthOf(fd)
-			if !de.IsDir() && fd&ViewFieldSize == ViewFieldSize {
+			if !de.IsDir() && fd&ViewFieldSize != 0 {
 				if de.IsCharDev() || de.IsDev() {
 					fmajor := ViewFieldMajor.Width()
 					fminor := ViewFieldMinor.Width()

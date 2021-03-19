@@ -9,6 +9,7 @@ type option struct {
 	isTrace bool
 	isDebug bool
 	isInfo  bool
+	isDump  bool
 	// VFS
 	rootPath string
 	paths    []string
@@ -109,5 +110,12 @@ var (
 		Value:       false,
 		Usage:       "trace mode",
 		Destination: &opt.isTrace,
+	}
+	fg_isDump = &cli.BoolFlag{
+		Name:        "dump",
+		Aliases:     []string{},
+		Value:       false,
+		Usage:       "directly dump files",
+		Destination: &opt.isDump,
 	}
 )

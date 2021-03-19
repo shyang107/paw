@@ -25,8 +25,12 @@ func (opt *option) view() error {
 		"ViewType":       opt.vopt.ViewType,
 	}).Debug()
 	fs := vfs.NewVFS(opt.rootPath, opt.vopt)
-	fs.BuildFS()
-	fs.View(os.Stdout)
+	if opt.isDump {
+		fs.Dump(os.Stdout)
+	} else {
+		fs.BuildFS()
+		fs.View(os.Stdout)
+	}
 
 	return nil
 }

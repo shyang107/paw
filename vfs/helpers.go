@@ -110,16 +110,48 @@ func PathTo(de DirEntryX, opt *PathToOption) (p string) {
 			p = paw.StripANSI(p)
 		}
 	case PRTRelPathToLink:
+		var (
+			crp, carrow, clink string
+			cdirp              = paw.CloneColor(paw.Cdirp)
+		)
 		if opt.IsColor {
-			_, _, p1 := pathC(de.RelPath(), opt.Bgc)
-			c := paw.CloneColor(paw.Cdashp)
 			if opt.Bgc != nil {
-				c = c.Add(opt.Bgc...)
+				cdirp.Add(opt.Bgc...)
 			}
-			p = p1 + c.Sprint(" -> ") + linkCbg(de, opt.Bgc)
+			if de.IsDir() {
+				dir := filepath.Dir(de.RelPath())
+				if dir != "." {
+					crp = PathTo(de, &PathToOption{true, opt.Bgc, PRTRelPath})
+				} else {
+					crp = nameCbg(de, opt.Bgc)
+				}
+			} else {
+				cdir := "" // cdirp.Sprint("./")
+				dir := filepath.Dir(de.RelPath())
+				if dir != "." {
+					cdir = relPathC(dir, opt.Bgc) + cdirp.Sprint("/")
+				}
+				crp = cdir + nameCbg(de, opt.Bgc)
+			}
+			if de.IsLink() {
+				c := paw.CloneColor(paw.Cdashp)
+				if opt.Bgc != nil {
+					c = c.Add(opt.Bgc...)
+				}
+				carrow = c.Sprint(" -> ")
+				clink = linkCbg(de, opt.Bgc)
+			}
 		} else {
-			p = de.RelPath() + " -> " + de.LinkPath()
+			crp = de.RelPath()
+			if de.RelPath() != "." {
+				crp = "./" + crp
+			}
+			if de.IsLink() {
+				carrow = " -> "
+				clink = de.LinkPath()
+			}
 		}
+		p = crp + carrow + clink
 	}
 
 	return p
