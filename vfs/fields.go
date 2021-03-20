@@ -356,12 +356,17 @@ func (v ViewField) RemoveGit(isNoGit bool) (vfields ViewField) {
 	if !isNoGit || v&ViewFieldGit == 0 {
 		return v
 	}
-	for _, f := range v.Fields() {
-		if f&ViewFieldGit != 0 {
-			continue
+	DoRangeViewField(v, func(i int, fd ViewField) {
+		if fd&ViewFieldGit == 0 {
+			vfields |= fd
 		}
-		vfields += f
-	}
+	})
+	// for _, f := range v.Fields() {
+	// 	if f&ViewFieldGit != 0 {
+	// 		continue
+	// 	}
+	// 	vfields |= f
+	// }
 	return vfields
 }
 
@@ -370,33 +375,33 @@ func (v ViewField) GetAllValues(de DirEntryX) (values []interface{}, cvalues []s
 	values = make([]interface{}, 0, len(fields))
 	cvalues = make([]string, 0, len(fields))
 	colors = make([]*Color, 0, len(fields))
-	for _, field := range fields {
-		values = append(values, de.Field(field))
-		cvalues = append(cvalues, de.FieldC(field))
-		if field&ViewFieldName != 0 {
-			colors = append(colors, de.LSColor())
+	DoRangeFields(fields, func(i int, fd ViewField) {
+		values = append(values, de.Field(fd))
+		cvalues = append(cvalues, de.FieldC(fd))
+		if fd&ViewFieldName == 0 {
+			colors = append(colors, fd.Color())
 		} else {
-			colors = append(colors, field.Color())
+			colors = append(colors, de.LSColor())
 		}
-	}
+	})
 	return values, cvalues, colors
 }
 
 func (v ViewField) GetValues(de DirEntryX) (values []interface{}) {
 	fields := v.Fields()
 	values = make([]interface{}, 0, len(fields))
-	for _, field := range fields {
-		values = append(values, de.Field(field))
-	}
+	DoRangeFields(fields, func(i int, fd ViewField) {
+		values = append(values, de.Field(fd))
+	})
 	return values
 }
 
 func (v ViewField) GetValuesC(de DirEntryX) (values []string) {
 	fields := v.Fields()
 	values = make([]string, 0, len(fields))
-	for _, field := range fields {
-		values = append(values, de.FieldC(field))
-	}
+	DoRangeFields(fields, func(i int, fd ViewField) {
+		values = append(values, de.FieldC(fd))
+	})
 	return values
 }
 
@@ -418,15 +423,15 @@ func (v ViewField) GetHead(c *Color) string {
 	}
 
 	hd := ""
-	for _, f := range v.Fields() {
-		if f&ViewFieldName != 0 {
-			value := paw.AlignWithWidth(f.Align(), f.Name(), f.Width())
+	DoRangeViewField(v, func(i int, fd ViewField) {
+		if fd&ViewFieldName == 0 {
+			value := fd.AlignedS(fd.Name())
+			hd += sprintf("%v", value) + " "
+		} else {
+			value := paw.AlignWithWidth(fd.Align(), fd.Name(), fd.Width())
 			hd += sprintf("%v", value)
-			continue
 		}
-		value := f.AlignedS(f.Name())
-		hd += sprintf("%v", value) + " "
-	}
+	})
 	return hd
 }
 
@@ -439,10 +444,10 @@ func (v ViewField) GetHeadA(c *Color) (values []string) {
 	}
 	fields := v.Fields()
 	values = make([]string, 0, len(fields))
-	for _, f := range fields {
-		v := sprint(f.AlignedS(f.Name()))
+	DoRangeFields(fields, func(i int, fd ViewField) {
+		v := sprint(fd.AlignedS(fd.Name()))
 		values = append(values, v)
-	}
+	})
 	return values
 }
 
@@ -460,15 +465,15 @@ func (v ViewField) GetHeadFuncA(fc func(i int) *Color) (values []string) {
 	values = make([]string, 0, len(fields))
 	if fc == nil {
 		sprint = fmt.Sprint
-		for _, f := range fields {
-			v := sprint(f.AlignedS(f.Name()))
+		DoRangeFields(fields, func(i int, fd ViewField) {
+			v := sprint(fd.AlignedS(fd.Name()))
 			values = append(values, v)
-		}
+		})
 	} else {
-		for i, f := range fields {
-			v := fc(i).Sprint(f.AlignedS(f.Name()))
+		DoRangeFields(fields, func(i int, fd ViewField) {
+			v := fc(i).Sprint(fd.AlignedS(fd.Name()))
 			values = append(values, v)
-		}
+		})
 	}
 	return values
 }
@@ -485,22 +490,32 @@ func (v ViewField) AlignedSC(cvalue interface{}) string {
 
 func (v ViewField) RowString(de DirEntryX) string {
 	sb := new(strings.Builder)
-	for _, field := range v.Fields() {
-		if field&ViewFieldName != 0 {
-			sb.WriteString(field.AlignedS(de.Field(field)))
-			continue
+	DoRangeViewField(v, func(i int, fd ViewField) {
+		if fd&ViewFieldName == 0 {
+			sb.WriteString(fd.AlignedS(de.Field(fd)) + " ")
+		} else {
+			sb.WriteString(fd.AlignedS(de.Field(fd)))
 		}
-		sb.WriteString(field.AlignedS(de.Field(field)) + " ")
-	}
+	})
+	// for _, field := range v.Fields() {
+	// 	if field&ViewFieldName != 0 {
+	// 		sb.WriteString(field.AlignedS(de.Field(field)))
+	// 		continue
+	// 	}
+	// 	sb.WriteString(field.AlignedS(de.Field(field)) + " ")
+	// }
 	return sb.String()
 }
 
 func (v ViewField) Rows(de DirEntryX) (values []string) {
 	fields := v.Fields()
 	values = make([]string, 0, len(fields))
-	for _, field := range fields {
-		values = append(values, field.AlignedS(de.Field(field)))
-	}
+	DoRangeFields(fields, func(i int, fd ViewField) {
+		values = append(values, fd.AlignedS(de.Field(fd)))
+	})
+	// for _, field := range fields {
+	// 	values = append(values, field.AlignedS(de.Field(field)))
+	// }
 	return values
 }
 func (v ViewField) XattibutesRowsC(de DirEntryX) (rows [][]string) {
@@ -509,14 +524,14 @@ func (v ViewField) XattibutesRowsC(de DirEntryX) (rows [][]string) {
 		return nil
 	}
 	fields := v.Fields()
+	nfd := len(fields)
 	rows = make([][]string, 0, len(xattrs))
-	cxs := make([]string, len(fields))
-	for i, f := range fields {
-		if f&ViewFieldName == 0 {
-			cxs[i] = paw.Spaces(f.Width())
-		}
+	cxs := make([]string, nfd)
+	for i := 0; i < nfd-1; i++ {
+		cxs[i] = paw.Spaces(fields[i].Width())
+
 	}
-	idx := len(fields) - 1
+	idx := nfd - 1
 	xsymb := "@ "
 	wdname := ViewFieldName.Width() - len(xsymb)
 	for _, x := range xattrs {
@@ -576,67 +591,71 @@ func (v ViewField) Rows2D(des []DirEntryX, isViewNoFiles, isViewNoDirs bool) (va
 
 func (v ViewField) RowStringXName(de DirEntryX) string {
 	sb := new(strings.Builder)
-	for _, field := range v.Fields() {
-		if field&ViewFieldName != 0 {
-			continue
+	DoRangeViewField(v, func(i int, fd ViewField) {
+		if fd&ViewFieldName == 0 {
+			sb.WriteString(fd.AlignedS(de.Field(fd)) + " ")
 		}
-		sb.WriteString(field.AlignedS(de.Field(field)) + " ")
-	}
+	})
+	// for _, field := range v.Fields() {
+	// 	if field&ViewFieldName != 0 {
+	// 		continue
+	// 	}
+	// 	sb.WriteString(field.AlignedS(de.Field(field)) + " ")
+	// }
 	return sb.String()
 }
 
 func (v ViewField) RowStringC(de DirEntryX) string {
 	sb := new(strings.Builder)
-	for _, field := range v.Fields() {
-		if field&ViewFieldName != 0 {
-			sb.WriteString(de.FieldC(field))
-			continue
+	DoRangeViewField(v, func(i int, fd ViewField) {
+		if fd&ViewFieldName == 0 {
+			sb.WriteString(de.FieldC(fd) + " ")
+		} else {
+			sb.WriteString(de.FieldC(fd))
 		}
-		sb.WriteString(de.FieldC(field) + " ")
-	}
-	return sb.String()
-}
-func (v ViewField) RowStringFC(de DirEntryX, fields []ViewField) string {
-	var s string
-	nf := len(fields)
-	for _, field := range fields[:nf-1] {
-		s += de.FieldC(field) + " "
-	}
-	s += de.FieldC(ViewFieldName)
-	return s
-	// sb := new(strings.Builder)
-	// for _, field := range fields {
+	})
+	// for _, field := range v.Fields() {
 	// 	if field&ViewFieldName != 0 {
 	// 		sb.WriteString(de.FieldC(field))
 	// 		continue
 	// 	}
 	// 	sb.WriteString(de.FieldC(field) + " ")
 	// }
-	// return sb.String()
+	return sb.String()
+}
+func (v ViewField) RowStringFC(de DirEntryX, fields []ViewField) string {
+	var s string
+	DoRangeFields(fields, func(i int, fd ViewField) {
+		if fd&ViewFieldName == 0 {
+			s += de.FieldC(fd) + " "
+		} else {
+			s += de.FieldC(ViewFieldName)
+		}
+	})
+	return s
 }
 
 func (v ViewField) RowsC(de DirEntryX) (values []string) {
 	fields := v.Fields()
 	values = make([]string, 0, len(fields))
-	for _, field := range fields {
-		values = append(values, de.FieldC(field))
-	}
+	DoRangeFields(fields, func(i int, fd ViewField) {
+		values = append(values, de.FieldC(fd))
+	})
 	return values
 }
 
 func (v ViewField) RowStringXNameC(de DirEntryX) string {
 	sb := new(strings.Builder)
-	for _, field := range v.Fields() {
-		if field&ViewFieldName != 0 {
-			continue
+	DoRangeViewField(v, func(i int, fd ViewField) {
+		if fd&ViewFieldName == 0 {
+			sb.WriteString(de.FieldC(fd) + " ")
 		}
-		sb.WriteString(de.FieldC(field) + " ")
-	}
+	})
 	return sb.String()
 }
 
 func (v ViewField) GetModifyWidthsNoGitFields(d *Dir) []ViewField {
-	fields := v.Fields()
+	fields := v.RemoveGit(true).Fields()
 	modFieldWidths(d, fields)
 	return fields
 }
@@ -649,12 +668,12 @@ func (v ViewField) ModifyWidths(d *Dir) {
 func modFieldWidths(d *Dir, fields []ViewField) {
 	childWidths(d, fields)
 	hasFieldNo := false
-	for _, fd := range fields {
-		if !hasFieldNo && fd&ViewFieldNo != 0 {
+	DoRangeFields(fields, func(i int, fd ViewField) {
+		if fd&ViewFieldNo != 0 {
 			hasFieldNo = true
-			break
+			return
 		}
-	}
+	})
 	if hasFieldNo {
 		nd, nf, _ := d.NItems(true)
 		wdidx := GetMaxWidthOf(nd, nf)
@@ -666,7 +685,7 @@ func modFieldWidths(d *Dir, fields []ViewField) {
 func childWidths(d *Dir, fields []ViewField) {
 	ds, _ := d.ReadDirAll()
 	for _, de := range ds {
-		for _, fd := range fields {
+		DoRangeFields(fields, func(i int, fd ViewField) {
 			wd := de.WidthOf(fd)
 			if !de.IsDir() && fd&ViewFieldSize != 0 {
 				if de.IsCharDev() || de.IsDev() {
@@ -683,11 +702,23 @@ func childWidths(d *Dir, fields []ViewField) {
 			}
 			width := paw.MaxInt(fd.Width(), wd)
 			fd.SetWidth(width)
-		}
+		})
 		if de.IsDir() {
 			child := de.(*Dir)
 			childWidths(child, fields)
 		}
+	}
+}
+
+func DoRangeFields(fields []ViewField, fc func(i int, fd ViewField)) {
+	for i := 0; i < len(fields); i++ {
+		fc(i, fields[i])
+	}
+}
+func DoRangeViewField(vfields ViewField, fc func(i int, fd ViewField)) {
+	fields := vfields.Fields()
+	for i := 0; i < len(fields); i++ {
+		fc(i, fields[i])
 	}
 }
 

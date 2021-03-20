@@ -53,6 +53,8 @@ func (v *VFS) Dump(w io.Writer) {
 		// vopt = *v.Option()
 		wdstty   = sttyWidth - 2
 		roothead = "Root: " + PathTo(cur, &PathToOption{true, nil, PRTPathToLink})
+		tnd, tnf int
+		tsize    int64
 	)
 	// vfields.ModifyWidths(cur)
 	ViewFieldSize.SetWidth(7)
@@ -61,11 +63,12 @@ func (v *VFS) Dump(w io.Writer) {
 	FprintBanner(w, "", "=", wdstty)
 
 	hasX, isViewNoDirs, isViewNoFiles := v.hasX_NoDir_NoFiles()
-	_dump(w, cur, root, 0, head, hasX, isViewNoDirs, isViewNoFiles)
+	_dump(w, cur, root, 0, head, hasX, isViewNoDirs, isViewNoFiles, &tnd, &tnf, &tsize)
 	// color.NoColor = paw.NoColor
+	fmt.Fprintln(w, totalSummary("", tnd, tnf, tsize, wdstty))
 }
 
-func _dump(w io.Writer, cur *Dir, root string, level int, head string, hasX, isViewNoDirs, isViewNoFiles bool) {
+func _dump(w io.Writer, cur *Dir, root string, level int, head string, hasX, isViewNoDirs, isViewNoFiles bool, nd, nf *int, size *int64) {
 	var (
 		dpath = cur.Path()
 		git   = cur.git
@@ -111,7 +114,14 @@ func _dump(w io.Writer, cur *Dir, root string, level int, head string, hasX, isV
 		if skip.IsSkip(child) {
 			continue
 		}
-
+		if child.IsDir() {
+			(*nd)++
+		} else {
+			(*nf)++
+			if de.Type().IsRegular() {
+				(*size) += child.Size()
+			}
+		}
 		cur.children[de.Name()] = child
 		_dumpPrint(w, child, cur.opt.ViewFields, hasX)
 		// paw.Logger.WithFields(logrus.Fields{
@@ -121,12 +131,12 @@ func _dump(w io.Writer, cur *Dir, root string, level int, head string, hasX, isV
 		// }).Trace()
 		if cur.opt.IsForceRecurse {
 			if child.IsDir() {
-				_dump(w, child.(*Dir), root, 0, head, hasX, isViewNoDirs, isViewNoFiles)
+				_dump(w, child.(*Dir), root, 0, head, hasX, isViewNoDirs, isViewNoFiles, nd, nf, size)
 				// buildFS(child.(*Dir), root, 0)
 			}
 		} else {
 			if cur.opt.Depth != 0 && child.IsDir() {
-				_dump(w, child.(*Dir), root, level+1, head, hasX, isViewNoDirs, isViewNoFiles)
+				_dump(w, child.(*Dir), root, level+1, head, hasX, isViewNoDirs, isViewNoFiles, nd, nf, size)
 				// buildFS(child.(*Dir), root, level+1)
 			}
 		}
@@ -134,13 +144,16 @@ func _dump(w io.Writer, cur *Dir, root string, level int, head string, hasX, isV
 }
 
 func _dumpPrint(w io.Writer, de DirEntryX, vfields ViewField, hasX bool) {
+	cmeta := vfields.RowStringXNameC(de)
+	fmt.Fprintf(w, "%v ", cmeta)
 	cname := PathTo(de, &PathToOption{true, nil, PRTRelPathToLink})
-	fmt.Fprintf(w, "%v ", vfields.RowStringXNameC(de))
 	fmt.Fprintf(w, "%v\n", cname)
-	xrows := vfields.XattibutesRowsSC(de)
-	if hasX && len(xrows) > 0 {
-		for _, row := range xrows {
-			fmt.Fprintln(w, row)
+	xs := de.Xattibutes()
+	if hasX && len(xs) > 0 {
+		pad := paw.Spaces(paw.StringWidth(paw.StripANSI(cmeta)))
+		for _, x := range xs {
+			x = paw.Cxbp.Sprint("@ ") + paw.Cxap.Sprint(x)
+			fmt.Fprintln(w, pad, x)
 		}
 	}
 }

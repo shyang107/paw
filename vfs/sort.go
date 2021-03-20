@@ -308,11 +308,11 @@ func (s SortKey) Name() string {
 	if s&SortByNone != 0 {
 		return "not sort"
 	}
-	key, ok := SortFuncFields[s]
-	if !ok {
+	if key, ok := SortFuncFields[s]; !ok {
 		return "[Error] use default sort field: by " + SortFuncFields[SortByLowerName]
+	} else {
+		return key
 	}
-	return key
 }
 
 // Sort is a method on the function type, By, that sorts the argument slice according to the function.
@@ -337,13 +337,17 @@ func (s SortKey) Sort(dxs []DirEntryX) {
 // IsOk returns true for effective and otherwise not. In genernal, use it in checking.
 func (s SortKey) IsOk() bool {
 	paw.Logger.Debug("checking SortKey..." + paw.Caller(1))
-
-	switch s {
-	case SortByINode, SortByHDLinks, SortBySize, SortByBlocks, SortByMTime, SortByATime, SortByCTime, SortByName, SortByLowerName, SortByINodeR, SortByHDLinksR, SortBySizeR, SortByBlocksR, SortByMTimeR, SortByATimeR, SortByCTimeR, SortByNameR, SortByLowerNameR, SortByNone:
-		return true
-	default:
+	if _, ok := SortLessFuncMap[s]; !ok {
 		return false
+	} else {
+		return true
 	}
+	// switch s {
+	// case SortByINode, SortByHDLinks, SortBySize, SortByBlocks, SortByMTime, SortByATime, SortByCTime, SortByName, SortByLowerName, SortByINodeR, SortByHDLinksR, SortBySizeR, SortByBlocksR, SortByMTimeR, SortByATimeR, SortByCTimeR, SortByNameR, SortByLowerNameR, SortByNone:
+	// 	return true
+	// default:
+	// 	return false
+	// }
 }
 
 type ByINode struct{ values []DirEntryX }

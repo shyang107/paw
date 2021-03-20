@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -23,6 +24,9 @@ func (opt *option) checkArgs(c *cli.Context) {
 	case 1:
 		lg.WithField("arg", c.Args().Get(0)).Trace("no argument" + paw.Caller(1))
 		arg := c.Args().Get(0)
+		if fs.ValidPath(arg) {
+			fatalf("%q is not a valid path!", arg)
+		}
 		path, err := filepath.Abs(arg)
 		if err != nil {
 			paw.Error.Println(err)
@@ -45,11 +49,15 @@ func (opt *option) checkArgs(c *cli.Context) {
 	default: // > 1
 		lg.WithField("arg", c.Args()).Trace("multi-arguments" + paw.Caller(1))
 		if opt.paths == nil {
-			opt.paths = make([]string, 0)
+			opt.paths = make([]string, 0, c.NArg())
 		}
 		lg.WithField("args", c.Args()).Debug()
 		for i := 0; i < c.NArg(); i++ {
 			arg := c.Args().Get(i)
+			if fs.ValidPath(arg) {
+				warningf("%q is not a valid path!", arg)
+				continue
+			}
 			path, err := filepath.Abs(arg)
 			if err != nil {
 				paw.Error.Println(err)
@@ -58,6 +66,9 @@ func (opt *option) checkArgs(c *cli.Context) {
 			}
 			opt.paths = append(opt.paths, path)
 			lg.WithField("path", path).Trace()
+		}
+		if len(opt.paths) == 0 {
+			fatalf("there is no valid paths: %v", c.Args().Slice())
 		}
 		lg.WithField("paths", opt.paths).Trace()
 	}

@@ -10,7 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"code.cloudfoundry.org/bytefmt"
 	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/cast"
@@ -354,7 +353,6 @@ func (d *Dir) Field(field ViewField) string {
 	case ViewFieldLinks:
 		return cast.ToString(d.HDLinks())
 	case ViewFieldSize:
-		// return bytefmt.ByteSize(uint64(d.Size()))
 		return "-"
 	case ViewFieldBlocks:
 		return "-"
@@ -887,33 +885,41 @@ func (d *Dir) FprintlnSummaryC(w io.Writer, pad string, wdstty int, isRecurse bo
 func (d *Dir) SummaryC(pad string, wdstty int, isRecurse bool) string {
 	var (
 		ndirs, nfiles, _ = d.NItems(isRecurse)
-		ss               = bytefmt.ByteSize(uint64(d.TotalSize()))
-		nss              = len(ss)
-		sn               = fmt.Sprintf("%s", ss[:nss-1])
-		su               = strings.ToLower(ss[nss-1:])
+		// ss               = bytefmt.ByteSize(uint64(d.TotalSize()))
+		// nss              = len(ss)
+		// sn               = fmt.Sprintf("%s", ss[:nss-1])
+		// su               = strings.ToLower(ss[nss-1:])
 	)
-	stotal := ""
-	ssize := ""
 	if isRecurse {
-		stotal = "Accumulated "
-		ssize = " total"
+		return totalSummary(pad, ndirs, nfiles, d.TotalSize(), sttyWidth-2)
+	} else {
+		return dirSummary(pad, ndirs, nfiles, d.TotalSize(), sttyWidth-2)
 	}
-	cndirs := paw.CpmptSn.Sprint(ndirs)
-	cnfiles := paw.CpmptSn.Sprint(nfiles)
-	csumsize := paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
-	msg := pad +
-		paw.Cpmpt.Sprint(stotal) +
-		cndirs +
-		paw.Cpmpt.Sprint(" directories, ") +
-		cnfiles +
-		paw.Cpmpt.Sprint(" files,") +
-		paw.Cpmpt.Sprint(ssize+" size ≈ ") +
-		csumsize +
-		paw.Cpmpt.Sprint(". ")
-	nmsg := paw.StringWidth(paw.StripANSI(msg))
-	msg += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - nmsg))
+	// stotal := ""
+	// ssize := ""
+	// if isRecurse {
+	// 	stotal = "Accumulated "
+	// 	ssize = " total"
+	// }
+	// cndirs := paw.CpmptSn.Sprint(ndirs)
+	// cnfiles := paw.CpmptSn.Sprint(nfiles)
+	// cnitems := paw.CpmptSn.Sprint(ndirs + nfiles)
+	// csumsize := paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
+	// msg := pad +
+	// 	paw.Cpmpt.Sprint(stotal) +
+	// 	cndirs +
+	// 	paw.Cpmpt.Sprint(" directories, ") +
+	// 	cnfiles +
+	// 	paw.Cpmpt.Sprint(" files (") +
+	// 	cnitems +
+	// 	paw.Cpmpt.Sprint(" objects),") +
+	// 	paw.Cpmpt.Sprint(ssize+" size ≈ ") +
+	// 	csumsize +
+	// 	paw.Cpmpt.Sprint(". ")
+	// nmsg := paw.StringWidth(paw.StripANSI(msg))
+	// msg += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - nmsg))
 
-	return msg
+	// return msg
 }
 
 func (d *Dir) FprintlnRelPathC(w io.Writer, pad string, isBg bool) {

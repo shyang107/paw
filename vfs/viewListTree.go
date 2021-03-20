@@ -44,6 +44,7 @@ func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 		head := vfields.GetHead(paw.Chdp)
 		fmt.Fprintf(w, "%v\n", head)
 		fmt.Fprintf(w, "%v", vfields.RowStringXNameC(rootdir))
+		ViewFieldName.SetWidth(4)
 	}
 	cdinf, _ := rootdir.DirInfoC()
 	fmt.Fprintf(w, " %v %v\n", cdinf, rootpath)

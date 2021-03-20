@@ -1,6 +1,7 @@
 package vfs
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -23,12 +24,12 @@ type VFS struct {
 // NewVFSWith 創建一個唯讀文件系統的實例
 func NewVFS(root string, opt *VFSOption) *VFS {
 	paw.Logger.Debug(root)
-
-	aroot, err := filepath.Abs(root)
-	if err != nil {
-		paw.Error.Fatal(err)
+	if fs.ValidPath(root) {
+		paw.Logger.Errorf("%q is not a valid path.", root)
+		return nil
 	}
-	info, err := os.Stat(aroot)
+
+	info, err := os.Stat(root)
 	if err != nil {
 		paw.Error.Fatal(err)
 	}
@@ -37,11 +38,11 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 		return nil
 	}
 
-	git := NewGitStatus(aroot)
+	git := NewGitStatus(root)
 	opt.ViewFields = opt.ViewFields.RemoveGit(git.NoGit)
 
-	relpath, _ := filepath.Rel(aroot, aroot)
-	// name := filepath.Base(aroot)
+	relpath, _ := filepath.Rel(root, root)
+	// name := filepath.Base(root)
 
 	opt.Check()
 
@@ -56,7 +57,7 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 	}).Debug()
 
 	v := &VFS{
-		Dir:      *NewDir(aroot, aroot, git, opt),
+		Dir:      *NewDir(root, root, git, opt),
 		relpaths: []string{relpath},
 		opt:      opt,
 	}
@@ -143,8 +144,8 @@ func buildFS(cur *Dir, root string, level int) {
 		cur.AddErrors(err)
 		return
 	}
-	for _, de := range des {
-		path := filepath.Join(dpath, de.Name())
+	for _, d := range des {
+		path := filepath.Join(dpath, d.Name())
 		_, err := os.Lstat(path)
 		if err != nil {
 			cur.AddErrors(err)
@@ -159,7 +160,7 @@ func buildFS(cur *Dir, root string, level int) {
 		// relpath, _ := filepath.Rel(root, path)
 		// xattrs, _ := GetXattr(path)
 		var child DirEntryX
-		if !de.IsDir() {
+		if !d.IsDir() {
 			child = NewFile(path, root, git)
 		} else {
 			child = NewDir(path, root, git, cur.opt)
@@ -168,7 +169,7 @@ func buildFS(cur *Dir, root string, level int) {
 			continue
 		}
 
-		cur.children[de.Name()] = child
+		cur.children[d.Name()] = child
 
 		// paw.Logger.WithFields(logrus.Fields{
 		// 	"name":  child.Name(),

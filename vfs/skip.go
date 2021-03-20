@@ -22,10 +22,11 @@ type SkipConds struct {
 
 // NewSkipConds creats a new instance of SkipConds
 // 	see examples/vfs
-func NewSkipConds() *SkipConds {
-	return &SkipConds{
-		skips: []Skiper{},
+func NewSkipConds(skips ...Skiper) *SkipConds {
+	s := &SkipConds{
+		skips: make([]Skiper, 0, len(skips)),
 	}
+	return s.Add(skips...)
 }
 
 func (s SkipConds) String() string {
@@ -46,7 +47,7 @@ func (s *SkipConds) Add(skips ...Skiper) *SkipConds {
 		return s
 	}
 	if s.skips == nil {
-		s.skips = []Skiper{}
+		s.skips = make([]Skiper, 0, len(skips))
 	}
 	var caller string
 	if paw.Logger.IsLevelEnabled(logrus.TraceLevel) {

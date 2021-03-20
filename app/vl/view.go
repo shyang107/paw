@@ -70,7 +70,7 @@ func (opt *option) viewPaths() error {
 	vfields.RemoveGit(true)
 	fields := vfields.Fields()
 	dxs.modFieldWidths(fields)
-	vfs.ViewFieldName.SetWidth(vfs.GetViewFieldNameWidthOf(fields))
+	// vfs.ViewFieldName.SetWidth(vfs.GetViewFieldNameWidthOf(fields))
 	wdmeta = wdstty - vfs.ViewFieldName.Width()
 
 	if len(viewPaths_errors) > 0 {
@@ -96,6 +96,13 @@ func (opt *option) viewPaths() error {
 				nf++
 			}
 			// print fields of de
+			// vfs.DoRangeFields(fields, func(i int, fd vfs.ViewField) {
+			// 	if fd&vfs.ViewFieldName == 0 {
+			// 		fmt.Fprintf(w, "%v ", de.FieldC(fd))
+			// 	} else {
+			// 		fmt.Fprintf(w, "%v%v\n", rooti, de.FieldC(fd))
+			// 	}
+			// })
 			fmt.Fprintf(w, "%v", vfields.RowStringXNameC(de))
 			fmt.Fprintf(w, "%v\n", rooti+de.FieldC(vfs.ViewFieldName))
 

@@ -7,7 +7,7 @@ type Group int
 const (
 	// GroupNone is default order of []DirEntryX returned by Dir.ReadDir(n)
 	// 	see example/vfs
-	GroupNone Group = 1 << iota
+	GroupNone Group = iota + 1
 	// Grouped use in returned values of Dir.ReadDir(n). Arrange order of []DirEntryX by dir..., file...
 	// 	see example/vfs
 	Grouped
@@ -17,25 +17,20 @@ const (
 )
 
 func (g Group) String() string {
-	switch g {
-	case Grouped:
-		return "Grouped"
-	case GroupedR:
-		return "Grouped reversely"
-	default:
-		return "Not grouped"
-	}
-
+	return []string{"Not grouped", "Grouped", "Grouped reversely"}[g-1]
 }
 
 // IsOk returns true for effective and otherwise not. In genernal, use it in checking.
 func (g Group) IsOk() bool {
 	paw.Logger.Debug("checking Group..." + paw.Caller(1))
-
-	switch g {
-	case Grouped, GroupedR, GroupNone:
+	if g > 0 && g < 4 {
 		return true
-	default:
-		return false
 	}
+	return false
+	// switch g {
+	// case Grouped, GroupedR, GroupNone:
+	// 	return true
+	// default:
+	// 	return false
+	// }
 }

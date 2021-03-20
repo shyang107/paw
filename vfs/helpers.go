@@ -559,12 +559,15 @@ func dirSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) st
 	)
 	cndirs := paw.CpmptSn.Sprint(ndirs)
 	cnfiles := paw.CpmptSn.Sprint(nfiles)
+	cnitems := paw.CpmptSn.Sprint(ndirs + nfiles)
 	csumsize := paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
 	msg := pad +
 		cndirs +
 		paw.Cpmpt.Sprint(" directories, ") +
 		cnfiles +
-		paw.Cpmpt.Sprint(" files, size ≈ ") +
+		paw.Cpmpt.Sprint(" files (") +
+		cnitems +
+		paw.Cpmpt.Sprint(" objects), size ≈ ") +
 		csumsize +
 		paw.Cpmpt.Sprint(". ")
 	nmsg := paw.StringWidth(paw.StripANSI(msg))
@@ -591,13 +594,16 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) 
 	)
 	cndirs := paw.CpmptSn.Sprint(ndirs)
 	cnfiles := paw.CpmptSn.Sprint(nfiles)
+	cnitems := paw.CpmptSn.Sprint(ndirs + nfiles)
 	csumsize := paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
 	summary := pad +
 		paw.Cpmpt.Sprint("Accumulated ") +
 		cndirs +
 		paw.Cpmpt.Sprint(" directories, ") +
 		cnfiles +
-		paw.Cpmpt.Sprint(" files, total size ≈ ") +
+		paw.Cpmpt.Sprint(" files (") +
+		cnitems +
+		paw.Cpmpt.Sprint(" objects), total size ≈ ") +
 		csumsize +
 		paw.Cpmpt.Sprint(".")
 	nsummary := paw.StringWidth(paw.StripANSI(summary))
@@ -712,35 +718,36 @@ func GetViewFieldWithoutName(vfields ViewField, de DirEntryX) (meta string, wdme
 }
 
 func GetViewFieldWithoutNameA(fields []ViewField, de DirEntryX) (meta string, wdmeta int) {
-	for _, field := range fields {
-		if field&ViewFieldName != 0 {
-			continue
+	DoRangeFields(fields, func(i int, fd ViewField) {
+		if fd&ViewFieldName == 0 {
+			wdmeta += fd.Width() + 1
+			meta += fmt.Sprintf("%v ", de.FieldC(fd))
 		}
-		wdmeta += field.Width() + 1
-		meta += fmt.Sprintf("%v ", de.FieldC(field))
-	}
+	})
 	return meta, wdmeta
 }
 
 func GetViewFieldWidthWithoutName(vfields ViewField) int {
-	wds := vfields.Widths()
-	wdmeta := paw.SumIntA(wds[:len(wds)-1]...) + len(wds) - 1
+	wdmeta := 0
+	DoRangeFields(vfields.Fields(), func(i int, fd ViewField) {
+		if fd&ViewFieldName == 0 {
+			wdmeta += fd.Width() + 1
+		}
+	})
 	return wdmeta
 }
 
 func GetViewFieldNameWidth(vfields ViewField) int {
-	wdmeta := GetViewFieldWidthWithoutName(vfields)
-	return sttyWidth - 2 - wdmeta
+	return GetViewFieldNameWidthOf(vfields.Fields())
 }
 
 func GetViewFieldNameWidthOf(fields []ViewField) int {
 	wdmeta := 0
-	for _, f := range fields {
-		if f&ViewFieldName != 0 {
-			continue
+	DoRangeFields(fields, func(i int, fd ViewField) {
+		if fd&ViewFieldName == 0 {
+			wdmeta += fd.Width() + 1
 		}
-		wdmeta += f.Width() + 1
-	}
+	})
 	return sttyWidth - 2 - wdmeta
 }
 

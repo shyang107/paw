@@ -56,8 +56,8 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 	fmt.Fprintf(w, "%v\n", roothead)
 	FprintBanner(w, "", "=", wdstty)
 
+	// ViewFieldNo.SetWidth(wdidx + 1)
 	vfields.ModifyWidths(rootdir)
-	ViewFieldNo.SetWidth(wdidx + 1)
 	ViewFieldName.SetWidth(ViewFieldName.Width() - vfields.Count()*2)
 	_Widths := vfields.Widths()
 	// heads := vfields.GetHeadFuncA(func(i int) *Color {
@@ -135,7 +135,7 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 			}
 			ViewFieldNo.SetValue(sidx)
 			values = vfields.GetValuesC(de)
-			wdname = paw.StringWidth(de.Field(ViewFieldName))
+			wdname = paw.StringWidth(de.FieldC(ViewFieldName))
 			if wdname < ViewFieldName.Width() {
 				values[len(values)-1] += paw.Spaces(ViewFieldName.Width() - wdname)
 			}
