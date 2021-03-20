@@ -34,7 +34,8 @@ func NewVFSOption() *VFSOption {
 }
 
 func (v VFSOption) String() string {
-	depth := strconv.Itoa(v.Depth)
+	depth := strconv.FormatInt(int64(v.Depth), 10)
+	// depth := strconv.Itoa(v.Depth)
 	if v.IsForceRecurse && v.Depth >= 0 {
 		depth += "(but recurse to all directory)"
 	}

@@ -596,6 +596,24 @@ func (v ViewField) RowStringC(de DirEntryX) string {
 	}
 	return sb.String()
 }
+func (v ViewField) RowStringFC(de DirEntryX, fields []ViewField) string {
+	var s string
+	nf := len(fields)
+	for _, field := range fields[:nf-1] {
+		s += de.FieldC(field) + " "
+	}
+	s += de.FieldC(ViewFieldName)
+	return s
+	// sb := new(strings.Builder)
+	// for _, field := range fields {
+	// 	if field&ViewFieldName != 0 {
+	// 		sb.WriteString(de.FieldC(field))
+	// 		continue
+	// 	}
+	// 	sb.WriteString(de.FieldC(field) + " ")
+	// }
+	// return sb.String()
+}
 
 func (v ViewField) RowsC(de DirEntryX) (values []string) {
 	fields := v.Fields()

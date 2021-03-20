@@ -223,13 +223,16 @@ func TrimFrontEndSpaceLine(content string) string {
 // RemoveEmptyLine remove empty lines of `content` and return
 func RemoveEmptyLine(content string) string {
 	srclines := strings.Split(content, "\n")
-	lines := make([]string, 0, len(srclines))
-	for _, line := range srclines {
-		if len(line) > 0 {
-			lines = append(lines, line)
+	ns := len(srclines)
+	sb := new(strings.Builder)
+	sb.Grow(len(content))
+	for i := 0; i < ns-1; i++ {
+		if len(srclines[i]) > 0 {
+			sb.WriteString(srclines[i] + "\n")
 		}
 	}
-	return strings.Join(lines, "\n")
+	sb.WriteString(srclines[ns-1])
+	return sb.String()
 }
 
 // -----------------------------------------------------------
@@ -251,17 +254,19 @@ func FillLeftRight(s string, w int) string {
 	if ns <= w {
 		return s
 	}
-	nr := (w - ns) / 2
-	nl := w - ns - nr
-	lsp := make([]byte, nr)
-	for i := range lsp {
-		lsp[i] = ' '
-	}
-	rsp := make([]byte, nl)
-	for i := range rsp {
-		rsp[i] = ' '
-	}
-	return string(lsp) + s + string(rsp)
+	rw := w - ns
+	nr := rw / 2
+	nl := rw - nr
+	return Spaces(nl) + s + Spaces(nr)
+	// lsp := make([]byte, nr)
+	// for i := range lsp {
+	// 	lsp[i] = ' '
+	// }
+	// rsp := make([]byte, nl)
+	// for i := range rsp {
+	// 	rsp[i] = ' '
+	// }
+	// return string(lsp) + s + string(rsp)
 }
 
 // StringWidth will return width as you can see (the numbers of placeholders on terminal)
@@ -297,12 +302,7 @@ func Spaces(w int) string {
 	if w <= 0 {
 		return ""
 	}
-	b := make([]byte, w)
-	for i := range b {
-		b[i] = ' '
-	}
-	return string(b)
-	// return strings.Repeat(" ", w)
+	return strings.Repeat(" ", w)
 }
 
 // CheckIndex will check index idx whether is in range of slice. If not, return error
@@ -335,34 +335,20 @@ func PaddingString(s string, pad string) string {
 	if !strings.Contains(s, "\n") {
 		return pad + s
 	}
-	r := []rune(s)
+	ns := StringWidth(s)
+	ss := strings.Split(s, "\n")
 	sb := new(strings.Builder)
-	sb.WriteString(pad)
-	for i, v := range r {
-		if v == '\n' {
-			// sb.WriteString("\n")
-			sb.WriteRune('\n')
-			if i < len(r)-1 {
-				sb.WriteString(pad)
-			}
-		} else {
-			sb.WriteRune(v)
-		}
+	sb.Grow(ns)
+	for i := 0; i < ns; i++ {
+		sb.WriteString(pad + ss[i] + "\n")
 	}
 	return sb.String()
 }
 
 // PaddingBytes add pad-prefix in every line('\n') of []byte
 func PaddingBytes(bytes []byte, pad string) []byte {
-	b := make([]byte, len(bytes))
-	b = append(b, pad...)
-	for _, v := range bytes {
-		b = append(b, v)
-		if v == '\n' {
-			b = append(b, pad...)
-		}
-	}
-	return b
+	s := PaddingString(string(bytes), pad)
+	return []byte(s)
 }
 
 // AlignWithWidth will return a constant width string according to align. If width of value as you see is greater than width, then return value
@@ -370,16 +356,14 @@ func AlignWithWidth(align Align, value string, width int) string {
 	if StringWidth(value) >= width || width <= 0 {
 		return value
 	}
-	var r string
 	switch align {
 	case AlignLeft:
-		r = FillRight(value, width)
+		return FillRight(value, width)
 	case AlignRight:
-		r = FillLeft(value, width)
+		return FillLeft(value, width)
 	case AlignCenter:
-		r = FillLeftRight(value, width)
+		return FillLeftRight(value, width)
 	default:
-		r = value
+		return value
 	}
-	return r
 }

@@ -84,6 +84,7 @@ func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) *Dir {
 		xattrs:   xattrs,
 		git:      git,
 		relpaths: []string{relpath},
+		// errors:   []error{},
 		children: make(map[string]DirEntryX),
 		opt:      opt,
 		isLink:   isLink,
@@ -234,49 +235,34 @@ func (d *Dir) LinkPath() string {
 
 // INode will return the inode number of File
 func (d *Dir) INode() uint64 {
-	inode := uint64(0)
-	if sys := d.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			inode = stat.Ino
-		}
+	if stat, ok := d.info.Sys().(*syscall.Stat_t); ok {
+		return stat.Ino
 	}
-	return inode
-	// sys := d.Stat.Sys()
-	// inode := reflect.ValueOf(sys).Elem().FieldByName("Ino").Uint()
-	// return inode
+	return 0
 }
 
 // HDLinks will return the number of hard links of File
 func (d *Dir) HDLinks() uint64 {
-	nlink := uint64(0)
-	if sys := d.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			nlink = uint64(stat.Nlink)
-		}
+	if stat, ok := d.info.Sys().(*syscall.Stat_t); ok {
+		return uint64(stat.Nlink)
 	}
-	return nlink
+	return 0
 }
 
 // Blocks will return number of file system blocks of File
 func (d *Dir) Blocks() uint64 {
-	blocks := uint64(0)
-	if sys := d.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			blocks = uint64(stat.Blocks)
-		}
+	if stat, ok := d.info.Sys().(*syscall.Stat_t); ok {
+		return uint64(stat.Blocks)
 	}
-	return blocks
+	return 0
 }
 
 // Uid returns user id of File
 func (d *Dir) Uid() uint32 {
-	id := uint32(0)
-	if sys := d.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			id = (stat.Uid)
-		}
+	if stat, ok := d.info.Sys().(*syscall.Stat_t); ok {
+		return (stat.Uid)
 	}
-	return id
+	return uint32(os.Geteuid())
 }
 
 // User returns user (owner) name of File
@@ -290,13 +276,10 @@ func (d *Dir) User() string {
 
 // Gid returns group id of File
 func (d *Dir) Gid() uint32 {
-	id := uint32(0)
-	if sys := d.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			id = (stat.Gid)
-		}
+	if stat, ok := d.info.Sys().(*syscall.Stat_t); ok {
+		return (stat.Gid)
 	}
-	return id
+	return uint32(os.Getgid())
 }
 
 // Group returns group (owner) name of File
@@ -310,13 +293,10 @@ func (d *Dir) Group() string {
 
 // Dev will return dev id of File
 func (d *Dir) Dev() uint64 {
-	dev := uint64(0)
-	if sys := d.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			dev = uint64(stat.Rdev)
-		}
+	if stat, ok := d.info.Sys().(*syscall.Stat_t); ok {
+		return uint64(stat.Rdev)
 	}
-	return dev
+	return 0
 }
 
 // DevNumber returns device number of a Darwin device number.
@@ -613,6 +593,13 @@ func (d *Dir) SetSortField(sortField SortKey) {
 
 func (d *Dir) RelPaths() []string {
 	return d.relpaths
+}
+
+func (d *Dir) AddErrors(errs ...error) {
+	if d.errors == nil {
+		d.errors = make([]error, 0, len(errs))
+	}
+	d.errors = append(d.errors, errs...)
 }
 
 func (d *Dir) Errors(pad string) string {

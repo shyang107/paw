@@ -1,11 +1,9 @@
 package vfs
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/fatih/color"
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
 )
@@ -78,6 +76,7 @@ func (v *VFS) Option() *VFSOption {
 }
 
 func (v *VFS) SetOption(opt *VFSOption) {
+	v.opt = opt
 	v.RootDir().SetOption(opt)
 }
 
@@ -139,15 +138,17 @@ func buildFS(cur *Dir, root string, level int) {
 		return
 	}
 
-	des, _ := os.ReadDir(dpath)
+	des, err := os.ReadDir(dpath)
+	if err != nil {
+		cur.AddErrors(err)
+		return
+	}
 	for _, de := range des {
 		path := filepath.Join(dpath, de.Name())
 		_, err := os.Lstat(path)
 		if err != nil {
-			if cur.errors == nil {
-				cur.errors = []error{}
-			}
-			cur.errors = append(cur.errors, err)
+			cur.AddErrors(err)
+			// cur.errors = append(cur.errors, err)
 			// cur.errors = append(cur.errors, &fs.PathError{
 			// 	Op:   "os", // "buildFS",
 			// 	Path: path,
@@ -204,12 +205,6 @@ func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 	// 	sort.Sort(ByLowerString(cur.relpaths))
 	// }
 	return relpaths
-}
-
-func (v *VFS) DumpFS(w io.Writer) {
-	color.NoColor = true
-	v.View(w)
-	color.NoColor = paw.NoColor
 }
 
 // getDir 通過一個路徑獲取其 dir 類型實例

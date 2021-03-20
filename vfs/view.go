@@ -37,6 +37,12 @@ func (v *VFS) hasList_hasX() (hasList, hasX bool) {
 	return hasList, hasX
 }
 
+// func (v *VFS) DumpFS(w io.Writer) {
+// 	color.NoColor = true
+// 	v.View(w)
+// 	color.NoColor = paw.NoColor
+// }
+
 func (v *VFS) Dump(w io.Writer) {
 	paw.Logger.Debug()
 	// color.NoColor = true

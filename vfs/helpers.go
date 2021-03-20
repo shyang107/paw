@@ -542,7 +542,7 @@ func GetDexLSColor(de DirEntryX) *Color {
 func checkFieldsHasGit(fields []ViewField, isNoGit bool) []ViewField {
 	fds := []ViewField{}
 	for _, fd := range fields {
-		if fd&ViewFieldGit == ViewFieldGit && isNoGit {
+		if fd&ViewFieldGit != 0 && isNoGit {
 			continue
 		}
 		fds = append(fds, fd)
@@ -622,6 +622,12 @@ func GetRootHeadC(de DirEntryX, wdstty int) string {
 	} else {
 		csize = paw.CpmptDashp.Sprint("-")
 	}
+	// chead := fmt.Sprintf("%v%v%v%v%v",
+	// 	paw.Cpmpt.Sprint("Root directory: "),
+	// 	PathTo(de, &PathToOption{true, paw.EXAColorAttributes["bgpmpt"], PRTPathToLink}),
+	// 	paw.Cpmpt.Sprint(", size ≈ "),
+	// 	csize,
+	// 	paw.Cpmpt.Sprint("."))
 	chead := paw.Cpmpt.Sprint("Root directory: ")
 	chead += PathTo(de, &PathToOption{true, paw.EXAColorAttributes["bgpmpt"], PRTPathToLink})
 	chead += paw.Cpmpt.Sprint(", size ≈ ")

@@ -218,13 +218,10 @@ func (f *File) LinkPath() string {
 
 // INode will return the inode number of File
 func (f *File) INode() uint64 {
-	inode := uint64(0)
-	if sys := f.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			inode = stat.Ino
-		}
+	if stat, ok := f.info.Sys().(*syscall.Stat_t); ok {
+		return stat.Ino
 	}
-	return inode
+	return 0
 	// sys := f.Stat.Sys()
 	// inode := reflect.ValueOf(sys).Elem().FieldByName("Ino").Uint()
 	// return inode
@@ -232,35 +229,26 @@ func (f *File) INode() uint64 {
 
 // HDLinks will return the number of hard links of File
 func (f *File) HDLinks() uint64 {
-	nlink := uint64(0)
-	if sys := f.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			nlink = uint64(stat.Nlink)
-		}
+	if stat, ok := f.info.Sys().(*syscall.Stat_t); ok {
+		return uint64(stat.Nlink)
 	}
-	return nlink
+	return 0
 }
 
 // Blocks will return number of file system blocks of File
 func (f *File) Blocks() uint64 {
-	blocks := uint64(0)
-	if sys := f.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			blocks = uint64(stat.Blocks)
-		}
+	if stat, ok := f.info.Sys().(*syscall.Stat_t); ok {
+		return uint64(stat.Blocks)
 	}
-	return blocks
+	return 0
 }
 
 // Uid returns user id of File
 func (f *File) Uid() uint32 {
-	id := uint32(0)
-	if sys := f.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			id = (stat.Uid)
-		}
+	if stat, ok := f.info.Sys().(*syscall.Stat_t); ok {
+		return (stat.Uid)
 	}
-	return id
+	return uint32(os.Getuid())
 }
 
 // User returns user (owner) name of File
@@ -274,13 +262,10 @@ func (f *File) User() string {
 
 // Gid returns group id of File
 func (f *File) Gid() uint32 {
-	id := uint32(0)
-	if sys := f.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			id = (stat.Gid)
-		}
+	if stat, ok := f.info.Sys().(*syscall.Stat_t); ok {
+		return (stat.Gid)
 	}
-	return id
+	return uint32(os.Getgid())
 }
 
 // Group returns group (owner) name of File
@@ -294,13 +279,10 @@ func (f *File) Group() string {
 
 // Dev will return dev id of File
 func (f *File) Dev() uint64 {
-	dev := uint64(0)
-	if sys := f.info.Sys(); sys != nil {
-		if stat, ok := sys.(*syscall.Stat_t); ok {
-			dev = uint64(stat.Rdev)
-		}
+	if stat, ok := f.info.Sys().(*syscall.Stat_t); ok {
+		return uint64(stat.Rdev)
 	}
-	return dev
+	return 0
 }
 
 // DevNumber returns device number of a Darwin device number.

@@ -32,6 +32,7 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 		tsize        int64
 		count        int
 		roothead     = GetRootHeadC(rootdir, wdstty)
+		fields       = vfields.Fields()
 	)
 
 	vfields.ModifyWidths(rootdir)
@@ -91,7 +92,7 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 			}
 			count++
 			// print fields of de
-			fmt.Fprintf(w, "%v\n", vfields.RowStringC(de))
+			fmt.Fprintf(w, "%v\n", vfields.RowStringFC(de, fields))
 			xrows := vfields.XattibutesRowsSC(de)
 			if hasX && len(xrows) > 0 {
 				for _, row := range xrows {

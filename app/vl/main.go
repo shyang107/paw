@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/cast"
@@ -128,16 +127,16 @@ func init() {
 }
 
 func main() {
-	start := time.Now()
+	// start := time.Now()
 
 	err := app.Run(os.Args)
 	if err != nil {
 		fatalf("run '%s' failed, error:%v", app.Name, err)
 	}
 
-	elapsedTime := time.Since(start)
-	fmt.Println()
-	fmt.Println("Total time for excution:", elapsedTime.String())
+	// elapsedTime := time.Since(start)
+	// fmt.Println()
+	// fmt.Println("Total time for excution:", elapsedTime.String())
 	// info()
 	// warning()
 	// stderr()
