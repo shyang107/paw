@@ -194,12 +194,6 @@ func NewValuePairWith(field string, value interface{}, level logrus.Level) *Valu
 func (v ValuePair) String() string {
 	if v.FieldColor == nil {
 		v.FieldColor = LogLevelColor(v.LeveL)
-		// switch v.LeveL {
-		// case logrus.InfoLevel:
-		// 	v.FieldColor = Cfield
-		// default:
-		// 	v.FieldColor = LogLevelColor(v.LeveL)
-		// }
 	}
 	if v.ValueColor == nil {
 		v.ValueColor = Cvalue
@@ -208,13 +202,6 @@ func (v ValuePair) String() string {
 	msg += v.ValueColor.Sprintf("%v", v.Value)
 	msg += "]"
 	return msg
-	// return MesageFieldAndValueC(
-	// 	v.Field,
-	// 	v.Value,
-	// 	v.LeveL, //Logger.GetLevel(),
-	// 	v.FieldColor,
-	// 	v.ValueColor,
-	// )
 }
 
 func (v *ValuePair) SetLevel(level logrus.Level) *ValuePair {
@@ -258,12 +245,51 @@ func (v ValuePairA) Add(field string, value interface{}) ValuePairA {
 	v = append(v, NewValuePair(field, value))
 	return v
 }
+func (v ValuePairA) AddV(p *ValuePair) ValuePairA {
+	return v.AddA(p)
+}
+
+func (v ValuePairA) AddA(vps ...*ValuePair) ValuePairA {
+	if len(vps) == 0 {
+		return v
+	}
+	for _, vp := range vps {
+		v = append(v, vp)
+	}
+	return v
+}
 
 func (v ValuePairA) SetLevel(level logrus.Level) ValuePairA {
 	for _, vp := range v {
 		vp.LeveL = level
 	}
 	return v
+}
+
+func (v ValuePairA) ToLogrusFields() logrus.Fields {
+	var fds logrus.Fields
+	for _, p := range v {
+		fds[p.Field] = p.Value
+	}
+	return fds
+}
+
+func (v ValuePairA) SprintSep(sep string) string {
+	b := new(strings.Builder)
+	nv := len(v)
+	for i := 0; i < nv-1; i++ {
+		b.WriteString(v[i].String() + sep)
+	}
+	b.WriteString(v[nv-1].String())
+	return b.String()
+}
+
+func (v ValuePairA) StringFunc(fc func(p *ValuePair) string) string {
+	b := new(strings.Builder)
+	for _, p := range v {
+		b.WriteString(fc(p))
+	}
+	return b.String()
 }
 
 func MesageFieldAndValueC(field string, value interface{}, level logrus.Level, cf, cv *color.Color) string {
