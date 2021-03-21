@@ -26,16 +26,16 @@ type File struct {
 	isLink   bool
 }
 
-func NewFile(path, root string, git *GitStatus) *File {
+func NewFile(path, root string, git *GitStatus) (*File, error) {
 	apath, err := filepath.Abs(path)
 	if err != nil {
-		paw.Logger.Error(err)
-		return nil
+		// paw.Logger.Error(err)
+		return nil, err
 	}
 	info, err := os.Lstat(apath)
 	if err != nil {
-		paw.Logger.Error(err)
-		return nil
+		// paw.Logger.Error(err)
+		return nil, err
 	}
 
 	var link string
@@ -51,8 +51,9 @@ func NewFile(path, root string, git *GitStatus) *File {
 	}
 
 	if info.IsDir() {
-		paw.Logger.Error(err)
-		return nil
+		err := fmt.Errorf("%q is a directory.", path)
+		// paw.Logger.Error(err)
+		return nil, err
 	}
 	// dir, _ := filepath.Split(apath)
 	// git := NewGitStatus(dir)
@@ -71,7 +72,7 @@ func NewFile(path, root string, git *GitStatus) *File {
 		git:      git,
 		isLink:   isLink,
 		linkPath: link,
-	}
+	}, nil
 }
 
 // 實現 fs.FileInfo 接口

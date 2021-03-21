@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/vfs"
 )
 
@@ -22,7 +23,11 @@ func BenchmarkVFS(b *testing.B) {
 
 func vfs01(root string) {
 	vopt.Depth = -1
-	fs := vfs.NewVFS(root, vopt)
+	fs, err := vfs.NewVFS(root, vopt)
+	if err != nil {
+		paw.Error.Println(err)
+		return
+	}
 	fs.BuildFS()
 	sb := new(strings.Builder)
 	fs.View(sb)

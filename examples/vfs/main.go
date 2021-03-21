@@ -83,7 +83,10 @@ func main() {
 		// ViewType: vfs.ViewClassify,
 	}
 
-	fs := vfs.NewVFS(root, vopt)
+	fs, err := vfs.NewVFS(root, vopt)
+	if err != nil {
+		paw.Error.Fatal(err)
+	}
 	// fs.AddSkipFuncs(reSkip)
 	// fs.AddSkipFuncs(vfs.SkipFile)
 	fs.BuildFS()
@@ -142,7 +145,10 @@ func test() {
 	opt.ViewFields = vfs.DefaultViewFieldAllNoMd5
 	opt.ViewType = vfs.ViewClassify
 
-	fs := vfs.NewVFS(root, opt)
+	fs, err := vfs.NewVFS(root, opt)
+	if err != nil {
+		paw.Error.Fatal(err)
+	}
 	fs.BuildFS()
 	rd := fs.RootDir()
 

@@ -3,6 +3,7 @@ package vfs
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -39,15 +40,17 @@ type Dir struct {
 	isLink   bool
 }
 
-func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) *Dir {
+func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) (*Dir, error) {
 	aroot, err := filepath.Abs(dirpath)
 	if err != nil {
-		return nil
+		// paw.Logger.Error(err)
+		return nil, err
 	}
 	var info FileInfo
 	info, err = os.Lstat(aroot)
 	if err != nil {
-		return nil
+		// paw.Logger.Error(err)
+		return nil, err
 	}
 
 	var link string
@@ -63,7 +66,9 @@ func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) *Dir {
 	}
 
 	if !info.IsDir() {
-		return nil
+		err := fmt.Errorf("%q is not a directory.", root)
+		// paw.Logger.Error(err)
+		return nil, err
 	}
 	// git := NewGitStatus(aroot)
 	relpath := "."
@@ -88,7 +93,7 @@ func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) *Dir {
 		opt:      opt,
 		isLink:   isLink,
 		linkPath: link,
-	}
+	}, nil
 }
 
 // 實現 fs.FileInfo 接口
@@ -862,14 +867,24 @@ func (d *Dir) getDir(relpath string) (*Dir, error) {
 
 	cur := d
 	for _, part := range parts {
-		child := cur.children[part]
-		if child == nil {
-			return nil, fmt.Errorf("%s is not exists", relpath)
+		child, ok := cur.children[part]
+		if !ok {
+			return nil, &fs.PathError{
+				Op:   "getDir",
+				Path: relpath,
+				Err:  fs.ErrNotExist,
+			}
+			// return nil, fmt.Errorf("%s is not exists", relpath)
 		}
 
 		childDir, ok := child.(*Dir)
 		if !ok {
-			return nil, fmt.Errorf("%s is not directory", relpath)
+			return nil, &fs.PathError{
+				Op:   "getDir",
+				Path: relpath,
+				Err:  fmt.Errorf("%s is not directory", relpath),
+			}
+			// return nil, fmt.Errorf("%s is not directory", relpath)
 		}
 
 		cur = childDir
@@ -885,41 +900,13 @@ func (d *Dir) FprintlnSummaryC(w io.Writer, pad string, wdstty int, isRecurse bo
 func (d *Dir) SummaryC(pad string, wdstty int, isRecurse bool) string {
 	var (
 		ndirs, nfiles, _ = d.NItems(isRecurse)
-		// ss               = bytefmt.ByteSize(uint64(d.TotalSize()))
-		// nss              = len(ss)
-		// sn               = fmt.Sprintf("%s", ss[:nss-1])
-		// su               = strings.ToLower(ss[nss-1:])
+		tsize            = d.TotalSize()
 	)
 	if isRecurse {
-		return totalSummary(pad, ndirs, nfiles, d.TotalSize(), sttyWidth-2)
+		return totalSummary(pad, ndirs, nfiles, tsize, sttyWidth-2)
 	} else {
-		return dirSummary(pad, ndirs, nfiles, d.TotalSize(), sttyWidth-2)
+		return dirSummary(pad, ndirs, nfiles, tsize, sttyWidth-2)
 	}
-	// stotal := ""
-	// ssize := ""
-	// if isRecurse {
-	// 	stotal = "Accumulated "
-	// 	ssize = " total"
-	// }
-	// cndirs := paw.CpmptSn.Sprint(ndirs)
-	// cnfiles := paw.CpmptSn.Sprint(nfiles)
-	// cnitems := paw.CpmptSn.Sprint(ndirs + nfiles)
-	// csumsize := paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
-	// msg := pad +
-	// 	paw.Cpmpt.Sprint(stotal) +
-	// 	cndirs +
-	// 	paw.Cpmpt.Sprint(" directories, ") +
-	// 	cnfiles +
-	// 	paw.Cpmpt.Sprint(" files (") +
-	// 	cnitems +
-	// 	paw.Cpmpt.Sprint(" objects),") +
-	// 	paw.Cpmpt.Sprint(ssize+" size ≈ ") +
-	// 	csumsize +
-	// 	paw.Cpmpt.Sprint(". ")
-	// nmsg := paw.StringWidth(paw.StripANSI(msg))
-	// msg += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - nmsg))
-
-	// return msg
 }
 
 func (d *Dir) FprintlnRelPathC(w io.Writer, pad string, isBg bool) {

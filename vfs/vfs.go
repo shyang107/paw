@@ -1,6 +1,7 @@
 package vfs
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -22,20 +23,32 @@ type VFS struct {
 }
 
 // NewVFSWith 創建一個唯讀文件系統的實例
-func NewVFS(root string, opt *VFSOption) *VFS {
+func NewVFS(root string, opt *VFSOption) (*VFS, error) {
 	paw.Logger.Debug(root)
 	if fs.ValidPath(root) {
-		paw.Logger.Errorf("%q is not a valid path.", root)
-		return nil
+		err := &fs.PathError{
+			Op:   "NewVFS",
+			Path: root,
+			Err:  fs.ErrInvalid,
+		}
+		return nil, err
 	}
 
 	info, err := os.Stat(root)
 	if err != nil {
-		paw.Error.Fatal(err)
+		return nil, &fs.PathError{
+			Op:   "NewVFS",
+			Path: root,
+			Err:  err,
+		}
 	}
 
 	if !info.IsDir() {
-		return nil
+		return nil, &fs.PathError{
+			Op:   "NewVFS",
+			Path: root,
+			Err:  fmt.Errorf("%s", "not a directory"),
+		}
 	}
 
 	git := NewGitStatus(root)
@@ -56,13 +69,17 @@ func NewVFS(root string, opt *VFSOption) *VFS {
 		"ViewType":       opt.ViewType,
 	}).Debug()
 
+	dir, err := NewDir(root, root, git, opt)
+	if err != nil {
+		return nil, err
+	}
 	v := &VFS{
-		Dir:      *NewDir(root, root, git, opt),
+		Dir:      *dir,
 		relpaths: []string{relpath},
 		opt:      opt,
 	}
 
-	return v
+	return v, nil
 }
 
 func (v *VFS) RootDir() *Dir {
@@ -161,9 +178,13 @@ func buildFS(cur *Dir, root string, level int) {
 		// xattrs, _ := GetXattr(path)
 		var child DirEntryX
 		if !d.IsDir() {
-			child = NewFile(path, root, git)
+			child, err = NewFile(path, root, git)
 		} else {
-			child = NewDir(path, root, git, cur.opt)
+			child, err = NewDir(path, root, git, cur.opt)
+		}
+		if err != nil {
+			cur.AddErrors(err)
+			continue
 		}
 		if skip.IsSkip(child) {
 			continue

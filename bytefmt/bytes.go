@@ -57,8 +57,8 @@ func ByteSize(bytes int64) string {
 		unit = "K"
 		value = value / KILOBYTE
 	case bytes >= BYTE:
-		unit = ""
-		// unit = "B"
+		// unit = ""
+		unit = "B"
 	case bytes == 0:
 		return "0B"
 	}

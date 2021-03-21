@@ -24,7 +24,10 @@ func (opt *option) view() error {
 		"ViewFields":     opt.vopt.ViewFields,
 		"ViewType":       opt.vopt.ViewType,
 	}).Debug()
-	fs := vfs.NewVFS(opt.rootPath, opt.vopt)
+	fs, err := vfs.NewVFS(opt.rootPath, opt.vopt)
+	if err != nil {
+		return err
+	}
 	if opt.isDump {
 		fs.Dump(os.Stdout)
 	} else {
@@ -136,7 +139,11 @@ func (opt *option) viewPaths() error {
 			if opt.depth > 0 {
 				opt.depth--
 			}
-			fs := vfs.NewVFS(de.Path(), opt.vopt)
+			fs, err := vfs.NewVFS(de.Path(), opt.vopt)
+			if err != nil {
+				warning(err)
+				continue
+			}
 			fs.BuildFS()
 			fs.View(os.Stdout)
 			nd, nf, _ = fs.RootDir().NItems(true)
@@ -207,6 +214,7 @@ func createBasepaths(paths []string) (dxs demap, srm srmap, dirs []string) {
 	paw.Logger.WithFields(logrus.Fields{
 		"paths": paths,
 	}).Trace()
+
 	for _, path := range paths {
 		info, err := os.Lstat(path)
 		if err != nil {
@@ -220,16 +228,23 @@ func createBasepaths(paths []string) (dxs demap, srm srmap, dirs []string) {
 			idx++
 			shortroot = fmt.Sprintf("R%d", idx)
 			sm[dir] = shortroot
-			rde := vfs.NewDir(dir, "", nil, nil)
+			rde, err := vfs.NewDir(dir, "", nil, nil)
+			if err != nil {
+
+			}
 			srm[dir] = rde
 			dxs[dir] = make([]vfs.DirEntryX, 0, len(paths))
 			dirs = append(dirs, dir)
 		}
 		var de vfs.DirEntryX
 		if info.IsDir() {
-			de = vfs.NewDir(path, "", nil, nil)
+			de, err = vfs.NewDir(path, "", nil, nil)
 		} else {
-			de = vfs.NewFile(path, "", nil)
+			de, err = vfs.NewFile(path, "", nil)
+		}
+		if err != nil {
+			stderr(err)
+			continue
 		}
 		// lg.WithField("de", de.Path()).Debug()
 		dxs[dir] = append(dxs[dir], de)

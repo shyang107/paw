@@ -107,9 +107,13 @@ func _dump(w io.Writer, cur *Dir, root string, level int, head string, hasX, isV
 		// xattrs, _ := GetXattr(path)
 		var child DirEntryX
 		if !de.IsDir() {
-			child = NewFile(path, root, git)
+			child, err = NewFile(path, root, git)
 		} else {
-			child = NewDir(path, root, git, cur.opt)
+			child, err = NewDir(path, root, git, cur.opt)
+		}
+		if err != nil {
+			cur.AddErrors(err)
+			continue
 		}
 		if skip.IsSkip(child) {
 			continue
