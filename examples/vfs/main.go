@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +15,59 @@ import (
 )
 
 func main() {
+	test3()
+}
+
+func test3() {
+	root := `/Users/shyang/go/src/github.com/shyang107/paw/`
+	rootFS := os.DirFS(root)
+	var (
+		nd, nf    int
+		size      int64
+		sidx      string
+		_, wdstty = paw.GetTerminalSize()
+		count     int
+		skippaths = make([]string, 0)
+	)
+	wdstty -= 2
+
+	err := fs.WalkDir(rootFS, ".", func(path string, d fs.DirEntry, err error) error {
+		count++
+		if strings.HasPrefix(d.Name(), ".") && d.Name() != "." && d.IsDir() {
+			skippaths = append(skippaths, path)
+			return fs.SkipDir
+		}
+		if strings.HasPrefix(d.Name(), ".") {
+			// if d.IsDir() {
+			// 	return fs.SkipDir
+			// } else {
+			// 	return nil
+			// }
+			return nil
+		}
+		if d.IsDir() {
+			nd++
+			sidx = paw.Cdip.Sprint("D" + cast.ToString(nd))
+		} else {
+			nf++
+			sidx = paw.Cfip.Sprint("F" + cast.ToString(nf))
+			if d.Type().IsRegular() {
+				s, _ := d.Info()
+				size += s.Size()
+			}
+		}
+		fmt.Println(sidx, paw.FileLSColor(root+"/"+path).Sprint(path))
+		return nil
+	})
+	if err != nil {
+		paw.Logger.Error(err)
+	}
+	vfs.FprintTotalSummary(os.Stdout, "", nd, nf, size, wdstty)
+	fmt.Println("count=", count)
+	fmt.Println("skippaths=", skippaths)
+}
+
+func test1() {
 	// root := `/Users/shyang/go/src/github.com/shyang107/paw/`
 	// root := `/dev`
 	var (
@@ -131,10 +185,9 @@ func main() {
 	}
 	// fs.SetViewType(vfs.ViewLevel)
 	// fs.View(os.Stdout)
-
 }
 
-func test() {
+func test2() {
 	lg.SetLevel(logrus.InfoLevel)
 	root, _ := filepath.Abs("../..")
 	lg.WithField("root", root).Info()
