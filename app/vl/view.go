@@ -93,6 +93,9 @@ func (opt *option) viewPaths() error {
 		des := dxs[dir]
 		opt.vopt.ByField.Sort(des)
 		for _, de := range des {
+			if opt.vopt.Skips.IsSkip(de) {
+				continue
+			}
 			if de.IsDir() {
 				nd++
 				size += de.Size()

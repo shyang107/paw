@@ -216,8 +216,9 @@ var DefaultSkiper = NewSkipFunc("«DefaultSkiper»", func(de DirEntry) bool {
 	if SkiperHiddens.IsSkip(de) {
 		return true
 	}
-
-	if strings.EqualFold(strings.TrimSpace(de.Name()), "_gsdata_") {
+	tname := strings.TrimSpace(de.Name())
+	if strings.EqualFold(tname, "_gsdata_") ||
+		strings.EqualFold(tname, "$RECYCLE.BIN") {
 		return true
 	}
 
