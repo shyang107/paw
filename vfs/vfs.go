@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
@@ -125,7 +126,8 @@ func (v *VFS) BuildFS() {
 	paw.Logger.Debug("building VFS...")
 	cur := v.RootDir()
 
-	buildFS(cur, cur.Path(), 0)
+	buildVFSwalk(cur, cur.Path())
+	// buildVFS(cur, cur.Path(), 0)
 	// nd, nf := cur.NItems()
 	// paw.Logger.WithFields(logrus.Fields{
 	// 	"nd": nd,
@@ -144,7 +146,67 @@ func (v *VFS) BuildFS() {
 	v.git.Dump("checkChildGit: modified")
 }
 
-func buildFS(cur *Dir, root string, level int) {
+func buildVFSwalk(cur *Dir, root string) {
+	var (
+		// dpath = cur.Path()
+		this = cur
+		git  = cur.git
+		skip = cur.opt.Skips
+		dirs = make(map[string]*Dir)
+		ok   bool
+	)
+	dirs["."] = cur
+	rfs := os.DirFS(root)
+	err := fs.WalkDir(rfs, ".", func(path string, d fs.DirEntry, err error) error {
+		level := len(strings.Split(path, "/"))
+		if !cur.opt.IsForceRecurse &&
+			cur.opt.Depth > 0 &&
+			level > cur.opt.Depth {
+			return nil
+		}
+		if skip.IsSkip(d) {
+			if path != "." && d.IsDir() {
+				return fs.SkipDir
+			}
+			return nil
+		}
+
+		var child DirEntryX
+		fpath := filepath.Join(root, path)
+		if !d.IsDir() {
+			child, err = NewFile(fpath, root, git)
+
+		} else {
+			child, err = NewDir(fpath, root, git, cur.opt)
+		}
+		if err != nil {
+			cur.AddErrors(err)
+			return nil
+		}
+		if d.IsDir() {
+			if _, ok = dirs[path]; !ok {
+				dirs[path] = child.(*Dir)
+			}
+		}
+		dir := filepath.Dir(path)
+		this = dirs[dir]
+		// this, ok = dirs[dir]
+		// if !ok {
+		// 	paw.Logger.Error(dir)
+		// }
+
+		this.children[d.Name()] = child
+		// if child.IsDir() {
+		// 	this = child.(*Dir)
+		// }
+		return nil
+	})
+	if err != nil {
+		cur.AddErrors(err)
+		return
+	}
+}
+func buildVFS(cur *Dir, root string, level int) {
 	var (
 		dpath = cur.Path()
 		git   = cur.git
@@ -162,18 +224,21 @@ func buildFS(cur *Dir, root string, level int) {
 		return
 	}
 	for _, d := range des {
-		path := filepath.Join(dpath, d.Name())
-		_, err := os.Lstat(path)
-		if err != nil {
-			cur.AddErrors(err)
-			// cur.errors = append(cur.errors, err)
-			// cur.errors = append(cur.errors, &fs.PathError{
-			// 	Op:   "os", // "buildFS",
-			// 	Path: path,
-			// 	Err:  err,
-			// })
+		if skip.IsSkip(d) {
 			continue
 		}
+		path := filepath.Join(dpath, d.Name())
+		// _, err := os.Lstat(path)
+		// if err != nil {
+		// 	cur.AddErrors(err)
+		// 	// cur.errors = append(cur.errors, err)
+		// 	// cur.errors = append(cur.errors, &fs.PathError{
+		// 	// 	Op:   "os", // "buildFS",
+		// 	// 	Path: path,
+		// 	// 	Err:  err,
+		// 	// })
+		// 	continue
+		// }
 		// relpath, _ := filepath.Rel(root, path)
 		// xattrs, _ := GetXattr(path)
 		var child DirEntryX
@@ -186,9 +251,9 @@ func buildFS(cur *Dir, root string, level int) {
 			cur.AddErrors(err)
 			continue
 		}
-		if skip.IsSkip(child) {
-			continue
-		}
+		// if skip.IsSkip(child) {
+		// 	continue
+		// }
 
 		cur.children[d.Name()] = child
 
@@ -199,15 +264,17 @@ func buildFS(cur *Dir, root string, level int) {
 		// }).Trace()
 		if cur.opt.IsForceRecurse {
 			if child.IsDir() {
-				buildFS(child.(*Dir), root, 0)
+				buildVFS(child.(*Dir), root, 0)
 			}
 		} else {
 			if cur.opt.Depth != 0 && child.IsDir() {
-				buildFS(child.(*Dir), root, level+1)
+				buildVFS(child.(*Dir), root, level+1)
 			}
 		}
 	}
 }
+
+var _rps = make(map[string]string)
 
 func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 	ds, _ := cur.ReadDirAll()
@@ -216,6 +283,11 @@ func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 	for _, d := range ds {
 		if d.IsDir() {
 			next := d.(*Dir)
+			// if _, ok := _rps[next.RelPath()]; ok {
+			// 	continue
+			// } else {
+			// 	_rps[next.RelPath()] = next.RelPath()
+			// }
 			relpaths = append(relpaths, next.RelPath())
 			v.relpaths = append(v.relpaths, next.RelPath())
 			nextrelpaths := v.createRDirs(next)
