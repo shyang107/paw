@@ -44,13 +44,21 @@ func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) (*Dir, error) 
 	aroot, err := filepath.Abs(dirpath)
 	if err != nil {
 		// paw.Logger.Error(err)
-		return nil, err
+		return nil, &fs.PathError{
+			Op:   "NewDir",
+			Path: root,
+			Err:  err,
+		}
 	}
 	var info FileInfo
 	info, err = os.Lstat(aroot)
 	if err != nil {
 		// paw.Logger.Error(err)
-		return nil, err
+		return nil, &fs.PathError{
+			Op:   "NewDir",
+			Path: root,
+			Err:  err,
+		}
 	}
 
 	var link string
@@ -68,7 +76,11 @@ func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) (*Dir, error) 
 	if !info.IsDir() {
 		err := fmt.Errorf("%q is not a directory.", root)
 		// paw.Logger.Error(err)
-		return nil, err
+		return nil, &fs.PathError{
+			Op:   "NewDir",
+			Path: root,
+			Err:  err,
+		}
 	}
 	// git := NewGitStatus(aroot)
 	relpath := "."
@@ -605,15 +617,21 @@ func (d *Dir) AddErrors(errs ...error) {
 	d.errors = append(d.errors, errs...)
 }
 
-func (d *Dir) Errors(pad string) string {
+func (d *Dir) Errors(pad string, isRecurse bool) string {
 	sb := new(strings.Builder)
-	d.FprintErrors(sb, pad)
+	d.FprintErrors(sb, pad, isRecurse)
 	return sb.String()
 }
 
-func (d *Dir) FprintErrors(w io.Writer, pad string) {
-	if len(d.errors) > 0 {
-		for _, err := range d.errors {
+func (d *Dir) FprintErrors(w io.Writer, pad string, isRecurse bool) {
+	errors := make([]error, 0)
+	if isRecurse {
+		errors = getAllErrors(d)
+	} else {
+		errors = d.errors
+	}
+	if len(errors) > 0 {
+		for _, err := range errors {
 			if paw.CnestedFMT.IsLogo {
 				fmt.Fprintf(w, "%s%s %v\n", pad,
 					cnested.Logos[logrus.ErrorLevel],
@@ -623,6 +641,21 @@ func (d *Dir) FprintErrors(w io.Writer, pad string) {
 			}
 		}
 	}
+}
+
+func getAllErrors(d *Dir) []error {
+	errors := make([]error, 0)
+	if len(d.errors) > 0 {
+		errors = append(errors, d.errors...)
+	}
+	des, _ := d.ReadDirAll()
+	for _, cur := range des {
+		if cur.IsDir() {
+			cerrs := getAllErrors(cur.(*Dir))
+			errors = append(errors, cerrs...)
+		}
+	}
+	return errors
 }
 
 // NItems returns numbers of dirs and files of resurse this dir if isRecurse is true; otherwise, returns just this dir.

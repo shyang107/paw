@@ -47,11 +47,6 @@ func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 			paw.Logger.WithFields(logrus.Fields{"rp": rp}).Fatal(err)
 		}
 
-		des, _ := cur.ReadDirAll()
-		if len(des) < 1 {
-			continue
-		}
-
 		if rp != "." {
 			cur.FprintlnRelPathC(w, "", false)
 			// fmt.Fprintln(w, cur.RelPathC("", false)+":")
@@ -59,8 +54,14 @@ func viewClassify(w io.Writer, rootdir *Dir, isViewNoDirs, isViewNoFiles bool) {
 		}
 
 		if len(cur.errors) > 0 {
-			cur.FprintErrors(os.Stderr, "")
+			cur.FprintErrors(os.Stderr, "", false)
 		}
+
+		des, _ := cur.ReadDirAll()
+		if len(des) < 1 {
+			continue
+		}
+
 		var (
 			curnd, curnf int
 			size         int64

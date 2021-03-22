@@ -70,18 +70,18 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 			paw.Logger.WithFields(logrus.Fields{"rp": rp}).Fatal(err)
 		}
 
-		des, _ := cur.ReadDirAll()
-		if len(des) < 1 {
-			continue
-		}
-
 		if level > 0 {
 			slevel := paw.Cfield.Sprintf("L%d", level)
 			cur.FprintlnRelPathC(w, pad+slevel+cidx, false)
 		}
 
 		if len(cur.errors) > 0 {
-			cur.FprintErrors(os.Stderr, pad)
+			cur.FprintErrors(os.Stderr, pad, false)
+		}
+
+		des, _ := cur.ReadDirAll()
+		if len(des) < 1 {
+			continue
 		}
 		ViewFieldName.SetWidth(wdname - wdpad)
 		var (

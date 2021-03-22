@@ -3,6 +3,7 @@ package vfs
 import (
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/shyang107/paw"
 	"github.com/sirupsen/logrus"
@@ -23,10 +24,10 @@ func VFSViewListTree(w io.Writer, v *VFS) {
 
 func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 	var (
-		vfields = rootdir.opt.ViewFields
-		fields  []ViewField
-		wdstty  = sttyWidth - 2
-		// roothead = GetRootHeadC(rootdir, wdstty)
+		vfields  = rootdir.opt.ViewFields
+		fields   []ViewField
+		wdstty   = sttyWidth - 2
+		roothead = GetRootHeadC(rootdir, wdstty)
 		// rootpath = PathToLinkC(rootdir, nil)
 		rootpath = PathTo(rootdir, &PathToOption{true, nil, PRTPathToLink})
 	)
@@ -36,8 +37,13 @@ func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 		fields = []ViewField{ViewFieldName}
 	}
 
-	// fmt.Fprintf(w, "%v\n", roothead)
-	// FprintBanner(w, "", "=", wdstty)
+	fmt.Fprintf(w, "%v\n", roothead)
+	FprintBanner(w, "", "=", wdstty)
+
+	errors := rootdir.Errors("", true)
+	if len(errors) > 0 {
+		fmt.Fprint(os.Stderr, errors)
+	}
 
 	if hasList {
 		// head := vfields.GetHeadFunc(paw.ChoseColorH)
@@ -70,8 +76,8 @@ func viewListTree(w io.Writer, rootdir *Dir, hasX, hasList bool) {
 	}
 
 	// print end message
-	fmt.Fprintln(w)
-	// FprintBanner(w, "", "=", wdstty)
+	// fmt.Fprintln(w)
+	FprintBanner(w, "", "=", wdstty)
 	rootdir.FprintlnSummaryC(w, "", wdstty, true)
 	// fmt.Fprintln(w, rootdir.SummaryC("", wdstty, true))
 }

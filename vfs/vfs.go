@@ -158,10 +158,20 @@ func buildVFSwalk(cur *Dir, root string) {
 	dirs["."] = cur
 	rfs := os.DirFS(root)
 	err := fs.WalkDir(rfs, ".", func(path string, d fs.DirEntry, err error) error {
+		dir := filepath.Dir(path)
 		level := len(strings.Split(path, "/"))
 		if !cur.opt.IsForceRecurse &&
 			cur.opt.Depth > 0 &&
-			level > cur.opt.Depth {
+			level > cur.opt.Depth || err == fs.SkipDir {
+			return nil
+		}
+		if err != nil {
+			this.AddErrors(&fs.PathError{
+				Op:   "WalkDir",
+				Path: path,
+				Err:  err,
+			})
+			// paw.Error.Printf("WalkDirFunc[dir %q, path %q]: %v", dir, path, err)
 			return nil
 		}
 		if skip.IsSkip(d) {
@@ -175,12 +185,16 @@ func buildVFSwalk(cur *Dir, root string) {
 		fpath := filepath.Join(root, path)
 		if !d.IsDir() {
 			child, err = NewFile(fpath, root, git)
-
 		} else {
 			child, err = NewDir(fpath, root, git, cur.opt)
 		}
 		if err != nil {
-			cur.AddErrors(err)
+			this.AddErrors(&fs.PathError{
+				Op:   "buildVFSwalk",
+				Path: path,
+				Err:  err,
+			})
+			// paw.Error.Printf("[dir:%q, path %q]: %v", dir, path, err)
 			return nil
 		}
 		if d.IsDir() {
@@ -188,17 +202,9 @@ func buildVFSwalk(cur *Dir, root string) {
 				dirs[path] = child.(*Dir)
 			}
 		}
-		dir := filepath.Dir(path)
+		dir = filepath.Dir(path)
 		this = dirs[dir]
-		// this, ok = dirs[dir]
-		// if !ok {
-		// 	paw.Logger.Error(dir)
-		// }
-
 		this.children[d.Name()] = child
-		// if child.IsDir() {
-		// 	this = child.(*Dir)
-		// }
 		return nil
 	})
 	if err != nil {
@@ -220,8 +226,12 @@ func buildVFS(cur *Dir, root string, level int) {
 
 	des, err := os.ReadDir(dpath)
 	if err != nil {
-		cur.AddErrors(err)
-		return
+		cur.AddErrors(&fs.PathError{
+			Op:   "ReadDir",
+			Path: dpath,
+			Err:  err,
+		})
+		// return
 	}
 	for _, d := range des {
 		if skip.IsSkip(d) {
@@ -248,7 +258,11 @@ func buildVFS(cur *Dir, root string, level int) {
 			child, err = NewDir(path, root, git, cur.opt)
 		}
 		if err != nil {
-			cur.AddErrors(err)
+			cur.AddErrors(&fs.PathError{
+				Op:   "buildVFS",
+				Path: path,
+				Err:  err,
+			})
 			continue
 		}
 		// if skip.IsSkip(child) {

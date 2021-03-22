@@ -54,7 +54,7 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 	tnd, tnf = 0, 0
 
 	fmt.Fprintf(w, "%v\n", roothead)
-	FprintBanner(w, "", "=", wdstty)
+	// FprintBanner(w, "", "=", wdstty)
 
 	// ViewFieldNo.SetWidth(wdidx + 1)
 	vfields.ModifyWidths(rootdir)
@@ -84,11 +84,6 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 			paw.Logger.WithFields(logrus.Fields{"rp": rp}).Fatal(err)
 		}
 
-		des, _ := cur.ReadDirAll()
-		if len(des) < 1 {
-			continue
-		}
-
 		if rp != "." {
 			if isViewNoDirs {
 				cur.FprintlnRelPathC(w, "", false)
@@ -97,8 +92,14 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 			}
 		}
 		if len(cur.errors) > 0 {
-			cur.FprintErrors(os.Stderr, "")
+			cur.FprintErrors(os.Stderr, "", false)
 		}
+
+		des, _ := cur.ReadDirAll()
+		if len(des) < 1 {
+			continue
+		}
+
 		var (
 			curnd, curnf  int
 			size          int64
@@ -209,7 +210,7 @@ func viewTable(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 	}
 
 	tf.Prepare(w)
-	errmsg := rootdir.Errors("")
+	errmsg := rootdir.Errors("", false)
 	if len(errmsg) > 0 {
 		errmsg = strings.TrimSuffix(errmsg, "\n")
 		tf.SetBeforeMessage(fmt.Sprintf("%v\n%v", roothead, errmsg))
@@ -238,20 +239,21 @@ func viewTable(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 			}).Fatal(err)
 		}
 
+		if rp != "." {
+			tf.PrintLineln(cur.RelPathC(idx, false))
+			// tf.PrintLineln(getRelPath("", idx, rp, false))
+		}
+		if len(cur.errors) > 0 {
+			errmsg := cur.Errors("", false)
+			tf.PrintLine(errmsg)
+		}
+
 		des, _ := cur.ReadDirAll()
 		if len(des) < 1 {
 			tnd--
 			continue
 		}
 
-		if rp != "." {
-			tf.PrintLineln(cur.RelPathC(idx, false))
-			// tf.PrintLineln(getRelPath("", idx, rp, false))
-		}
-		if len(cur.errors) > 0 {
-			errmsg := cur.Errors("")
-			tf.PrintLine(errmsg)
-		}
 		if rp != "." {
 			// tf.PrintMiddleSepLine()
 			tf.PrintHeads()

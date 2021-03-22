@@ -2,6 +2,7 @@ package vfs
 
 import (
 	"fmt"
+	"io/fs"
 
 	"os"
 	"os/user"
@@ -30,18 +31,26 @@ func NewFile(path, root string, git *GitStatus) (*File, error) {
 	apath, err := filepath.Abs(path)
 	if err != nil {
 		// paw.Logger.Error(err)
-		return nil, err
+		return nil, &fs.PathError{
+			Op:   "NewFile",
+			Path: path,
+			Err:  err,
+		}
 	}
 	info, err := os.Lstat(apath)
 	if err != nil {
 		// paw.Logger.Error(err)
-		return nil, err
+		return nil, &fs.PathError{
+			Op:   "NewFile",
+			Path: path,
+			Err:  err,
+		}
 	}
 
 	var link string
 	isLink := false
 	if info.Mode()&os.ModeSymlink != 0 {
-		// info, _ = os.Stat(apath)
+		info, _ = os.Stat(apath)
 		isLink = true
 		link = getPathFromLink(apath)
 		if !filepath.IsAbs(link) { // get absolute path of link
@@ -53,7 +62,11 @@ func NewFile(path, root string, git *GitStatus) (*File, error) {
 	if info.IsDir() {
 		err := fmt.Errorf("%q is a directory.", path)
 		// paw.Logger.Error(err)
-		return nil, err
+		return nil, &fs.PathError{
+			Op:   "NewFile",
+			Path: path,
+			Err:  err,
+		}
 	}
 	// dir, _ := filepath.Split(apath)
 	// git := NewGitStatus(dir)

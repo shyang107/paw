@@ -56,17 +56,18 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 				"rp": rp,
 			}).Fatal(err)
 		}
-		des, _ := cur.ReadDirAll()
-		if len(des) < 1 {
-			continue
-		}
 
 		if rp != "." {
 			cur.FprintlnRelPathC(w, "", false)
 		}
 
 		if len(cur.errors) > 0 {
-			cur.FprintErrors(os.Stderr, "")
+			cur.FprintErrors(os.Stderr, "", false)
+		}
+
+		des, _ := cur.ReadDirAll()
+		if len(des) < 1 {
+			continue
 		}
 
 		var (
