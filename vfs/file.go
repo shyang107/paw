@@ -59,7 +59,7 @@ func NewFile(path, root string, git *GitStatus) (*File, error) {
 		}
 	}
 
-	if info.IsDir() {
+	if info.IsDir() && !isLink {
 		err := fmt.Errorf("%q is a directory.", path)
 		// paw.Logger.Error(err)
 		return nil, &fs.PathError{

@@ -63,7 +63,7 @@ func (opt *option) viewPaths() error {
 	for i, dir := range dirs {
 		c = paw.ChoseColor(i)
 		de := srm[dir]
-		rhead := c.Sprintf("{ R%d }: ", i+1)
+		rhead := c.Sprintf("{R%d}: ", i+1)
 		// rhead += " directory: "
 		// rhead += vfs.PathToLinkC(de, nil)
 		rhead += vfs.PathTo(de, &vfs.PathToOption{
@@ -73,8 +73,9 @@ func (opt *option) viewPaths() error {
 	vfields.RemoveGit(true)
 	fields := vfields.Fields()
 	dxs.modFieldWidths(fields)
-	// vfs.ViewFieldName.SetWidth(vfs.GetViewFieldNameWidthOf(fields))
+	vfs.ViewFieldName.SetWidth(vfs.GetViewFieldNameWidthOf(fields))
 	wdmeta = wdstty - vfs.ViewFieldName.Width()
+	vfs.ViewFieldName.SetWidth(4)
 
 	if len(viewPaths_errors) > 0 {
 		for _, err := range viewPaths_errors {
@@ -88,7 +89,7 @@ func (opt *option) viewPaths() error {
 	fmt.Fprintln(w, head)
 	for i, dir := range dirs {
 		c = paw.ChoseColor(i)
-		rooti := c.Sprintf("{ R%d }/", i+1)
+		rooti := c.Sprintf("{R%d}/", i+1)
 		des := dxs[dir]
 		opt.vopt.ByField.Sort(des)
 		for _, de := range des {
@@ -108,9 +109,12 @@ func (opt *option) viewPaths() error {
 			// })
 			fmt.Fprintf(w, "%v", vfields.RowStringXNameC(de))
 			fmt.Fprintf(w, "%v\n", rooti+de.FieldC(vfs.ViewFieldName))
-
-			if hasX {
+			if hasX && len(de.Xattibutes()) > 0 {
 				vfs.FprintXattrs(w, wdmeta, de.Xattibutes())
+				// xrows := vfields.XattibutesRowsSC(de)
+				// for _, row := range xrows {
+				// 	fmt.Fprintf(w, "%s%s\n", "", row)
+				// }
 			}
 			totalsize += de.Size()
 		}
