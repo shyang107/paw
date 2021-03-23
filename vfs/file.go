@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/cast"
 )
@@ -28,38 +29,15 @@ type File struct {
 }
 
 func NewFile(path, root string, git *GitStatus) (*File, error) {
-	apath, err := filepath.Abs(path)
+	f, err := _NewFile(path, root, git)
 	if err != nil {
-		// paw.Logger.Error(err)
 		return nil, &fs.PathError{
 			Op:   "NewFile",
 			Path: path,
 			Err:  err,
 		}
 	}
-	info, err := os.Lstat(apath)
-	if err != nil {
-		// paw.Logger.Error(err)
-		return nil, &fs.PathError{
-			Op:   "NewFile",
-			Path: path,
-			Err:  err,
-		}
-	}
-
-	var link string
-	isLink := false
-	if info.Mode()&os.ModeSymlink != 0 {
-		info, _ = os.Stat(apath)
-		isLink = true
-		link = getPathFromLink(apath)
-		if !filepath.IsAbs(link) { // get absolute path of link
-			dir := filepath.Dir(apath)
-			link = filepath.Join(dir, link)
-		}
-	}
-
-	if info.IsDir() && !isLink {
+	if f.IsDir() && !f.isLink {
 		err := fmt.Errorf("%q is a directory.", path)
 		// paw.Logger.Error(err)
 		return nil, &fs.PathError{
@@ -68,14 +46,39 @@ func NewFile(path, root string, git *GitStatus) (*File, error) {
 			Err:  err,
 		}
 	}
-	// dir, _ := filepath.Split(apath)
-	// git := NewGitStatus(dir)
+	return f, nil
+}
+
+func _NewFile(path, root string, git *GitStatus) (*File, error) {
+	apath, err := filepath.Abs(path)
+	if err != nil {
+		// paw.Logger.Error(err)
+		return nil, err
+	}
+	info, err := os.Lstat(apath)
+	if err != nil {
+		// paw.Logger.Error(err)
+		return nil, err
+	}
+
+	var link string
+	isLink := false
+	if info.Mode()&os.ModeSymlink != 0 {
+		info, _ = os.Stat(apath)
+		isLink = true
+		link = getLinkPath(apath)
+		if !filepath.IsAbs(link) { // get absolute path of link
+			dir := filepath.Dir(apath)
+			link = filepath.Join(dir, link)
+		}
+	}
+
 	relpath := "."
 	if len(root) > 0 {
 		relpath, _ = filepath.Rel(root, apath)
 	}
 	name := filepath.Base(apath)
-	xattrs, _ := GetXattr(apath)
+	xattrs, _ := _GetXattrs(apath)
 	return &File{
 		path:     apath,
 		relpath:  relpath,
@@ -86,6 +89,21 @@ func NewFile(path, root string, git *GitStatus) (*File, error) {
 		isLink:   isLink,
 		linkPath: link,
 	}, nil
+}
+
+func _GetXattrs(path string) ([]string, error) {
+	// paw.Logger.WithField("path", path).Info("income")
+	xattrs, err := xattr.List(path)
+	if err != nil {
+		return xattrs, err
+	}
+	if len(xattrs) > 0 {
+		for i, x := range xattrs {
+			x, _ := xattr.Get(path, x)
+			xattrs[i] = fmt.Sprintf("%s (len %d)", xattrs[i], len(x))
+		}
+	}
+	return xattrs, nil
 }
 
 // 實現 fs.FileInfo 接口

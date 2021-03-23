@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/pkg/xattr"
 	"github.com/shyang107/paw"
 	"github.com/shyang107/paw/bytefmt"
 	"github.com/shyang107/paw/cast"
@@ -284,7 +283,7 @@ func nameToLinkCbg(de DirEntryX, bgc []Attribute) string {
 	}
 }
 
-func getPathFromLink(path string) string {
+func getLinkPath(path string) string {
 	alink, err := os.Readlink(path)
 	if err != nil {
 		return err.Error()
@@ -446,21 +445,6 @@ func alNameC(d DirEntryX) string {
 
 func alFieldC(d DirEntryX, fd ViewField) string {
 	return fd.Color().Sprint(fd.AlignedS(d.Field(fd)))
-}
-
-func GetXattr(path string) ([]string, error) {
-	// paw.Logger.WithField("path", path).Info("income")
-	xattrs, err := xattr.List(path)
-	if err != nil {
-		return xattrs, err
-	}
-	if len(xattrs) > 0 {
-		for i, x := range xattrs {
-			x, _ := xattr.Get(path, x)
-			xattrs[i] = fmt.Sprintf("%s (len %d)", xattrs[i], len(x))
-		}
-	}
-	return xattrs, nil
 }
 
 func permissionS(de DirEntryX) string {
@@ -715,15 +699,12 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) 
 	summary += paw.Cpmpt.Sprint(paw.Spaces(wdstty + 1 - nsummary))
 	return summary
 }
-func GetRootHeadC(de DirEntryX, wdstty int) string {
+func GetRootHeadC(d *Dir, wdstty int) string {
 	var (
-		size  int64
 		csize string
+		size  = d.TotalSize()
 	)
 
-	if de.IsDir() {
-		size = de.(*Dir).TotalSize()
-	}
 	if size > 0 {
 		ss := bytefmt.ByteSize(size)
 		nss := len(ss)
@@ -740,7 +721,7 @@ func GetRootHeadC(de DirEntryX, wdstty int) string {
 	// 	csize,
 	// 	paw.Cpmpt.Sprint("."))
 	chead := paw.Cpmpt.Sprint("Root directory: ")
-	chead += PathTo(de, &PathToOption{true, paw.EXAColorAttributes["bgpmpt"], PRTPathToLink})
+	chead += PathTo(d, &PathToOption{true, paw.EXAColorAttributes["bgpmpt"], PRTPathToLink})
 	chead += paw.Cpmpt.Sprint(", size ≈ ")
 	chead += csize
 	chead += paw.Cpmpt.Sprint(".")
@@ -875,9 +856,10 @@ func isSkipViewItem(de DirEntryX, isViewNoDirs, isViewNoFiles bool, nitems, curn
 			return true
 		}
 		(*curnf)++
-		if de.Mode().IsRegular() {
-			(*size) += de.Size()
-		}
+		(*size) += de.Size()
+		// if de.Mode().IsRegular() {
+		// 	(*size) += de.Size()
+		// }
 	}
 	return false
 }

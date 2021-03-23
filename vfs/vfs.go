@@ -74,6 +74,7 @@ func NewVFS(root string, opt *VFSOption) (*VFS, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	v := &VFS{
 		Dir:      *dir,
 		relpaths: []string{relpath},
@@ -148,7 +149,6 @@ func (v *VFS) BuildFS() {
 
 func buildVFSwalk(cur *Dir, root string) {
 	var (
-		// dpath = cur.Path()
 		this = cur
 		git  = cur.git
 		skip = cur.opt.Skips
@@ -212,6 +212,7 @@ func buildVFSwalk(cur *Dir, root string) {
 		return
 	}
 }
+
 func buildVFS(cur *Dir, root string, level int) {
 	var (
 		dpath = cur.Path()
@@ -297,11 +298,6 @@ func (v *VFS) createRDirs(cur *Dir) (relpaths []string) {
 	for _, d := range ds {
 		if d.IsDir() {
 			next := d.(*Dir)
-			// if _, ok := _rps[next.RelPath()]; ok {
-			// 	continue
-			// } else {
-			// 	_rps[next.RelPath()] = next.RelPath()
-			// }
 			relpaths = append(relpaths, next.RelPath())
 			v.relpaths = append(v.relpaths, next.RelPath())
 			nextrelpaths := v.createRDirs(next)

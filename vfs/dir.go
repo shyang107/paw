@@ -20,12 +20,15 @@ import (
 
 // dir 代表一個目錄
 type Dir struct {
-	path    string // full path = filepath.Join(root, relpath, name)
-	relpath string
-	name    string // basename
-	info    FileInfo
-	xattrs  []string
-	git     *GitStatus
+	File
+	// path     string // full path = filepath.Join(root, relpath, name)
+	// relpath  string
+	// name     string // basename
+	// info     FileInfo
+	// xattrs   []string
+	// git      *GitStatus
+	// linkPath string
+	// isLink   bool
 
 	// 存放該目錄下的子項，value 可能是 *dir 或 *file
 	// map[basename]DirEntryX
@@ -36,44 +39,18 @@ type Dir struct {
 	idx int
 	opt *VFSOption
 	//
-	linkPath string
-	isLink   bool
 }
 
 func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) (*Dir, error) {
-	aroot, err := filepath.Abs(dirpath)
+	f, err := _NewFile(dirpath, root, git)
 	if err != nil {
-		// paw.Logger.Error(err)
 		return nil, &fs.PathError{
 			Op:   "NewDir",
-			Path: root,
+			Path: dirpath,
 			Err:  err,
 		}
 	}
-	var info FileInfo
-	info, err = os.Lstat(aroot)
-	if err != nil {
-		// paw.Logger.Error(err)
-		return nil, &fs.PathError{
-			Op:   "NewDir",
-			Path: root,
-			Err:  err,
-		}
-	}
-
-	var link string
-	isLink := false
-	if info.Mode()&os.ModeSymlink != 0 {
-		info, _ = os.Stat(aroot)
-		isLink = true
-		link = getPathFromLink(aroot)
-		if !filepath.IsAbs(link) {
-			dir := filepath.Dir(aroot)
-			link = filepath.Join(dir, link)
-		}
-	}
-
-	if !info.IsDir() {
+	if !f.info.IsDir() {
 		err := fmt.Errorf("%q is not a directory.", root)
 		// paw.Logger.Error(err)
 		return nil, &fs.PathError{
@@ -82,29 +59,13 @@ func NewDir(dirpath, root string, git *GitStatus, opt *VFSOption) (*Dir, error) 
 			Err:  err,
 		}
 	}
-	// git := NewGitStatus(aroot)
-	relpath := "."
-	if len(root) > 0 {
-		relpath, _ = filepath.Rel(root, aroot)
-	}
-	name := filepath.Base(aroot)
-	xattrs, _ := GetXattr(aroot)
-	if opt == nil {
-		opt = NewVFSOption()
-	}
 	return &Dir{
-		path:     aroot,
-		relpath:  relpath,
-		name:     name,
-		info:     info,
-		xattrs:   xattrs,
-		git:      git,
-		relpaths: []string{relpath},
+		File: *f,
+		// relpaths: []string{},
+		relpaths: []string{f.relpath},
 		// errors:   []error{},
 		children: make(map[string]DirEntryX),
 		opt:      opt,
-		isLink:   isLink,
-		linkPath: link,
 	}, nil
 }
 
@@ -526,15 +487,15 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 		names = append(names, name)
 	}
 
-	totalEntry := len(names)
+	totalEntries := len(names)
 	if n <= 0 {
-		n = totalEntry
+		n = totalEntries
 	}
 
 	dxs := make([]DirEntryX, 0, n)
 	dirs := make([]DirEntryX, 0)
 	files := make([]DirEntryX, 0)
-	for i := d.idx; i < n && i < totalEntry; i++ {
+	for i := d.idx; i < n && i < totalEntries; i++ {
 		child := d.children[names[i]]
 		if d.opt.Grouping == GroupNone {
 			dxs = append(dxs, child)
@@ -569,7 +530,7 @@ func (d *Dir) ReadDir(n int) ([]DirEntryX, error) {
 
 func (d *Dir) ReadDirAll() ([]DirEntryX, error) {
 	dxs, err := d.ReadDir(-1)
-	d.ReadDirClose()
+	d.ResetIndex()
 	return dxs, err
 }
 
@@ -577,9 +538,9 @@ func (d *Dir) ResetIndex() {
 	d.idx = 0
 }
 
-func (d *Dir) ReadDirClose() {
-	d.idx = 0
-}
+// func (d *Dir) _ReadDirClose() {
+// 	d.ResetIndex()
+// }
 
 func (d *Dir) Option() *VFSOption {
 	return d.opt
@@ -610,6 +571,10 @@ func (d *Dir) SetSortField(sortField SortKey) {
 func (d *Dir) RelPaths() []string {
 	return d.relpaths
 }
+
+// func (d *Dir) AddRelPath(relpaths ...string) {
+// 	d.relpaths = append(d.relpaths, relpaths...)
+// }
 
 func (d *Dir) AddErrors(errs ...error) {
 	if d.errors == nil {
@@ -715,16 +680,18 @@ func (d *Dir) TotalSize() int64 {
 func calcSize(cur *Dir, level int) (size int64) {
 	if cur.opt.Depth > 0 && level > cur.opt.Depth {
 		return size
-		// continue
 	}
-	for _, de := range cur.children {
-		if !de.IsDir() {
-			if de.Mode().IsRegular() {
-				size += de.Size()
-			}
-		} else {
+	dxs, _ := cur.ReadDirAll()
+	for _, de := range dxs {
+		// if de.Mode().IsRegular() {
+		// 	size += de.Size()
+		// 	continue
+		// }
+		if de.IsDir() {
 			next := de.(*Dir)
 			size += calcSize(next, level+1)
+		} else {
+			size += de.Size()
 		}
 	}
 	return size

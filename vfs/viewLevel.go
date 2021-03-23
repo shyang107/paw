@@ -69,7 +69,6 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		if err != nil {
 			paw.Logger.WithFields(logrus.Fields{"rp": rp}).Fatal(err)
 		}
-
 		if level > 0 {
 			slevel := paw.Cfield.Sprintf("L%d", level)
 			cur.FprintlnRelPathC(w, pad+slevel+cidx, false)
@@ -83,6 +82,7 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		if len(des) < 1 {
 			continue
 		}
+
 		ViewFieldName.SetWidth(wdname - wdpad)
 		var (
 			curnd, curnf int
@@ -136,7 +136,7 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 			// cur.FprintlnSummaryC(w, pad, wdstty, false)
 			if count < nitems {
 				// fmt.Fprintln(w)
-				fmt.Fprintln(w, "count=", count, "nitems=", nitems)
+				// fmt.Fprintln(w, "count=", count, "nitems=", nitems)
 				FprintBanner(w, "", "-", wdstty)
 			}
 		}
