@@ -133,7 +133,7 @@ func (opt *option) checkSkips() {
 			re := regexp.MustCompile(pattern)
 			lg.WithField("ri.pattern", re.String()).Trace()
 		}
-		reSkiper := vfs.NewSkipFuncRe("«re-include»", pattern, func(de vfs.DirEntry, re *regexp.Regexp) bool {
+		reSkiper := vfs.NewSkipperRe("«re-include»", pattern, func(de vfs.DirEntry, re *regexp.Regexp) bool {
 			name := strings.TrimSpace(de.Name())
 			if re.MatchString(name) || de.IsDir() {
 				return false
@@ -149,7 +149,7 @@ func (opt *option) checkSkips() {
 			re := regexp.MustCompile(pattern)
 			lg.WithField("rx.pattern", re.String()).Trace()
 		}
-		reSkiper := vfs.NewSkipFuncRe("«re-exclude»", pattern, func(de vfs.DirEntry, re *regexp.Regexp) bool {
+		reSkiper := vfs.NewSkipperRe("«re-exclude»", pattern, func(de vfs.DirEntry, re *regexp.Regexp) bool {
 			name := strings.TrimSpace(de.Name())
 			if !re.MatchString(name) || de.IsDir() {
 				return false
