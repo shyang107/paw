@@ -672,7 +672,8 @@ func ContainsUInt64(s []uint64, v uint64) bool {
 // ContainsString returns true if a string is present in a iteratee.
 func ContainsString(s []string, v string) bool {
 	for _, vv := range s {
-		if strings.EqualFold(vv, v) {
+		if vv == v {
+			// if strings.EqualFold(vv, v) {
 			return true
 		}
 	}
