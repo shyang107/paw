@@ -136,31 +136,33 @@ func (s *SkipConds) IsOk() bool {
 	return true
 }
 
-// SkipFunc is a func used to skip DirEntry during building VFS
+type SkipFunc func(d DirEntry) bool
+
+// Skipper is a func used to skip DirEntry during building VFS
 // 	see examples/vfs
-type SkipFunc struct {
+type Skipper struct {
 	name string
-	skip func(DirEntry) bool
+	skip SkipFunc
 }
 
-// NewSkipFunc returns a new instance of SkipFunc
+// NewSkipper returns a new instance of Skipper
 // 	see examples/vfs
-func NewSkipFunc(name string, skip func(DirEntry) bool) Skiper {
-	return &SkipFunc{
+func NewSkipper(name string, skip SkipFunc) Skiper {
+	return &Skipper{
 		name: name,
 		skip: skip,
 	}
 }
 
-// Name return name of SkipFunc; in genral, message about this SkipFunc.
-func (s *SkipFunc) Name() string {
+// Name return name of Skipper; in genral, message about this Skipper.
+func (s *Skipper) Name() string {
 	return s.name
 }
 
 // Skip return true to skip file, otherwise not.
-func (s *SkipFunc) IsSkip(de DirEntry) bool {
+func (s *Skipper) IsSkip(d DirEntry) bool {
 	// paw.Logger.Trace(s.Name(), ": ", de.Name())
-	return s.skip(de)
+	return s.skip(d)
 }
 
 type SkipNamesType []string
@@ -206,13 +208,13 @@ func (s *SkipSuffixType) Add(suffixs ...string) *SkipSuffixType {
 	return s
 }
 
-// DefaultSkiper is a deault SkipFunc used to skip DirEntry
+// DefaultSkiper is a deault Skipper used to skip DirEntry
 //
 // Skip Condition, Name of DirEntry is:
 // 	1. with prefix of "."
 // 	2. "_gsdata_"
 // 	see examples/vfs
-var DefaultSkiper = NewSkipFunc("«DefaultSkiper»", func(de DirEntry) bool {
+var DefaultSkiper = NewSkipper("«DefaultSkiper»", func(de DirEntry) bool {
 	if SkiperHiddens.IsSkip(de) {
 		return true
 	}
@@ -225,9 +227,9 @@ var DefaultSkiper = NewSkipFunc("«DefaultSkiper»", func(de DirEntry) bool {
 	return false
 })
 
-// SkiperHiddens is a SkipFunc used to skip Name of DirEntry with prefix of "."
+// SkiperHiddens is a Skipper used to skip Name of DirEntry with prefix of "."
 // 	see examples/vfs
-var SkiperHiddens = NewSkipFunc("«SkiperHiddens»", func(de DirEntry) bool {
+var SkiperHiddens = NewSkipper("«SkiperHiddens»", func(de DirEntry) bool {
 	name := strings.TrimSpace(de.Name())
 	if strings.HasPrefix(name, ".") {
 		return true
@@ -235,9 +237,9 @@ var SkiperHiddens = NewSkipFunc("«SkiperHiddens»", func(de DirEntry) bool {
 	return false
 })
 
-// SkiperHasNames is a SkipFunc used to skip Name of DirEntry in SkipNames
+// SkiperHasNames is a Skipper used to skip Name of DirEntry in SkipNames
 // 	see examples/vfs
-var SkiperHasNames = NewSkipFunc("«SkiperHasNames»", func(de DirEntry) bool {
+var SkiperHasNames = NewSkipper("«SkiperHasNames»", func(de DirEntry) bool {
 	name := strings.TrimSpace(de.Name())
 	for _, skipname := range SkipNames {
 		if strings.EqualFold(name, skipname) {
@@ -247,9 +249,9 @@ var SkiperHasNames = NewSkipFunc("«SkiperHasNames»", func(de DirEntry) bool {
 	return false
 })
 
-// SkipPrefixer is a SkipFunc used to skip Name of DirEntry with prefix in SkipPrefix
+// SkipPrefixer is a Skipper used to skip Name of DirEntry with prefix in SkipPrefix
 // 	see examples/vfs
-var SkipPrefixer = NewSkipFunc("«SkipPrefixer»", func(de DirEntry) bool {
+var SkipPrefixer = NewSkipper("«SkipPrefixer»", func(de DirEntry) bool {
 	name := strings.ToLower(strings.TrimSpace(de.Name()))
 	for _, prefix := range SkipPrefix {
 		if strings.HasPrefix(name, strings.ToLower(prefix)) {
@@ -259,9 +261,9 @@ var SkipPrefixer = NewSkipFunc("«SkipPrefixer»", func(de DirEntry) bool {
 	return false
 })
 
-// SkipSuffixer is a SkipFunc used to skip Name of DirEntry with prefix in SkipPrefix
+// SkipSuffixer is a Skipper used to skip Name of DirEntry with prefix in SkipPrefix
 // 	see examples/vfs
-var SkipSuffixer = NewSkipFunc("«SkipSuffixer»", func(de DirEntry) bool {
+var SkipSuffixer = NewSkipper("«SkipSuffixer»", func(de DirEntry) bool {
 	name := strings.ToLower(strings.TrimSpace(de.Name()))
 	for _, suffix := range SkipSuffix {
 		if strings.HasSuffix(name, strings.ToLower(suffix)) {
@@ -274,7 +276,7 @@ var SkipSuffixer = NewSkipFunc("«SkipSuffixer»", func(de DirEntry) bool {
 // SkipFiler skips regular files
 // 	Another way, use VFSOption.ViewType.NoFiles(); and use VFSOption.ViewType.ViewDirAndFile() back to default show directories and files (excluding ViewListTree and ViewListTreeX).
 // 	see examples/vfs
-var SkipFiler = NewSkipFunc("«SkipFiler»", func(de DirEntry) bool {
+var SkipFiler = NewSkipper("«SkipFiler»", func(de DirEntry) bool {
 	if !de.IsDir() {
 		return true
 	}
@@ -285,26 +287,26 @@ var SkipFiler = NewSkipFunc("«SkipFiler»", func(de DirEntry) bool {
 // 	[Warning] If use SkipDirer, any directories under root do not be accessed.
 //  Use VFSOption.ViewType.NoDirs() would be great; and use VFSOption.ViewType.ViewDirAndFile() back to default show directories and files (excluding ViewListTree and ViewListTreeX).
 // 	see examples/vfs
-var SkipDirer = NewSkipFunc("«SkipDirer»", func(de DirEntry) bool {
+var SkipDirer = NewSkipper("«SkipDirer»", func(de DirEntry) bool {
 	if de.IsDir() {
 		return true
 	}
 	return false
 })
 
-// SkipFuncRe is a func to skip DirEntry using regex
+// SkipperRe is a func to skip DirEntry using regex
 // 	see examples/vfs
-type SkipFuncRe struct {
+type SkipperRe struct {
 	name    string
 	re      *regexp.Regexp
 	pattern string
 	skip    func(DirEntry, *regexp.Regexp) bool
 }
 
-// NewSkipFuncRe returns a new instance of SkipFuncRe
+// NewSkipperRe returns a new instance of SkipperRe
 // 	see examples/vfs
-func NewSkipFuncRe(name string, pattern string, skip func(d DirEntry, re *regexp.Regexp) bool) Skiper {
-	return &SkipFuncRe{
+func NewSkipperRe(name string, pattern string, skip func(d DirEntry, re *regexp.Regexp) bool) Skiper {
+	return &SkipperRe{
 		name:    name,
 		pattern: pattern,
 		re:      regexp.MustCompile(pattern),
@@ -312,13 +314,13 @@ func NewSkipFuncRe(name string, pattern string, skip func(d DirEntry, re *regexp
 	}
 }
 
-// Name return name of SkipFuncRe; in genral, message about this SkipFuncRe.
-func (s *SkipFuncRe) Name() string {
+// Name return name of SkipperRe; in genral, message about this SkipperRe.
+func (s *SkipperRe) Name() string {
 	return s.name
 }
 
 // IsSkip return true to skip file, otherwise not.
-func (s *SkipFuncRe) IsSkip(de DirEntry) bool {
+func (s *SkipperRe) IsSkip(de DirEntry) bool {
 	// paw.Logger.Trace(s.Name(), ": ", de.Name())
 	return s.skip(de, s.re)
 }

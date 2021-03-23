@@ -26,14 +26,14 @@ type VFS struct {
 // NewVFSWith 創建一個唯讀文件系統的實例
 func NewVFS(root string, opt *VFSOption) (*VFS, error) {
 	paw.Logger.Debug(root)
-	if fs.ValidPath(root) {
-		err := &fs.PathError{
-			Op:   "NewVFS",
-			Path: root,
-			Err:  fs.ErrInvalid,
-		}
-		return nil, err
-	}
+	// if !fs.ValidPath(root) {
+	// 	err := &fs.PathError{
+	// 		Op:   "NewVFS",
+	// 		Path: root,
+	// 		Err:  fs.ErrInvalid,
+	// 	}
+	// 	return nil, err
+	// }
 
 	info, err := os.Stat(root)
 	if err != nil {
