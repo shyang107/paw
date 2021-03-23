@@ -108,9 +108,9 @@ func viewList(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool)
 		if rootdir.opt.Depth != 0 {
 			// cur.FprintlnSummaryC(w, "", wdstty, false)
 			fmt.Fprintln(w, dirSummary("", curnd, curnf, size, wdstty))
-		}
-		if count < nitems {
-			FprintBanner(w, "", "-", wdstty)
+			if count < nitems {
+				FprintBanner(w, "", "-", wdstty)
+			}
 		}
 	BAN:
 		if rootdir.opt.Depth == 0 {

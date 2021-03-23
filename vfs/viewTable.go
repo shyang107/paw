@@ -161,9 +161,9 @@ func viewTableByTabulate(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNo
 		if rootdir.opt.Depth != 0 {
 			fmt.Fprintln(w, dirSummary("", curnd, curnf, size, wdstty))
 			// cur.FprintlnSummaryC(w, "", wdstty, false)
-		}
-		if count < nitems {
-			FprintBanner(w, "", "-", wdstty)
+			if count < nitems {
+				FprintBanner(w, "", "-", wdstty)
+			}
 		}
 	BAN:
 		if rootdir.opt.Depth == 0 {

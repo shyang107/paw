@@ -134,10 +134,11 @@ func viewLevel(w io.Writer, rootdir *Dir, hasX, isViewNoDirs, isViewNoFiles bool
 		if rootdir.opt.Depth != 0 {
 			fmt.Fprintln(w, dirSummary(pad, curnd, curnf, size, wdstty))
 			// cur.FprintlnSummaryC(w, pad, wdstty, false)
-		}
-		if count < nitems {
-			// fmt.Fprintln(w)
-			FprintBanner(w, "", "-", wdstty)
+			if count < nitems {
+				// fmt.Fprintln(w)
+				fmt.Fprintln(w, "count=", count, "nitems=", nitems)
+				FprintBanner(w, "", "-", wdstty)
+			}
 		}
 	BAN:
 		if rootdir.opt.Depth == 0 {
