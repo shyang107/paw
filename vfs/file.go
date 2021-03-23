@@ -389,27 +389,24 @@ func (f *File) Field(field ViewField) string {
 func (f *File) FieldC(fd ViewField) string {
 	switch fd {
 	case ViewFieldNo:
-		return paw.Cfip.Sprint(fd.AlignedS(fd.Value()))
+		return alNoC(f)
+		// return paw.Cfip.Sprint(fd.AlignedS(fd.Value()))
 	case ViewFieldPermissions:
-		return fd.AlignedSC(permissionC(f))
+		return alPermissionC(f)
 	case ViewFieldSize:
-		return f.SizeC()
+		return alSizeC(f)
 	case ViewFieldBlocks:
-		b := f.Field(fd)
-		if b == "-" {
-			return fd.AlignedSC(paw.Cdashp.Sprint("-"))
-		}
-		return fd.Color().Sprint(fd.AlignedS(b))
+		return alBlockC(f)
 	case ViewFieldUser: //"User",
-		return f.UserC()
+		return alUserC(f)
 	case ViewFieldGroup: //"Group",
-		return f.GroupC()
+		return alGroupC(f)
 	case ViewFieldGit:
-		return " " + f.XYC()
+		return alXYC(f)
 	case ViewFieldName:
-		return fd.AlignedSC(PathTo(f, &PathToOption{true, nil, PRTNameToLink}))
+		return alNameC(f)
 	default:
-		return fd.Color().Sprint(fd.AlignedS(f.Field(fd)))
+		return alFieldC(f, fd)
 	}
 }
 
@@ -524,61 +521,10 @@ func (f *File) IsRegularFile() bool {
 	return f.Mode().IsRegular()
 }
 
-func (f *File) XYC() string {
-	return f.git.XYC(f.RelPath())
-}
-
 func (f *File) SizeS() string {
 	return _sizeSC(f, false)
 }
 
 func (f *File) SizeC() string {
 	return _sizeSC(f, true)
-}
-
-func _sizeSC(f *File, isColor bool) string {
-	fd := ViewFieldSize
-	if f.IsCharDev() || f.IsDev() {
-		if !isColor {
-			return f.DevNumberS()
-		}
-		major, minor := f.DevNumber()
-		wdmajor := ViewFieldMajor.Width()
-		wdminor := ViewFieldMinor.Width()
-		csj := paw.Csnp.Sprintf("%[1]*[2]v", wdmajor, major)
-		csn := paw.Csnp.Sprintf("%[1]*[2]v", wdminor, minor)
-		cdev := csj + paw.Cdirp.Sprintf(",") + csn
-		wdev := wdmajor + wdminor + 1 //len(paw.StripANSI(cdev))
-		if wdev < fd.Width() {
-			cdev = csj + paw.Cdirp.Sprintf(",") + paw.Spaces(fd.Width()-wdev) + csn
-		}
-		return cdev
-	} else {
-		if !isColor {
-			return sizeS(f)
-		}
-		return fd.AlignedSC(sizeC(f))
-	}
-}
-
-func (f *File) UserC() string {
-	furname := f.User()
-	var c *Color
-	if furname != urname {
-		c = paw.Cunp
-	} else {
-		c = paw.Cuup
-	}
-	return c.Sprint(ViewFieldUser.AlignedS(furname))
-}
-
-func (f *File) GroupC() string {
-	fgpname := f.Group()
-	var c *Color
-	if fgpname != gpname {
-		c = paw.Cgnp
-	} else {
-		c = paw.Cgup
-	}
-	return c.Sprint(ViewFieldGroup.AlignedS(fgpname))
 }

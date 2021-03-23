@@ -198,8 +198,8 @@ func pathC(path string, bgc []Attribute) (cdir, cname, cpath string) {
 	return cdir, cname, cpath
 }
 
-func nameC(de DirEntryX) string {
-	return de.LSColor().Sprint(de.Name())
+func nameC(d DirEntryX) string {
+	return d.LSColor().Sprint(d.Name())
 }
 func nameCbg(de DirEntryX, bgc []Attribute) string {
 	c := paw.CloneColor(de.LSColor())
@@ -264,13 +264,14 @@ func linkCbg(de DirEntryX, bgc []Attribute) string {
 	return ""
 }
 
-func nameToLinkC(de DirEntryX) string {
-	if de.IsLink() {
-		return nameC(de) + paw.Cdashp.Sprint(" -> ") + linkC(de)
+func nameToLinkC(d DirEntryX) string {
+	if d.IsLink() {
+		return nameC(d) + paw.Cdashp.Sprint(" -> ") + linkC(d)
 	} else {
-		return nameC(de)
+		return nameC(d)
 	}
 }
+
 func nameToLinkCbg(de DirEntryX, bgc []Attribute) string {
 	c := paw.CloneColor(paw.Cdashp)
 	if bgc != nil {
@@ -315,6 +316,136 @@ func pathToLinkC(de DirEntryX, bgc []Attribute) (cpath string) {
 
 func iNodeC(de DirEntryX) string {
 	return paw.Cinp.Sprint(de.INode())
+}
+
+func alNoC(d DirEntryX) string {
+	fd := ViewFieldNo
+	if d.IsDir() {
+		return paw.Cdip.Sprint(fd.AlignedS(fd.Value()))
+	}
+	return paw.Cfip.Sprint(fd.AlignedS(fd.Value()))
+}
+
+func alPermissionC(d DirEntryX) string {
+	return ViewFieldPermissions.AlignedSC(permissionC(d))
+}
+
+func alSizeS(d DirEntryX) string {
+	if d.IsDir() {
+		return ViewFieldSize.AlignedS(_sizeS(d))
+	}
+	return _sizeSC(d.(*File), false)
+}
+
+func alSizeC(d DirEntryX) string {
+	if d.IsDir() {
+		return ViewFieldSize.AlignedSC(_sizeC(d))
+	}
+	return _sizeSC(d.(*File), true)
+}
+
+func _sizeSC(f *File, isColor bool) string {
+	fd := ViewFieldSize
+	if f.IsCharDev() || f.IsDev() {
+		if !isColor {
+			return f.DevNumberS()
+		}
+		major, minor := f.DevNumber()
+		wdmajor := ViewFieldMajor.Width()
+		wdminor := ViewFieldMinor.Width()
+		csj := paw.Csnp.Sprintf("%[1]*[2]v", wdmajor, major)
+		csn := paw.Csnp.Sprintf("%[1]*[2]v", wdminor, minor)
+		cdev := csj + paw.Cdirp.Sprintf(",") + csn
+		wdev := wdmajor + wdminor + 1 //len(paw.StripANSI(cdev))
+		if wdev < fd.Width() {
+			cdev = csj + paw.Cdirp.Sprintf(",") + paw.Spaces(fd.Width()-wdev) + csn
+		}
+		return fd.AlignedSC(cdev)
+	} else {
+		if !isColor {
+			return _sizeS(f)
+		}
+		return fd.AlignedSC(_sizeC(f))
+	}
+}
+
+func _sizeS(de DirEntryX) string {
+	var s string
+	if !de.IsDir() && de.Mode().IsRegular() {
+		if de.Size() == 0 {
+			return "-"
+		}
+		s = bytefmt.ByteSize(de.Size())
+		// s= paw.FillLeft(bytefmt.ByteSize(uint64(f.Size())), 6)
+	} else {
+		s = "-"
+	}
+	return strings.ToLower(s)
+}
+
+func _sizeC(de DirEntryX) (csize string) {
+	ss := _sizeS(de)
+	if ss == "-" {
+		return paw.Cdashp.Sprint(ss)
+	}
+	nss := len(ss)
+	sn := fmt.Sprintf("%s", ss[:nss-1])
+	su := ss[nss-1:]
+	csize = paw.Csnp.Sprint(sn) + paw.Csup.Sprint(su)
+	return csize
+}
+
+func alBlockC(d DirEntryX) string {
+	fd := ViewFieldBlocks
+	b := d.Field(fd)
+	if b == "-" || d.IsDir() {
+		return fd.AlignedSC(paw.Cdashp.Sprint("-"))
+	}
+	return fd.Color().Sprint(fd.AlignedS(b))
+}
+
+func alUserC(d DirEntryX) string {
+	furname := d.User()
+	var c *Color
+	if furname != urname {
+		c = paw.Cunp
+	} else {
+		c = paw.Cuup
+	}
+	return c.Sprint(ViewFieldUser.AlignedS(furname))
+}
+
+func alGroupC(d DirEntryX) string {
+	fgpname := d.Group()
+	var c *Color
+	if fgpname != gpname {
+		c = paw.Cgnp
+	} else {
+		c = paw.Cgup
+	}
+	return c.Sprint(ViewFieldGroup.AlignedS(fgpname))
+}
+
+func alXYC(d DirEntryX) string {
+	return " " + d.Git().XYC(d.RelPath())
+}
+
+func alNameC(d DirEntryX) string {
+	var cname string
+	if d.IsDir() {
+		cname = paw.Cdip.Sprint(d.Name())
+	} else {
+		if d.IsLink() {
+			cname = PathTo(d, &PathToOption{true, nil, PRTNameToLink})
+		} else {
+			cname = d.LSColor().Sprint(d.Name())
+		}
+	}
+	return ViewFieldName.AlignedSC(cname)
+}
+
+func alFieldC(d DirEntryX, fd ViewField) string {
+	return fd.Color().Sprint(fd.AlignedS(d.Field(fd)))
 }
 
 func GetXattr(path string) ([]string, error) {
@@ -413,32 +544,6 @@ func permissionC(de DirEntryX) string {
 	}
 
 	return cabbr + c + cxmark
-}
-
-func sizeS(de DirEntryX) string {
-	var s string
-	if !de.IsDir() && de.Mode().IsRegular() {
-		if de.Size() == 0 {
-			return "-"
-		}
-		s = bytefmt.ByteSize(de.Size())
-		// s= paw.FillLeft(bytefmt.ByteSize(uint64(f.Size())), 6)
-	} else {
-		s = "-"
-	}
-	return strings.ToLower(s)
-}
-
-func sizeC(de DirEntryX) (csize string) {
-	ss := sizeS(de)
-	if ss == "-" {
-		return paw.Cdashp.Sprint(ss)
-	}
-	nss := len(ss)
-	sn := fmt.Sprintf("%s", ss[:nss-1])
-	su := ss[nss-1:]
-	csize = paw.Csnp.Sprint(sn) + paw.Csup.Sprint(su)
-	return csize
 }
 
 // func sizeCaligned(de DirEntryX) (csize string) {
@@ -563,7 +668,7 @@ func dirSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) st
 	csumsize := paw.CpmptSn.Sprint(sn) + paw.CpmptSu.Sprint(su)
 	msg := pad +
 		cndirs +
-		paw.Cpmpt.Sprint(" directories, ") +
+		paw.Cpmpt.Sprint(" directories and ") +
 		cnfiles +
 		paw.Cpmpt.Sprint(" files (") +
 		cnitems +
@@ -599,7 +704,7 @@ func totalSummary(pad string, ndirs int, nfiles int, sumsize int64, wdstty int) 
 	summary := pad +
 		paw.Cpmpt.Sprint("Accumulated ") +
 		cndirs +
-		paw.Cpmpt.Sprint(" directories, ") +
+		paw.Cpmpt.Sprint(" directories and ") +
 		cnfiles +
 		paw.Cpmpt.Sprint(" files (") +
 		cnitems +

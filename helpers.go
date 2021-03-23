@@ -699,6 +699,17 @@ func ContainsFloat64(s []float64, v float64) bool {
 	return false
 }
 
+func ContainsAny(s, chars string) bool {
+	for i := 0; i < len(s); i++ {
+		for j := 0; j < len(chars); j++ {
+			if s[i] == chars[j] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // ReverseStringA reverses an array of string
 func ReverseStringA(s []string) []string {
 	for i, j := 0, len(s)-1; i < len(s)/2; i, j = i+1, j-1 {

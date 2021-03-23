@@ -398,22 +398,23 @@ func (d *Dir) Field(field ViewField) string {
 func (d *Dir) FieldC(fd ViewField) string {
 	switch fd {
 	case ViewFieldNo:
-		return paw.Cdip.Sprint(fd.AlignedS(fd.Value()))
+		return alNoC(d)
 	case ViewFieldPermissions:
-		return fd.AlignedSC(permissionC(d))
-	case ViewFieldSize, ViewFieldBlocks:
-		return fd.AlignedSC(sizeC(d))
+		return alPermissionC(d)
+	case ViewFieldSize:
+		return alSizeC(d)
+	case ViewFieldBlocks:
+		return alBlockC(d)
 	case ViewFieldUser: //"User",
-		return d.UserC()
+		return alUserC(d)
 	case ViewFieldGroup: //"Group",
-		return d.GroupC()
+		return alGroupC(d)
 	case ViewFieldGit:
-		return " " + d.XYC()
+		return alXYC(d)
 	case ViewFieldName:
-		// return fd.AlignedSC(paw.Cdip.Sprint(d.Name()))
-		return paw.Cdip.Sprint(d.Name())
+		return alNameC(d)
 	default:
-		return fd.Color().Sprint(fd.AlignedS(d.Field(fd)))
+		return alFieldC(d, fd)
 	}
 }
 
@@ -884,9 +885,9 @@ func (d *Dir) getSubXYs() (xs, ys []GitStatusCode) {
 	return xs, ys
 }
 
-func (d *Dir) XYC() string {
-	return d.git.XYC(d.RelPath() + "/")
-}
+// func (d *Dir) XYC() string {
+// 	return d.git.XYC(d.RelPath() + "/")
+// }
 
 // getDir 通過一個路徑獲取其 dir 類型實例
 func (d *Dir) getDir(relpath string) (*Dir, error) {
@@ -956,24 +957,24 @@ func (d *Dir) RelPathC(pad string, isBg bool) string {
 	// return getRelPath(pad, "", d.RelPath(), isBg)
 }
 
-func (d *Dir) UserC() string {
-	furname := d.User()
-	var c *Color
-	if furname != urname {
-		c = paw.Cunp
-	} else {
-		c = paw.Cuup
-	}
-	return c.Sprint(ViewFieldUser.AlignedS(furname))
-}
+// func (d *Dir) UserC() string {
+// 	furname := d.User()
+// 	var c *Color
+// 	if furname != urname {
+// 		c = paw.Cunp
+// 	} else {
+// 		c = paw.Cuup
+// 	}
+// 	return c.Sprint(ViewFieldUser.AlignedS(furname))
+// }
 
-func (d *Dir) GroupC() string {
-	fgpname := d.Group()
-	var c *Color
-	if fgpname != gpname {
-		c = paw.Cgnp
-	} else {
-		c = paw.Cgup
-	}
-	return c.Sprint(ViewFieldGroup.AlignedS(fgpname))
-}
+// func (d *Dir) GroupC() string {
+// 	fgpname := d.Group()
+// 	var c *Color
+// 	if fgpname != gpname {
+// 		c = paw.Cgnp
+// 	} else {
+// 		c = paw.Cgup
+// 	}
+// 	return c.Sprint(ViewFieldGroup.AlignedS(fgpname))
+// }
