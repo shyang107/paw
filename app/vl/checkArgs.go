@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/shyang107/paw"
 	"github.com/urfave/cli"
@@ -24,16 +25,28 @@ func (opt *option) checkArgs(c *cli.Context) {
 	case 1:
 		lg.WithField("arg", c.Args().Get(0)).Trace("no argument" + paw.Caller(1))
 		arg := c.Args().Get(0)
-		if fs.ValidPath(arg) {
-			fatalf("%q is not a valid path!", arg)
-		}
+		// if !fs.ValidPath(arg) {
+		// 	fatal(&fs.PathError{
+		// 		Op:   "checkArgs",
+		// 		Path: arg,
+		// 		Err:  fs.ErrInvalid,
+		// 	})
+		// }
 		path, err := filepath.Abs(arg)
 		if err != nil {
-			paw.Error.Println(err)
+			paw.Error.Println(&fs.PathError{
+				Op:   "checkArgs",
+				Path: arg,
+				Err:  err,
+			})
 		}
 		fi, err := os.Stat(path)
 		if err != nil {
-			paw.Error.Println(err)
+			paw.Error.Println(&fs.PathError{
+				Op:   "checkArgs",
+				Path: arg,
+				Err:  err,
+			})
 			os.Exit(1)
 		}
 		if fi.IsDir() {
@@ -54,13 +67,21 @@ func (opt *option) checkArgs(c *cli.Context) {
 		lg.WithField("args", c.Args()).Debug()
 		for i := 0; i < c.NArg(); i++ {
 			arg := c.Args().Get(i)
-			if fs.ValidPath(arg) {
-				warningf("%q is not a valid path!", arg)
-				continue
-			}
+			// if !fs.ValidPath(arg) {
+			// 	warning(&fs.PathError{
+			// 		Op:   "checkArgs",
+			// 		Path: arg,
+			// 		Err:  fs.ErrInvalid,
+			// 	})
+			// 	continue
+			// }
 			path, err := filepath.Abs(arg)
 			if err != nil {
-				paw.Error.Println(err)
+				paw.Error.Println(&fs.PathError{
+					Op:   "checkArgs",
+					Path: arg,
+					Err:  err,
+				})
 				viewPaths_errors = append(viewPaths_errors, err)
 				continue
 			}
@@ -68,7 +89,12 @@ func (opt *option) checkArgs(c *cli.Context) {
 			lg.WithField("path", path).Trace()
 		}
 		if len(opt.paths) == 0 {
-			fatalf("there is no valid paths: %v", c.Args().Slice())
+			fatal(&fs.PathError{
+				Op:   "checkArgs",
+				Path: strings.Join(c.Args().Slice(), ";"),
+				Err:  fs.ErrInvalid,
+			})
+			// fatalf("there is no valid paths: %v", c.Args().Slice())
 		}
 		lg.WithField("paths", opt.paths).Trace()
 	}
