@@ -92,12 +92,16 @@ func GetDotDir() string {
 
 // GetHomeDir get the home directory of user
 func GetHomeDir() string {
-	// Log.Info("get home dir")
-	home, err := homedir.Dir()
-	if err != nil {
-		Logger.Error(err)
+	home, homeerr := os.UserHomeDir()
+	if homeerr == nil {
+		return home
 	}
-	return home
+	// Log.Info("get home dir")
+	home, homeerr = homedir.Dir()
+	if homeerr == nil {
+		return home
+	}
+	return ""
 }
 
 // MakeAll check path and create like as `make -p path`
