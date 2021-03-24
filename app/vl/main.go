@@ -1,8 +1,7 @@
 package main
 
 import (
-	"embed"
-	// _ "embed"
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -23,8 +22,10 @@ const (
 var (
 	lg = paw.Logger
 
-	//go:embed assets/*
-	cfs embed.FS
+	//go:embed assets/config.yaml
+	buf []byte
+	// //go:embed assets/*
+	// cfs embed.FS
 
 	app *cli.App
 	ca  *appConfig
@@ -74,7 +75,7 @@ type appConfig struct {
 
 func readConfig() {
 	ca = new(appConfig)
-	buf, _ := cfs.ReadFile("assets/config.yaml")
+	// buf, _ := cfs.ReadFile("assets/config.yaml")
 	err := yaml.Unmarshal(buf, ca)
 	if err != nil {
 		fatal(err.Error())
