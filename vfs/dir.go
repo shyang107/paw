@@ -670,6 +670,9 @@ func (d *Dir) DirInfoC() (cdinf string, wdinf int) {
 }
 
 func (d *Dir) TotalSize() int64 {
+	if d.opt.ViewType&ViewNoFiles != 0 {
+		return 0
+	}
 	level := 0
 	if d.RelPath() != "." {
 		level = len(strings.Split(d.RelPath(), "/"))
