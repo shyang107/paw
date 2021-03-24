@@ -1,45 +1,101 @@
 package main
 
 import (
+	"embed"
+	// _ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/shyang107/paw"
-	"github.com/shyang107/paw/cast"
 	"github.com/shyang107/paw/cnested"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	version     = "0.0.2"
-	releaseDate = "2021-03-08"
+// version = "0.0.2"
+// releaseDate = "2021-03-08"
 )
 
 var (
-	app         *cli.App
-	appName     = "vl"
-	lg          = paw.Logger
-	releaseTime = cast.ToTime(releaseDate)
-	authorName  = "Shuhhua Yang"
-	authorEmail = "shyang107@gmail.com"
+	lg = paw.Logger
 
-	cInfoPrefix  = paw.Cinfo.Sprintf("[INFO]")
-	cWarnPrefix  = paw.Cwarn.Sprintf("[WARN]")
-	cErrorPrefix = paw.Cwarn.Sprintf("[ERRO]")
+	//go:embed assets/*
+	cfs embed.FS
+
+	app *cli.App
+	ca  *appConfig
+
+	// version     string
+	// appName     string
+	// releaseTime time.Time
+	// authorName  string
+	// authorEmail string
+
+	cInfoPrefix  string
+	cWarnPrefix  string
+	cErrorPrefix string
+
+	// version     string
+	// releaseDate string
+	// app         *cli.App
+	// appName     = "vl"
+	// lg          = paw.Logger
+	// releaseTime = cast.ToTime(releaseDate)
+	// authorName  = "Shuhhua Yang"
+	// authorEmail = "shyang107@gmail.com"
+
+	// cInfoPrefix  = paw.Cinfo.Sprintf("[INFO]")
+	// cWarnPrefix  = paw.Cwarn.Sprintf("[WARN]")
+	// cErrorPrefix = paw.Cwarn.Sprintf("[ERRO]")
 	// cInfoPrefix  = paw.Cinfo.Sprintf("[%s][INFO]", appName)
 	// cWarnPrefix  = paw.Cwarn.Sprintf("[%s][WARN]", appName)
 	// cErrorPrefix = paw.Cwarn.Sprintf("[%s][ERRO]", appName)
 )
 
-func init() {
-	lg.SetLevel(logrus.WarnLevel)
+type appConfig struct {
+	Appname string
+	Version string `yaml:"version"`
+	// Releasestr string `yaml:"release"`
+	Release time.Time
+	Author  struct {
+		Name  string `yaml:"name"`
+		Email string `yaml:"email"`
+	}
+	Log struct {
+		Pinfo  string `yaml:"pinfo"`
+		Pwarn  string `yaml:"pwarn"`
+		Perror string `yaml:"perror"`
+	}
+}
+
+func readConfig() {
+	ca = new(appConfig)
+	buf, _ := cfs.ReadFile("assets/config.yaml")
+	err := yaml.Unmarshal(buf, ca)
+	if err != nil {
+		fatal(err.Error())
+	}
 	appName, err := os.Executable()
 	if err != nil || len(appName) == 0 {
 		appName = os.Args[0]
 	}
 	appName = filepath.Base(appName)
+	ca.Appname = appName
+
+	// spew.Dump(ca)
+
+	cInfoPrefix = paw.Cinfo.Sprint(ca.Log.Pinfo)
+	cWarnPrefix = paw.Cwarn.Sprint(ca.Log.Pwarn)
+	cErrorPrefix = paw.Cwarn.Sprint(ca.Log.Perror)
+}
+
+func init() {
+	lg.SetLevel(logrus.WarnLevel)
+	readConfig()
 
 	paw.GologInit(os.Stdout, os.Stderr, os.Stderr, false)
 
@@ -66,17 +122,17 @@ func init() {
 	}
 
 	app = &cli.App{
-		Name:      appName,
+		Name:      ca.Appname,
 		Usage:     "list directory (excluding hidden items) in color view.",
-		UsageText: appName + " command [command options] [arguments...]",
+		UsageText: ca.Appname + " command [command options] [arguments...]",
 		ArgsUsage: "[path]",
-		Version:   version,
+		Version:   ca.Version, //version,
 		// Compiled : time.Now(),
-		Compiled: releaseTime,
+		Compiled: ca.Release,
 		Authors: []*cli.Author{
 			{
-				Name:  authorName,
-				Email: authorEmail,
+				Name:  ca.Author.Name,
+				Email: ca.Author.Email,
 			},
 		},
 		UseShortOptionHandling: true,
