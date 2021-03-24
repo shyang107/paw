@@ -376,7 +376,7 @@ func (f *File) Field(field ViewField) string {
 	case ViewFieldLinks:
 		return cast.ToString(f.HDLinks())
 	case ViewFieldSize:
-		return f.SizeS()
+		return sizeS(f)
 	case ViewFieldBlocks:
 		if f.Blocks() == 0 {
 			return "-"
@@ -386,12 +386,8 @@ func (f *File) Field(field ViewField) string {
 		return f.User()
 	case ViewFieldGroup:
 		return f.Group()
-	case ViewFieldModified:
-		return dateS(f.ModifiedTime())
-	case ViewFieldCreated:
-		return dateS(f.CreatedTime())
-	case ViewFieldAccessed:
-		return dateS(f.AccessedTime())
+	case ViewFieldModified, ViewFieldCreated, ViewFieldAccessed:
+		return deDateS(f, field)
 	case ViewFieldGit:
 		return f.XY()
 	case ViewFieldMd5:
@@ -539,10 +535,10 @@ func (f *File) IsRegularFile() bool {
 	return f.Mode().IsRegular()
 }
 
-func (f *File) SizeS() string {
-	return _sizeSC(f, false)
-}
+// func (f *File) SizeS() string {
+// 	return _sizeSC(f, false)
+// }
 
-func (f *File) SizeC() string {
-	return _sizeSC(f, true)
-}
+// func (f *File) SizeC() string {
+// 	return _sizeSC(f, true)
+// }

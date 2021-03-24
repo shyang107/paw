@@ -338,12 +338,8 @@ func (d *Dir) Field(field ViewField) string {
 		return d.User()
 	case ViewFieldGroup:
 		return d.Group()
-	case ViewFieldModified:
-		return dateS(d.ModifiedTime())
-	case ViewFieldCreated:
-		return dateS(d.CreatedTime())
-	case ViewFieldAccessed:
-		return dateS(d.AccessedTime())
+	case ViewFieldModified, ViewFieldCreated, ViewFieldAccessed:
+		return deDateS(d, field)
 	case ViewFieldGit:
 		return d.XY()
 	case ViewFieldMd5:
@@ -923,25 +919,3 @@ func (d *Dir) RelPathC(pad string, isBg bool) string {
 	return fmt.Sprintf("%s%s", pad, rp)
 	// return getRelPath(pad, "", d.RelPath(), isBg)
 }
-
-// func (d *Dir) UserC() string {
-// 	furname := d.User()
-// 	var c *Color
-// 	if furname != urname {
-// 		c = paw.Cunp
-// 	} else {
-// 		c = paw.Cuup
-// 	}
-// 	return c.Sprint(ViewFieldUser.AlignedS(furname))
-// }
-
-// func (d *Dir) GroupC() string {
-// 	fgpname := d.Group()
-// 	var c *Color
-// 	if fgpname != gpname {
-// 		c = paw.Cgnp
-// 	} else {
-// 		c = paw.Cgup
-// 	}
-// 	return c.Sprint(ViewFieldGroup.AlignedS(fgpname))
-// }

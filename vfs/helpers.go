@@ -329,7 +329,7 @@ func alPermissionC(d DirEntryX) string {
 	return ViewFieldPermissions.AlignedSC(permissionC(d))
 }
 
-func alSizeS(d DirEntryX) string {
+func sizeS(d DirEntryX) string {
 	if d.IsDir() {
 		return ViewFieldSize.AlignedS(_sizeS(d))
 	}
@@ -530,38 +530,6 @@ func permissionC(de DirEntryX) string {
 	return cabbr + c + cxmark
 }
 
-// func sizeCaligned(de DirEntryX) (csize string) {
-// 	var (
-// 		ss  = sizeS(de)
-// 		nss = len(ss)
-// 	)
-// 	if ss == "-" {
-// 		csize = paw.Cdashp.Sprint("-")
-// 	} else {
-// 		sn := fmt.Sprintf("%s", ss[:nss-1])
-// 		su := ss[nss-1:]
-// 		csize = paw.Csnp.Sprint(sn) + paw.Csup.Sprint(su)
-// 	}
-// 	var (
-// 		width = paw.MaxInt(nss, ViewFieldSize.Width())
-// 		sp    = paw.Spaces(width - nss)
-// 	)
-// 	return sp + csize
-// }
-
-// func blocksCaligned(de DirEntryX) (cb string) {
-// 	var (
-// 		ss  = "-"
-// 		nss = 1
-// 	)
-// 	cb = paw.Cdashp.Sprint(ss)
-// 	var (
-// 		width = paw.MaxInt(nss, ViewFieldBlocks.Width())
-// 		sp    = paw.Spaces(width - nss)
-// 	)
-// 	return sp + cb
-// }
-
 func timespecToTime(ts syscall.Timespec) time.Time {
 	return time.Unix(int64(ts.Sec), int64(ts.Nsec))
 }
@@ -570,6 +538,20 @@ func dateS(date time.Time) (sdate string) {
 	sdate = date.Format(timeThisLayout)
 	if date.Before(thisYear) {
 		sdate = date.Format(timeBeforeLayout)
+	}
+	return sdate
+	// return paw.FillLeft(sdate, 11)
+}
+func deDateS(d DirEntryX, fd ViewField) (sdate string) {
+	switch fd {
+	case ViewFieldModified:
+		sdate = dateS(d.ModifiedTime())
+	case ViewFieldCreated:
+		sdate = dateS(d.CreatedTime())
+	case ViewFieldAccessed:
+		sdate = dateS(d.AccessedTime())
+	default:
+		sdate = ""
 	}
 	return sdate
 	// return paw.FillLeft(sdate, 11)
