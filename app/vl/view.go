@@ -31,7 +31,10 @@ func (opt *option) view() error {
 	if opt.isDump {
 		fs.Dump(os.Stdout)
 	} else {
-		fs.BuildFS()
+		err := fs.BuildFS()
+		if err != nil {
+			fatal(err)
+		}
 		fs.View(os.Stdout)
 	}
 

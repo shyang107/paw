@@ -856,10 +856,10 @@ func isSkipViewItem(de DirEntryX, isViewNoDirs, isViewNoFiles bool, nitems, curn
 			return true
 		}
 		(*curnf)++
-		(*size) += de.Size()
-		// if de.Mode().IsRegular() {
-		// 	(*size) += de.Size()
-		// }
+		// (*size) += de.Size()
+		if de.Mode().IsRegular() {
+			(*size) += de.Size()
+		}
 	}
 	return false
 }

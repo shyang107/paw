@@ -123,11 +123,18 @@ func (v *VFS) AddSkipFuncs(skips ...Skiper) {
 	v.opt.Skips.Add(skips...)
 }
 
-func (v *VFS) BuildFS() {
+func (v *VFS) BuildFS() error {
 	paw.Logger.Debug("building VFS...")
 	cur := v.RootDir()
 
-	buildVFSwalk(cur, cur.Path())
+	err := buildVFSwalk(cur, cur.Path())
+	if err != nil {
+		return &fs.PathError{
+			Op:   "BuildFS",
+			Path: cur.Path(),
+			Err:  err,
+		}
+	}
 	// buildVFS(cur, cur.Path(), 0)
 	// nd, nf := cur.NItems()
 	// paw.Logger.WithFields(logrus.Fields{
@@ -145,9 +152,10 @@ func (v *VFS) BuildFS() {
 	cur.CheckGitFiles()
 
 	v.git.Dump("checkChildGit: modified")
+	return nil
 }
 
-func buildVFSwalk(cur *Dir, root string) {
+func buildVFSwalk(cur *Dir, root string) error {
 	var (
 		this = cur
 		git  = cur.git
@@ -160,9 +168,13 @@ func buildVFSwalk(cur *Dir, root string) {
 	err := fs.WalkDir(rfs, ".", func(path string, d fs.DirEntry, err error) error {
 		dir := filepath.Dir(path)
 		level := len(strings.Split(path, "/"))
+		if cur.opt.Depth == 0 && level > 1 {
+			return fs.SkipDir
+		}
 		if !cur.opt.IsForceRecurse &&
 			cur.opt.Depth > 0 &&
-			level > cur.opt.Depth || err == fs.SkipDir {
+			level > cur.opt.Depth ||
+			err == fs.SkipDir {
 			return nil
 		}
 		if err != nil {
@@ -174,6 +186,7 @@ func buildVFSwalk(cur *Dir, root string) {
 			// paw.Error.Printf("WalkDirFunc[dir %q, path %q]: %v", dir, path, err)
 			return nil
 		}
+
 		if skip.IsSkip(d) {
 			if path != "." && d.IsDir() {
 				return fs.SkipDir
@@ -209,8 +222,9 @@ func buildVFSwalk(cur *Dir, root string) {
 	})
 	if err != nil {
 		cur.AddErrors(err)
-		return
+		return err
 	}
+	return nil
 }
 
 func buildVFS(cur *Dir, root string, level int) {

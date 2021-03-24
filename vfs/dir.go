@@ -683,14 +683,11 @@ func calcSize(cur *Dir, level int) (size int64) {
 	}
 	dxs, _ := cur.ReadDirAll()
 	for _, de := range dxs {
-		// if de.Mode().IsRegular() {
-		// 	size += de.Size()
-		// 	continue
-		// }
 		if de.IsDir() {
 			next := de.(*Dir)
 			size += calcSize(next, level+1)
-		} else {
+		}
+		if de.Mode().IsRegular() {
 			size += de.Size()
 		}
 	}
