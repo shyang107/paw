@@ -11,50 +11,23 @@ import (
 	"github.com/shyang107/paw/cnested"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
-	"gopkg.in/yaml.v2"
-)
-
-const (
-// version = "0.0.2"
-// releaseDate = "2021-03-08"
+	"gopkg.in/yaml.v3"
 )
 
 var (
 	lg = paw.Logger
 
 	//go:embed assets/config.yaml
-	buf []byte
+	cfgbuf []byte
 	// //go:embed assets/*
 	// cfs embed.FS
 
 	app *cli.App
 	ca  *appConfig
 
-	// version     string
-	// appName     string
-	// releaseTime time.Time
-	// authorName  string
-	// authorEmail string
-
 	cInfoPrefix  string
 	cWarnPrefix  string
 	cErrorPrefix string
-
-	// version     string
-	// releaseDate string
-	// app         *cli.App
-	// appName     = "vl"
-	// lg          = paw.Logger
-	// releaseTime = cast.ToTime(releaseDate)
-	// authorName  = "Shuhhua Yang"
-	// authorEmail = "shyang107@gmail.com"
-
-	// cInfoPrefix  = paw.Cinfo.Sprintf("[INFO]")
-	// cWarnPrefix  = paw.Cwarn.Sprintf("[WARN]")
-	// cErrorPrefix = paw.Cwarn.Sprintf("[ERRO]")
-	// cInfoPrefix  = paw.Cinfo.Sprintf("[%s][INFO]", appName)
-	// cWarnPrefix  = paw.Cwarn.Sprintf("[%s][WARN]", appName)
-	// cErrorPrefix = paw.Cwarn.Sprintf("[%s][ERRO]", appName)
 )
 
 type appConfig struct {
@@ -75,8 +48,8 @@ type appConfig struct {
 
 func readConfig() {
 	ca = new(appConfig)
-	// buf, _ := cfs.ReadFile("assets/config.yaml")
-	err := yaml.Unmarshal(buf, ca)
+	// cfgbuf, _ := cfs.ReadFile("assets/config.yaml")
+	err := yaml.Unmarshal(cfgbuf, ca)
 	if err != nil {
 		fatal(err.Error())
 	}
@@ -96,6 +69,8 @@ func readConfig() {
 
 func init() {
 	lg.SetLevel(logrus.WarnLevel)
+
+	// read config of app from embeded `assets/config.yaml`
 	readConfig()
 
 	paw.GologInit(os.Stdout, os.Stderr, os.Stderr, false)
